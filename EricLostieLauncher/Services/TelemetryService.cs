@@ -1,17 +1,4 @@
-﻿using EricLostieLauncher;
-using EricLostieLauncher.Services;
-using System.Net;
-using System.Reflection.Metadata;
-using System.Runtime.Intrinsics.X86;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Shapes;
-using System.Xml.Linq;
-using static System.Reflection.Metadata.BlobBuilder;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace EricLostieLauncher.Services;
+﻿namespace EricLostieLauncher.Services;
 
 public class TelemetryService
 {
