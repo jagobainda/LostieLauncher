@@ -16,10 +16,4 @@
     <PackageReference Include="Velopack" Version="0.0.1298" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ViewModels\" />
-    <Folder Include="Utils\" />
-    <Folder Include="Themes\" />
-  </ItemGroup>
-
 </Project>
