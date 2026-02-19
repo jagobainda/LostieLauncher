@@ -1,0 +1,69 @@
+# ============================================================
+#  Visual Studio / .NET / WPF MVVM — .gitignore
+# ============================================================
+
+# ----- Build output -----
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# ----- Visual Studio files -----
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+.vscode/
+
+# ----- NuGet -----
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.lock.json
+project.lock.json
+packages.lock.json
+nuget.dgspec.json
+
+# ----- Roslyn / MSBuild generated -----
+*.g.cs
+*.g.i.cs
+GlobalUsings.g.cs
+AssemblyAttributes.cs.bak
+
+# ----- Test results -----
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage*/
+
+# ----- Publish / deployment -----
+publish/
+**/Properties/PublishProfiles/
+
+# ----- Rider -----
+.idea/
+*.sln.iml
+
+# ----- OS generated -----
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ----- Secrets / sensitive config -----
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+*.pfx
+*.p12
+*.key
+
+# ----- Crash dumps -----
+*.dmp
+*.mdmp
