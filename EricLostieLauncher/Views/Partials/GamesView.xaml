@@ -4,9 +4,35 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
+             xmlns:components="clr-namespace:EricLostieLauncher.Views.Components"
+             xmlns:models="clr-namespace:EricLostieLauncher.Models"
              d:DataContext="{d:DesignInstance Type=viewmodels:GamesViewModel}"
              mc:Ignorable="d">
-    <Grid>
-		
-    </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+
+            <!-- Juego sin actualización pendiente -->
+            <components:GameCardComponent
+                CardMode="Games"
+                GameTitle="Stardew Valley"
+                InstalledVersion="1.6.0"
+                HasUpdate="False" />
+
+            <!-- Juego con actualización disponible -->
+            <components:GameCardComponent
+                CardMode="Games"
+                GameTitle="Among Us"
+                InstalledVersion="2024.9.5"
+                HasUpdate="True"
+                UpdateVersion="2024.11.26" />
+
+            <!-- Otro juego sin actualización -->
+            <components:GameCardComponent
+                CardMode="Games"
+                GameTitle="Terraria"
+                InstalledVersion="1.4.4"
+                HasUpdate="False" />
+
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

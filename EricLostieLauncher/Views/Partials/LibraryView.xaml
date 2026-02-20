@@ -4,9 +4,50 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
+             xmlns:components="clr-namespace:EricLostieLauncher.Views.Components"
+             xmlns:models="clr-namespace:EricLostieLauncher.Models"
              d:DataContext="{d:DesignInstance Type=viewmodels:LibraryViewModel}"
              mc:Ignorable="d">
-    <Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
 
-    </Grid>
+            <!-- Disponible para descargar -->
+            <components:GameCardComponent
+                CardMode="Library"
+                GameTitle="Minecraft"
+                GameSize="1.2 GB"
+                TotalDownloads="12.345"
+                LatestVersion="1.21.4"
+                DownloadStatus="Available" />
+
+            <!-- Descargando -->
+            <components:GameCardComponent
+                CardMode="Library"
+                GameTitle="Terraria"
+                GameSize="200 MB"
+                TotalDownloads="8.910"
+                LatestVersion="1.4.4"
+                DownloadStatus="Downloading"
+                DownloadProgress="150" />
+
+            <!-- Ya descargado -->
+            <components:GameCardComponent
+                CardMode="Library"
+                GameTitle="Stardew Valley"
+                GameSize="500 MB"
+                TotalDownloads="5.678"
+                LatestVersion="1.6.0"
+                DownloadStatus="Downloaded" />
+
+            <!-- Actualización disponible -->
+            <components:GameCardComponent
+                CardMode="Library"
+                GameTitle="Among Us"
+                GameSize="350 MB"
+                TotalDownloads="99.999"
+                LatestVersion="2024.11.26"
+                DownloadStatus="UpdateAvailable" />
+
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>
