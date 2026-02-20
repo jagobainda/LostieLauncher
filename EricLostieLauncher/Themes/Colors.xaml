@@ -5,6 +5,10 @@
     <Color x:Key="SecondaryBgColor">#b0dede</Color>
     <Color x:Key="PrimaryFgColor">#f08058</Color>
     <Color x:Key="SecondaryFgColor">#f3f7fa</Color>
-    <Color x:Key="TertiaryFgColor">#4ec6ef</Color>
+
+    <SolidColorBrush x:Key="PrimaryBgBrush" Color="{StaticResource PrimaryBgColor}" />
+    <SolidColorBrush x:Key="SecondaryBgBrush" Color="{StaticResource SecondaryBgColor}" />
+    <SolidColorBrush x:Key="PrimaryFgBrush" Color="{StaticResource PrimaryFgColor}" />
+    <SolidColorBrush x:Key="SecondaryFgBrush" Color="{StaticResource SecondaryFgColor}" />
 
 </ResourceDictionary>

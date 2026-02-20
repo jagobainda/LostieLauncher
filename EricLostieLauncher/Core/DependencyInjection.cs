@@ -15,6 +15,7 @@ public static class DependencyInjection
 
         // ViewModels
         services.AddSingleton<GlobalViewModel>();
+        services.AddSingleton<MainViewModel>();
 
         // Views
         services.AddSingleton<MainWindow>();
