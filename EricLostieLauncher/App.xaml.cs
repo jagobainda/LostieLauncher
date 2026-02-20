@@ -1,5 +1,6 @@
 ﻿using EricLostieLauncher.Core;
 using EricLostieLauncher.Views;
+using EricLostieLauncher.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using Velopack;
@@ -40,9 +41,13 @@ public partial class App : Application
 
             Dispatcher.Invoke(() =>
             {
-                var result = MessageBox.Show($"Nueva versión {updateInfo.TargetFullRelease.Version} disponible. ¿Reiniciar para actualizar?", "Actualización disponible", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var result = CustomMessageBox.Show(
+                    "Actualización disponible",
+                    $"Nueva versión {updateInfo.TargetFullRelease.Version} disponible. ¿Reiniciar para actualizar?",
+                    CustomMessageBoxButton.YesNo
+                );
 
-                if (result == MessageBoxResult.Yes) mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
+                if (result == true) mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
             });
         }
         catch (Exception ex)
