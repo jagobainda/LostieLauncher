@@ -44,7 +44,8 @@ public partial class App : Application
                 var result = CustomMessageBox.Show(
                     "Actualización disponible",
                     $"Nueva versión {updateInfo.TargetFullRelease.Version} disponible. ¿Reiniciar para actualizar?",
-                    CustomMessageBoxButton.YesNo
+                    CustomMessageBoxButton.YesNo,
+                    CustomMessageBoxIcon.Update
                 );
 
                 if (result == true) mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);

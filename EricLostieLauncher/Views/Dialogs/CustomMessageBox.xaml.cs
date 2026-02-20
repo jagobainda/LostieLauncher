@@ -1,5 +1,7 @@
+using MahApps.Metro.IconPacks;
 using System.Windows;
 using System.Windows.Input;
+using Velopack.Windows;
 
 namespace EricLostieLauncher.Views.Dialogs;
 
@@ -9,13 +11,27 @@ public enum CustomMessageBoxButton
     YesNo
 }
 
+public enum CustomMessageBoxIcon
+{
+    Update,
+    Information,
+    Error
+}
+
 public partial class CustomMessageBox : Window
 {
-    private CustomMessageBox(string title, string description, CustomMessageBoxButton button)
+    private CustomMessageBox(string title, string description, CustomMessageBoxButton button, CustomMessageBoxIcon icon)
     {
         InitializeComponent();
         TitleText.Text = title;
         DescriptionText.Text = description;
+
+        TitleIcon.Kind = icon switch
+        {
+            CustomMessageBoxIcon.Information => PackIconMaterialKind.Information,
+            CustomMessageBoxIcon.Error => PackIconMaterialKind.Alert,
+            _ => PackIconMaterialKind.Update,
+        };
 
         if (button == CustomMessageBoxButton.YesNo)
         {
@@ -24,12 +40,12 @@ public partial class CustomMessageBox : Window
         }
     }
 
-    public static bool? Show(string title, string description, CustomMessageBoxButton button = CustomMessageBoxButton.OK, Window? owner = null)
+    public static bool? Show(string title, string description, CustomMessageBoxButton button = CustomMessageBoxButton.OK, CustomMessageBoxIcon icon = CustomMessageBoxIcon.Update, Window? owner = null)
     {
-        var dialog = new CustomMessageBox(title, description, button);
+        var dialog = new CustomMessageBox(title, description, button, icon);
 
         var candidateOwner = owner ?? Application.Current.MainWindow;
-        
+
         if (candidateOwner?.IsLoaded == true) dialog.Owner = candidateOwner;
 
         return dialog.ShowDialog();

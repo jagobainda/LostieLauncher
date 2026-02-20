@@ -112,7 +112,8 @@
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         Margin="16,0,0,0">
-                <iconPacks:PackIconMaterial Kind="Pokeball"
+                <iconPacks:PackIconMaterial x:Name="TitleIcon"
+                                           Kind="Update"
                                            Width="18" Height="18"
                                            Foreground="{DynamicResource PrimaryFgBrush}"
                                            VerticalAlignment="Center" />
@@ -138,7 +139,7 @@
                    VerticalAlignment="Center"
                    Margin="20,0,20,0" />
 
-        <Grid Grid.Row="2" Margin="20,0,20,14" VerticalAlignment="Bottom">
+        <Grid Grid.Row="2" Margin="20,0,20,20" VerticalAlignment="Bottom">
             <StackPanel x:Name="OkPanel"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right">
