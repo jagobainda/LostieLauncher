@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:EricLostieLauncher"
         xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
+        xmlns:partials="clr-namespace:EricLostieLauncher.Views.Partials"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
         mc:Ignorable="d"
@@ -47,6 +48,55 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="NavItemStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#88f3f7fa" />
+            <Setter Property="Width" Value="60" />
+            <Setter Property="Height" Value="60" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="ActiveIndicator"
+                                    Width="3"
+                                    HorizontalAlignment="Left"
+                                    Background="{DynamicResource PrimaryFgBrush}"
+                                    Visibility="Collapsed" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#22FFFFFF" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryFgBrush}" />
+                    <Setter Property="Background" Value="#1AFFFFFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate DataType="{x:Type viewmodels:GamesViewModel}">
+            <partials:GamesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:LibraryViewModel}">
+            <partials:LibraryView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SettingsViewModel}">
+            <partials:SettingsView />
+        </DataTemplate>
+
     </Window.Resources>
 
     <Grid>
@@ -87,7 +137,38 @@
         </Grid>
 
         <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
+            <Grid Grid.Column="0" Background="#3a3737" Margin="15">
+                <StackPanel VerticalAlignment="Top">
+                    <RadioButton Style="{StaticResource NavItemStyle}"
+                                 GroupName="Navigation"
+                                 IsChecked="True"
+                                 Command="{Binding NavigateToGamesCommand}"
+                                 ToolTip="Mis Juegos">
+                        <iconPacks:PackIconMaterial Kind="Play" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItemStyle}"
+                                 GroupName="Navigation"
+                                 Command="{Binding NavigateToLibraryCommand}"
+                                 ToolTip="Biblioteca">
+                        <iconPacks:PackIconMaterial Kind="Download" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Bottom">
+                    <RadioButton Style="{StaticResource NavItemStyle}"
+                                 GroupName="Navigation"
+                                 Command="{Binding NavigateToSettingsCommand}"
+                                 ToolTip="Ajustes">
+                        <iconPacks:PackIconMaterial Kind="Cog" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                </StackPanel>
+            </Grid>
+
+            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="0, 15, 15, 15" />
         </Grid>
     </Grid>
 </Window>

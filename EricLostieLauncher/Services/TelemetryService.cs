@@ -1,6 +1,11 @@
 ﻿namespace EricLostieLauncher.Services;
 
-public class TelemetryService
+public interface ITelemetryService
+{
+    
+}
+
+public class TelemetryService : ITelemetryService
 {
 
 }

@@ -1,0 +1,7 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace EricLostieLauncher.ViewModels;
+
+public partial class LibraryViewModel : ObservableObject
+{
+}

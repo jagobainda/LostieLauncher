@@ -14,8 +14,7 @@ public partial class MainWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 1)
-            DragMove();
+        if (e.ClickCount == 1) DragMove();
     }
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)

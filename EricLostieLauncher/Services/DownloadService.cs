@@ -1,6 +1,11 @@
 ﻿namespace EricLostieLauncher.Services;
 
-public class DownloadService
+public interface IDownloadService
+{
+    
+}
+
+public class DownloadService : IDownloadService
 {
 
 }

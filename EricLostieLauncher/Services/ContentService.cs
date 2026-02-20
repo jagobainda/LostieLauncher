@@ -1,3 +1,5 @@
 ﻿namespace EricLostieLauncher.Services;
 
-public class ContentService { }
+public interface IContentService { }
+
+public class ContentService : IContentService { }
