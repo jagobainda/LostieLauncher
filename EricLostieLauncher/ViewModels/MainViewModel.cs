@@ -25,14 +25,13 @@ public partial class MainViewModel : ObservableObject
 
         _settingsViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(SettingsViewModel.Strings))
-                UpdateCurrentTitle();
+            if (e.PropertyName == nameof(SettingsViewModel.Strings)) UpdateCurrentTitle();
         };
     }
 
     private void UpdateCurrentTitle()
     {
-        CurrentTitle = _currentViewModel switch
+        CurrentTitle = CurrentViewModel switch
         {
             GamesViewModel => _settingsViewModel.Strings.TitleGames,
             LibraryViewModel => _settingsViewModel.Strings.TitleLibrary,

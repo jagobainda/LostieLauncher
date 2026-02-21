@@ -38,10 +38,10 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#d06038" />
+                    <Setter Property="Background" Value="{DynamicResource PrimaryFgHoverBrush}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#b04020" />
+                    <Setter Property="Background" Value="{DynamicResource PrimaryFgPressedBrush}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.5" />
@@ -51,7 +51,7 @@
 
         <!-- Secondary / subtle button -->
         <Style x:Key="CardSecondaryButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#33FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource OverlayMutedBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Height" Value="32" />
@@ -70,10 +70,10 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#55FFFFFF" />
+                    <Setter Property="Background" Value="{DynamicResource OverlayMediumBrush}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#22FFFFFF" />
+                    <Setter Property="Background" Value="{DynamicResource OverlayLightBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -85,7 +85,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="#3a3737" CornerRadius="6" Padding="16" Margin="0,0,0,10" SnapsToDevicePixels="True">
+    <Border Background="{DynamicResource SecondaryBgBrush}" CornerRadius="6" Padding="16" Margin="0,0,0,10" SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -97,13 +97,13 @@
             <Border Grid.Column="0"
                     Width="80" Height="80"
                     CornerRadius="6"
-                    Background="#2e2c2c"
+                    Background="{DynamicResource TertiaryBgBrush}"
                     VerticalAlignment="Center"
                     ClipToBounds="True">
                 <Grid>
                     <iconPacks:PackIconMaterial Kind="Gamepad"
                                                Width="32" Height="32"
-                                               Foreground="#55FFFFFF"
+                                               Foreground="{DynamicResource OverlayMediumBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center">
                         <iconPacks:PackIconMaterial.Style>
@@ -156,20 +156,20 @@
                     </StackPanel.Style>
 
                     <iconPacks:PackIconMaterial Kind="Harddisk" Width="12" Height="12"
-                                               Foreground="#88f3f7fa" VerticalAlignment="Center" />
+                                               Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding GameSize, ElementName=Root}"
-                               Foreground="#88f3f7fa" FontSize="12" Margin="4,0,14,0"
+                               Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,14,0"
                                VerticalAlignment="Center" />
 
                     <iconPacks:PackIconMaterial Kind="Download" Width="12" Height="12"
-                                               Foreground="#88f3f7fa" VerticalAlignment="Center" />
+                                               Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding TotalDownloads, ElementName=Root}"
-                               Foreground="#88f3f7fa" FontSize="12" Margin="4,0,14,0"
+                               Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,14,0"
                                VerticalAlignment="Center" />
 
                     <iconPacks:PackIconMaterial Kind="TagOutline" Width="12" Height="12"
-                                               Foreground="#88f3f7fa" VerticalAlignment="Center" />
-                    <TextBlock Foreground="#88f3f7fa" FontSize="12" Margin="4,0,0,0"
+                                               Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
                                VerticalAlignment="Center">
                         <Run Text="v" /><Run Text="{Binding LatestVersion, ElementName=Root}" />
                     </TextBlock>
@@ -190,8 +190,8 @@
 
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="TagOutline" Width="12" Height="12"
-                                                   Foreground="#88f3f7fa" VerticalAlignment="Center" />
-                        <TextBlock Foreground="#88f3f7fa" FontSize="12" Margin="4,0,0,0"
+                                                   Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
+                        <TextBlock Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
                                    VerticalAlignment="Center">
                             <Run Text="v" /><Run Text="{Binding InstalledVersion, ElementName=Root}" />
                         </TextBlock>
@@ -230,7 +230,7 @@
                             </Style.Triggers>
                         </Style>
                     </Grid.Style>
-                    <Border Background="#22FFFFFF" CornerRadius="2" />
+                    <Border Background="{DynamicResource OverlayLightBrush}" CornerRadius="2" />
                     <Border Background="{DynamicResource PrimaryFgBrush}" CornerRadius="2"
                             HorizontalAlignment="Left"
                             Width="{Binding DownloadProgress, ElementName=Root}"
@@ -277,7 +277,7 @@
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadedVisibility}}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Check" Width="13" Height="13"
-                                                       Foreground="#78c878"
+                                                       Foreground="{DynamicResource SuccessBrush}"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
                             <TextBlock Text="{Binding Strings.BtnDownloaded, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>

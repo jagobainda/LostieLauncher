@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- === BULBASAUR === -->
+
+    <!-- Surfaces -->
+    <Color x:Key="PrimaryBgColor">#1e2d2a</Color>
+    <Color x:Key="SecondaryBgColor">#263830</Color>
+    <Color x:Key="TertiaryBgColor">#1a2a22</Color>
+
+    <!-- Accent -->
+    <Color x:Key="PrimaryFgColor">#5dbf60</Color>
+    <Color x:Key="PrimaryFgHoverColor">#4aa34d</Color>
+    <Color x:Key="PrimaryFgPressedColor">#378740</Color>
+
+    <!-- Text -->
+    <Color x:Key="SecondaryFgColor">#e8f5ec</Color>
+    <Color x:Key="SecondaryFgDimColor">#88e8f5ec</Color>
+
+    <!-- Semantic -->
+    <Color x:Key="SuccessColor">#c8d840</Color>
+
+    <!-- Overlays (black tints for dark-cool surfaces) -->
+    <Color x:Key="OverlaySubtleColor">#1A000000</Color>
+    <Color x:Key="OverlayLightColor">#22000000</Color>
+    <Color x:Key="OverlayMutedColor">#33000000</Color>
+    <Color x:Key="OverlayMediumColor">#55000000</Color>
+    <Color x:Key="OverlayStrongColor">#88000000</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PrimaryBgBrush"       Color="{StaticResource PrimaryBgColor}" />
+    <SolidColorBrush x:Key="SecondaryBgBrush"      Color="{StaticResource SecondaryBgColor}" />
+    <SolidColorBrush x:Key="TertiaryBgBrush"       Color="{StaticResource TertiaryBgColor}" />
+    <SolidColorBrush x:Key="PrimaryFgBrush"        Color="{StaticResource PrimaryFgColor}" />
+    <SolidColorBrush x:Key="PrimaryFgHoverBrush"   Color="{StaticResource PrimaryFgHoverColor}" />
+    <SolidColorBrush x:Key="PrimaryFgPressedBrush" Color="{StaticResource PrimaryFgPressedColor}" />
+    <SolidColorBrush x:Key="SecondaryFgBrush"      Color="{StaticResource SecondaryFgColor}" />
+    <SolidColorBrush x:Key="SecondaryFgDimBrush"   Color="{StaticResource SecondaryFgDimColor}" />
+    <SolidColorBrush x:Key="SuccessBrush"          Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="OverlaySubtleBrush"    Color="{StaticResource OverlaySubtleColor}" />
+    <SolidColorBrush x:Key="OverlayLightBrush"     Color="{StaticResource OverlayLightColor}" />
+    <SolidColorBrush x:Key="OverlayMutedBrush"     Color="{StaticResource OverlayMutedColor}" />
+    <SolidColorBrush x:Key="OverlayMediumBrush"    Color="{StaticResource OverlayMediumColor}" />
+    <SolidColorBrush x:Key="OverlayStrongBrush"    Color="{StaticResource OverlayStrongColor}" />
+
+</ResourceDictionary>
