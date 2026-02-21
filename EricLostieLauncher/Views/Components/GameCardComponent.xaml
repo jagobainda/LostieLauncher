@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:models="clr-namespace:EricLostieLauncher.Models"
              xmlns:converters="clr-namespace:EricLostieLauncher.Converters"
+             xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d"
              x:Name="Root">
@@ -259,7 +260,7 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Descargar" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Strings.BtnDownload, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 
@@ -268,7 +269,7 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Loading" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Descargando..." VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Strings.BtnDownloading, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 
@@ -278,7 +279,7 @@
                             <iconPacks:PackIconMaterial Kind="Check" Width="13" Height="13"
                                                        Foreground="#78c878"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Descargado" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Strings.BtnDownloaded, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 
@@ -288,7 +289,7 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Actualizar" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -313,7 +314,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Play" Width="13" Height="13"
                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <TextBlock Text="Jugar" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Strings.BtnPlay, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
@@ -332,13 +333,13 @@
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <TextBlock Text="Actualizar" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
                         <Button Command="{Binding OpenFolderCommand, ElementName=Root}"
                                 Style="{StaticResource CardSecondaryButtonStyle}"
-                                ToolTip="Abrir carpeta del juego">
+                                ToolTip="{Binding Strings.TooltipOpenFolder, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                             <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14"
                                                        VerticalAlignment="Center" />
                         </Button>

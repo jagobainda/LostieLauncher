@@ -10,7 +10,7 @@ public partial class MainViewModel : ObservableObject
     private readonly SettingsViewModel _settingsViewModel;
 
     [ObservableProperty]
-    private string _currentTitle = "Mis Juegos";
+    private string _currentTitle = string.Empty;
 
     [ObservableProperty]
     private ObservableObject _currentViewModel = null!;
@@ -21,26 +21,43 @@ public partial class MainViewModel : ObservableObject
         _libraryViewModel = libraryViewModel;
         _settingsViewModel = settingsViewModel;
         _currentViewModel = _gamesViewModel;
+        _currentTitle = _settingsViewModel.Strings.TitleGames;
+
+        _settingsViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.Strings))
+                UpdateCurrentTitle();
+        };
+    }
+
+    private void UpdateCurrentTitle()
+    {
+        CurrentTitle = _currentViewModel switch
+        {
+            GamesViewModel => _settingsViewModel.Strings.TitleGames,
+            LibraryViewModel => _settingsViewModel.Strings.TitleLibrary,
+            _ => _settingsViewModel.Strings.TitleSettings
+        };
     }
 
     [RelayCommand]
     private void NavigateToGames()
     {
         CurrentViewModel = _gamesViewModel;
-        CurrentTitle = "Mis Juegos";
+        CurrentTitle = _settingsViewModel.Strings.TitleGames;
     }
 
     [RelayCommand]
     private void NavigateToLibrary()
     {
         CurrentViewModel = _libraryViewModel;
-        CurrentTitle = "Biblioteca";
+        CurrentTitle = _settingsViewModel.Strings.TitleLibrary;
     }
 
     [RelayCommand]
     private void NavigateToSettings()
     {
         CurrentViewModel = _settingsViewModel;
-        CurrentTitle = "Ajustes";
+        CurrentTitle = _settingsViewModel.Strings.TitleSettings;
     }
 }

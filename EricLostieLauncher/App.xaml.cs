@@ -1,4 +1,5 @@
 ﻿using EricLostieLauncher.Core;
+using EricLostieLauncher.ViewModels;
 using EricLostieLauncher.Views;
 using EricLostieLauncher.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,9 +42,10 @@ public partial class App : Application
 
             Dispatcher.Invoke(() =>
             {
+                var strings = SettingsViewModel.Instance.Strings;
                 var result = CustomMessageBox.Show(
-                    "Actualización disponible",
-                    $"Nueva versión {updateInfo.TargetFullRelease.Version} disponible. ¿Reiniciar para actualizar?",
+                    strings.UpdateAvailableTitle,
+                    string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version),
                     CustomMessageBoxButton.YesNo,
                     CustomMessageBoxIcon.Update
                 );

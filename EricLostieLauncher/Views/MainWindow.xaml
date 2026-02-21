@@ -148,13 +148,13 @@
                                  GroupName="Navigation"
                                  IsChecked="True"
                                  Command="{Binding NavigateToGamesCommand}"
-                                 ToolTip="Mis Juegos">
+                                 ToolTip="{Binding Strings.TitleGames, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Play" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
                                  Command="{Binding NavigateToLibraryCommand}"
-                                 ToolTip="Biblioteca">
+                                 ToolTip="{Binding Strings.TitleLibrary, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Download" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                 </StackPanel>
@@ -162,7 +162,7 @@
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
                                  Command="{Binding NavigateToSettingsCommand}"
-                                 ToolTip="Ajustes">
+                                 ToolTip="{Binding Strings.TitleSettings, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Cog" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                 </StackPanel>

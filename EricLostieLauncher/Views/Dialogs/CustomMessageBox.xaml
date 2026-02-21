@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
         mc:Ignorable="d"
         Height="220"
         Width="420"
@@ -143,7 +144,7 @@
             <StackPanel x:Name="OkPanel"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right">
-                <Button Content="Aceptar"
+                <Button Content="{Binding Strings.BtnOk, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                         Width="100"
                         Style="{StaticResource AccentButtonStyle}"
                         Click="OkButton_Click" />
@@ -152,12 +153,12 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Visibility="Collapsed">
-                <Button Content="Sí"
+                <Button Content="{Binding Strings.BtnYes, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                         Width="90"
                         Margin="0,0,8,0"
                         Style="{StaticResource AccentButtonStyle}"
                         Click="YesButton_Click" />
-                <Button Content="No"
+                <Button Content="{Binding Strings.BtnNo, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                         Width="90"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Click="NoButton_Click" />
