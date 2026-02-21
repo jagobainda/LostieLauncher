@@ -1,7 +1,10 @@
+using System.IO;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Content;
 using EricLostieLauncher.Models;
-using System.Windows;
+using Microsoft.Win32;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -17,6 +20,23 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private AppTheme _theme = AppTheme.Volcarona;
+
+    [ObservableProperty]
+    private bool _startWithWindows;
+
+    [ObservableProperty]
+    private bool _startMinimized;
+
+    [ObservableProperty]
+    private bool _autoUpdate = true;
+
+    [ObservableProperty]
+    private string _downloadDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "EricLostie", "Games");
+
+    public static AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
+    public static AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
 
     private ResourceDictionary? _activeThemeDict;
 
@@ -54,5 +74,16 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         dicts.Add(_activeThemeDict);
+    }
+
+    [RelayCommand]
+    private void BrowseDownloadDirectory()
+    {
+        var dialog = new OpenFolderDialog();
+        if (!string.IsNullOrEmpty(DownloadDirectory))
+            dialog.InitialDirectory = DownloadDirectory;
+
+        if (dialog.ShowDialog() == true)
+            DownloadDirectory = dialog.FolderName;
     }
 }

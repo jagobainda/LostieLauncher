@@ -16,6 +16,15 @@ public interface IStrings
     string TooltipOpenFolder { get; }
     string UpdateAvailableTitle { get; }
     string UpdateAvailableMessage { get; }
+    string SettingsGeneral { get; }
+    string SettingsAppearance { get; }
+    string SettingsStartWithWindows { get; }
+    string SettingsStartMinimized { get; }
+    string SettingsAutoUpdate { get; }
+    string SettingsLanguage { get; }
+    string SettingsDownloadDir { get; }
+    string SettingsTheme { get; }
+    string BtnBrowse { get; }
 }
 
 public class Esp : IStrings
@@ -34,6 +43,15 @@ public class Esp : IStrings
     public string TooltipOpenFolder => "Abrir carpeta del juego";
     public string UpdateAvailableTitle => "Actualización disponible";
     public string UpdateAvailableMessage => "Nueva versión {0} disponible. ¿Reiniciar para actualizar?";
+    public string SettingsGeneral => "General";
+    public string SettingsAppearance => "Apariencia";
+    public string SettingsStartWithWindows => "Iniciar con Windows";
+    public string SettingsStartMinimized => "Iniciar minimizado";
+    public string SettingsAutoUpdate => "Actualizaciones automáticas";
+    public string SettingsLanguage => "Idioma";
+    public string SettingsDownloadDir => "Directorio de descargas";
+    public string SettingsTheme => "Tema";
+    public string BtnBrowse => "Examinar...";
 }
 
 public class Eng : IStrings
@@ -52,4 +70,13 @@ public class Eng : IStrings
     public string TooltipOpenFolder => "Open game folder";
     public string UpdateAvailableTitle => "Update available";
     public string UpdateAvailableMessage => "New version {0} available. Restart to update?";
+    public string SettingsGeneral => "General";
+    public string SettingsAppearance => "Appearance";
+    public string SettingsStartWithWindows => "Start with Windows";
+    public string SettingsStartMinimized => "Start minimized";
+    public string SettingsAutoUpdate => "Automatic updates";
+    public string SettingsLanguage => "Language";
+    public string SettingsDownloadDir => "Download directory";
+    public string SettingsTheme => "Theme";
+    public string BtnBrowse => "Browse...";
 }
