@@ -25,6 +25,9 @@ public interface IStrings
     string SettingsDownloadDir { get; }
     string SettingsTheme { get; }
     string BtnBrowse { get; }
+    string SettingsCheckForUpdates { get; }
+    string CheckForUpdatesTitle { get; }
+    string CheckForUpdatesMessage { get; }
 }
 
 public class Esp : IStrings
@@ -52,6 +55,9 @@ public class Esp : IStrings
     public string SettingsDownloadDir => "Directorio de descargas";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Examinar...";
+    public string SettingsCheckForUpdates => "Buscar actualizaciones";
+    public string CheckForUpdatesTitle => "Buscar actualizaciones";
+    public string CheckForUpdatesMessage => "Buscar actualizaciones requiere reiniciar el launcher. Si hay alguna descarga en progreso, podría dañarse o interrumpirse. ¿Deseas continuar?";
 }
 
 public class Eng : IStrings
@@ -79,4 +85,7 @@ public class Eng : IStrings
     public string SettingsDownloadDir => "Download directory";
     public string SettingsTheme => "Theme";
     public string BtnBrowse => "Browse...";
+    public string SettingsCheckForUpdates => "Check for updates";
+    public string CheckForUpdatesTitle => "Check for updates";
+    public string CheckForUpdatesMessage => "Checking for updates requires restarting the launcher. Any ongoing download may be interrupted or corrupted. Do you want to continue?";
 }

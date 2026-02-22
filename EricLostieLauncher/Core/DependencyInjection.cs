@@ -12,6 +12,7 @@ public static class DependencyInjection
         var services = new ServiceCollection();
 
         // Services
+        services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();

@@ -16,7 +16,6 @@
         <converters:EnumToVisibilityConverter x:Key="DownloadedVisibility" TargetValue="Downloaded" />
         <converters:EnumToVisibilityConverter x:Key="UpdateAvailableVisibility" TargetValue="UpdateAvailable" />
 
-        <!-- Accent button (Play / Download) -->
         <Style x:Key="CardAccentButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource PrimaryFgBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
@@ -49,7 +48,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Secondary / subtle button -->
         <Style x:Key="CardSecondaryButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource OverlayMutedBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
@@ -58,11 +56,10 @@
             <Setter Property="MinWidth" Value="32" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Padding" Value="10,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}" Padding="10,0" CornerRadius="4" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
@@ -78,7 +75,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Downloaded / disabled state button -->
         <Style x:Key="CardDisabledButtonStyle" TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
             <Setter Property="IsEnabled" Value="False" />
             <Setter Property="Opacity" Value="0.6" />
@@ -93,7 +89,6 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Game logo -->
             <Border Grid.Column="0"
                     Width="80" Height="80"
                     CornerRadius="6"
@@ -101,7 +96,7 @@
                     VerticalAlignment="Center"
                     ClipToBounds="True">
                 <Grid>
-                    <iconPacks:PackIconMaterial Kind="Gamepad"
+                    <iconPacks:PackIconMaterial Kind="PokemonGo"
                                                Width="32" Height="32"
                                                Foreground="{DynamicResource OverlayMediumBrush}"
                                                HorizontalAlignment="Center"
@@ -134,7 +129,6 @@
                 </Grid>
             </Border>
 
-            <!-- Centre info block -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,16,0">
                 <TextBlock Text="{Binding GameTitle, ElementName=Root}"
                            Foreground="{DynamicResource SecondaryFgBrush}"
@@ -142,7 +136,6 @@
                            FontWeight="Bold"
                            TextTrimming="CharacterEllipsis" />
 
-                <!-- Library info -->
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -175,7 +168,6 @@
                     </TextBlock>
                 </StackPanel>
 
-                <!-- Games info -->
                 <StackPanel Margin="0,6,0,0">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -218,7 +210,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Download progress bar -->
                 <Grid Margin="0,8,0,0" Height="4">
                     <Grid.Style>
                         <Style TargetType="Grid">
@@ -238,10 +229,8 @@
                 </Grid>
             </StackPanel>
 
-            <!-- Action buttons -->
             <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
 
-                <!-- LIBRARY ACTIONS -->
                 <StackPanel>
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -267,7 +256,7 @@
                     <Button Style="{StaticResource CardDisabledButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadingVisibility}}">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Loading" Width="13" Height="13"
+                            <iconPacks:PackIconMaterial Kind="ProgressDownload" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
                             <TextBlock Text="{Binding Strings.BtnDownloading, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
                         </StackPanel>

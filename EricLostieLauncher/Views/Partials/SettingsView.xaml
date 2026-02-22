@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:converters="clr-namespace:EricLostieLauncher.Converters"
              d:DataContext="{d:DesignInstance Type=viewmodels:SettingsViewModel}"
              mc:Ignorable="d">
 
@@ -34,19 +35,17 @@
             </Setter>
         </Style>
 
-        <!-- Settings button -->
         <Style x:Key="SettingsButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource OverlayMutedBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Height" Value="32" />
-            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="12,0" SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
@@ -62,7 +61,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Settings TextBox -->
         <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource TertiaryBgBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
@@ -80,7 +78,6 @@
             </Setter>
         </Style>
 
-        <!-- Settings ComboBox -->
         <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
             <Setter Property="MinWidth" Value="160" />
@@ -136,7 +133,6 @@
             </Setter>
         </Style>
 
-        <!-- ComboBox item -->
         <Style x:Key="SettingsComboBoxItemStyle" TargetType="ComboBoxItem">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
@@ -160,12 +156,13 @@
             </Style.Triggers>
         </Style>
 
+        <converters:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
+
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
 
-            <!-- ═══ GENERAL ═══ -->
             <TextBlock Text="{Binding Strings.SettingsGeneral}"
                        Foreground="{DynamicResource PrimaryFgBrush}"
                        FontSize="14" FontWeight="SemiBold" Margin="4,0,0,8" />
@@ -174,7 +171,6 @@
                     SnapsToDevicePixels="True" Margin="0,0,0,24">
                 <StackPanel>
 
-                    <!-- Start with Windows -->
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="Launch" Width="16" Height="16"
@@ -191,7 +187,6 @@
 
                     <Border Height="1" Background="{DynamicResource OverlayLightBrush}" Margin="16,0" />
 
-                    <!-- Start minimized -->
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="16" Height="16"
@@ -208,7 +203,6 @@
 
                     <Border Height="1" Background="{DynamicResource OverlayLightBrush}" Margin="16,0" />
 
-                    <!-- Automatic updates -->
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="Update" Width="16" Height="16"
@@ -225,10 +219,26 @@
 
                     <Border Height="1" Background="{DynamicResource OverlayLightBrush}" Margin="16,0" />
 
-                    <!-- Download directory -->
+                    <Grid Margin="16,14">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="Refresh" Width="16" Height="16"
+                                                       Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding Strings.SettingsCheckForUpdates}"
+                                       Foreground="{DynamicResource SecondaryFgBrush}"
+                                       FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button Content="{Binding Strings.SettingsCheckForUpdates}"
+                                Command="{Binding CheckForUpdatesCommand}"
+                                Style="{StaticResource SettingsButtonStyle}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource OverlayLightBrush}" Margin="16,0" />
+
                     <StackPanel Margin="16,14">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <iconPacks:PackIconMaterial Kind="FolderDownload" Width="16" Height="16"
+                            <iconPacks:PackIconMaterial Kind="FolderDownload"
                                                        Foreground="{DynamicResource SecondaryFgDimBrush}"
                                                        VerticalAlignment="Center" Margin="0,0,10,0" />
                             <TextBlock Text="{Binding Strings.SettingsDownloadDir}"
@@ -255,7 +265,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- ═══ APPEARANCE ═══ -->
             <TextBlock Text="{Binding Strings.SettingsAppearance}"
                        Foreground="{DynamicResource PrimaryFgBrush}"
                        FontSize="14" FontWeight="SemiBold" Margin="4,0,0,8" />
@@ -264,7 +273,6 @@
                     SnapsToDevicePixels="True" Margin="0,0,0,24">
                 <StackPanel>
 
-                    <!-- Language -->
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="Translate" Width="16" Height="16"
@@ -278,12 +286,17 @@
                                   ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
                                   ItemsSource="{x:Static viewmodels:SettingsViewModel.LanguageOptions}"
                                   SelectedItem="{Binding Language}"
-                                  HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                  HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </Grid>
 
                     <Border Height="1" Background="{DynamicResource OverlayLightBrush}" Margin="16,0" />
 
-                    <!-- Theme -->
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="Palette" Width="16" Height="16"
@@ -302,7 +315,6 @@
 
                 </StackPanel>
             </Border>
-
         </StackPanel>
     </ScrollViewer>
 </UserControl>

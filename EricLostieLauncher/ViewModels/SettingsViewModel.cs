@@ -4,6 +4,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Content;
 using EricLostieLauncher.Models;
+using EricLostieLauncher.Services;
+using EricLostieLauncher.Utils;
+using EricLostieLauncher.Views.Dialogs;
 using Microsoft.Win32;
 
 namespace EricLostieLauncher.ViewModels;
@@ -31,24 +34,57 @@ public partial class SettingsViewModel : ObservableObject
     private bool _autoUpdate = true;
 
     [ObservableProperty]
-    private string _downloadDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "EricLostie", "Games");
+    private string _downloadDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EricLostie", "Games");
 
     public static AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
     public static AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
 
     private ResourceDictionary? _activeThemeDict;
 
-    public SettingsViewModel()
+    private readonly ISettingsService _settingsService;
+    private bool _isLoading;
+
+    public SettingsViewModel(ISettingsService settingsService)
     {
         Instance = this;
+        _settingsService = settingsService;
+
         _activeThemeDict = Application.Current.Resources.MergedDictionaries
             .FirstOrDefault(d => d.Source != null &&
                 (d.Source.OriginalString.Contains("/Themes/") ||
                  d.Source.OriginalString.Contains("Themes/")));
 
         if (_activeThemeDict == null) ApplyTheme(_theme);
+
+        LoadSettings();
+    }
+
+    private void LoadSettings()
+    {
+        _isLoading = true;
+        var settings = _settingsService.Load();
+        Language = settings.Language;
+        Theme = settings.Theme;
+        StartWithWindows = settings.StartWithWindows;
+        StartMinimized = settings.StartMinimized;
+        AutoUpdate = settings.AutoUpdate;
+        DownloadDirectory = settings.DownloadDirectory;
+        _isLoading = false;
+    }
+
+    private void SaveSettings()
+    {
+        if (_isLoading) return;
+
+        _settingsService.Save(new AppSettings
+        {
+            Language = Language,
+            Theme = Theme,
+            StartWithWindows = StartWithWindows,
+            StartMinimized = StartMinimized,
+            AutoUpdate = AutoUpdate,
+            DownloadDirectory = DownloadDirectory
+        });
     }
 
     partial void OnLanguageChanged(AppLanguage value)
@@ -58,9 +94,19 @@ public partial class SettingsViewModel : ObservableObject
             AppLanguage.Eng => new Eng(),
             _ => new Esp()
         };
+        SaveSettings();
     }
 
-    partial void OnThemeChanged(AppTheme value) => ApplyTheme(value);
+    partial void OnThemeChanged(AppTheme value)
+    {
+        ApplyTheme(value);
+        SaveSettings();
+    }
+
+    partial void OnStartWithWindowsChanged(bool value) => SaveSettings();
+    partial void OnStartMinimizedChanged(bool value) => SaveSettings();
+    partial void OnAutoUpdateChanged(bool value) => SaveSettings();
+    partial void OnDownloadDirectoryChanged(string value) => SaveSettings();
 
     private void ApplyTheme(AppTheme theme)
     {
@@ -80,10 +126,17 @@ public partial class SettingsViewModel : ObservableObject
     private void BrowseDownloadDirectory()
     {
         var dialog = new OpenFolderDialog();
-        if (!string.IsNullOrEmpty(DownloadDirectory))
-            dialog.InitialDirectory = DownloadDirectory;
 
-        if (dialog.ShowDialog() == true)
-            DownloadDirectory = dialog.FolderName;
+        if (!string.IsNullOrEmpty(DownloadDirectory)) dialog.InitialDirectory = DownloadDirectory;
+
+        if (dialog.ShowDialog() == true) DownloadDirectory = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void CheckForUpdates()
+    {
+        var result = CustomMessageBox.Show(Strings.CheckForUpdatesTitle, Strings.CheckForUpdatesMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
+
+        if (result == true) ProcessUtils.RestartApplication();
     }
 }
