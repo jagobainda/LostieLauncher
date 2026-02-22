@@ -34,8 +34,7 @@ public partial class App : Application
 
         mainWindow.Show();
 
-        if (SettingsViewModel.Instance.StartMinimized)
-            mainWindow.Hide();
+        if (SettingsViewModel.Instance.StartMinimized) mainWindow.Hide();
 
         base.OnStartup(e);
     }
@@ -70,8 +69,7 @@ public partial class App : Application
 
         SettingsViewModel.Instance.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(SettingsViewModel.Strings))
-                UpdateTrayMenuText();
+            if (e.PropertyName == nameof(SettingsViewModel.Strings)) UpdateTrayMenuText();
         };
     }
 
@@ -105,12 +103,8 @@ public partial class App : Application
             Dispatcher.Invoke(() =>
             {
                 var strings = SettingsViewModel.Instance.Strings;
-                var result = CustomMessageBox.Show(
-                    strings.UpdateAvailableTitle,
-                    string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version),
-                    CustomMessageBoxButton.YesNo,
-                    CustomMessageBoxIcon.Update
-                );
+
+                var result = CustomMessageBox.Show(strings.UpdateAvailableTitle, string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version), CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
 
                 if (result == true) mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
             });

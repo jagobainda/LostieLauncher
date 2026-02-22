@@ -161,7 +161,7 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20">
+        <StackPanel Margin="20,20,20,4">
 
             <TextBlock Text="{Binding Strings.SettingsGeneral}"
                        Foreground="{DynamicResource PrimaryFgBrush}"
@@ -270,12 +270,12 @@
                        FontSize="14" FontWeight="SemiBold" Margin="4,0,0,8" />
 
             <Border Background="{DynamicResource SecondaryBgBrush}" CornerRadius="6"
-                    SnapsToDevicePixels="True" Margin="0,0,0,24">
+                    SnapsToDevicePixels="True" Margin="0,0,0,0">
                 <StackPanel>
 
                     <Grid Margin="16,14">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <iconPacks:PackIconMaterial Kind="Translate" Width="16" Height="16"
+                            <iconPacks:PackIconMaterial Kind="Translate"
                                                        Foreground="{DynamicResource SecondaryFgDimBrush}"
                                                        VerticalAlignment="Center" Margin="0,0,10,0" />
                             <TextBlock Text="{Binding Strings.SettingsLanguage}"
