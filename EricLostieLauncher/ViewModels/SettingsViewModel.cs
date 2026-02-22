@@ -42,12 +42,14 @@ public partial class SettingsViewModel : ObservableObject
     private ResourceDictionary? _activeThemeDict;
 
     private readonly ISettingsService _settingsService;
+    private readonly IWindowsStartupService _windowsStartupService;
     private bool _isLoading;
 
-    public SettingsViewModel(ISettingsService settingsService)
+    public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService)
     {
         Instance = this;
         _settingsService = settingsService;
+        _windowsStartupService = windowsStartupService;
 
         _activeThemeDict = Application.Current.Resources.MergedDictionaries
             .FirstOrDefault(d => d.Source != null &&
@@ -65,7 +67,7 @@ public partial class SettingsViewModel : ObservableObject
         var settings = _settingsService.Load();
         Language = settings.Language;
         Theme = settings.Theme;
-        StartWithWindows = settings.StartWithWindows;
+        StartWithWindows = _windowsStartupService.IsEnabled();
         StartMinimized = settings.StartMinimized;
         AutoUpdate = settings.AutoUpdate;
         DownloadDirectory = settings.DownloadDirectory;
@@ -103,7 +105,15 @@ public partial class SettingsViewModel : ObservableObject
         SaveSettings();
     }
 
-    partial void OnStartWithWindowsChanged(bool value) => SaveSettings();
+    partial void OnStartWithWindowsChanged(bool value)
+    {
+        if (!_isLoading)
+        {
+            if (value) _windowsStartupService.Enable();
+            else _windowsStartupService.Disable();
+        }
+        SaveSettings();
+    }
     partial void OnStartMinimizedChanged(bool value) => SaveSettings();
     partial void OnAutoUpdateChanged(bool value) => SaveSettings();
     partial void OnDownloadDirectoryChanged(string value) => SaveSettings();

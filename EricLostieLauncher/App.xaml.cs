@@ -14,18 +14,80 @@ public partial class App : Application
 
     private readonly string feedUrl = "https://cdn.jagoba.dev/downloads/skinholder-desktop-latest";
 
+    private NotifyIcon? _notifyIcon;
+    private ToolStripMenuItem? _trayOpenItem;
+    private ToolStripMenuItem? _trayExitItem;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         VelopackApp.Build().Run();
+
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         Services = DependencyInjection.Configure();
 
         _ = Task.Run(CheckForUpdatesAsync);
 
-        var loginWindow = Services.GetRequiredService<MainWindow>();
-        loginWindow.Show();
+        var mainWindow = Services.GetRequiredService<MainWindow>();
+
+        InitializeTrayIcon();
+
+        mainWindow.Show();
+
+        if (SettingsViewModel.Instance.StartMinimized)
+            mainWindow.Hide();
 
         base.OnStartup(e);
+    }
+
+    private void InitializeTrayIcon()
+    {
+        _trayOpenItem = new ToolStripMenuItem();
+        _trayExitItem = new ToolStripMenuItem();
+
+        UpdateTrayMenuText();
+
+        _trayOpenItem.Click += (_, _) => RestoreMainWindow();
+        _trayExitItem.Click += (_, _) => Shutdown();
+
+        var contextMenu = new ContextMenuStrip();
+        contextMenu.Items.Add(_trayOpenItem);
+        contextMenu.Items.Add(new ToolStripSeparator());
+        contextMenu.Items.Add(_trayExitItem);
+
+        Icon? icon = null;
+        try { icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!); } catch { }
+
+        _notifyIcon = new NotifyIcon
+        {
+            Icon = icon ?? SystemIcons.Application,
+            Text = "EricLostie Launcher",
+            ContextMenuStrip = contextMenu,
+            Visible = true
+        };
+
+        _notifyIcon.DoubleClick += (_, _) => RestoreMainWindow();
+
+        SettingsViewModel.Instance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.Strings))
+                UpdateTrayMenuText();
+        };
+    }
+
+    private void UpdateTrayMenuText()
+    {
+        var strings = SettingsViewModel.Instance.Strings;
+        _trayOpenItem?.Text = strings.TrayOpen;
+        _trayExitItem?.Text = strings.TrayExit;
+    }
+
+    private static void RestoreMainWindow()
+    {
+        var mainWindow = Services.GetRequiredService<MainWindow>();
+        mainWindow.Show();
+        mainWindow.WindowState = WindowState.Normal;
+        mainWindow.Activate();
     }
 
     private async Task CheckForUpdatesAsync()
@@ -61,6 +123,8 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _notifyIcon?.Dispose();
         base.OnExit(e);
     }
 }
+

@@ -13,6 +13,7 @@ public static class DependencyInjection
 
         // Services
         services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IWindowsStartupService, WindowsStartupService>();
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();

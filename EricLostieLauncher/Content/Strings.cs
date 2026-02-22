@@ -28,6 +28,8 @@ public interface IStrings
     string SettingsCheckForUpdates { get; }
     string CheckForUpdatesTitle { get; }
     string CheckForUpdatesMessage { get; }
+    string TrayOpen { get; }
+    string TrayExit { get; }
 }
 
 public class Esp : IStrings
@@ -58,6 +60,8 @@ public class Esp : IStrings
     public string SettingsCheckForUpdates => "Buscar actualizaciones";
     public string CheckForUpdatesTitle => "Buscar actualizaciones";
     public string CheckForUpdatesMessage => "Buscar actualizaciones requiere reiniciar el launcher. Si hay alguna descarga en progreso, podría dañarse o interrumpirse. ¿Deseas continuar?";
+    public string TrayOpen => "Abrir";
+    public string TrayExit => "Salir";
 }
 
 public class Eng : IStrings
@@ -88,4 +92,6 @@ public class Eng : IStrings
     public string SettingsCheckForUpdates => "Check for updates";
     public string CheckForUpdatesTitle => "Check for updates";
     public string CheckForUpdatesMessage => "Checking for updates requires restarting the launcher. Any ongoing download may be interrupted or corrupted. Do you want to continue?";
+    public string TrayOpen => "Open";
+    public string TrayExit => "Exit";
 }
