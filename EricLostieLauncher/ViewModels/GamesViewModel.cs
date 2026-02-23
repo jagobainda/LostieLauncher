@@ -4,4 +4,5 @@ namespace EricLostieLauncher.ViewModels;
 
 public partial class GamesViewModel : ObservableObject
 {
+
 }

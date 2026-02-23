@@ -41,6 +41,14 @@ public partial class GameCardComponent : UserControl
 
     // --- Library properties ---
 
+    public static readonly DependencyProperty GameIdProperty = DependencyProperty.Register(nameof(GameId), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string GameId
+    {
+        get => (string)GetValue(GameIdProperty);
+        set => SetValue(GameIdProperty, value);
+    }
+
     public static readonly DependencyProperty GameSizeProperty = DependencyProperty.Register(nameof(GameSize), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
 
     public string GameSize

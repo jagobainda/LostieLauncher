@@ -15,6 +15,7 @@
         <converters:EnumToVisibilityConverter x:Key="DownloadingVisibility" TargetValue="Downloading" />
         <converters:EnumToVisibilityConverter x:Key="DownloadedVisibility" TargetValue="Downloaded" />
         <converters:EnumToVisibilityConverter x:Key="UpdateAvailableVisibility" TargetValue="UpdateAvailable" />
+        <converters:GameDownloadArgsConverter x:Key="GameDownloadArgsConverter" />
 
         <Style x:Key="CardAccentButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource PrimaryFgBrush}" />
@@ -246,6 +247,12 @@
                     <Button Command="{Binding DownloadCommand, ElementName=Root}"
                             Style="{StaticResource CardAccentButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource AvailableVisibility}}">
+                        <Button.CommandParameter>
+                            <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
+                                <Binding Path="GameId" ElementName="Root" />
+                                <Binding Path="LatestVersion" ElementName="Root" />
+                            </MultiBinding>
+                        </Button.CommandParameter>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -275,6 +282,12 @@
                     <Button Command="{Binding DownloadCommand, ElementName=Root}"
                             Style="{StaticResource CardAccentButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource UpdateAvailableVisibility}}">
+                        <Button.CommandParameter>
+                            <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
+                                <Binding Path="GameId" ElementName="Root" />
+                                <Binding Path="LatestVersion" ElementName="Root" />
+                            </MultiBinding>
+                        </Button.CommandParameter>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />

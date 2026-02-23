@@ -11,42 +11,46 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
 
-            <!-- Disponible para descargar -->
             <components:GameCardComponent
                 CardMode="Library"
+                GameId="minecraft"
                 GameTitle="Minecraft"
                 GameSize="1.2 GB"
                 TotalDownloads="12.345"
                 LatestVersion="1.21.4"
-                DownloadStatus="Available" />
+                DownloadStatus="Available"
+                DownloadCommand="{Binding StartDownloadCommand}" />
 
-            <!-- Descargando -->
             <components:GameCardComponent
                 CardMode="Library"
+                GameId="terraria"
                 GameTitle="Terraria"
                 GameSize="200 MB"
                 TotalDownloads="8.910"
                 LatestVersion="1.4.4"
                 DownloadStatus="Downloading"
-                DownloadProgress="150" />
+                DownloadProgress="150"
+                DownloadCommand="{Binding StartDownloadCommand}" />
 
-            <!-- Ya descargado -->
             <components:GameCardComponent
                 CardMode="Library"
+                GameId="stardew-valley"
                 GameTitle="Stardew Valley"
                 GameSize="500 MB"
                 TotalDownloads="5.678"
                 LatestVersion="1.6.0"
-                DownloadStatus="Downloaded" />
+                DownloadStatus="Downloaded"
+                DownloadCommand="{Binding StartDownloadCommand}" />
 
-            <!-- Actualización disponible -->
             <components:GameCardComponent
                 CardMode="Library"
+                GameId="among-us"
                 GameTitle="Among Us"
                 GameSize="350 MB"
                 TotalDownloads="99.999"
                 LatestVersion="2024.11.26"
-                DownloadStatus="UpdateAvailable" />
+                DownloadStatus="UpdateAvailable"
+                DownloadCommand="{Binding StartDownloadCommand}" />
 
         </StackPanel>
     </ScrollViewer>
