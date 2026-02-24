@@ -201,10 +201,9 @@
                             <iconPacks:PackIconMaterial Kind="ArrowRight" Width="10" Height="10"
                                                        Foreground="{DynamicResource PrimaryFgBrush}"
                                                        VerticalAlignment="Center" Margin="8,0,8,0" />
-                            <TextBlock Foreground="{DynamicResource PrimaryFgBrush}" FontSize="12"
-                                       FontWeight="SemiBold" VerticalAlignment="Center">
-                                <Run Text="v" /><Run Text="{Binding UpdateVersion, ElementName=Root}" />
-                            </TextBlock>
+                            <TextBlock Text="{Binding UpdateVersion, ElementName=Root}"
+                                       Foreground="{DynamicResource PrimaryFgBrush}" FontSize="12"
+                                       FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
@@ -294,7 +293,6 @@
                     </Button>
                 </StackPanel>
 
-                <!-- GAMES ACTIONS -->
                 <StackPanel>
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">

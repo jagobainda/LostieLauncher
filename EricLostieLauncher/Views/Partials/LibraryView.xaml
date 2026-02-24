@@ -49,8 +49,9 @@
                             GameId="{Binding GameId}"
                             GameTitle="{Binding Nombre}"
                             GameSize="{Binding PesoFormateado}"
+                            TotalDownloads="{Binding TotalDownloads}"
                             LatestVersion="{Binding Version}"
-                            DownloadStatus="Available"
+                            DownloadStatus="{Binding DownloadStatus}"
                             DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

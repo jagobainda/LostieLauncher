@@ -11,6 +11,7 @@ namespace EricLostieLauncher.Services;
 public interface ITelemetryService
 {
     void TrackDownloadStarted(string gameId, string gameVersion);
+    Task<Dictionary<string, int>> GetDownloadCountsAsync();
 }
 
 public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOptions telemetryOptions) : ITelemetryService
@@ -53,7 +54,29 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             RamGb = _ramGb
         };
         MessageBox.Show($"Telemetry Payload:\n{JsonSerializer.Serialize(payload, JsonOptions)}", "Telemetry Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        _ = SendAsync(_httpClientFactory.CreateClient("Telemetry"), payload, _telemetryOptions.Endpoint, _telemetryOptions.ApiKey);
+        Clipboard.SetText(JsonSerializer.Serialize(payload, JsonOptions));
+        _ = SendAsync(_httpClientFactory.CreateClient("Telemetry"), payload, $"{_telemetryOptions.Endpoint}telemetry", _telemetryOptions.ApiKey);
+    }
+
+    public async Task<Dictionary<string, int>> GetDownloadCountsAsync()
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("Telemetry");
+            using var response = await client.GetAsync($"{_telemetryOptions.Endpoint}stats").ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var stats = JsonSerializer.Deserialize<StatsResponse>(json, JsonOptions);
+
+            if (stats?.ByGame is null) return [];
+
+            return stats.ByGame.ToDictionary(kv => kv.Key, kv => kv.Value.TotalEvents);
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     private static async Task SendAsync(HttpClient httpClient, TelemetryPayload payload, string endpoint, string apiKey)

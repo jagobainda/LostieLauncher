@@ -15,7 +15,7 @@ public static class DependencyInjection
         // Configuration
         services.AddSingleton(new TelemetryOptions(
             ApiKey: "4V7p0XSJ9C6FgCE7ae3c",
-            Endpoint: "http://localhost:6969/launcher/api/telemetry"
+            Endpoint: "http://localhost:6969/launcher/api/"
         ));
         services.AddSingleton(new ContentOptions(
             Endpoint: "http://localhost:5000/juegos"

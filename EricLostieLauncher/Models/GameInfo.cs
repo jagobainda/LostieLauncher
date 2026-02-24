@@ -21,6 +21,12 @@ public partial class GameInfo
     [JsonIgnore]
     public string PesoFormateado => PesoGB >= 1 ? $"{PesoGB.ToString("0.#", CultureInfo.InvariantCulture)} GB" : $"{(PesoGB * 1024).ToString("0", CultureInfo.InvariantCulture)} MB";
 
+    [JsonIgnore]
+    public int TotalDownloads { get; set; }
+
+    [JsonIgnore]
+    public GameDownloadStatus DownloadStatus { get; set; } = GameDownloadStatus.Available;
+
     [GeneratedRegex(@"[^a-z0-9]+")]
     private static partial Regex SlugRegex();
 }

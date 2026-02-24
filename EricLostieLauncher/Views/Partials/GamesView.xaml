@@ -6,33 +6,53 @@
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
              xmlns:components="clr-namespace:EricLostieLauncher.Views.Components"
              xmlns:models="clr-namespace:EricLostieLauncher.Models"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:GamesViewModel}"
              mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20">
+    <Grid>
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="Pokeball"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryFgBrush}"
+                                           RenderTransformOrigin="0.5,0.5">
+                    <iconPacks:PackIconMaterial.RenderTransform>
+                        <RotateTransform x:Name="PokeballRotation" />
+                    </iconPacks:PackIconMaterial.RenderTransform>
+                </iconPacks:PackIconMaterial>
+                <TextBlock Text="Cargando juegos instalados..."
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
+                                             Storyboard.TargetProperty="Angle"
+                                             From="0" To="360" Duration="0:0:1" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+        </Grid>
 
-            <!-- Juego sin actualización pendiente -->
-            <components:GameCardComponent
-                CardMode="Games"
-                GameTitle="Stardew Valley"
-                InstalledVersion="1.6.0"
-                HasUpdate="False" />
-
-            <!-- Juego con actualización disponible -->
-            <components:GameCardComponent
-                CardMode="Games"
-                GameTitle="Among Us"
-                InstalledVersion="2024.9.5"
-                HasUpdate="True"
-                UpdateVersion="2024.11.26" />
-
-            <!-- Otro juego sin actualización -->
-            <components:GameCardComponent
-                CardMode="Games"
-                GameTitle="Terraria"
-                InstalledVersion="1.4.4"
-                HasUpdate="False" />
-
-        </StackPanel>
-    </ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+            <ItemsControl ItemsSource="{Binding InstalledGames}" Margin="20">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:InstalledGameInfo}">
+                        <components:GameCardComponent
+                            CardMode="Games"
+                            GameTitle="{Binding Nombre}"
+                            InstalledVersion="{Binding InstalledVersion}"
+                            HasUpdate="{Binding HasUpdate}"
+                            UpdateVersion="{Binding UpdateVersion}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
