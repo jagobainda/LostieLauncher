@@ -163,10 +163,9 @@
 
                     <iconPacks:PackIconMaterial Kind="TagOutline" Width="12" Height="12"
                                                Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
-                    <TextBlock Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
-                               VerticalAlignment="Center">
-                        <Run Text="v" /><Run Text="{Binding LatestVersion, ElementName=Root}" />
-                    </TextBlock>
+                    <TextBlock Text="{Binding LatestVersion, ElementName=Root}"
+                               Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
+                               VerticalAlignment="Center" />
                 </StackPanel>
 
                 <StackPanel Margin="0,6,0,0">
@@ -184,10 +183,9 @@
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="TagOutline" Width="12" Height="12"
                                                    Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
-                        <TextBlock Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
-                                   VerticalAlignment="Center">
-                            <Run Text="v" /><Run Text="{Binding InstalledVersion, ElementName=Root}" />
-                        </TextBlock>
+                        <TextBlock Text="{Binding InstalledVersion, ElementName=Root}"
+                                   Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
+                                   VerticalAlignment="Center" />
 
                         <StackPanel Orientation="Horizontal">
                             <StackPanel.Style>

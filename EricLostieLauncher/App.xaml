@@ -1,12 +1,15 @@
 ﻿<Application x:Class="EricLostieLauncher.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:EricLostieLauncher">
+             xmlns:local="clr-namespace:EricLostieLauncher"
+             xmlns:converters="clr-namespace:EricLostieLauncher.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Volcarona.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <converters:BoolToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:BoolToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" Invert="True" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

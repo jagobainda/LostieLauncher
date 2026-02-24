@@ -1,4 +1,5 @@
-﻿using EricLostieLauncher.Services;
+﻿using EricLostieLauncher.Models;
+using EricLostieLauncher.Services;
 using EricLostieLauncher.ViewModels;
 using EricLostieLauncher.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,12 +12,29 @@ public static class DependencyInjection
     {
         var services = new ServiceCollection();
 
+        // Configuration
+        services.AddSingleton(new TelemetryOptions(
+            ApiKey: "4V7p0XSJ9C6FgCE7ae3c",
+            Endpoint: "http://localhost:6969/launcher/api/telemetry"
+        ));
+        services.AddSingleton(new ContentOptions(
+            Endpoint: "http://localhost:5000/juegos"
+        ));
+
         // Services
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IWindowsStartupService, WindowsStartupService>();
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();
+        services.AddHttpClient("Telemetry", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(3);
+        });
+        services.AddHttpClient("Content", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
 
         // ViewModels
         services.AddSingleton<GlobalViewModel>();

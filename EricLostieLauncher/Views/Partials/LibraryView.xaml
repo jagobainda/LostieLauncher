@@ -6,52 +6,55 @@
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
              xmlns:components="clr-namespace:EricLostieLauncher.Views.Components"
              xmlns:models="clr-namespace:EricLostieLauncher.Models"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:LibraryViewModel}"
              mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20">
+    <Grid>
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="Pokeball"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryFgBrush}"
+                                           RenderTransformOrigin="0.5,0.5">
+                    <iconPacks:PackIconMaterial.RenderTransform>
+                        <RotateTransform x:Name="PokeballRotation" />
+                    </iconPacks:PackIconMaterial.RenderTransform>
+                </iconPacks:PackIconMaterial>
+                <TextBlock Text="Cargando juegos..."
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
+                                             Storyboard.TargetProperty="Angle"
+                                             From="0" To="360" Duration="0:0:1" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+        </Grid>
 
-            <components:GameCardComponent
-                CardMode="Library"
-                GameId="minecraft"
-                GameTitle="Minecraft"
-                GameSize="1.2 GB"
-                TotalDownloads="12.345"
-                LatestVersion="1.21.4"
-                DownloadStatus="Available"
-                DownloadCommand="{Binding StartDownloadCommand}" />
-
-            <components:GameCardComponent
-                CardMode="Library"
-                GameId="terraria"
-                GameTitle="Terraria"
-                GameSize="200 MB"
-                TotalDownloads="8.910"
-                LatestVersion="1.4.4"
-                DownloadStatus="Downloading"
-                DownloadProgress="150"
-                DownloadCommand="{Binding StartDownloadCommand}" />
-
-            <components:GameCardComponent
-                CardMode="Library"
-                GameId="stardew-valley"
-                GameTitle="Stardew Valley"
-                GameSize="500 MB"
-                TotalDownloads="5.678"
-                LatestVersion="1.6.0"
-                DownloadStatus="Downloaded"
-                DownloadCommand="{Binding StartDownloadCommand}" />
-
-            <components:GameCardComponent
-                CardMode="Library"
-                GameId="among-us"
-                GameTitle="Among Us"
-                GameSize="350 MB"
-                TotalDownloads="99.999"
-                LatestVersion="2024.11.26"
-                DownloadStatus="UpdateAvailable"
-                DownloadCommand="{Binding StartDownloadCommand}" />
-
-        </StackPanel>
-    </ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+            <ItemsControl ItemsSource="{Binding Games}" Margin="20">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:GameInfo}">
+                        <components:GameCardComponent
+                            CardMode="Library"
+                            GameId="{Binding GameId}"
+                            GameTitle="{Binding Nombre}"
+                            GameSize="{Binding PesoFormateado}"
+                            LatestVersion="{Binding Version}"
+                            DownloadStatus="Available"
+                            DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

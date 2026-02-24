@@ -13,16 +13,15 @@ public interface ITelemetryService
     void TrackDownloadStarted(string gameId, string gameVersion);
 }
 
-public class TelemetryService(ISettingsService settingsService) : ITelemetryService
+public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOptions telemetryOptions) : ITelemetryService
 {
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(3) };
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private readonly TelemetryOptions _telemetryOptions = telemetryOptions;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private static readonly TimeSpan CooldownPeriod = TimeSpan.FromMinutes(5);
     private readonly Dictionary<string, DateTime> _lastSentTimes = [];
     private readonly Lock _cooldownLock = new();
-
-    private readonly ISettingsService _settingsService = settingsService;
 
     private readonly string _cpuName = GetCpuName();
     private readonly int _cpuCores = Environment.ProcessorCount;
@@ -33,9 +32,7 @@ public class TelemetryService(ISettingsService settingsService) : ITelemetryServ
 
     public void TrackDownloadStarted(string gameId, string gameVersion)
     {
-        var settings = _settingsService.Load();
-
-        if (string.IsNullOrWhiteSpace(settings.TelemetryApiKey)) return;
+        if (string.IsNullOrWhiteSpace(_telemetryOptions.ApiKey)) return;
 
         lock (_cooldownLock)
         {
@@ -56,10 +53,10 @@ public class TelemetryService(ISettingsService settingsService) : ITelemetryServ
             RamGb = _ramGb
         };
         MessageBox.Show($"Telemetry Payload:\n{JsonSerializer.Serialize(payload, JsonOptions)}", "Telemetry Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        _ = SendAsync(payload, settings.TelemetryEndpoint, settings.TelemetryApiKey);
+        _ = SendAsync(_httpClientFactory.CreateClient("Telemetry"), payload, _telemetryOptions.Endpoint, _telemetryOptions.ApiKey);
     }
 
-    private static async Task SendAsync(TelemetryPayload payload, string endpoint, string apiKey)
+    private static async Task SendAsync(HttpClient httpClient, TelemetryPayload payload, string endpoint, string apiKey)
     {
         try
         {
@@ -67,7 +64,7 @@ public class TelemetryService(ISettingsService settingsService) : ITelemetryServ
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
             request.Headers.TryAddWithoutValidation("X-Launcher-Key", apiKey);
-            await HttpClient.SendAsync(request).ConfigureAwait(false);
+            await httpClient.SendAsync(request).ConfigureAwait(false);
         }
         catch
         {

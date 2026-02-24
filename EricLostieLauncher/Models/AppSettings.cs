@@ -10,6 +10,4 @@ public class AppSettings
     public bool StartMinimized { get; set; }
     public bool AutoUpdate { get; set; } = true;
     public string DownloadDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EricLostie", "Games");
-    public string TelemetryApiKey { get; set; } = "4V7p0XSJ9C6FgCE7ae3c";
-    public string TelemetryEndpoint { get; set; } = "http://localhost:6969/launcher/api/telemetry";
 }
