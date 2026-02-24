@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -34,7 +33,7 @@ public partial class SettingsViewModel : ObservableObject
     private bool _autoUpdate = true;
 
     [ObservableProperty]
-    private string _downloadDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EricLostie", "Games");
+    private string _downloadDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
     public static AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
     public static AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
@@ -72,6 +71,8 @@ public partial class SettingsViewModel : ObservableObject
         AutoUpdate = settings.AutoUpdate;
         DownloadDirectory = settings.DownloadDirectory;
         _isLoading = false;
+
+        _settingsService.EnsureGamesRootDirectoryExists();
     }
 
     private void SaveSettings()
@@ -116,7 +117,11 @@ public partial class SettingsViewModel : ObservableObject
     }
     partial void OnStartMinimizedChanged(bool value) => SaveSettings();
     partial void OnAutoUpdateChanged(bool value) => SaveSettings();
-    partial void OnDownloadDirectoryChanged(string value) => SaveSettings();
+    partial void OnDownloadDirectoryChanged(string value)
+    {
+        SaveSettings();
+        _settingsService.EnsureGamesRootDirectoryExists();
+    }
 
     private void ApplyTheme(AppTheme theme)
     {
@@ -135,6 +140,9 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void BrowseDownloadDirectory()
     {
+        var result = CustomMessageBox.Show(Strings.ChangeDownloadDirTitle, Strings.ChangeDownloadDirMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Information);
+        if (result != true) return;
+
         var dialog = new OpenFolderDialog();
 
         if (!string.IsNullOrEmpty(DownloadDirectory)) dialog.InitialDirectory = DownloadDirectory;

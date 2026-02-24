@@ -39,8 +39,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
-            var settings = _settingsService.Load();
-            var path = Path.Combine(settings.DownloadDirectory, "local_games.json");
+            var gamesRoot = _settingsService.GetGamesRootDirectory();
+            var path = Path.Combine(gamesRoot, "local_games.json");
             if (!File.Exists(path)) return [];
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
