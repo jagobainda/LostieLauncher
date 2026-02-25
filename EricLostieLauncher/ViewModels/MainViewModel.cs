@@ -24,8 +24,8 @@ public partial class MainViewModel : ObservableObject
         _gamesViewModel = gamesViewModel;
         _libraryViewModel = libraryViewModel;
         _settingsViewModel = settingsViewModel;
-        _currentViewModel = _gamesViewModel;
-        _currentTitle = _settingsViewModel.Strings.TitleGames;
+        _currentViewModel = _homeViewModel;
+        _currentTitle = _settingsViewModel.Strings.TitleHome;
 
         _settingsViewModel.PropertyChanged += (_, e) =>
         {

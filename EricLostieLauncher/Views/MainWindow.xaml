@@ -175,13 +175,13 @@
                 <StackPanel VerticalAlignment="Top">
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
+                                 IsChecked="True"
                                  Command="{Binding NavigateToHomeCommand}"
                                  ToolTip="{Binding Strings.TitleHome, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Home" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
-                                 IsChecked="True"
                                  Command="{Binding NavigateToGamesCommand}"
                                  ToolTip="{Binding Strings.TitleGames, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Play" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
