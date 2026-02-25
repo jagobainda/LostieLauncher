@@ -87,6 +87,35 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="NavActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryFgDimBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="60" />
+            <Setter Property="Height" Value="60" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource OverlayLightBrush}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.3" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate DataType="{x:Type viewmodels:HomeViewModel}">
+            <partials:HomeView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:GamesViewModel}">
             <partials:GamesView />
         </DataTemplate>
@@ -146,6 +175,12 @@
                 <StackPanel VerticalAlignment="Top">
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
+                                 Command="{Binding NavigateToHomeCommand}"
+                                 ToolTip="{Binding Strings.TitleHome, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                        <iconPacks:PackIconMaterial Kind="Home" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItemStyle}"
+                                 GroupName="Navigation"
                                  IsChecked="True"
                                  Command="{Binding NavigateToGamesCommand}"
                                  ToolTip="{Binding Strings.TitleGames, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
@@ -157,6 +192,11 @@
                                  ToolTip="{Binding Strings.TitleLibrary, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconMaterial Kind="Download" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
+                    <Button Style="{StaticResource NavActionButtonStyle}"
+                            Command="{Binding RefreshDataCommand}"
+                            ToolTip="{Binding Strings.TooltipRefresh, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                        <iconPacks:PackIconMaterial Kind="Refresh" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Bottom">
                     <RadioButton Style="{StaticResource NavItemStyle}"

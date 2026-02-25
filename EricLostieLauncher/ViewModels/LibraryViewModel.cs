@@ -27,6 +27,8 @@ public partial class LibraryViewModel : ObservableObject
         _ = LoadGamesAsync();
     }
 
+    public async Task RefreshAsync() => await LoadGamesAsync();
+
     private async Task LoadGamesAsync()
     {
         IsLoading = true;

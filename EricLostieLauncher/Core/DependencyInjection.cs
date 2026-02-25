@@ -38,6 +38,7 @@ public static class DependencyInjection
 
         // ViewModels
         services.AddSingleton<GlobalViewModel>();
+        services.AddSingleton<HomeViewModel>();
         services.AddSingleton<GamesViewModel>();
         services.AddSingleton<LibraryViewModel>();
         services.AddSingleton<SettingsViewModel>();

@@ -24,14 +24,16 @@ public partial class GamesViewModel : ObservableObject
     {
         _contentService = contentService;
         _libraryViewModel = libraryViewModel;
-        _ = LoadInstalledGamesAsync();
+        _ = LoadInstalledGamesAsync(waitForLibrary: true);
     }
 
-    private async Task LoadInstalledGamesAsync()
+    public async Task RefreshAsync() => await LoadInstalledGamesAsync(waitForLibrary: false);
+
+    private async Task LoadInstalledGamesAsync(bool waitForLibrary = true)
     {
         IsLoading = true;
 
-        await _libraryViewModel.LibraryLoadedTask;
+        if (waitForLibrary) await _libraryViewModel.LibraryLoadedTask;
 
         var localGames = await _contentService.GetLocalGamesAsync();
         var remoteGames = _libraryViewModel.Games;

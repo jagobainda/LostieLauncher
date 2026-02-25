@@ -2,6 +2,7 @@
 
 public interface IStrings
 {
+    string TitleHome { get; }
     string TitleGames { get; }
     string TitleLibrary { get; }
     string TitleSettings { get; }
@@ -15,6 +16,7 @@ public interface IStrings
     string BtnPlay { get; }
     string TooltipOpenFolder { get; }
     string TooltipUninstall { get; }
+    string TooltipRefresh { get; }
     string FolderNotFoundTitle { get; }
     string FolderNotFoundMessage { get; }
     string UninstallConfirmTitle { get; }
@@ -45,6 +47,7 @@ public interface IStrings
 
 public class Esp : IStrings
 {
+    public string TitleHome => "Inicio";
     public string TitleGames => "Mis Juegos";
     public string TitleLibrary => "Biblioteca";
     public string TitleSettings => "Ajustes";
@@ -58,6 +61,7 @@ public class Esp : IStrings
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Abrir carpeta del juego";
     public string TooltipUninstall => "Desinstalar juego";
+    public string TooltipRefresh => "Actualizar";
     public string FolderNotFoundTitle => "Carpeta no encontrada";
     public string FolderNotFoundMessage => "La carpeta del juego no se encontró. ¿Quieres reinstalar los archivos?";
     public string UninstallConfirmTitle => "Desinstalar juego";
@@ -88,6 +92,7 @@ public class Esp : IStrings
 
 public class Eng : IStrings
 {
+    public string TitleHome => "Home";
     public string TitleGames => "My Games";
     public string TitleLibrary => "Library";
     public string TitleSettings => "Settings";
@@ -101,6 +106,7 @@ public class Eng : IStrings
     public string BtnPlay => "Play";
     public string TooltipOpenFolder => "Open game folder";
     public string TooltipUninstall => "Uninstall game";
+    public string TooltipRefresh => "Refresh";
     public string FolderNotFoundTitle => "Folder not found";
     public string FolderNotFoundMessage => "The game folder was not found. Do you want to reinstall the files?";
     public string UninstallConfirmTitle => "Uninstall game";
