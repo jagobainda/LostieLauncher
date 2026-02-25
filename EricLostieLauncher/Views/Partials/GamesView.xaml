@@ -49,7 +49,9 @@
                             GameTitle="{Binding Nombre}"
                             InstalledVersion="{Binding InstalledVersion}"
                             HasUpdate="{Binding HasUpdate}"
-                            UpdateVersion="{Binding UpdateVersion}" />
+                            UpdateVersion="{Binding UpdateVersion}"
+                            OpenFolderCommand="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            UninstallCommand="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -1,7 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Models;
 using EricLostieLauncher.Services;
+using EricLostieLauncher.Views.Dialogs;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -32,7 +36,7 @@ public partial class GamesViewModel : ObservableObject
         var localGames = await _contentService.GetLocalGamesAsync();
         var remoteGames = _libraryViewModel.Games;
 
-        var installed = localGames.Select(local =>
+        IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
         {
             var remote = remoteGames.FirstOrDefault(r => string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
             var hasUpdate = remote != null && remote.Version != local.Version;
@@ -43,9 +47,84 @@ public partial class GamesViewModel : ObservableObject
                 HasUpdate = hasUpdate,
                 UpdateVersion = hasUpdate ? remote!.Version : string.Empty
             };
-        }).ToList();
+        })];
 
         InstalledGames = new ObservableCollection<InstalledGameInfo>(installed);
         IsLoading = false;
+    }
+
+    [RelayCommand]
+    private void OpenFolder(string gameName)
+    {
+        var path = _contentService.GetGameDirectory(gameName);
+
+        if (!Directory.Exists(path))
+        {
+            var result = CustomMessageBox.Show(
+                SettingsViewModel.Instance.Strings.FolderNotFoundTitle,
+                SettingsViewModel.Instance.Strings.FolderNotFoundMessage,
+                CustomMessageBoxButton.YesNo,
+                CustomMessageBoxIcon.Information);
+
+            if (result == true)
+            {
+                // TODO: Trigger reinstall when download feature is implemented
+            }
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+        }
+        catch { }
+    }
+
+    [RelayCommand]
+    private async Task UninstallAsync(string gameName)
+    {
+        var strings = SettingsViewModel.Instance.Strings;
+
+        var confirm = CustomMessageBox.Show(
+            strings.UninstallConfirmTitle,
+            string.Format(strings.UninstallConfirmMessage, gameName),
+            CustomMessageBoxButton.YesNo,
+            CustomMessageBoxIcon.Information);
+
+        if (confirm != true) return;
+
+        var path = _contentService.GetGameDirectory(gameName);
+        var folderExisted = Directory.Exists(path);
+
+        if (folderExisted)
+        {
+            try
+            {
+                Directory.Delete(path, recursive: true);
+            }
+            catch
+            {
+                CustomMessageBox.Show(
+                    strings.UninstallErrorTitle,
+                    strings.UninstallErrorMessage,
+                    CustomMessageBoxButton.OK,
+                    CustomMessageBoxIcon.Error);
+                return;
+            }
+        }
+
+        await _contentService.RemoveGameRegistryAsync(gameName);
+
+        var toRemove = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+        if (toRemove != null) InstalledGames.Remove(toRemove);
+
+        if (!folderExisted)
+        {
+            CustomMessageBox.Show(
+                strings.UninstallNotFoundTitle,
+                strings.UninstallNotFoundMessage,
+                CustomMessageBoxButton.OK,
+                CustomMessageBoxIcon.Information);
+        }
     }
 }

@@ -9,6 +9,8 @@ public interface IContentService
 {
     Task<List<GameInfo>> GetGamesAsync();
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
+    string GetGameDirectory(string gameName);
+    Task RemoveGameRegistryAsync(string gameName);
 }
 
 public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions contentOptions, ISettingsService settingsService) : IContentService
@@ -50,5 +52,27 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         {
             return [];
         }
+    }
+
+    public string GetGameDirectory(string gameName)
+    {
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        return Path.Combine(gamesRoot, gameName);
+    }
+
+    public async Task RemoveGameRegistryAsync(string gameName)
+    {
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        var path = Path.Combine(gamesRoot, "local_games.json");
+        if (!File.Exists(path)) return;
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+            var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
+            var updated = games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase)).ToList();
+            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
+        }
+        catch { }
     }
 }

@@ -336,9 +336,19 @@
                         </Button>
 
                         <Button Command="{Binding OpenFolderCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameTitle, ElementName=Root}"
                                 Style="{StaticResource CardSecondaryButtonStyle}"
+                                Margin="0,0,6,0"
                                 ToolTip="{Binding Strings.TooltipOpenFolder, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                             <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14"
+                                                       VerticalAlignment="Center" />
+                        </Button>
+
+                        <Button Command="{Binding UninstallCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameTitle, ElementName=Root}"
+                                Style="{StaticResource CardSecondaryButtonStyle}"
+                                ToolTip="{Binding Strings.TooltipUninstall, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <iconPacks:PackIconMaterial Kind="TrashCanOutline" Width="14" Height="14"
                                                        VerticalAlignment="Center" />
                         </Button>
                     </StackPanel>

@@ -14,6 +14,15 @@ public interface IStrings
     string BtnUpdate { get; }
     string BtnPlay { get; }
     string TooltipOpenFolder { get; }
+    string TooltipUninstall { get; }
+    string FolderNotFoundTitle { get; }
+    string FolderNotFoundMessage { get; }
+    string UninstallConfirmTitle { get; }
+    string UninstallConfirmMessage { get; }
+    string UninstallNotFoundTitle { get; }
+    string UninstallNotFoundMessage { get; }
+    string UninstallErrorTitle { get; }
+    string UninstallErrorMessage { get; }
     string UpdateAvailableTitle { get; }
     string UpdateAvailableMessage { get; }
     string SettingsGeneral { get; }
@@ -48,6 +57,15 @@ public class Esp : IStrings
     public string BtnUpdate => "Actualizar";
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Abrir carpeta del juego";
+    public string TooltipUninstall => "Desinstalar juego";
+    public string FolderNotFoundTitle => "Carpeta no encontrada";
+    public string FolderNotFoundMessage => "La carpeta del juego no se encontró. ¿Quieres reinstalar los archivos?";
+    public string UninstallConfirmTitle => "Desinstalar juego";
+    public string UninstallConfirmMessage => "¿Seguro que quieres desinstalar {0}? Esta acción no se puede deshacer.";
+    public string UninstallNotFoundTitle => "Archivos no encontrados";
+    public string UninstallNotFoundMessage => "No se encontraron los archivos del juego, pero se ha limpiado el registro de la lista.";
+    public string UninstallErrorTitle => "Error al desinstalar";
+    public string UninstallErrorMessage => "No se pudo desinstalar el juego. Es posible que algunos archivos estén en uso.";
     public string UpdateAvailableTitle => "Actualización disponible";
     public string UpdateAvailableMessage => "Nueva versión {0} disponible. ¿Reiniciar para actualizar?";
     public string SettingsGeneral => "General";
@@ -82,6 +100,15 @@ public class Eng : IStrings
     public string BtnUpdate => "Update";
     public string BtnPlay => "Play";
     public string TooltipOpenFolder => "Open game folder";
+    public string TooltipUninstall => "Uninstall game";
+    public string FolderNotFoundTitle => "Folder not found";
+    public string FolderNotFoundMessage => "The game folder was not found. Do you want to reinstall the files?";
+    public string UninstallConfirmTitle => "Uninstall game";
+    public string UninstallConfirmMessage => "Are you sure you want to uninstall {0}? This action cannot be undone.";
+    public string UninstallNotFoundTitle => "Files not found";
+    public string UninstallNotFoundMessage => "The game files were not found, but the entry has been cleaned up from the list.";
+    public string UninstallErrorTitle => "Uninstall error";
+    public string UninstallErrorMessage => "Failed to uninstall the game. Some files may be in use.";
     public string UpdateAvailableTitle => "Update available";
     public string UpdateAvailableMessage => "New version {0} available. Restart to update?";
     public string SettingsGeneral => "General";

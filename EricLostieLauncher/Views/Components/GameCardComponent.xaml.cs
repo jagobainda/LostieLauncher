@@ -146,4 +146,12 @@ public partial class GameCardComponent : UserControl
         get => (ICommand?)GetValue(OpenFolderCommandProperty);
         set => SetValue(OpenFolderCommandProperty, value);
     }
+
+    public static readonly DependencyProperty UninstallCommandProperty = DependencyProperty.Register(nameof(UninstallCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? UninstallCommand
+    {
+        get => (ICommand?)GetValue(UninstallCommandProperty);
+        set => SetValue(UninstallCommandProperty, value);
+    }
 }
