@@ -43,6 +43,7 @@ public interface IStrings
     string ChangeDownloadDirMessage { get; }
     string TrayOpen { get; }
     string TrayExit { get; }
+    string LibraryNoContent { get; }
 }
 
 public class Esp : IStrings
@@ -88,6 +89,7 @@ public class Esp : IStrings
     public string ChangeDownloadDirMessage => "Si tienes juegos instalados, tendrás que moverlos manualmente a la nueva ruta o el launcher no los reconocerá. ¿Deseas continuar?";
     public string TrayOpen => "Abrir";
     public string TrayExit => "Salir";
+    public string LibraryNoContent => "No disponible";
 }
 
 public class Eng : IStrings
@@ -133,4 +135,5 @@ public class Eng : IStrings
     public string ChangeDownloadDirMessage => "If you have installed games, you will need to move them manually to the new path or the launcher won't recognize them. Do you want to continue?";
     public string TrayOpen => "Open";
     public string TrayExit => "Exit";
+    public string LibraryNoContent => "Not available";
 }

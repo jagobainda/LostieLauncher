@@ -39,8 +39,21 @@
             </Grid.Triggers>
         </Grid>
 
+        <Grid Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="CloudOffOutline"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SecondaryFgDimBrush}" />
+                <TextBlock Text="{Binding Strings.LibraryNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+        </Grid>
+
         <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding IsLoading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                      Visibility="{Binding IsListVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
             <ItemsControl ItemsSource="{Binding Games}" Margin="20">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:GameInfo}">

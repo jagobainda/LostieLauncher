@@ -13,10 +13,17 @@ public partial class LibraryViewModel : ObservableObject
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     private ObservableCollection<GameInfo> _games = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     private bool _isLoading;
+
+    public bool IsEmpty => !IsLoading && Games.Count == 0;
+    public bool IsListVisible => !IsLoading && Games.Count > 0;
 
     public Task LibraryLoadedTask => _libraryLoadedTcs.Task;
 
