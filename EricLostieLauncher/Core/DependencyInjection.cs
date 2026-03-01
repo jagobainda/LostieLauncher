@@ -18,7 +18,8 @@ public static class DependencyInjection
             Endpoint: "http://localhost:6969/launcher/api/"
         ));
         services.AddSingleton(new ContentOptions(
-            Endpoint: "http://localhost:5000/juegos"
+            Endpoint: "http://localhost:5000/juegos",
+            NotificationsEndpoint: "http://localhost:5000/notis"
         ));
 
         // Services

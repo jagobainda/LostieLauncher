@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using EricLostieLauncher.Models;
 
 namespace EricLostieLauncher.Services;
@@ -9,6 +10,7 @@ public interface IContentService
 {
     Task<List<GameInfo>> GetGamesAsync();
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
+    Task<HomeContent> GetHomeContentAsync();
     string GetGameDirectory(string gameName);
     Task RemoveGameRegistryAsync(string gameName);
 }
@@ -18,7 +20,11 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ContentOptions _contentOptions = contentOptions;
     private readonly ISettingsService _settingsService = settingsService;
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     public async Task<List<GameInfo>> GetGamesAsync()
     {
@@ -34,6 +40,23 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         catch
         {
             return [];
+        }
+    }
+
+    public async Task<HomeContent> GetHomeContentAsync()
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("Content");
+            using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return JsonSerializer.Deserialize<HomeContent>(json, JsonOptions) ?? new HomeContent();
+        }
+        catch
+        {
+            return new HomeContent();
         }
     }
 
