@@ -44,6 +44,10 @@ public interface IStrings
     string TrayOpen { get; }
     string TrayExit { get; }
     string LibraryNoContent { get; }
+    string HomeNews { get; }
+    string HomeNotifications { get; }
+    string HomeLoading { get; }
+    string HomeNoContent { get; }
 }
 
 public class Esp : IStrings
@@ -90,6 +94,10 @@ public class Esp : IStrings
     public string TrayOpen => "Abrir";
     public string TrayExit => "Salir";
     public string LibraryNoContent => "No disponible";
+    public string HomeNews => "Novedades";
+    public string HomeNotifications => "Notificaciones";
+    public string HomeLoading => "Cargando...";
+    public string HomeNoContent => "Sin contenido";
 }
 
 public class Eng : IStrings
@@ -136,4 +144,8 @@ public class Eng : IStrings
     public string TrayOpen => "Open";
     public string TrayExit => "Exit";
     public string LibraryNoContent => "Not available";
+    public string HomeNews => "News";
+    public string HomeNotifications => "Notifications";
+    public string HomeLoading => "Loading...";
+    public string HomeNoContent => "No content";
 }

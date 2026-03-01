@@ -10,13 +10,22 @@ public partial class HomeViewModel : ObservableObject
     private readonly IContentService _contentService;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     private ObservableCollection<NewsItem> _news = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     private ObservableCollection<NotificationItem> _notifications = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     private bool _isLoading;
+
+    public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
+    public bool IsListVisible => !IsLoading && (News.Count > 0 || Notifications.Count > 0);
 
     public HomeViewModel(IContentService contentService)
     {

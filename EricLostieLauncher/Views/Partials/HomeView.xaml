@@ -6,57 +6,103 @@
              xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
              xmlns:components="clr-namespace:EricLostieLauncher.Views.Components"
              xmlns:models="clr-namespace:EricLostieLauncher.Models"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
              mc:Ignorable="d">
-    <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="20" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+    <Grid>
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="Pokeball"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryFgBrush}"
+                                           RenderTransformOrigin="0.5,0.5">
+                    <iconPacks:PackIconMaterial.RenderTransform>
+                        <RotateTransform x:Name="PokeballRotation" />
+                    </iconPacks:PackIconMaterial.RenderTransform>
+                </iconPacks:PackIconMaterial>
+                <TextBlock Text="{Binding Strings.HomeLoading, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
+                                             Storyboard.TargetProperty="Angle"
+                                             From="0" To="360" Duration="0:0:1" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+        </Grid>
 
-        <!-- Novedades -->
-        <DockPanel Grid.Column="0">
-            <TextBlock DockPanel.Dock="Top" Text="Novedades"
-                       Foreground="{DynamicResource SecondaryFgBrush}"
-                       FontSize="18" FontWeight="SemiBold"
-                       Margin="0,0,0,14" />
+        <Grid Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="CloudOffOutline"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SecondaryFgDimBrush}" />
+                <TextBlock Text="{Binding Strings.HomeNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+        </Grid>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding News}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:NewsItem}">
-                            <components:NewsCardComponent
-                                Title="{Binding Title}"
-                                Description="{Binding Description}"
-                                Tag="{Binding Tag}"
-                                Date="{Binding Date}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </DockPanel>
+        <Grid Margin="20"
+              Visibility="{Binding IsListVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-        <!-- Notificaciones -->
-        <DockPanel Grid.Column="2">
-            <TextBlock DockPanel.Dock="Top" Text="Notificaciones"
-                       Foreground="{DynamicResource SecondaryFgBrush}"
-                       FontSize="18" FontWeight="SemiBold"
-                       Margin="0,0,0,14" />
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="{Binding Strings.HomeNews, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgBrush}"
+                           FontSize="18" FontWeight="SemiBold"
+                           Margin="0,0,0,14" />
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Notifications}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:NotificationItem}">
-                            <components:NotificationCardComponent
-                                Title="{Binding Title}"
-                                Message="{Binding Message}"
-                                NotificationType="{Binding Type}"
-                                Date="{Binding Date}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </DockPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding News}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:NewsItem}">
+                                <components:NewsCardComponent
+                                    Title="{Binding Title}"
+                                    Description="{Binding Description}"
+                                    Tag="{Binding Tag}"
+                                    Date="{Binding Date}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="{Binding Strings.HomeNotifications, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgBrush}"
+                           FontSize="18" FontWeight="SemiBold"
+                           Margin="0,0,0,14" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Notifications}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:NotificationItem}">
+                                <components:NotificationCardComponent
+                                    Title="{Binding Title}"
+                                    Message="{Binding Message}"
+                                    NotificationType="{Binding Type}"
+                                    Date="{Binding Date}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
     </Grid>
 </UserControl>
