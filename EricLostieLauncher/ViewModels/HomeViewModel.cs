@@ -33,6 +33,8 @@ public partial class HomeViewModel : ObservableObject
         _ = LoadHomeContentAsync();
     }
 
+    public async Task RefreshAsync() => await LoadHomeContentAsync();
+
     private async Task LoadHomeContentAsync()
     {
         IsLoading = true;

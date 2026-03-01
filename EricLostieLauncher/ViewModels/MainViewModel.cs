@@ -49,6 +49,12 @@ public partial class MainViewModel : ObservableObject
             if (e.PropertyName == nameof(GamesViewModel.IsLoading))
                 RefreshDataCommand.NotifyCanExecuteChanged();
         };
+
+        _homeViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(HomeViewModel.IsLoading))
+                RefreshDataCommand.NotifyCanExecuteChanged();
+        };
     }
 
     private void UpdateCurrentTitle()
@@ -96,7 +102,7 @@ public partial class MainViewModel : ObservableObject
         _globalViewModel.IsRefreshing = true;
         try
         {
-            await _libraryViewModel.RefreshAsync();
+            await Task.WhenAll(_homeViewModel.RefreshAsync(), _libraryViewModel.RefreshAsync());
             await _gamesViewModel.RefreshAsync();
         }
         finally
@@ -108,6 +114,7 @@ public partial class MainViewModel : ObservableObject
     private bool CanRefreshData() =>
         !_globalViewModel.IsDownloading &&
         !_globalViewModel.IsRefreshing &&
+        !_homeViewModel.IsLoading &&
         !_libraryViewModel.IsLoading &&
         !_gamesViewModel.IsLoading;
 }
