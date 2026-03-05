@@ -34,26 +34,22 @@ public partial class MainViewModel : ObservableObject
 
         _globalViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(GlobalViewModel.IsDownloading) or nameof(GlobalViewModel.IsRefreshing))
-                RefreshDataCommand.NotifyCanExecuteChanged();
+            if (e.PropertyName is nameof(GlobalViewModel.IsDownloading) or nameof(GlobalViewModel.IsRefreshing)) RefreshDataCommand.NotifyCanExecuteChanged();
         };
 
         _libraryViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(LibraryViewModel.IsLoading))
-                RefreshDataCommand.NotifyCanExecuteChanged();
+            if (e.PropertyName == nameof(LibraryViewModel.IsLoading)) RefreshDataCommand.NotifyCanExecuteChanged();
         };
 
         _gamesViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(GamesViewModel.IsLoading))
-                RefreshDataCommand.NotifyCanExecuteChanged();
+            if (e.PropertyName == nameof(GamesViewModel.IsLoading)) RefreshDataCommand.NotifyCanExecuteChanged();
         };
 
         _homeViewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(HomeViewModel.IsLoading))
-                RefreshDataCommand.NotifyCanExecuteChanged();
+            if (e.PropertyName == nameof(HomeViewModel.IsLoading)) RefreshDataCommand.NotifyCanExecuteChanged();
         };
     }
 
