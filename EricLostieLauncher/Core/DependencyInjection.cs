@@ -19,7 +19,7 @@ public static class DependencyInjection
         ));
         services.AddSingleton(new ContentOptions(
             Endpoint: "http://localhost:5000/juegos",
-            NotificationsEndpoint: "http://localhost:5000/notis"
+            NotificationsEndpoint: "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json"
         ));
 
         // Services

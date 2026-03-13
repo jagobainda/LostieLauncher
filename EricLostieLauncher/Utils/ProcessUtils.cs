@@ -8,6 +8,6 @@ public static class ProcessUtils
 
         if (exePath is not null) System.Diagnostics.Process.Start(exePath);
 
-        System.Diagnostics.Process.GetCurrentProcess().Kill();
+        Application.Current.Shutdown();
     }
 }

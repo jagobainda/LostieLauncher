@@ -28,10 +28,10 @@ public partial class NewsCardComponent : UserControl
         set => SetValue(DescriptionProperty, value);
     }
 
-    public static readonly DependencyProperty TagProperty =
+    public static new readonly DependencyProperty TagProperty =
         DependencyProperty.Register(nameof(Tag), typeof(string), typeof(NewsCardComponent), new PropertyMetadata(string.Empty));
 
-    public string Tag
+    public new string Tag
     {
         get => (string)GetValue(TagProperty);
         set => SetValue(TagProperty, value);
