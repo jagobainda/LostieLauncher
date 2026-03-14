@@ -95,6 +95,11 @@ public partial class SettingsViewModel : ObservableObject
         Strings = value switch
         {
             AppLanguage.Eng => new Eng(),
+            AppLanguage.Cat => new Cat(),
+            AppLanguage.Eus => new Eus(),
+            AppLanguage.Gal => new Gal(),
+            AppLanguage.Por => new Por(),
+            AppLanguage.Val => new Val(),
             _ => new Esp()
         };
         SaveSettings();
