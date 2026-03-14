@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EricLostieLauncher.Models;
 using EricLostieLauncher.Services;
@@ -8,6 +9,7 @@ namespace EricLostieLauncher.ViewModels;
 public partial class HomeViewModel : ObservableObject
 {
     private readonly IContentService _contentService;
+    private readonly SettingsViewModel _settingsViewModel;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
@@ -27,10 +29,18 @@ public partial class HomeViewModel : ObservableObject
     public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
     public bool IsListVisible => !IsLoading && (News.Count > 0 || Notifications.Count > 0);
 
-    public HomeViewModel(IContentService contentService)
+    public HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel)
     {
         _contentService = contentService;
+        _settingsViewModel = settingsViewModel;
+        _settingsViewModel.PropertyChanged += OnSettingsPropertyChanged;
         _ = LoadHomeContentAsync();
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.Language))
+            _ = LoadHomeContentAsync();
     }
 
     public async Task RefreshAsync() => await LoadHomeContentAsync();

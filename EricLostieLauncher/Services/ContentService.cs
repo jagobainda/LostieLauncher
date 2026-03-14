@@ -20,6 +20,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ContentOptions _contentOptions = contentOptions;
     private readonly ISettingsService _settingsService = settingsService;
+    private HomeContentDto? _homeContentCache;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -47,18 +48,81 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
-            var client = _httpClientFactory.CreateClient("Content");
-            using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            if (_homeContentCache is null)
+            {
+                var client = _httpClientFactory.CreateClient("Content");
+                using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return JsonSerializer.Deserialize<HomeContent>(json, JsonOptions) ?? new HomeContent();
+                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, JsonOptions) ?? new HomeContentDto([], []);
+            }
+
+            var settings = _settingsService.Load();
+            var langCode = GetLanguageCode(settings.Language);
+
+            return new HomeContent
+            {
+                News = [.. _homeContentCache.News.Select(n => new NewsItem
+                {
+                    Id = n.Id,
+                    Title = Resolve(n.Title, langCode),
+                    Description = Resolve(n.Description, langCode),
+                    Tag = n.Tag,
+                    Date = n.Date,
+                    ExpiresAt = n.ExpiresAt
+                })],
+                Notifications = [.. _homeContentCache.Notifications.Select(n => new NotificationItem
+                {
+                    Id = n.Id,
+                    Title = Resolve(n.Title, langCode),
+                    Message = Resolve(n.Message, langCode),
+                    Type = n.Type,
+                    Date = n.Date,
+                    ExpiresAt = n.ExpiresAt
+                })]
+            };
         }
         catch
         {
             return new HomeContent();
         }
     }
+
+    private static string GetLanguageCode(AppLanguage language) => language switch
+    {
+        AppLanguage.Esp => "es",
+        AppLanguage.Eng => "en",
+        AppLanguage.Cat => "ca",
+        AppLanguage.Eus => "eu",
+        AppLanguage.Gal => "gl",
+        AppLanguage.Por => "pt",
+        AppLanguage.Val => "val",
+        _ => "es"
+    };
+
+    private static string Resolve(Dictionary<string, string> localized, string languageCode) =>
+        localized.TryGetValue(languageCode, out var value) ? value :
+        localized.TryGetValue("es", out var fallback) ? fallback :
+        localized.Values.FirstOrDefault() ?? string.Empty;
+
+    private record HomeContentDto(List<NewsItemDto> News, List<NotificationItemDto> Notifications);
+
+    private record NewsItemDto(
+        Guid Id,
+        Dictionary<string, string> Title,
+        Dictionary<string, string> Description,
+        string Tag,
+        DateTime Date,
+        [property: JsonPropertyName("expires_at")] DateTime? ExpiresAt);
+
+    private record NotificationItemDto(
+        Guid Id,
+        Dictionary<string, string> Title,
+        Dictionary<string, string> Message,
+        NotificationType Type,
+        DateTime Date,
+        [property: JsonPropertyName("expires_at")] DateTime? ExpiresAt);
 
     public async Task<List<LocalGameInfo>> GetLocalGamesAsync()
     {
@@ -93,7 +157,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         {
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
-            var updated = games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase)).ToList();
+            List<LocalGameInfo> updated = [.. games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase))];
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
         }
         catch { }
