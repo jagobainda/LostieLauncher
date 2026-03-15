@@ -52,12 +52,14 @@ public partial class GamesViewModel : ObservableObject
         })];
 
         InstalledGames = new ObservableCollection<InstalledGameInfo>(installed);
+        Logs.DebugLogManager($"Installed games loaded: {InstalledGames.Count} games.");
         IsLoading = false;
     }
 
     [RelayCommand]
     private void OpenFolder(string gameName)
     {
+        Logs.DebugLogManager($"Opening folder for: {gameName}.");
         var path = _contentService.GetGameDirectory(gameName);
 
         if (!Directory.Exists(path))
@@ -79,7 +81,7 @@ public partial class GamesViewModel : ObservableObject
         {
             Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
         }
-        catch { }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 
     [RelayCommand]
@@ -95,6 +97,7 @@ public partial class GamesViewModel : ObservableObject
 
         if (confirm != true) return;
 
+        Logs.InfoLogManager($"Uninstalling game: {gameName}.");
         var path = _contentService.GetGameDirectory(gameName);
         var folderExisted = Directory.Exists(path);
 
@@ -104,8 +107,9 @@ public partial class GamesViewModel : ObservableObject
             {
                 Directory.Delete(path, recursive: true);
             }
-            catch
+            catch (Exception ex)
             {
+                Logs.ErrorLogManager(ex);
                 CustomMessageBox.Show(
                     strings.UninstallErrorTitle,
                     strings.UninstallErrorMessage,
@@ -119,6 +123,8 @@ public partial class GamesViewModel : ObservableObject
 
         var toRemove = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
         if (toRemove != null) InstalledGames.Remove(toRemove);
+
+        Logs.InfoLogManager($"Game uninstalled: {gameName}.");
 
         if (!folderExisted)
         {

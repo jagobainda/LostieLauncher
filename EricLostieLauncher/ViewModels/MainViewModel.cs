@@ -95,11 +95,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRefreshData))]
     private async Task RefreshDataAsync()
     {
+        Logs.DebugLogManager("Data refresh started.");
         _globalViewModel.IsRefreshing = true;
         try
         {
             await Task.WhenAll(_homeViewModel.RefreshAsync(), _libraryViewModel.RefreshAsync());
             await _gamesViewModel.RefreshAsync();
+            Logs.DebugLogManager("Data refresh completed.");
         }
         finally
         {

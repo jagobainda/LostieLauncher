@@ -20,6 +20,7 @@ public class SettingsService : ISettingsService
 
     public AppSettings Load()
     {
+        Logs.DebugLogManager("Loading settings from disk.");
         if (!File.Exists(SettingsPath)) return new AppSettings();
 
         try
@@ -27,16 +28,25 @@ public class SettingsService : ISettingsService
             var json = File.ReadAllText(SettingsPath);
             return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return new AppSettings();
         }
     }
 
     public void Save(AppSettings settings)
     {
-        var json = JsonSerializer.Serialize(settings, JsonOptions);
-        File.WriteAllText(SettingsPath, json);
+        try
+        {
+            var json = JsonSerializer.Serialize(settings, JsonOptions);
+            File.WriteAllText(SettingsPath, json);
+            Logs.DebugLogManager("Settings saved to disk.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     public string GetGamesRootDirectory()

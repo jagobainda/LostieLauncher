@@ -62,6 +62,7 @@ public partial class LibraryViewModel : ObservableObject
         }
 
         Games = new ObservableCollection<GameInfo>(result);
+        Logs.DebugLogManager($"Games library loaded: {result.Count} games.");
         IsLoading = false;
         _libraryLoadedTcs.TrySetResult();
     }
@@ -69,6 +70,7 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private void StartDownload(GameDownloadArgs args)
     {
+        Logs.InfoLogManager($"Download started: {args.GameId} v{args.Version}.");
         _telemetryService.TrackDownloadStarted(args.GameId, args.Version);
     }
 }

@@ -53,8 +53,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             GpuName = _gpuName,
             RamGb = _ramGb
         };
-        MessageBox.Show($"Telemetry Payload:\n{JsonSerializer.Serialize(payload, JsonOptions)}", "Telemetry Debug", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        Clipboard.SetText(JsonSerializer.Serialize(payload, JsonOptions));
+        Logs.DebugLogManager($"Tracking download started: {gameId} v{gameVersion}.");
         _ = SendAsync(_httpClientFactory.CreateClient("Telemetry"), payload, $"{_telemetryOptions.Endpoint}telemetry", _telemetryOptions.ApiKey);
     }
 
@@ -62,6 +61,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
     {
         try
         {
+            Logs.DebugLogManager("Fetching download counts from telemetry service.");
             var client = _httpClientFactory.CreateClient("Telemetry");
             using var response = await client.GetAsync($"{_telemetryOptions.Endpoint}stats").ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -73,8 +73,9 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
 
             return stats.ByGame.ToDictionary(kv => kv.Key, kv => kv.Value.TotalEvents);
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return [];
         }
     }
@@ -88,10 +89,11 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
             request.Headers.TryAddWithoutValidation("X-Launcher-Key", apiKey);
             await httpClient.SendAsync(request).ConfigureAwait(false);
+            Logs.DebugLogManager($"Telemetry sent for game: {payload.GameId}.");
         }
-        catch
+        catch (Exception ex)
         {
-            // ignore
+            Logs.ErrorLogManager(ex);
         }
     }
 
@@ -101,7 +103,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         {
             return ((string?)Registry.GetValue(@"HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString", null))?.Trim() ?? "Unknown";
         }
-        catch { return "Unknown"; }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return "Unknown"; }
     }
 
     private static string GetGpuName()
@@ -111,7 +113,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             const string keyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000";
             return ((string?)Registry.GetValue(keyPath, "DriverDesc", null))?.Trim() ?? "Unknown";
         }
-        catch { return "Unknown"; }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return "Unknown"; }
     }
 
     private static int GetRamGb()
@@ -124,7 +126,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             double ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
             return (int)Math.Round(ramGb);
         }
-        catch { return 0; }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return 0; }
     }
 
     private static string GetOsVersion()
@@ -135,7 +137,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             
             if (int.TryParse(buildStr, out int build)) return build >= 22000 ? "Windows 11" : "Windows 10";
         }
-        catch { }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
         return "Windows";
     }
 

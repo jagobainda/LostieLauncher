@@ -73,6 +73,7 @@ public partial class SettingsViewModel : ObservableObject
         _isLoading = false;
 
         _settingsService.EnsureGamesRootDirectoryExists();
+        Logs.DebugLogManager("Settings loaded.");
     }
 
     private void SaveSettings()
@@ -88,10 +89,12 @@ public partial class SettingsViewModel : ObservableObject
             AutoUpdate = AutoUpdate,
             DownloadDirectory = DownloadDirectory
         });
+        Logs.DebugLogManager("Settings saved.");
     }
 
     partial void OnLanguageChanged(AppLanguage value)
     {
+        Logs.DebugLogManager($"Language changed to: {value}.");
         Strings = value switch
         {
             AppLanguage.Eng => new Eng(),
@@ -107,6 +110,7 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnThemeChanged(AppTheme value)
     {
+        Logs.DebugLogManager($"Theme changed to: {value}.");
         ApplyTheme(value);
         SaveSettings();
     }
@@ -118,6 +122,7 @@ public partial class SettingsViewModel : ObservableObject
             if (value) _windowsStartupService.Enable();
             else _windowsStartupService.Disable();
         }
+        Logs.InfoLogManager($"Start with Windows: {(value ? "enabled" : "disabled")}.");
         SaveSettings();
     }
     partial void OnStartMinimizedChanged(bool value) => SaveSettings();
@@ -152,12 +157,17 @@ public partial class SettingsViewModel : ObservableObject
 
         if (!string.IsNullOrEmpty(DownloadDirectory)) dialog.InitialDirectory = DownloadDirectory;
 
-        if (dialog.ShowDialog() == true) DownloadDirectory = dialog.FolderName;
+        if (dialog.ShowDialog() == true)
+        {
+            Logs.InfoLogManager($"Download directory changed to: {dialog.FolderName}.");
+            DownloadDirectory = dialog.FolderName;
+        }
     }
 
     [RelayCommand]
     private void CheckForUpdates()
     {
+        Logs.InfoLogManager("Manual update check initiated.");
         var result = CustomMessageBox.Show(Strings.CheckForUpdatesTitle, Strings.CheckForUpdatesMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
 
         if (result == true) ProcessUtils.RestartApplication();

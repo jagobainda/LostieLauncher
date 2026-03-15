@@ -26,6 +26,8 @@ public partial class App : Application
 
         Services = DependencyInjection.Configure();
 
+        Logs.InfoLogManager("Application started.");
+
         _ = Task.Run(CheckForUpdatesAsync);
 
         var mainWindow = Services.GetRequiredService<MainWindow>();
@@ -55,7 +57,7 @@ public partial class App : Application
         contextMenu.Items.Add(_trayExitItem);
 
         Icon? icon = null;
-        try { icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!); } catch { }
+        try { icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
 
         _notifyIcon = new NotifyIcon
         {
@@ -66,6 +68,8 @@ public partial class App : Application
         };
 
         _notifyIcon.DoubleClick += (_, _) => RestoreMainWindow();
+
+        Logs.DebugLogManager("Tray icon initialized.");
 
         SettingsViewModel.Instance.PropertyChanged += (_, e) =>
         {
@@ -82,6 +86,7 @@ public partial class App : Application
 
     private static void RestoreMainWindow()
     {
+        Logs.DebugLogManager("Main window restored from tray.");
         var mainWindow = Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
         mainWindow.WindowState = WindowState.Normal;
@@ -92,11 +97,19 @@ public partial class App : Application
     {
         try
         {
+            Logs.InfoLogManager("Checking for updates...");
+
             var mgr = new UpdateManager(feedUrl);
 
             var updateInfo = await mgr.CheckForUpdatesAsync();
 
-            if (updateInfo == null) return;
+            if (updateInfo == null)
+            {
+                Logs.InfoLogManager("No updates available.");
+                return;
+            }
+
+            Logs.InfoLogManager($"Update available: {updateInfo.TargetFullRelease.Version}. Downloading...");
 
             await mgr.DownloadUpdatesAsync(updateInfo);
 
@@ -106,17 +119,22 @@ public partial class App : Application
 
                 var result = CustomMessageBox.Show(strings.UpdateAvailableTitle, string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version), CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
 
-                if (result == true) mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
+                if (result == true)
+                {
+                    Logs.InfoLogManager($"Applying update to {updateInfo.TargetFullRelease.Version} and restarting.");
+                    mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
+                }
             });
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error checking for updates: {ex.Message}");
+            Logs.ErrorLogManager(ex);
         }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Logs.InfoLogManager("Application exiting.");
         _notifyIcon?.Dispose();
         base.OnExit(e);
     }

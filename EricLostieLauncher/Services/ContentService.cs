@@ -31,6 +31,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
+            Logs.DebugLogManager("Fetching games list from remote.");
             var client = _httpClientFactory.CreateClient("Content");
             using var response = await client.GetAsync(_contentOptions.Endpoint).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -38,8 +39,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             return JsonSerializer.Deserialize<List<GameInfo>>(json, JsonOptions) ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return [];
         }
     }
@@ -50,6 +52,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         {
             if (_homeContentCache is null)
             {
+                Logs.DebugLogManager("Fetching home content from remote.");
                 var client = _httpClientFactory.CreateClient("Content");
                 using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
@@ -83,8 +86,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                 })]
             };
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return new HomeContent();
         }
     }
@@ -128,6 +132,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
+            Logs.DebugLogManager("Reading local games registry.");
             var gamesRoot = _settingsService.GetGamesRootDirectory();
             var path = Path.Combine(gamesRoot, "local_games.json");
             if (!File.Exists(path)) return [];
@@ -135,8 +140,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             return JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return [];
         }
     }
@@ -155,11 +161,12 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
         try
         {
+            Logs.DebugLogManager($"Removing game from registry: {gameName}.");
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
             List<LocalGameInfo> updated = [.. games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase))];
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
         }
-        catch { }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 }

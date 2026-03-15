@@ -53,6 +53,8 @@ public partial class HomeViewModel : ObservableObject
         News = new ObservableCollection<NewsItem>(content.News);
         Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
 
+        Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications.");
+
         IsLoading = false;
     }
 }

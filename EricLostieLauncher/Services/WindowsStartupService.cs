@@ -24,11 +24,13 @@ public class WindowsStartupService : IWindowsStartupService
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
         key?.SetValue(AppName, $"\"{Environment.ProcessPath}\"");
+        Logs.InfoLogManager("Windows startup entry enabled.");
     }
 
     public void Disable()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
         key?.DeleteValue(AppName, false);
+        Logs.InfoLogManager("Windows startup entry disabled.");
     }
 }
