@@ -103,6 +103,7 @@ public partial class SettingsViewModel : ObservableObject
             AppLanguage.Gal => new Gal(),
             AppLanguage.Por => new Por(),
             AppLanguage.Val => new Val(),
+            AppLanguage.Fra => new Fra(),
             _ => new Esp()
         };
         SaveSettings();

@@ -399,3 +399,53 @@ public class Val : IStrings
     public string HomeLoading => "Carregant...";
     public string HomeNoContent => "Sense contingut";
 }
+
+public class Fra : IStrings
+{
+    public string TitleHome => "Accueil";
+    public string TitleGames => "Mes jeux";
+    public string TitleLibrary => "Bibliothèque";
+    public string TitleSettings => "Paramètres";
+    public string BtnOk => "OK";
+    public string BtnYes => "Oui";
+    public string BtnNo => "Non";
+    public string BtnDownload => "Télécharger";
+    public string BtnDownloading => "Téléchargement...";
+    public string BtnDownloaded => "Téléchargé";
+    public string BtnUpdate => "Mettre à jour";
+    public string BtnPlay => "Jouer";
+    public string TooltipOpenFolder => "Ouvrir le dossier du jeu";
+    public string TooltipUninstall => "Désinstaller le jeu";
+    public string TooltipRefresh => "Actualiser";
+    public string FolderNotFoundTitle => "Dossier non trouvé";
+    public string FolderNotFoundMessage => "Le dossier du jeu n'a pas été trouvé. Voulez-vous réinstaller les fichiers ?";
+    public string UninstallConfirmTitle => "Désinstaller le jeu";
+    public string UninstallConfirmMessage => "Êtes-vous sûr de vouloir désinstaller {0} ? Cette action ne peut pas être annulée.";
+    public string UninstallNotFoundTitle => "Fichiers non trouvés";
+    public string UninstallNotFoundMessage => "Les fichiers du jeu n'ont pas été trouvés, mais l'entrée a été supprimée de la liste.";
+    public string UninstallErrorTitle => "Erreur de désinstallation";
+    public string UninstallErrorMessage => "Impossible de désinstaller le jeu. Certains fichiers peuvent être en cours d'utilisation.";
+    public string UpdateAvailableTitle => "Mise à jour disponible";
+    public string UpdateAvailableMessage => "Nouvelle version {0} disponible. Redémarrer pour mettre à jour ?";
+    public string SettingsGeneral => "Général";
+    public string SettingsAppearance => "Apparence";
+    public string SettingsStartWithWindows => "Démarrer avec Windows";
+    public string SettingsStartMinimized => "Démarrer minimisé";
+    public string SettingsAutoUpdate => "Mises à jour automatiques";
+    public string SettingsLanguage => "Langue";
+    public string SettingsDownloadDir => "Répertoire de téléchargement";
+    public string SettingsTheme => "Thème";
+    public string BtnBrowse => "Parcourir...";
+    public string SettingsCheckForUpdates => "Vérifier les mises à jour";
+    public string CheckForUpdatesTitle => "Vérifier les mises à jour";
+    public string CheckForUpdatesMessage => "La vérification des mises à jour nécessite de redémarrer le lanceur. Tout téléchargement en cours peut être interrompu ou corrompu. Voulez-vous continuer ?";
+    public string ChangeDownloadDirTitle => "Modifier le répertoire de téléchargement";
+    public string ChangeDownloadDirMessage => "Si vous avez des jeux installés, vous devrez les déplacer manuellement vers le nouveau chemin ou le lanceur ne les reconnaîtra pas. Voulez-vous continuer ?";
+    public string TrayOpen => "Ouvrir";
+    public string TrayExit => "Quitter";
+    public string LibraryNoContent => "Non disponible";
+    public string HomeNews => "Actualités";
+    public string HomeNotifications => "Notifications";
+    public string HomeLoading => "Chargement...";
+    public string HomeNoContent => "Aucun contenu";
+}

@@ -18,4 +18,6 @@ public enum AppLanguage
     Por,
     [Description("Valencià")]
     Val,
+    [Description("Français")]
+    Fra,
 }

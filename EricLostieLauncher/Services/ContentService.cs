@@ -10,7 +10,7 @@ public interface IContentService
 {
     Task<List<GameInfo>> GetGamesAsync();
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
-    Task<HomeContent> GetHomeContentAsync();
+    Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
     string GetGameDirectory(string gameName);
     Task RemoveGameRegistryAsync(string gameName);
 }
@@ -46,10 +46,12 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         }
     }
 
-    public async Task<HomeContent> GetHomeContentAsync()
+    public async Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false)
     {
         try
         {
+            if (forceRefresh) _homeContentCache = null;
+
             if (_homeContentCache is null)
             {
                 Logs.DebugLogManager("Fetching home content from remote.");
@@ -102,6 +104,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         AppLanguage.Gal => "gl",
         AppLanguage.Por => "pt",
         AppLanguage.Val => "val",
+        AppLanguage.Fra => "fr",
         _ => "es"
     };
 

@@ -43,13 +43,13 @@ public partial class HomeViewModel : ObservableObject
             _ = LoadHomeContentAsync();
     }
 
-    public async Task RefreshAsync() => await LoadHomeContentAsync();
+    public async Task RefreshAsync() => await LoadHomeContentAsync(forceRefresh: true);
 
-    private async Task LoadHomeContentAsync()
+    private async Task LoadHomeContentAsync(bool forceRefresh = false)
     {
         IsLoading = true;
 
-        var content = await _contentService.GetHomeContentAsync();
+        var content = await _contentService.GetHomeContentAsync(forceRefresh);
         News = new ObservableCollection<NewsItem>(content.News);
         Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
 
