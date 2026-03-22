@@ -15,6 +15,12 @@ public partial class GameInfo
     [JsonPropertyName("version")]
     public string Version { get; init; } = string.Empty;
 
+    [JsonPropertyName("descripcion")]
+    public string Descripcion { get; init; } = string.Empty;
+
+    [JsonPropertyName("url")]
+    public string Url { get; init; } = string.Empty;
+
     [JsonIgnore]
     public string GameId => SlugRegex().Replace(Nombre.ToLowerInvariant(), "-");
 

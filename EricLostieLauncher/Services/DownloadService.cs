@@ -21,30 +21,30 @@ public class DownloadService : IDownloadService
 //- pause
 //- resume
 //- progress reporting
-//-cancellation
+//- cancellation
 //- basic retry handling(no Polly required)
 //This service will be used by ViewModels.
 
 //Architecture requirements:
 //- MVVM friendly
-//-No UI logic in the service
-//-Service must be injectable(constructor injection)
+//- No UI logic in the service
+//- Service must be injectable(constructor injection)
 //- Use HttpClient with a single shared/static instance
 //- Use async/await properly
-//-The service must never block the UI thread
+//- The service must never block the UI thread
 //- Must never throw unhandled exceptions to the UI layer
-//-If download fails, return a meaningful result object instead of throwing
+//- If download fails, return a meaningful result object instead of throwing
 
 //Functional requirements:
 //- Method:
 //  DownloadAsync(string url, string destinationPath, IProgress<double> progress, CancellationToken ct)
 //- If a partial file already exists:
 //  - Get its current size
-//  -Send HTTP Range request: "bytes=<existingBytes>-"
+//  - Send HTTP Range request: "bytes=<existingBytes>-"
 //  - Append to the existing file
 //- If server responds with:
 //  - 206 Partial Content → resume download
-//  -200 OK → delete partial file and start from scratch
+//  - 200 OK → delete partial file and start from scratch
 //-Support Pause:
 //  - Implement pause via CancellationToken(cancel current request but keep partial file)
 //- Support Resume:

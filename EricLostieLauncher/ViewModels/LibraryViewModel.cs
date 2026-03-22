@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Models;
 using EricLostieLauncher.Services;
+using EricLostieLauncher.Views.Dialogs;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -10,6 +11,7 @@ public partial class LibraryViewModel : ObservableObject
 {
     private readonly ITelemetryService _telemetryService;
     private readonly IContentService _contentService;
+    private readonly ISettingsService _settingsService;
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
 
     [ObservableProperty]
@@ -27,10 +29,11 @@ public partial class LibraryViewModel : ObservableObject
 
     public Task LibraryLoadedTask => _libraryLoadedTcs.Task;
 
-    public LibraryViewModel(ITelemetryService telemetryService, IContentService contentService)
+    public LibraryViewModel(ITelemetryService telemetryService, IContentService contentService, ISettingsService settingsService)
     {
         _telemetryService = telemetryService;
         _contentService = contentService;
+        _settingsService = settingsService;
         _ = LoadGamesAsync();
     }
 
@@ -70,7 +73,16 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private void StartDownload(GameDownloadArgs args)
     {
-        Logs.InfoLogManager($"Download started: {args.GameId} v{args.Version}.");
-        _telemetryService.TrackDownloadStarted(args.GameId, args.Version);
+        var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
+        if (game is null) return;
+
+        var downloadPath = _contentService.GetGameDirectory(game.Nombre);
+        var strings = SettingsViewModel.Instance.Strings;
+
+        var confirmed = DownloadConfirmDialog.Show(game, args, downloadPath, strings);
+        if (confirmed is null) return;
+
+        Logs.InfoLogManager($"Download started: {confirmed.GameId} v{confirmed.Version}{(confirmed.Key is not null ? " (with key)" : "")}.");
+        _telemetryService.TrackDownloadStarted(confirmed.GameId, confirmed.Version);
     }
 }

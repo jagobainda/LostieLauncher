@@ -48,6 +48,14 @@ public interface IStrings
     string HomeNotifications { get; }
     string HomeLoading { get; }
     string HomeNoContent { get; }
+    string DownloadDialogTitle { get; }
+    string DownloadDialogPath { get; }
+    string DownloadDialogGameSize { get; }
+    string DownloadDialogFreeSpace { get; }
+    string DownloadDialogViewPage { get; }
+    string DownloadDialogNoDescription { get; }
+    string DownloadDialogKey { get; }
+    string BtnCancel { get; }
 }
 
 public class Esp : IStrings
@@ -98,6 +106,14 @@ public class Esp : IStrings
     public string HomeNotifications => "Notificaciones";
     public string HomeLoading => "Cargando...";
     public string HomeNoContent => "Sin contenido";
+    public string DownloadDialogTitle => "Confirmar descarga";
+    public string DownloadDialogPath => "Ruta de descarga";
+    public string DownloadDialogGameSize => "Tamaño";
+    public string DownloadDialogFreeSpace => "Espacio libre";
+    public string DownloadDialogViewPage => "Ver página del juego";
+    public string DownloadDialogNoDescription => "Sin descripción disponible.";
+    public string DownloadDialogKey => "Clave para versiones especiales (opcional)";
+    public string BtnCancel => "Cancelar";
 }
 
 public class Eng : IStrings
@@ -148,6 +164,14 @@ public class Eng : IStrings
     public string HomeNotifications => "Notifications";
     public string HomeLoading => "Loading...";
     public string HomeNoContent => "No content";
+    public string DownloadDialogTitle => "Confirm download";
+    public string DownloadDialogPath => "Download path";
+    public string DownloadDialogGameSize => "Size";
+    public string DownloadDialogFreeSpace => "Free space";
+    public string DownloadDialogViewPage => "View game page";
+    public string DownloadDialogNoDescription => "No description available.";
+    public string DownloadDialogKey => "Access key for special versions (optional)";
+    public string BtnCancel => "Cancel";
 }
 
 public class Cat : IStrings
@@ -198,6 +222,14 @@ public class Cat : IStrings
     public string HomeNotifications => "Notificacions";
     public string HomeLoading => "Carregant...";
     public string HomeNoContent => "Sense contingut";
+    public string DownloadDialogTitle => "Confirmar descàrrega";
+    public string DownloadDialogPath => "Ruta de descàrrega";
+    public string DownloadDialogGameSize => "Mida";
+    public string DownloadDialogFreeSpace => "Espai lliure";
+    public string DownloadDialogViewPage => "Veure pàgina del joc";
+    public string DownloadDialogNoDescription => "Sense descripció disponible.";
+    public string DownloadDialogKey => "Clau per a versions especials (opcional)";
+    public string BtnCancel => "Cancel·lar";
 }
 
 public class Eus : IStrings
@@ -248,6 +280,14 @@ public class Eus : IStrings
     public string HomeNotifications => "Jakinarazpenak";
     public string HomeLoading => "Kargatzen...";
     public string HomeNoContent => "Eduki gabe";
+    public string DownloadDialogTitle => "Deskarga berretsi";
+    public string DownloadDialogPath => "Deskarga bidea";
+    public string DownloadDialogGameSize => "Tamaina";
+    public string DownloadDialogFreeSpace => "Leku librea";
+    public string DownloadDialogViewPage => "Jokoaren orria ikusi";
+    public string DownloadDialogNoDescription => "Deskribapenik ez.";
+    public string DownloadDialogKey => "Bertsio berezietarako gakoa (aukerakoa)";
+    public string BtnCancel => "Utzi";
 }
 
 public class Gal : IStrings
@@ -298,6 +338,14 @@ public class Gal : IStrings
     public string HomeNotifications => "Notificacións";
     public string HomeLoading => "Cargando...";
     public string HomeNoContent => "Sen contido";
+    public string DownloadDialogTitle => "Confirmar descarga";
+    public string DownloadDialogPath => "Ruta de descarga";
+    public string DownloadDialogGameSize => "Tamaño";
+    public string DownloadDialogFreeSpace => "Espazo libre";
+    public string DownloadDialogViewPage => "Ver páxina do xogo";
+    public string DownloadDialogNoDescription => "Sen descrición dispoñible.";
+    public string DownloadDialogKey => "Clave para versións especiais (opcional)";
+    public string BtnCancel => "Cancelar";
 }
 
 public class Por : IStrings
@@ -348,6 +396,14 @@ public class Por : IStrings
     public string HomeNotifications => "Notificações";
     public string HomeLoading => "Carregando...";
     public string HomeNoContent => "Sem conteúdo";
+    public string DownloadDialogTitle => "Confirmar download";
+    public string DownloadDialogPath => "Caminho de download";
+    public string DownloadDialogGameSize => "Tamanho";
+    public string DownloadDialogFreeSpace => "Espaço livre";
+    public string DownloadDialogViewPage => "Ver página do jogo";
+    public string DownloadDialogNoDescription => "Sem descrição disponível.";
+    public string DownloadDialogKey => "Chave para versões especiais (opcional)";
+    public string BtnCancel => "Cancelar";
 }
 
 public class Val : IStrings
@@ -398,6 +454,14 @@ public class Val : IStrings
     public string HomeNotifications => "Notificacions";
     public string HomeLoading => "Carregant...";
     public string HomeNoContent => "Sense contingut";
+    public string DownloadDialogTitle => "Confirmar descàrrega";
+    public string DownloadDialogPath => "Ruta de descàrrega";
+    public string DownloadDialogGameSize => "Grandària";
+    public string DownloadDialogFreeSpace => "Espai lliure";
+    public string DownloadDialogViewPage => "Veure pàgina del joc";
+    public string DownloadDialogNoDescription => "Sense descripció disponible.";
+    public string DownloadDialogKey => "Clau per a versions especials (opcional)";
+    public string BtnCancel => "Cancel·lar";
 }
 
 public class Fra : IStrings
@@ -448,4 +512,12 @@ public class Fra : IStrings
     public string HomeNotifications => "Notifications";
     public string HomeLoading => "Chargement...";
     public string HomeNoContent => "Aucun contenu";
+    public string DownloadDialogTitle => "Confirmer le téléchargement";
+    public string DownloadDialogPath => "Chemin de téléchargement";
+    public string DownloadDialogGameSize => "Taille";
+    public string DownloadDialogFreeSpace => "Espace libre";
+    public string DownloadDialogViewPage => "Voir la page du jeu";
+    public string DownloadDialogNoDescription => "Aucune description disponible.";
+    public string DownloadDialogKey => "Clé pour les versions spéciales (optionnel)";
+    public string BtnCancel => "Annuler";
 }
