@@ -10,6 +10,8 @@ public enum GameDownloadStatus
 {
     Available,
     Downloading,
+    Paused,
     Downloaded,
-    UpdateAvailable
+    UpdateAvailable,
+    Extracting
 }

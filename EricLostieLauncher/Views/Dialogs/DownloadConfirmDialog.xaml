@@ -6,7 +6,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
         mc:Ignorable="d"
-        Height="400"
+        Height="420"
         Width="480"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
@@ -126,9 +126,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <TextBlock Text="{TemplateBinding Content}"
-                                   Foreground="{TemplateBinding Foreground}"
-                                   TextDecorations="Underline" />
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -203,7 +202,7 @@
                                    FontSize="12"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,0"
-                                   MaxHeight="54" />
+                                   MaxHeight="100" />
                         <Button x:Name="ViewPageButton"
                                 Margin="0,6,0,0"
                                 HorizontalAlignment="Left"

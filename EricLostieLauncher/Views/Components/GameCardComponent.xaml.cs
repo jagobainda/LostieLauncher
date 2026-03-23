@@ -73,6 +73,14 @@ public partial class GameCardComponent : UserControl
         set => SetValue(LatestVersionProperty, value);
     }
 
+    public static readonly DependencyProperty RutaRelativaProperty = DependencyProperty.Register(nameof(RutaRelativa), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string RutaRelativa
+    {
+        get => (string)GetValue(RutaRelativaProperty);
+        set => SetValue(RutaRelativaProperty, value);
+    }
+
     public static readonly DependencyProperty DownloadStatusProperty = DependencyProperty.Register(nameof(DownloadStatus), typeof(GameDownloadStatus), typeof(GameCardComponent), new PropertyMetadata(GameDownloadStatus.Available));
 
     public GameDownloadStatus DownloadStatus
@@ -89,12 +97,36 @@ public partial class GameCardComponent : UserControl
         set => SetValue(DownloadProgressProperty, value);
     }
 
+    public static readonly DependencyProperty DownloadSpeedTextProperty = DependencyProperty.Register(nameof(DownloadSpeedText), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string DownloadSpeedText
+    {
+        get => (string)GetValue(DownloadSpeedTextProperty);
+        set => SetValue(DownloadSpeedTextProperty, value);
+    }
+
+    public static readonly DependencyProperty DownloadRemainingTextProperty = DependencyProperty.Register(nameof(DownloadRemainingText), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string DownloadRemainingText
+    {
+        get => (string)GetValue(DownloadRemainingTextProperty);
+        set => SetValue(DownloadRemainingTextProperty, value);
+    }
+
     public static readonly DependencyProperty DownloadCommandProperty = DependencyProperty.Register(nameof(DownloadCommand), typeof(ICommand), typeof(GameCardComponent));
 
     public ICommand? DownloadCommand
     {
         get => (ICommand?)GetValue(DownloadCommandProperty);
         set => SetValue(DownloadCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty PauseDownloadCommandProperty = DependencyProperty.Register(nameof(PauseDownloadCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? PauseDownloadCommand
+    {
+        get => (ICommand?)GetValue(PauseDownloadCommandProperty);
+        set => SetValue(PauseDownloadCommandProperty, value);
     }
 
     // --- Games properties ---

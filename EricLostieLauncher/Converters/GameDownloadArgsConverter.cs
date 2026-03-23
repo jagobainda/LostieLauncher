@@ -8,8 +8,8 @@ public class GameDownloadArgsConverter : IMultiValueConverter
 {
     public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (values is [string gameId, string version])
-            return new GameDownloadArgs(gameId, version);
+        if (values is [string gameId, string version, string rutaRelativa])
+            return new GameDownloadArgs(gameId, version, rutaRelativa);
 
         return null;
     }

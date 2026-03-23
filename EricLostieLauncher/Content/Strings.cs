@@ -12,6 +12,8 @@ public interface IStrings
     string BtnDownload { get; }
     string BtnDownloading { get; }
     string BtnDownloaded { get; }
+    string BtnPause { get; }
+    string BtnResume { get; }
     string BtnUpdate { get; }
     string BtnPlay { get; }
     string TooltipOpenFolder { get; }
@@ -55,7 +57,16 @@ public interface IStrings
     string DownloadDialogViewPage { get; }
     string DownloadDialogNoDescription { get; }
     string DownloadDialogKey { get; }
+    string DownloadKeyInvalidTitle { get; }
+    string DownloadKeyInvalidMessage { get; }
+    string DownloadKeyConsumedTitle { get; }
+    string DownloadKeyConsumedMessage { get; }
+    string DownloadErrorTitle { get; }
+    string DownloadErrorMessage { get; }
     string BtnCancel { get; }
+    string StatusExtracting { get; }
+    string GameExeNotFoundTitle { get; }
+    string GameExeNotFoundMessage { get; }
 }
 
 public class Esp : IStrings
@@ -70,6 +81,8 @@ public class Esp : IStrings
     public string BtnDownload => "Descargar";
     public string BtnDownloading => "Descargando...";
     public string BtnDownloaded => "Descargado";
+    public string BtnPause => "Pausar";
+    public string BtnResume => "Reanudar";
     public string BtnUpdate => "Actualizar";
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Abrir carpeta del juego";
@@ -113,7 +126,16 @@ public class Esp : IStrings
     public string DownloadDialogViewPage => "Ver página del juego";
     public string DownloadDialogNoDescription => "Sin descripción disponible.";
     public string DownloadDialogKey => "Clave para versiones especiales (opcional)";
+    public string DownloadKeyInvalidTitle => "Clave no válida";
+    public string DownloadKeyInvalidMessage => "El formato de la clave no es válido. Comprueba e inténtalo de nuevo.";
+    public string DownloadKeyConsumedTitle => "Clave consumida";
+    public string DownloadKeyConsumedMessage => "Esta clave ya no es válida o ha sido utilizada. Solicita una nueva clave.";
+    public string DownloadErrorTitle => "Error en la descarga";
+    public string DownloadErrorMessage => "No se pudo completar la descarga. Por favor, intenta más tarde. Si el problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
+    public string StatusExtracting => "Descomprimiendo...";
+    public string GameExeNotFoundTitle => "Juego no encontrado";
+    public string GameExeNotFoundMessage => "No se encontró el ejecutable del juego. Intenta reinstalarlo.";
 }
 
 public class Eng : IStrings
@@ -128,6 +150,8 @@ public class Eng : IStrings
     public string BtnDownload => "Download";
     public string BtnDownloading => "Downloading...";
     public string BtnDownloaded => "Downloaded";
+    public string BtnPause => "Pause";
+    public string BtnResume => "Resume";
     public string BtnUpdate => "Update";
     public string BtnPlay => "Play";
     public string TooltipOpenFolder => "Open game folder";
@@ -171,7 +195,16 @@ public class Eng : IStrings
     public string DownloadDialogViewPage => "View game page";
     public string DownloadDialogNoDescription => "No description available.";
     public string DownloadDialogKey => "Access key for special versions (optional)";
+    public string DownloadKeyInvalidTitle => "Invalid key";
+    public string DownloadKeyInvalidMessage => "The key format is invalid. Please check and try again.";
+    public string DownloadKeyConsumedTitle => "Key consumed";
+    public string DownloadKeyConsumedMessage => "This key is invalid or has already been used. Please request a new key.";
+    public string DownloadErrorTitle => "Download failed";
+    public string DownloadErrorMessage => "The download could not be completed. Please try again later. If the problem persists, write in #bugs-launcher on Discord.";
     public string BtnCancel => "Cancel";
+    public string StatusExtracting => "Extracting...";
+    public string GameExeNotFoundTitle => "Game not found";
+    public string GameExeNotFoundMessage => "The game executable was not found. Try reinstalling the game.";
 }
 
 public class Cat : IStrings
@@ -186,6 +219,8 @@ public class Cat : IStrings
     public string BtnDownload => "Descarregar";
     public string BtnDownloading => "Descarregant...";
     public string BtnDownloaded => "Descarregat";
+    public string BtnPause => "Pausar";
+    public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Obrir carpeta del joc";
@@ -229,7 +264,16 @@ public class Cat : IStrings
     public string DownloadDialogViewPage => "Veure pàgina del joc";
     public string DownloadDialogNoDescription => "Sense descripció disponible.";
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
+    public string DownloadKeyInvalidTitle => "Clau no vàlida";
+    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Comprova-ho i torna-ho a intentar.";
+    public string DownloadKeyConsumedTitle => "Clau consumida";
+    public string DownloadKeyConsumedMessage => "Aquesta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
+    public string DownloadErrorTitle => "Ha fallat la descàrrega";
+    public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
+    public string StatusExtracting => "Descomprimint...";
+    public string GameExeNotFoundTitle => "Joc no trobat";
+    public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
 }
 
 public class Eus : IStrings
@@ -244,6 +288,8 @@ public class Eus : IStrings
     public string BtnDownload => "Deskargatu";
     public string BtnDownloading => "Deskargatzen...";
     public string BtnDownloaded => "Deskargatuta";
+    public string BtnPause => "Pausatu";
+    public string BtnResume => "Berrekin";
     public string BtnUpdate => "Eguneratu";
     public string BtnPlay => "Jolastu";
     public string TooltipOpenFolder => "Jokoaren karpeta ireki";
@@ -287,7 +333,16 @@ public class Eus : IStrings
     public string DownloadDialogViewPage => "Jokoaren orria ikusi";
     public string DownloadDialogNoDescription => "Deskribapenik ez.";
     public string DownloadDialogKey => "Bertsio berezietarako gakoa (aukerakoa)";
+    public string DownloadKeyInvalidTitle => "Gako baliogabea";
+    public string DownloadKeyInvalidMessage => "Gakoaren formatua ez da baliozkoa. Egiaztatu eta saiatu berriro.";
+    public string DownloadKeyConsumedTitle => "Gakoa kontsumituta";
+    public string DownloadKeyConsumedMessage => "Gako hau baliogabea da edo dagoeneko erabili da. Eskatu gako berri bat.";
+    public string DownloadErrorTitle => "Deskargetak huts egin du";
+    public string DownloadErrorMessage => "Deskargetak ezin izan du osatu. Mesedez, geroago saiatu. Arazoa jarraitzen badu, idatzi #bugs-launcher kanalean Discord-en.";
     public string BtnCancel => "Utzi";
+    public string StatusExtracting => "Deskonprimatzen...";
+    public string GameExeNotFoundTitle => "Jokoa ez da aurkitu";
+    public string GameExeNotFoundMessage => "Jokoaren exekutagarria ez da aurkitu. Saiatu berrinstalatzea.";
 }
 
 public class Gal : IStrings
@@ -302,6 +357,8 @@ public class Gal : IStrings
     public string BtnDownload => "Descargar";
     public string BtnDownloading => "Descargando...";
     public string BtnDownloaded => "Descargado";
+    public string BtnPause => "Pausar";
+    public string BtnResume => "Retomar";
     public string BtnUpdate => "Actualizar";
     public string BtnPlay => "Xogar";
     public string TooltipOpenFolder => "Abrir cartafol do xogo";
@@ -345,10 +402,19 @@ public class Gal : IStrings
     public string DownloadDialogViewPage => "Ver páxina do xogo";
     public string DownloadDialogNoDescription => "Sen descrición dispoñible.";
     public string DownloadDialogKey => "Clave para versións especiais (opcional)";
-    public string BtnCancel => "Cancelar";
-}
+    public string DownloadKeyInvalidTitle => "Clave non válida";
+    public string DownloadKeyInvalidMessage => "O formato da clave non é válido. Comproba e téntao de novo.";
+    public string DownloadKeyConsumedTitle => "Clave consumida";
+        public string DownloadKeyConsumedMessage => "Esta clave xa non é válida ou xa foi utilizada. Solicita unha nova clave.";
+        public string DownloadErrorTitle => "Erro na descarga";
+        public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
+        public string BtnCancel => "Cancelar";
+        public string StatusExtracting => "Descomprimindo...";
+        public string GameExeNotFoundTitle => "Xogo non atopado";
+        public string GameExeNotFoundMessage => "Non se atopou o executable do xogo. Intenta reinstalalo.";
+    }
 
-public class Por : IStrings
+    public class Por : IStrings
 {
     public string TitleHome => "Início";
     public string TitleGames => "Meus Jogos";
@@ -360,6 +426,8 @@ public class Por : IStrings
     public string BtnDownload => "Baixar";
     public string BtnDownloading => "Baixando...";
     public string BtnDownloaded => "Baixado";
+    public string BtnPause => "Pausar";
+    public string BtnResume => "Retomar";
     public string BtnUpdate => "Atualizar";
     public string BtnPlay => "Jogar";
     public string TooltipOpenFolder => "Abrir pasta do jogo";
@@ -403,7 +471,16 @@ public class Por : IStrings
     public string DownloadDialogViewPage => "Ver página do jogo";
     public string DownloadDialogNoDescription => "Sem descrição disponível.";
     public string DownloadDialogKey => "Chave para versões especiais (opcional)";
+    public string DownloadKeyInvalidTitle => "Chave inválida";
+    public string DownloadKeyInvalidMessage => "O formato da chave é inválido. Verifique e tente novamente.";
+    public string DownloadKeyConsumedTitle => "Chave consumida";
+    public string DownloadKeyConsumedMessage => "Esta chave é inválida ou já foi utilizada. Solicite uma nova chave.";
+    public string DownloadErrorTitle => "Falha no download";
+    public string DownloadErrorMessage => "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, escreva em #bugs-launcher no Discord.";
     public string BtnCancel => "Cancelar";
+    public string StatusExtracting => "Descomprimindo...";
+    public string GameExeNotFoundTitle => "Jogo n\u00e3o encontrado";
+    public string GameExeNotFoundMessage => "O execut\u00e1vel do jogo n\u00e3o foi encontrado. Tente reinstal\u00e1-lo.";
 }
 
 public class Val : IStrings
@@ -418,6 +495,8 @@ public class Val : IStrings
     public string BtnDownload => "Descarregar";
     public string BtnDownloading => "Descarregant...";
     public string BtnDownloaded => "Descarregat";
+    public string BtnPause => "Pausar";
+    public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Obrir carpeta del joc";
@@ -461,7 +540,16 @@ public class Val : IStrings
     public string DownloadDialogViewPage => "Veure pàgina del joc";
     public string DownloadDialogNoDescription => "Sense descripció disponible.";
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
+    public string DownloadKeyInvalidTitle => "Clau no vàlida";
+    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Comprova-ho i torna-ho a intentar.";
+    public string DownloadKeyConsumedTitle => "Clau consumida";
+    public string DownloadKeyConsumedMessage => "Esta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
+    public string DownloadErrorTitle => "Ha fallat la descàrrega";
+    public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
+    public string StatusExtracting => "Descomprimint...";
+    public string GameExeNotFoundTitle => "Joc no trobat";
+    public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
 }
 
 public class Fra : IStrings
@@ -476,6 +564,8 @@ public class Fra : IStrings
     public string BtnDownload => "Télécharger";
     public string BtnDownloading => "Téléchargement...";
     public string BtnDownloaded => "Téléchargé";
+    public string BtnPause => "Pause";
+    public string BtnResume => "Reprendre";
     public string BtnUpdate => "Mettre à jour";
     public string BtnPlay => "Jouer";
     public string TooltipOpenFolder => "Ouvrir le dossier du jeu";
@@ -519,5 +609,14 @@ public class Fra : IStrings
     public string DownloadDialogViewPage => "Voir la page du jeu";
     public string DownloadDialogNoDescription => "Aucune description disponible.";
     public string DownloadDialogKey => "Clé pour les versions spéciales (optionnel)";
+    public string DownloadKeyInvalidTitle => "Clé invalide";
+    public string DownloadKeyInvalidMessage => "Le format de la clé est invalide. Veuillez vérifier et réessayer.";
+    public string DownloadKeyConsumedTitle => "Clé consommée";
+    public string DownloadKeyConsumedMessage => "Cette clé est invalide ou a déjà été utilisée. Veuillez demander une nouvelle clé.";
+    public string DownloadErrorTitle => "Échec du téléchargement";
+    public string DownloadErrorMessage => "Le téléchargement n'a pas pu être complété. Veuillez réessayer plus tard. Si le problème persiste, écrivez dans #bugs-launcher sur Discord.";
     public string BtnCancel => "Annuler";
+    public string StatusExtracting => "Extraction en cours...";
+    public string GameExeNotFoundTitle => "Jeu non trouv\u00e9";
+    public string GameExeNotFoundMessage => "L'ex\u00e9cutable du jeu est introuvable. Essayez de le r\u00e9installer.";
 }

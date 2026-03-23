@@ -12,6 +12,7 @@ public interface IContentService
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
     Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
     string GetGameDirectory(string gameName);
+    Task RegisterGameAsync(string gameName, string version);
     Task RemoveGameRegistryAsync(string gameName);
 }
 
@@ -154,6 +155,30 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         var gamesRoot = _settingsService.GetGamesRootDirectory();
         return Path.Combine(gamesRoot, gameName);
+    }
+
+    public async Task RegisterGameAsync(string gameName, string version)
+    {
+        try
+        {
+            Logs.DebugLogManager($"Registering game in local registry: {gameName} v{version}.");
+            var gamesRoot = _settingsService.GetGamesRootDirectory();
+            Directory.CreateDirectory(gamesRoot);
+            var path = Path.Combine(gamesRoot, "local_games.json");
+
+            List<LocalGameInfo> games = [];
+            if (File.Exists(path))
+            {
+                var existingJson = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+                games = JsonSerializer.Deserialize<List<LocalGameInfo>>(existingJson, JsonOptions) ?? [];
+            }
+
+            games.RemoveAll(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+            games.Add(new LocalGameInfo { Nombre = gameName, Version = version });
+
+            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 
     public async Task RemoveGameRegistryAsync(string gameName)

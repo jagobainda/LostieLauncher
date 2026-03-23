@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Models;
@@ -12,7 +15,18 @@ public partial class LibraryViewModel : ObservableObject
     private readonly ITelemetryService _telemetryService;
     private readonly IContentService _contentService;
     private readonly ISettingsService _settingsService;
+    private readonly IDownloadService _downloadService;
+    private readonly GlobalViewModel _globalViewModel;
+    private readonly DownloadOptions _downloadOptions;
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
+
+    private CancellationTokenSource? _downloadCts;
+    private GameDownloadArgs? _activeDownloadArgs;
+    private bool _isKeyedDownload;
+
+    private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$", RegexOptions.Compiled);
+
+    public event Action<string, string>? GameInstalled;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
@@ -29,11 +43,15 @@ public partial class LibraryViewModel : ObservableObject
 
     public Task LibraryLoadedTask => _libraryLoadedTcs.Task;
 
-    public LibraryViewModel(ITelemetryService telemetryService, IContentService contentService, ISettingsService settingsService)
+    public LibraryViewModel(ITelemetryService telemetryService, IContentService contentService, ISettingsService settingsService,
+        IDownloadService downloadService, GlobalViewModel globalViewModel, DownloadOptions downloadOptions)
     {
         _telemetryService = telemetryService;
         _contentService = contentService;
         _settingsService = settingsService;
+        _downloadService = downloadService;
+        _globalViewModel = globalViewModel;
+        _downloadOptions = downloadOptions;
         _ = LoadGamesAsync();
     }
 
@@ -53,9 +71,7 @@ public partial class LibraryViewModel : ObservableObject
         {
             if (installedLookup.TryGetValue(game.Nombre, out var local))
             {
-                game.DownloadStatus = game.Version == local.Version
-                    ? GameDownloadStatus.Downloaded
-                    : GameDownloadStatus.UpdateAvailable;
+                game.DownloadStatus = game.Version == local.Version ? GameDownloadStatus.Downloaded : GameDownloadStatus.UpdateAvailable;
             }
 
             if (downloadCounts.TryGetValue(game.GameId, out var count))
@@ -71,18 +87,168 @@ public partial class LibraryViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void StartDownload(GameDownloadArgs args)
+    private async Task StartDownloadAsync(GameDownloadArgs args)
     {
+        if (_globalViewModel.IsDownloading) return;
+
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
-        var downloadPath = _contentService.GetGameDirectory(game.Nombre);
         var strings = SettingsViewModel.Instance.Strings;
 
-        var confirmed = DownloadConfirmDialog.Show(game, args, downloadPath, strings);
-        if (confirmed is null) return;
+        if (game.DownloadStatus == GameDownloadStatus.Paused && _activeDownloadArgs is not null)
+        {
+            args = _activeDownloadArgs;
+        }
+        else
+        {
+            var downloadPath = _contentService.GetGameDirectory(game.Nombre);
 
-        Logs.InfoLogManager($"Download started: {confirmed.GameId} v{confirmed.Version}{(confirmed.Key is not null ? " (with key)" : "")}.");
-        _telemetryService.TrackDownloadStarted(confirmed.GameId, confirmed.Version);
+            var confirmed = DownloadConfirmDialog.Show(game, args, downloadPath, strings);
+            if (confirmed is null) return;
+
+            args = confirmed;
+            _telemetryService.TrackDownloadStarted(confirmed.GameId, confirmed.Version);
+        }
+
+        _activeDownloadArgs = args;
+
+        _isKeyedDownload = !string.IsNullOrEmpty(args.Key);
+        string url;
+
+        if (_isKeyedDownload)
+        {
+            if (!KeyFormatRegex.IsMatch(args.Key!))
+            {
+                CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyInvalidMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                _activeDownloadArgs = null;
+                return;
+            }
+
+            var exchangeResult = await _downloadService.ExchangeKeyAsync(args.Key!);
+
+            if (!exchangeResult.IsSuccess)
+            {
+                CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                _activeDownloadArgs = null;
+                return;
+            }
+
+            url = exchangeResult.DownloadUrl!;
+        }
+        else
+        {
+            url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
+        }
+
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        var zipPath = Path.Combine(gamesRoot, ".downloads", $"{args.GameId}.zip");
+        var extractDir = _contentService.GetGameDirectory(game.Nombre);
+
+        game.DownloadStatus = GameDownloadStatus.Downloading;
+        game.DownloadProgressValue = 0;
+        _globalViewModel.IsDownloading = true;
+
+        _downloadCts = new CancellationTokenSource();
+        var progress = new Progress<DownloadProgressInfo>(p =>
+        {
+            game.DownloadProgressValue = p.Percent;
+            game.DownloadSpeedBytesPerSec = p.BytesPerSecond;
+            game.DownloadRemainingText = p.BytesPerSecond > 0 && p.TotalBytes > 0
+                ? $"· {FormatRemainingTime((p.TotalBytes - p.DownloadedBytes) / p.BytesPerSecond)}"
+                : string.Empty;
+        });
+
+        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(_isKeyedDownload ? " (keyed)" : "")}.");
+        var result = await _downloadService.DownloadAsync(url, zipPath, resumable: !_isKeyedDownload, progress, _downloadCts.Token);
+
+        switch (result.Outcome)
+        {
+            case DownloadOutcome.Success:
+                try
+                {
+                    Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
+
+                    game.DownloadStatus = GameDownloadStatus.Extracting;
+                    game.DownloadProgressValue = 100;
+                    game.DownloadRemainingText = string.Empty;
+
+                    await Task.Run(() =>
+                    {
+                        Directory.CreateDirectory(extractDir);
+                        ZipFile.ExtractToDirectory(zipPath, extractDir, overwriteFiles: true);
+                        File.Delete(zipPath);
+                    });
+
+                    await _contentService.RegisterGameAsync(game.Nombre, args.Version);
+
+                    game.DownloadStatus = GameDownloadStatus.Downloaded;
+                    game.DownloadProgressValue = 100;
+                    _activeDownloadArgs = null;
+                    Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}.");
+                    GameInstalled?.Invoke(game.Nombre, args.Version);
+                }
+                catch (Exception ex)
+                {
+                    Logs.ErrorLogManager(ex);
+                    game.DownloadStatus = GameDownloadStatus.Available;
+                    game.DownloadProgressValue = 0;
+                    _activeDownloadArgs = null;
+                }
+                break;
+
+            case DownloadOutcome.Cancelled:
+                if (_isKeyedDownload)
+                {
+                    Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
+                    game.DownloadStatus = GameDownloadStatus.Available;
+                    game.DownloadProgressValue = 0;
+                    _activeDownloadArgs = null;
+                    CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
+                }
+                else
+                {
+                    Logs.InfoLogManager($"Download paused: {args.GameId}.");
+                    game.DownloadStatus = GameDownloadStatus.Paused;
+                }
+                break;
+
+            case DownloadOutcome.Failed:
+                Logs.ErrorLogManager($"Download failed: {args.GameId}: {result.ErrorMessage}");
+                game.DownloadStatus = GameDownloadStatus.Available;
+                game.DownloadProgressValue = 0;
+                _activeDownloadArgs = null;
+
+                if (_isKeyedDownload)
+                {
+                    CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                }
+                else
+                {
+                    CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                }
+
+                break;
+        }
+
+        game.DownloadSpeedBytesPerSec = 0;
+        game.DownloadRemainingText = string.Empty;
+        _globalViewModel.IsDownloading = false;
+        _downloadCts = null;
+    }
+
+    private static string FormatRemainingTime(double seconds)
+    {
+        if (seconds <= 0) return string.Empty;
+        var ts = TimeSpan.FromSeconds(seconds);
+        if (ts.TotalHours >= 1) return $"{(int)ts.TotalHours}h {ts.Minutes}m";
+        if (ts.TotalMinutes >= 1) return $"{ts.Minutes}m {ts.Seconds}s";
+        return $"{ts.Seconds}s";
+    }
+
+    [RelayCommand]
+    private void PauseDownload()
+    {
+        _downloadCts?.Cancel();
     }
 }

@@ -1,11 +1,12 @@
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Models;
 using EricLostieLauncher.Services;
 using EricLostieLauncher.Views.Dialogs;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Windows;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -24,10 +25,22 @@ public partial class GamesViewModel : ObservableObject
     {
         _contentService = contentService;
         _libraryViewModel = libraryViewModel;
+        _libraryViewModel.GameInstalled += OnGameInstalled;
         _ = LoadInstalledGamesAsync(waitForLibrary: true);
     }
 
     public async Task RefreshAsync() => await LoadInstalledGamesAsync(waitForLibrary: false);
+
+    private void OnGameInstalled(string gameName, string version)
+    {
+        App.Current.Dispatcher.Invoke(() =>
+        {
+            var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) InstalledGames.Remove(existing);
+            InstalledGames.Add(new InstalledGameInfo { Nombre = gameName, InstalledVersion = version });
+        });
+        Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}.");
+    }
 
     private async Task LoadInstalledGamesAsync(bool waitForLibrary = true)
     {
@@ -57,6 +70,39 @@ public partial class GamesViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void Play(string gameName)
+    {
+        Logs.DebugLogManager($"Launching game: {gameName}.");
+        var exePath = Path.Combine(_contentService.GetGameDirectory(gameName), "Game.exe");
+
+        if (!File.Exists(exePath))
+        {
+            CustomMessageBox.Show(
+                SettingsViewModel.Instance.Strings.GameExeNotFoundTitle,
+                SettingsViewModel.Instance.Strings.GameExeNotFoundMessage,
+                CustomMessageBoxButton.OK,
+                CustomMessageBoxIcon.Error);
+            return;
+        }
+
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exePath)! });
+            if (process is not null)
+            {
+                process.EnableRaisingEvents = true;
+                process.Exited += (_, _) =>
+                {
+                    Logs.DebugLogManager($"Game process exited: {gameName}.");
+                    Application.Current.Dispatcher.Invoke(() => Application.Current.MainWindow.WindowState = WindowState.Normal);
+                };
+            }
+            Application.Current.MainWindow.WindowState = WindowState.Minimized;
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
+    [RelayCommand]
     private void OpenFolder(string gameName)
     {
         Logs.DebugLogManager($"Opening folder for: {gameName}.");
@@ -64,11 +110,7 @@ public partial class GamesViewModel : ObservableObject
 
         if (!Directory.Exists(path))
         {
-            var result = CustomMessageBox.Show(
-                SettingsViewModel.Instance.Strings.FolderNotFoundTitle,
-                SettingsViewModel.Instance.Strings.FolderNotFoundMessage,
-                CustomMessageBoxButton.YesNo,
-                CustomMessageBoxIcon.Information);
+            var result = CustomMessageBox.Show(SettingsViewModel.Instance.Strings.FolderNotFoundTitle, SettingsViewModel.Instance.Strings.FolderNotFoundMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Information);
 
             if (result == true)
             {
@@ -123,6 +165,9 @@ public partial class GamesViewModel : ObservableObject
 
         var toRemove = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
         if (toRemove != null) InstalledGames.Remove(toRemove);
+
+        var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+        if (libraryGame != null) libraryGame.DownloadStatus = GameDownloadStatus.Available;
 
         Logs.InfoLogManager($"Game uninstalled: {gameName}.");
 

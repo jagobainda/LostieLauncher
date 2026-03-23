@@ -18,8 +18,12 @@ public static class DependencyInjection
             Endpoint: "http://localhost:6969/launcher/api/"
         ));
         services.AddSingleton(new ContentOptions(
-            Endpoint: "http://localhost:5000/juegos",
+            Endpoint: "https://ericlostie-launcher.jagoba.dev/games/listado.json",
             NotificationsEndpoint: "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json"
+        ));
+        services.AddSingleton(new DownloadOptions(
+            BaseUrl: "https://ericlostie-launcher.jagoba.dev/games",
+            KeyManagerEndpoint: "https://ericlostie-launcher.jagoba.dev"
         ));
 
         // Services
@@ -35,6 +39,10 @@ public static class DependencyInjection
         services.AddHttpClient("Content", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddHttpClient("Download", client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
         });
 
         // ViewModels

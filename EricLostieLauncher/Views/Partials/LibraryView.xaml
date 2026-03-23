@@ -64,8 +64,13 @@
                             GameSize="{Binding PesoFormateado}"
                             TotalDownloads="{Binding TotalDownloads}"
                             LatestVersion="{Binding Version}"
+                            RutaRelativa="{Binding RutaRelativa}"
                             DownloadStatus="{Binding DownloadStatus}"
-                            DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                            DownloadProgress="{Binding DownloadProgressValue}"
+                            DownloadSpeedText="{Binding DownloadSpeedText}"
+                            DownloadRemainingText="{Binding DownloadRemainingText}"
+                            DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            PauseDownloadCommand="{Binding DataContext.PauseDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
