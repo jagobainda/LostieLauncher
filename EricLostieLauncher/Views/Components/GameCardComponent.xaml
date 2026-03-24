@@ -101,7 +101,8 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource SecondaryBgBrush}" CornerRadius="6" Padding="16" Margin="0,0,0,10" SnapsToDevicePixels="True">
+    <Grid Margin="0,0,0,10">
+    <Border Background="{DynamicResource SecondaryBgBrush}" CornerRadius="6" Padding="16" SnapsToDevicePixels="True">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -360,7 +361,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding DownloadCommand, ElementName=Root}"
+                    <Button Command="{Binding LibraryUpdateCommand, ElementName=Root}"
                             Style="{StaticResource CardAccentButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource UpdateAvailableVisibility}}">
                         <Button.CommandParameter>
@@ -393,8 +394,16 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Command="{Binding PlayCommand, ElementName=Root}"
                                 CommandParameter="{Binding GameTitle, ElementName=Root}"
-                                Style="{StaticResource CardAccentButtonStyle}"
                                 Margin="0,0,6,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardAccentButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUpdating, ElementName=Root}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Play" Width="13" Height="13"
                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -403,6 +412,7 @@
                         </Button>
 
                         <Button Command="{Binding UpdateCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameTitle, ElementName=Root}"
                                 Margin="0,0,6,0">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
@@ -423,9 +433,17 @@
 
                         <Button Command="{Binding OpenFolderCommand, ElementName=Root}"
                                 CommandParameter="{Binding GameTitle, ElementName=Root}"
-                                Style="{StaticResource CardSecondaryButtonStyle}"
                                 Margin="0,0,6,0"
                                 ToolTip="{Binding Strings.TooltipOpenFolder, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUpdating, ElementName=Root}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
                             <iconPacks:PackIconMaterial Kind="FolderOpen" Width="14" Height="14"
                                                        VerticalAlignment="Center" />
                         </Button>
@@ -442,4 +460,31 @@
             </StackPanel>
         </Grid>
     </Border>
+    <Border CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource PrimaryFgBrush}"
+            IsHitTestVisible="False" Opacity="0" SnapsToDevicePixels="True">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.Downloading}">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard x:Name="PulseStoryboard">
+                                <Storyboard RepeatBehavior="0:0:3" AutoReverse="True">
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="0.3" To="1" Duration="0:0:0.8" FillBehavior="Stop">
+                                        <DoubleAnimation.EasingFunction>
+                                            <SineEase EasingMode="EaseInOut" />
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                        <DataTrigger.ExitActions>
+                            <StopStoryboard BeginStoryboardName="PulseStoryboard" />
+                        </DataTrigger.ExitActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+    </Border>
+    </Grid>
 </UserControl>

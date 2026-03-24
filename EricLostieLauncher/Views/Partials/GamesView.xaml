@@ -50,7 +50,9 @@
                             InstalledVersion="{Binding InstalledVersion}"
                             HasUpdate="{Binding HasUpdate}"
                             UpdateVersion="{Binding UpdateVersion}"
+                            IsUpdating="{Binding IsUpdating}"
                             PlayCommand="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            UpdateCommand="{Binding DataContext.UpdateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             OpenFolderCommand="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             UninstallCommand="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>

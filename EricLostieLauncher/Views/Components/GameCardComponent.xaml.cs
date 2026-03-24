@@ -155,6 +155,14 @@ public partial class GameCardComponent : UserControl
         set => SetValue(HasUpdateProperty, value);
     }
 
+    public static readonly DependencyProperty IsUpdatingProperty = DependencyProperty.Register(nameof(IsUpdating), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false));
+
+    public bool IsUpdating
+    {
+        get => (bool)GetValue(IsUpdatingProperty);
+        set => SetValue(IsUpdatingProperty, value);
+    }
+
     public static readonly DependencyProperty PlayCommandProperty = DependencyProperty.Register(nameof(PlayCommand), typeof(ICommand), typeof(GameCardComponent));
 
     public ICommand? PlayCommand
@@ -169,6 +177,14 @@ public partial class GameCardComponent : UserControl
     {
         get => (ICommand?)GetValue(UpdateCommandProperty);
         set => SetValue(UpdateCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty LibraryUpdateCommandProperty = DependencyProperty.Register(nameof(LibraryUpdateCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? LibraryUpdateCommand
+    {
+        get => (ICommand?)GetValue(LibraryUpdateCommandProperty);
+        set => SetValue(LibraryUpdateCommandProperty, value);
     }
 
     public static readonly DependencyProperty OpenFolderCommandProperty = DependencyProperty.Register(nameof(OpenFolderCommand), typeof(ICommand), typeof(GameCardComponent));

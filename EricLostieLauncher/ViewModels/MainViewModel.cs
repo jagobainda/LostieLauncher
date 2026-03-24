@@ -12,10 +12,17 @@ public partial class MainViewModel : ObservableObject
     private readonly SettingsViewModel _settingsViewModel;
 
     [ObservableProperty]
-    private string _currentTitle = string.Empty;
+    public partial string CurrentTitle { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private ObservableObject _currentViewModel = null!;
+    [NotifyPropertyChangedFor(nameof(IsHomeActive))]
+    [NotifyPropertyChangedFor(nameof(IsGamesActive))]
+    [NotifyPropertyChangedFor(nameof(IsLibraryActive))]
+    public partial ObservableObject CurrentViewModel { get; set; } = null!;
+
+    public bool IsHomeActive => CurrentViewModel is HomeViewModel;
+    public bool IsGamesActive => CurrentViewModel is GamesViewModel;
+    public bool IsLibraryActive => CurrentViewModel is LibraryViewModel;
 
     public MainViewModel(GlobalViewModel globalViewModel, HomeViewModel homeViewModel, GamesViewModel gamesViewModel, LibraryViewModel libraryViewModel, SettingsViewModel settingsViewModel)
     {
@@ -24,8 +31,14 @@ public partial class MainViewModel : ObservableObject
         _gamesViewModel = gamesViewModel;
         _libraryViewModel = libraryViewModel;
         _settingsViewModel = settingsViewModel;
-        _currentViewModel = _homeViewModel;
-        _currentTitle = _settingsViewModel.Strings.TitleHome;
+        CurrentViewModel = _homeViewModel;
+        CurrentTitle = _settingsViewModel.Strings.TitleHome;
+
+        _gamesViewModel.NavigateToLibraryRequested += () =>
+        {
+            CurrentViewModel = _libraryViewModel;
+            CurrentTitle = _settingsViewModel.Strings.TitleLibrary;
+        };
 
         _settingsViewModel.PropertyChanged += (_, e) =>
         {

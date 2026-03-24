@@ -54,7 +54,7 @@
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       Visibility="{Binding IsListVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <ItemsControl ItemsSource="{Binding Games}" Margin="20">
+            <ItemsControl x:Name="GamesItemsControl" ItemsSource="{Binding Games}" Margin="20">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:GameInfo}">
                         <components:GameCardComponent
@@ -70,6 +70,7 @@
                             DownloadSpeedText="{Binding DownloadSpeedText}"
                             DownloadRemainingText="{Binding DownloadRemainingText}"
                             DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            LibraryUpdateCommand="{Binding DataContext.StartUpdateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             PauseDownloadCommand="{Binding DataContext.PauseDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

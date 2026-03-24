@@ -29,16 +29,18 @@ public partial class LibraryViewModel : ObservableObject
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$", RegexOptions.Compiled);
 
     public event Action<string, string>? GameInstalled;
+    public event Action<string>? ScrollToGameRequested;
+    public string? PendingScrollGameId { get; private set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     [NotifyPropertyChangedFor(nameof(IsListVisible))]
-    private ObservableCollection<GameInfo> _games = [];
+    public partial ObservableCollection<GameInfo> Games { get; set; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     [NotifyPropertyChangedFor(nameof(IsListVisible))]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     public bool IsEmpty => !IsLoading && Games.Count == 0;
     public bool IsListVisible => !IsLoading && Games.Count > 0;
@@ -114,7 +116,6 @@ public partial class LibraryViewModel : ObservableObject
         }
 
         _activeDownloadArgs = args;
-
         _isKeyedDownload = !string.IsNullOrEmpty(args.Key);
         string url;
 
@@ -143,9 +144,33 @@ public partial class LibraryViewModel : ObservableObject
             url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
         }
 
+        await ExecuteDownloadAndInstallAsync(game, args, url, resumable: !_isKeyedDownload, isKeyedDownload: _isKeyedDownload, isUpdate: false);
+    }
+
+    [RelayCommand]
+    private async Task StartUpdateAsync(GameDownloadArgs args)
+    {
+        if (_globalViewModel.IsDownloading) return;
+
+        var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
+        if (game is null) return;
+
+        _activeDownloadArgs = args;
+        _isKeyedDownload = false;
+        var url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
+
+        PendingScrollGameId = args.GameId;
+        ScrollToGameRequested?.Invoke(args.GameId);
+        await ExecuteDownloadAndInstallAsync(game, args, url, resumable: true, isKeyedDownload: false, isUpdate: true);
+        PendingScrollGameId = null;
+    }
+
+    private async Task ExecuteDownloadAndInstallAsync(GameInfo game, GameDownloadArgs args, string url, bool resumable, bool isKeyedDownload, bool isUpdate)
+    {
         var gamesRoot = _settingsService.GetGamesRootDirectory();
         var zipPath = Path.Combine(gamesRoot, ".downloads", $"{args.GameId}.zip");
         var extractDir = _contentService.GetGameDirectory(game.Nombre);
+        var strings = SettingsViewModel.Instance.Strings;
 
         game.DownloadStatus = GameDownloadStatus.Downloading;
         game.DownloadProgressValue = 0;
@@ -161,8 +186,8 @@ public partial class LibraryViewModel : ObservableObject
                 : string.Empty;
         });
 
-        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(_isKeyedDownload ? " (keyed)" : "")}.");
-        var result = await _downloadService.DownloadAsync(url, zipPath, resumable: !_isKeyedDownload, progress, _downloadCts.Token);
+        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(isKeyedDownload ? " (keyed)" : "")}.");
+        var result = await _downloadService.DownloadAsync(url, zipPath, resumable, progress, _downloadCts.Token);
 
         switch (result.Outcome)
         {
@@ -208,20 +233,27 @@ public partial class LibraryViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     Logs.ErrorLogManager(ex);
-                    game.DownloadStatus = GameDownloadStatus.Available;
+                    game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
                     game.DownloadProgressValue = 0;
                     _activeDownloadArgs = null;
                 }
                 break;
 
             case DownloadOutcome.Cancelled:
-                if (_isKeyedDownload)
+                if (isKeyedDownload)
                 {
                     Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
                     game.DownloadStatus = GameDownloadStatus.Available;
                     game.DownloadProgressValue = 0;
                     _activeDownloadArgs = null;
                     CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
+                }
+                else if (isUpdate)
+                {
+                    Logs.InfoLogManager($"Update cancelled: {args.GameId}.");
+                    game.DownloadStatus = GameDownloadStatus.UpdateAvailable;
+                    game.DownloadProgressValue = 0;
+                    _activeDownloadArgs = null;
                 }
                 else
                 {
@@ -232,19 +264,14 @@ public partial class LibraryViewModel : ObservableObject
 
             case DownloadOutcome.Failed:
                 Logs.ErrorLogManager($"Download failed: {args.GameId}: {result.ErrorMessage}");
-                game.DownloadStatus = GameDownloadStatus.Available;
+                game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
                 game.DownloadProgressValue = 0;
                 _activeDownloadArgs = null;
 
-                if (_isKeyedDownload)
-                {
+                if (isKeyedDownload)
                     CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                }
                 else
-                {
                     CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                }
-
                 break;
         }
 
