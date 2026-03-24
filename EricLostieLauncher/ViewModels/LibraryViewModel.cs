@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
+using SharpCompress.Archives;
+using SharpCompress.Common;
+using SharpCompress.Readers;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -176,7 +178,22 @@ public partial class LibraryViewModel : ObservableObject
                     await Task.Run(() =>
                     {
                         Directory.CreateDirectory(extractDir);
-                        ZipFile.ExtractToDirectory(zipPath, extractDir, overwriteFiles: true);
+                        var readerOptions = new ReaderOptions
+                        {
+                            ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
+                        };
+                        using (var stream = File.OpenRead(zipPath))
+                        using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
+                        {
+                            foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                            {
+                                entry.WriteToDirectory(extractDir, new ExtractionOptions
+                                {
+                                    ExtractFullPath = true,
+                                    Overwrite = true
+                                });
+                            }
+                        }
                         File.Delete(zipPath);
                     });
 
