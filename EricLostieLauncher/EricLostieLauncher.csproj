@@ -8,6 +8,10 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+	<Version>0.8.0</Version>
+	<FileVersion>0.8.0.0</FileVersion>
+	<AssemblyVersion>0.8.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

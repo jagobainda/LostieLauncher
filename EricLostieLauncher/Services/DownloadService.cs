@@ -147,6 +147,7 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
             }
 
             State = DownloadState.Failed;
+            Logs.ErrorLogManager($"Download failed after {MaxRetries + 1} attempts, giving up.");
             return DownloadResult.Failed("Download failed after maximum retries.");
         }
         catch (Exception ex)

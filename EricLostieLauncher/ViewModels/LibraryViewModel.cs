@@ -93,7 +93,11 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private async Task StartDownloadAsync(GameDownloadArgs args)
     {
-        if (_globalViewModel.IsDownloading) return;
+        if (_globalViewModel.IsDownloading)
+        {
+            Logs.DebugLogManager($"Download request ignored for {args.GameId}: another download is already active.");
+            return;
+        }
 
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
@@ -123,6 +127,7 @@ public partial class LibraryViewModel : ObservableObject
         {
             if (!KeyFormatRegex.IsMatch(args.Key!))
             {
+                Logs.InfoLogManager($"Download key rejected for {args.GameId}: invalid format.");
                 CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyInvalidMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
                 _activeDownloadArgs = null;
                 return;
@@ -150,7 +155,11 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private async Task StartUpdateAsync(GameDownloadArgs args)
     {
-        if (_globalViewModel.IsDownloading) return;
+        if (_globalViewModel.IsDownloading)
+        {
+            Logs.DebugLogManager($"Update request ignored for {args.GameId}: another download is already active.");
+            return;
+        }
 
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;

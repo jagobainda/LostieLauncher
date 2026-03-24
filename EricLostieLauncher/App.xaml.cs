@@ -24,6 +24,16 @@ public partial class App : Application
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+        DispatcherUnhandledException += (_, ex) =>
+        {
+            Logs.ErrorLogManager(ex.Exception);
+            ex.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, ex) =>
+        {
+            if (ex.ExceptionObject is Exception e) Logs.ErrorLogManager(e);
+        };
+
         Services = DependencyInjection.Configure();
 
         Logs.InfoLogManager("Application started.");
@@ -36,7 +46,11 @@ public partial class App : Application
 
         mainWindow.Show();
 
-        if (SettingsViewModel.Instance.StartMinimized) mainWindow.Hide();
+        if (SettingsViewModel.Instance.StartMinimized)
+        {
+            Logs.DebugLogManager("Window hidden on startup (StartMinimized).");
+            mainWindow.Hide();
+        }
 
         base.OnStartup(e);
     }
@@ -123,6 +137,10 @@ public partial class App : Application
                 {
                     Logs.InfoLogManager($"Applying update to {updateInfo.TargetFullRelease.Version} and restarting.");
                     mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
+                }
+                else
+                {
+                    Logs.InfoLogManager($"Update to {updateInfo.TargetFullRelease.Version} declined by user.");
                 }
             });
         }

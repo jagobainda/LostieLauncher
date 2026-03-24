@@ -126,10 +126,19 @@ public partial class SettingsViewModel : ObservableObject
         Logs.InfoLogManager($"Start with Windows: {(value ? "enabled" : "disabled")}.");
         SaveSettings();
     }
-    partial void OnStartMinimizedChanged(bool value) => SaveSettings();
-    partial void OnAutoUpdateChanged(bool value) => SaveSettings();
+    partial void OnStartMinimizedChanged(bool value)
+    {
+        Logs.InfoLogManager($"Start minimized: {(value ? "enabled" : "disabled")}.");
+        SaveSettings();
+    }
+    partial void OnAutoUpdateChanged(bool value)
+    {
+        Logs.InfoLogManager($"Auto update: {(value ? "enabled" : "disabled")}.");
+        SaveSettings();
+    }
     partial void OnDownloadDirectoryChanged(string value)
     {
+        Logs.InfoLogManager($"Download directory changed to: {value}.");
         SaveSettings();
         _settingsService.EnsureGamesRootDirectoryExists();
     }
