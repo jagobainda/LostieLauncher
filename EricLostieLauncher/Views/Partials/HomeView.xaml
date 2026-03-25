@@ -67,7 +67,8 @@
                            FontSize="18" FontWeight="SemiBold"
                            Margin="0,0,0,14" />
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding IsNewsEmpty, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                     <ItemsControl ItemsSource="{Binding News}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type models:NewsItem}">
@@ -80,6 +81,17 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <StackPanel Visibility="{Binding IsNewsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <iconPacks:PackIconMaterial Kind="NewspaperVariantOutline"
+                                               Width="36" Height="36"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SecondaryFgDimBrush}" />
+                    <TextBlock Text="{Binding Strings.HomeNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                               Foreground="{DynamicResource SecondaryFgDimBrush}"
+                               FontSize="13" HorizontalAlignment="Center" Margin="0,12,0,0" />
+                </StackPanel>
             </DockPanel>
 
             <DockPanel Grid.Column="2">
@@ -89,7 +101,8 @@
                            FontSize="18" FontWeight="SemiBold"
                            Margin="0,0,0,14" />
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding IsNotificationsEmpty, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                     <ItemsControl ItemsSource="{Binding Notifications}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type models:NotificationItem}">
@@ -102,6 +115,17 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <StackPanel Visibility="{Binding IsNotificationsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <iconPacks:PackIconMaterial Kind="BellOffOutline"
+                                               Width="36" Height="36"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource SecondaryFgDimBrush}" />
+                    <TextBlock Text="{Binding Strings.HomeNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                               Foreground="{DynamicResource SecondaryFgDimBrush}"
+                               FontSize="13" HorizontalAlignment="Center" Margin="0,12,0,0" />
+                </StackPanel>
             </DockPanel>
         </Grid>
     </Grid>

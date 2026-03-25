@@ -14,20 +14,26 @@ public partial class HomeViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     [NotifyPropertyChangedFor(nameof(IsListVisible))]
-    private ObservableCollection<NewsItem> _news = [];
+    [NotifyPropertyChangedFor(nameof(IsNewsEmpty))]
+    public partial ObservableCollection<NewsItem> News { get; set; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     [NotifyPropertyChangedFor(nameof(IsListVisible))]
-    private ObservableCollection<NotificationItem> _notifications = [];
+    [NotifyPropertyChangedFor(nameof(IsNotificationsEmpty))]
+    public partial ObservableCollection<NotificationItem> Notifications { get; set; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     [NotifyPropertyChangedFor(nameof(IsListVisible))]
-    private bool _isLoading;
+    [NotifyPropertyChangedFor(nameof(IsNewsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsNotificationsEmpty))]
+    public partial bool IsLoading { get; set; }
 
     public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
     public bool IsListVisible => !IsLoading && (News.Count > 0 || Notifications.Count > 0);
+    public bool IsNewsEmpty => !IsLoading && News.Count == 0;
+    public bool IsNotificationsEmpty => !IsLoading && Notifications.Count == 0;
 
     public HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel)
     {
