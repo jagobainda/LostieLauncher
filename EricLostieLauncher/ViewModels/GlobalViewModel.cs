@@ -6,11 +6,11 @@ public partial class GlobalViewModel : ObservableObject
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBusy))]
-    private bool _isDownloading;
+    public partial bool IsDownloading { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBusy))]
-    private bool _isRefreshing;
+    public partial bool IsRefreshing { get; set; }
 
     public bool IsBusy => IsDownloading || IsRefreshing;
 }

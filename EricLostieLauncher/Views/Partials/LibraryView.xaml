@@ -65,6 +65,7 @@
                             TotalDownloads="{Binding TotalDownloads}"
                             LatestVersion="{Binding Version}"
                             RutaRelativa="{Binding RutaRelativa}"
+                            PlaytimeText="{Binding PlaytimeText}"
                             DownloadStatus="{Binding DownloadStatus}"
                             DownloadProgress="{Binding DownloadProgressValue}"
                             DownloadSpeedText="{Binding DownloadSpeedText}"

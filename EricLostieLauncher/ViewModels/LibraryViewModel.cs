@@ -67,21 +67,30 @@ public partial class LibraryViewModel : ObservableObject
 
         var result = await _contentService.GetGamesAsync();
         var localGames = await _contentService.GetLocalGamesAsync();
+        var playtimes = await _contentService.GetAllPlaytimesAsync();
         var downloadCounts = await _telemetryService.GetDownloadCountsAsync();
 
-        var installedLookup = localGames.ToDictionary(g => g.Nombre, StringComparer.OrdinalIgnoreCase);
+        var installedById = localGames
+            .Where(g => g.Id != Guid.Empty)
+            .ToDictionary(g => g.Id);
+        var installedByName = localGames
+            .Where(g => g.Id == Guid.Empty)
+            .ToDictionary(g => g.Nombre, StringComparer.OrdinalIgnoreCase);
 
         foreach (var game in result)
         {
-            if (installedLookup.TryGetValue(game.Nombre, out var local))
-            {
+            LocalGameInfo? local =
+                (game.Id != Guid.Empty && installedById.TryGetValue(game.Id, out var byId)) ? byId :
+                installedByName.TryGetValue(game.Nombre, out var byName) ? byName : null;
+
+            if (local is not null)
                 game.DownloadStatus = game.Version == local.Version ? GameDownloadStatus.Downloaded : GameDownloadStatus.UpdateAvailable;
-            }
+
+            if (game.Id != Guid.Empty && playtimes.TryGetValue(game.Id, out var pt))
+                game.PlaytimeMinutes = pt;
 
             if (downloadCounts.TryGetValue(game.GameId, out var count))
-            {
                 game.TotalDownloads = count;
-            }
         }
 
         Games = new ObservableCollection<GameInfo>(result);
@@ -231,7 +240,7 @@ public partial class LibraryViewModel : ObservableObject
                         File.Delete(zipPath);
                     });
 
-                    await _contentService.RegisterGameAsync(game.Nombre, args.Version);
+                    await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version);
 
                     game.DownloadStatus = GameDownloadStatus.Downloaded;
                     game.DownloadProgressValue = 100;

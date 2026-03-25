@@ -15,25 +15,25 @@ public partial class SettingsViewModel : ObservableObject
     public static SettingsViewModel Instance { get; private set; } = null!;
 
     [ObservableProperty]
-    private AppLanguage _language = AppLanguage.Esp;
+    public partial AppLanguage Language { get; set; } = AppLanguage.Esp;
 
     [ObservableProperty]
-    private IStrings _strings = new Esp();
+    public partial IStrings Strings { get; set; } = new Esp();
 
     [ObservableProperty]
-    private AppTheme _theme = AppTheme.Volcarona;
+    public partial AppTheme Theme { get; set; } = AppTheme.Volcarona;
 
     [ObservableProperty]
-    private bool _startWithWindows;
+    public partial bool StartWithWindows { get; set; }
 
     [ObservableProperty]
-    private bool _startMinimized;
+    public partial bool StartMinimized { get; set; }
 
     [ObservableProperty]
-    private bool _autoUpdate = true;
+    public partial bool AutoUpdate { get; set; } = true;
 
     [ObservableProperty]
-    private string _downloadDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    public partial string DownloadDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
     public static AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
     public static AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
@@ -55,7 +55,7 @@ public partial class SettingsViewModel : ObservableObject
                 (d.Source.OriginalString.Contains("/Themes/") ||
                  d.Source.OriginalString.Contains("Themes/")));
 
-        if (_activeThemeDict == null) ApplyTheme(_theme);
+        if (_activeThemeDict == null) ApplyTheme(Theme);
 
         LoadSettings();
     }

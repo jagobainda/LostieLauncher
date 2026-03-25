@@ -4,6 +4,9 @@ namespace EricLostieLauncher.Models;
 
 public class LocalGameInfo
 {
+    [JsonPropertyName("id")]
+    public Guid Id { get; init; }
+
     [JsonPropertyName("nombre")]
     public string Nombre { get; init; } = string.Empty;
 

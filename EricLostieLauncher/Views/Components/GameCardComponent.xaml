@@ -187,6 +187,15 @@
                     <TextBlock Text="{Binding LatestVersion, ElementName=Root}"
                                Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
                                VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" Margin="14,0,0,0"
+                                Visibility="{Binding PlaytimeText, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}">
+                        <iconPacks:PackIconMaterial Kind="ClockOutline" Width="12" Height="12"
+                                                   Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding PlaytimeText, ElementName=Root}"
+                                   Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Margin="0,6,0,0">
@@ -226,6 +235,15 @@
                                        Foreground="{DynamicResource PrimaryFgBrush}" FontSize="12"
                                        FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                Visibility="{Binding PlaytimeText, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}">
+                        <iconPacks:PackIconMaterial Kind="ClockOutline" Width="12" Height="12"
+                                                   Foreground="{DynamicResource SecondaryFgDimBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding PlaytimeText, ElementName=Root}"
+                                   Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
+                                   VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
 

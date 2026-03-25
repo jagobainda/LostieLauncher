@@ -7,6 +7,9 @@ namespace EricLostieLauncher.Models;
 
 public partial class GameInfo : ObservableObject
 {
+    [JsonPropertyName("id")]
+    public Guid Id { get; init; }
+
     [JsonPropertyName("nombre")]
     public string Nombre { get; init; } = string.Empty;
 
@@ -35,21 +38,38 @@ public partial class GameInfo : ObservableObject
     public int TotalDownloads { get; set; }
 
     [ObservableProperty]
-    [property: JsonIgnore]
-    private GameDownloadStatus _downloadStatus = GameDownloadStatus.Available;
+    [JsonIgnore]
+    public partial GameDownloadStatus DownloadStatus { get; set; } = GameDownloadStatus.Available;
 
     [ObservableProperty]
-    [property: JsonIgnore]
-    private double _downloadProgressValue;
+    [JsonIgnore]
+    public partial double DownloadProgressValue { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DownloadSpeedText))]
-    [property: JsonIgnore]
-    private double _downloadSpeedBytesPerSec;
+    [JsonIgnore]
+    public partial double DownloadSpeedBytesPerSec { get; set; }
 
     [ObservableProperty]
-    [property: JsonIgnore]
-    private string _downloadRemainingText = string.Empty;
+    [JsonIgnore]
+    public partial string DownloadRemainingText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlaytimeText))]
+    [JsonIgnore]
+    public partial int PlaytimeMinutes { get; set; }
+
+    [JsonIgnore]
+    public string PlaytimeText => FormatPlaytime(PlaytimeMinutes);
+
+    private static string FormatPlaytime(int minutes)
+    {
+        if (minutes <= 0) return string.Empty;
+        if (minutes < 60) return "< 1 h";
+        var h = minutes / 60;
+        var m = minutes % 60;
+        return m > 0 ? $"{h} h {m} min" : $"{h} h";
+    }
 
     [JsonIgnore]
     public string DownloadSpeedText => DownloadSpeedBytesPerSec switch

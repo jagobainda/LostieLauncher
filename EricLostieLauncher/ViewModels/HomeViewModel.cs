@@ -45,8 +45,7 @@ public partial class HomeViewModel : ObservableObject
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(SettingsViewModel.Language))
-            _ = LoadHomeContentAsync();
+        if (e.PropertyName == nameof(SettingsViewModel.Language)) _ = LoadHomeContentAsync();
     }
 
     public async Task RefreshAsync() => await LoadHomeContentAsync(forceRefresh: true);

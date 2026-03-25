@@ -202,4 +202,12 @@ public partial class GameCardComponent : UserControl
         get => (ICommand?)GetValue(UninstallCommandProperty);
         set => SetValue(UninstallCommandProperty, value);
     }
+
+    public static readonly DependencyProperty PlaytimeTextProperty = DependencyProperty.Register(nameof(PlaytimeText), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string PlaytimeText
+    {
+        get => (string)GetValue(PlaytimeTextProperty);
+        set => SetValue(PlaytimeTextProperty, value);
+    }
 }

@@ -12,8 +12,10 @@ public interface IContentService
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
     Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
     string GetGameDirectory(string gameName);
-    Task RegisterGameAsync(string gameName, string version);
+    Task RegisterGameAsync(Guid gameId, string gameName, string version);
     Task RemoveGameRegistryAsync(string gameName);
+    Task AddPlaytimeAsync(Guid gameId, int minutes);
+    Task<Dictionary<Guid, int>> GetAllPlaytimesAsync();
 }
 
 public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions contentOptions, ISettingsService settingsService) : IContentService
@@ -157,7 +159,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         return Path.Combine(gamesRoot, gameName);
     }
 
-    public async Task RegisterGameAsync(string gameName, string version)
+    public async Task RegisterGameAsync(Guid gameId, string gameName, string version)
     {
         try
         {
@@ -174,7 +176,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             }
 
             games.RemoveAll(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-            games.Add(new LocalGameInfo { Nombre = gameName, Version = version });
+            games.Add(new LocalGameInfo { Id = gameId, Nombre = gameName, Version = version });
 
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
         }
@@ -196,5 +198,57 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
+    public async Task AddPlaytimeAsync(Guid gameId, int minutes)
+    {
+        if (gameId == Guid.Empty) return;
+
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        var path = Path.Combine(gamesRoot, "playtime.json");
+
+        try
+        {
+            Logs.DebugLogManager($"Adding {minutes} playtime minutes for game id: {gameId}.");
+            List<PlaytimeRecord> records = [];
+            if (File.Exists(path))
+            {
+                var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+                records = JsonSerializer.Deserialize<List<PlaytimeRecord>>(json, JsonOptions) ?? [];
+            }
+
+            var existing = records.FirstOrDefault(r => r.Id == gameId);
+            if (existing is not null)
+                records = [.. records.Select(r => r.Id == gameId
+                    ? new PlaytimeRecord { Id = r.Id, PlaytimeMinutes = r.PlaytimeMinutes + minutes }
+                    : r)];
+            else
+                records.Add(new PlaytimeRecord { Id = gameId, PlaytimeMinutes = minutes });
+
+            Directory.CreateDirectory(gamesRoot);
+            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(records, JsonOptions)).ConfigureAwait(false);
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
+    public async Task<Dictionary<Guid, int>> GetAllPlaytimesAsync()
+    {
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        var path = Path.Combine(gamesRoot, "playtime.json");
+        if (!File.Exists(path)) return [];
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+            var records = JsonSerializer.Deserialize<List<PlaytimeRecord>>(json, JsonOptions) ?? [];
+            return records
+                .Where(r => r.Id != Guid.Empty)
+                .ToDictionary(r => r.Id, r => r.PlaytimeMinutes);
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            return [];
+        }
     }
 }
