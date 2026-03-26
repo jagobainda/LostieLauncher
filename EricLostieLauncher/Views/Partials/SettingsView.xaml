@@ -224,7 +224,7 @@
                             <iconPacks:PackIconMaterial Kind="Refresh" Width="16" Height="16"
                                                        Foreground="{DynamicResource SecondaryFgDimBrush}"
                                                        VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <TextBlock Text="{Binding Strings.SettingsCheckForUpdates}"
+                            <TextBlock Text="{Binding CurrentVersion}"
                                        Foreground="{DynamicResource SecondaryFgBrush}"
                                        FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>

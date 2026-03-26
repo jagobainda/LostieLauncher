@@ -44,9 +44,6 @@ public static class DependencyInjection
         // Views
         services.AddSingleton<MainWindow>();
 
-        // Singletons
-
-
         return services.BuildServiceProvider();
     }
 }

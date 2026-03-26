@@ -24,6 +24,8 @@ public partial class MainViewModel : ObservableObject
     public bool IsGamesActive => CurrentViewModel is GamesViewModel;
     public bool IsLibraryActive => CurrentViewModel is LibraryViewModel;
 
+    public event Action? WelcomeDialogRequested;
+
     public MainViewModel(GlobalViewModel globalViewModel, HomeViewModel homeViewModel, GamesViewModel gamesViewModel, LibraryViewModel libraryViewModel, SettingsViewModel settingsViewModel)
     {
         _globalViewModel = globalViewModel;
@@ -128,5 +130,14 @@ public partial class MainViewModel : ObservableObject
         !_homeViewModel.IsLoading &&
         !_libraryViewModel.IsLoading &&
         !_gamesViewModel.IsLoading;
+
+    partial void OnCurrentViewModelChanged(ObservableObject oldValue, ObservableObject newValue)
+    {
+        if (oldValue is SettingsViewModel && !_settingsViewModel.HasSeenWelcome)
+        {
+            _settingsViewModel.MarkWelcomeSeen();
+            WelcomeDialogRequested?.Invoke();
+        }
+    }
 }
 

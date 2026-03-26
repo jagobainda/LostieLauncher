@@ -52,6 +52,19 @@ public partial class App : Application
             mainWindow.Hide();
         }
 
+        if (!SettingsViewModel.Instance.HasSeenWelcome)
+        {
+            Logs.InfoLogManager("First launch detected — navigating to settings.");
+            var mainViewModel = Services.GetRequiredService<MainViewModel>();
+            mainViewModel.NavigateToSettingsCommand.Execute(null);
+            mainViewModel.WelcomeDialogRequested += () =>
+            {
+                Logs.InfoLogManager("User navigated away from settings — showing welcome dialog.");
+                WelcomeDialog.Show(SettingsViewModel.Instance.Strings, mainWindow);
+                Logs.InfoLogManager("Welcome dialog shown.");
+            };
+        }
+
         base.OnStartup(e);
     }
 

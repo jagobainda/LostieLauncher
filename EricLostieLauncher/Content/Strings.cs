@@ -67,6 +67,10 @@ public interface IStrings
     string StatusExtracting { get; }
     string GameExeNotFoundTitle { get; }
     string GameExeNotFoundMessage { get; }
+    string WelcomeDialogTitle { get; }
+    string WelcomeDialogDescription { get; }
+    string WelcomeDialogContinue { get; }
+    string RepositoryUrl { get; }
 }
 
 public class Esp : IStrings
@@ -107,7 +111,7 @@ public class Esp : IStrings
     public string SettingsDownloadDir => "Directorio de descargas";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Examinar...";
-    public string SettingsCheckForUpdates => "Buscar actualizaciones";
+    public string SettingsCheckForUpdates => "Buscar actualizaciones del launcher";
     public string CheckForUpdatesTitle => "Buscar actualizaciones";
     public string CheckForUpdatesMessage => "Buscar actualizaciones requiere reiniciar el launcher. Si hay alguna descarga en progreso, podría dañarse o interrumpirse. ¿Deseas continuar?";
     public string ChangeDownloadDirTitle => "Cambiar directorio de descargas";
@@ -136,6 +140,10 @@ public class Esp : IStrings
     public string StatusExtracting => "Descomprimiendo...";
     public string GameExeNotFoundTitle => "Juego no encontrado";
     public string GameExeNotFoundMessage => "No se encontró el ejecutable del juego. Intenta reinstalarlo.";
+    public string WelcomeDialogTitle => "¡Bienvenido al EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Descarga, actualiza y juega tus títulos favoritos en un solo lugar. Simple, rápido y sin complicaciones.\n\nTu privacidad es importante. No recogemos datos personales. Solo consultamos información básica de tu PC, como los núcleos del procesador o la RAM disponible para optimizar los juegos.\n\nEste proyecto es opensource. ¿Dudas sobre cómo funciona? Consulta el código fuente";
+    public string WelcomeDialogContinue => "Continuar";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Eng : IStrings
@@ -176,7 +184,7 @@ public class Eng : IStrings
     public string SettingsDownloadDir => "Download directory";
     public string SettingsTheme => "Theme";
     public string BtnBrowse => "Browse...";
-    public string SettingsCheckForUpdates => "Check for updates";
+    public string SettingsCheckForUpdates => "Check for launcher updates";
     public string CheckForUpdatesTitle => "Check for updates";
     public string CheckForUpdatesMessage => "Checking for updates requires restarting the launcher. Any ongoing download may be interrupted or corrupted. Do you want to continue?";
     public string ChangeDownloadDirTitle => "Change download directory";
@@ -205,6 +213,10 @@ public class Eng : IStrings
     public string StatusExtracting => "Extracting...";
     public string GameExeNotFoundTitle => "Game not found";
     public string GameExeNotFoundMessage => "The game executable was not found. Try reinstalling the game.";
+    public string WelcomeDialogTitle => "Welcome to EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Download, update, and play your favorite games in one place. Simple, fast, and hassle-free.\n\nYour privacy is important. We don't collect personal data. We only check basic information about your PC, like processor cores or available RAM to optimize your games.\n\nThis project is open source. Questions about how it works? Check the source code";
+    public string WelcomeDialogContinue => "Continue";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Cat : IStrings
@@ -245,7 +257,7 @@ public class Cat : IStrings
     public string SettingsDownloadDir => "Directori de descàrregues";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Explorar...";
-    public string SettingsCheckForUpdates => "Buscar actualitzacions";
+    public string SettingsCheckForUpdates => "Buscar actualitzacions del launcher";
     public string CheckForUpdatesTitle => "Buscar actualitzacions";
     public string CheckForUpdatesMessage => "Buscar actualitzacions requereix reiniciar el launcher. Si hi ha alguna descàrrega en curs, podria danyar-se o interrompre's. Vols continuar?";
     public string ChangeDownloadDirTitle => "Canviar directori de descàrregues";
@@ -274,6 +286,10 @@ public class Cat : IStrings
     public string StatusExtracting => "Descomprimint...";
     public string GameExeNotFoundTitle => "Joc no trobat";
     public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
+    public string WelcomeDialogTitle => "Benvingut al EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim dades personals. Només consultem informació bàsica del teu PC, com els nuclis del processador o la RAM disponible per a optimitzar els teus jocs.\n\nAquest projecte és opensource. Dubtes sobre com funciona? Consulta el codi font";
+    public string WelcomeDialogContinue => "Continuar";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Eus : IStrings
@@ -314,7 +330,7 @@ public class Eus : IStrings
     public string SettingsDownloadDir => "Deskarga direktorioa";
     public string SettingsTheme => "Gaia";
     public string BtnBrowse => "Arakatu...";
-    public string SettingsCheckForUpdates => "Eguneraketak bilatu";
+    public string SettingsCheckForUpdates => "Launcher-aren eguneraketak bilatu";
     public string CheckForUpdatesTitle => "Eguneraketak bilatu";
     public string CheckForUpdatesMessage => "Eguneraketak bilatzeak launcher-a berrabiarazi behar du. Deskarga bat abian badago, hondatu edo eten daiteke. Jarraitu nahi duzu?";
     public string ChangeDownloadDirTitle => "Deskarga direktorioa aldatu";
@@ -343,6 +359,10 @@ public class Eus : IStrings
     public string StatusExtracting => "Deskonprimatzen...";
     public string GameExeNotFoundTitle => "Jokoa ez da aurkitu";
     public string GameExeNotFoundMessage => "Jokoaren exekutagarria ez da aurkitu. Saiatu berrinstalatzea.";
+    public string WelcomeDialogTitle => "Ongi etorri EricLostie Launcher-era!";
+    public string WelcomeDialogDescription => "Deskargatu, eguneratu eta jolastu zure joko gogokoak leku batean. Sinplea, azkarra eta konplikazio gabe.\n\nZure pribatutasuna garrantzitsua da. Ez dugu datu pertsonalik biltzen. PCaren oinarrizko informazioa bakarrik kontsultatzen dugu, prozesadoreko nukleak edo eskuragarri dagoen RAMa adibidez, zure jokoak optimizatzeko.\n\nProiektu hau opensource. Zalantzak nola funtzionatzen duen jakin nahi? Bilatu iturburu kodea";
+    public string WelcomeDialogContinue => "Jarraitu";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Gal : IStrings
@@ -383,7 +403,7 @@ public class Gal : IStrings
     public string SettingsDownloadDir => "Directorio de descargas";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Examinar...";
-    public string SettingsCheckForUpdates => "Buscar actualizacións";
+    public string SettingsCheckForUpdates => "Buscar actualizacións do launcher";
     public string CheckForUpdatesTitle => "Buscar actualizacións";
     public string CheckForUpdatesMessage => "Buscar actualizacións require reiniciar o launcher. Se hai algunha descarga en progreso, podería danarse ou interromperse. Desexas continuar?";
     public string ChangeDownloadDirTitle => "Cambiar directorio de descargas";
@@ -405,16 +425,20 @@ public class Gal : IStrings
     public string DownloadKeyInvalidTitle => "Clave non válida";
     public string DownloadKeyInvalidMessage => "O formato da clave non é válido. Comproba e téntao de novo.";
     public string DownloadKeyConsumedTitle => "Clave consumida";
-        public string DownloadKeyConsumedMessage => "Esta clave xa non é válida ou xa foi utilizada. Solicita unha nova clave.";
-        public string DownloadErrorTitle => "Erro na descarga";
-        public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
-        public string BtnCancel => "Cancelar";
-        public string StatusExtracting => "Descomprimindo...";
-        public string GameExeNotFoundTitle => "Xogo non atopado";
-        public string GameExeNotFoundMessage => "Non se atopou o executable do xogo. Intenta reinstalalo.";
-    }
+    public string DownloadKeyConsumedMessage => "Esta clave xa non é válida ou xa foi utilizada. Solicita unha nova clave.";
+    public string DownloadErrorTitle => "Erro na descarga";
+    public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
+    public string BtnCancel => "Cancelar";
+    public string StatusExtracting => "Descomprimindo...";
+    public string GameExeNotFoundTitle => "Xogo non atopado";
+    public string GameExeNotFoundMessage => "Non se atopou o executable do xogo. Intenta reinstalalo.";
+    public string WelcomeDialogTitle => "Benvido ao EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Descarga, actualiza e xoga os teus xogos favoritos nun só lugar. Simple, rápido e sen complicacións.\n\nA túa privacidade é importante. Non recollemos datos persoais. Só consultamos información básica do teu PC, como os núcleos do procesador ou a RAM dispoñible para optimizar os teus xogos.\n\nEste proxecto é opensource. Dúbidas sobre como funciona? Consulta o código fonte";
+    public string WelcomeDialogContinue => "Continuar";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
+}
 
-    public class Por : IStrings
+public class Por : IStrings
 {
     public string TitleHome => "Início";
     public string TitleGames => "Meus Jogos";
@@ -452,7 +476,7 @@ public class Gal : IStrings
     public string SettingsDownloadDir => "Diretório de downloads";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Procurar...";
-    public string SettingsCheckForUpdates => "Verificar atualizações";
+    public string SettingsCheckForUpdates => "Verificar atualizações do launcher";
     public string CheckForUpdatesTitle => "Verificar atualizações";
     public string CheckForUpdatesMessage => "Verificar atualizações requer reiniciar o launcher. Se houver algum download em andamento, ele pode ser interrompido ou corrompido. Deseja continuar?";
     public string ChangeDownloadDirTitle => "Alterar diretório de downloads";
@@ -479,8 +503,12 @@ public class Gal : IStrings
     public string DownloadErrorMessage => "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, escreva em #bugs-launcher no Discord.";
     public string BtnCancel => "Cancelar";
     public string StatusExtracting => "Descomprimindo...";
-    public string GameExeNotFoundTitle => "Jogo n\u00e3o encontrado";
-    public string GameExeNotFoundMessage => "O execut\u00e1vel do jogo n\u00e3o foi encontrado. Tente reinstal\u00e1-lo.";
+    public string GameExeNotFoundTitle => "Jogo não encontrado";
+    public string GameExeNotFoundMessage => "O executável do jogo não foi encontrado. Tente reinstalá-lo.";
+    public string WelcomeDialogTitle => "Bem-vindo ao EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Baixe, atualize e jogue seus jogos favoritos em um único lugar. Simples, rápido e sem complicações.\n\nSua privacidade é importante. Não coletamos dados pessoais. Apenas consultamos informações básicas do seu PC, como núcleos do processador ou RAM disponível para otimizar seus jogos.\n\nEste projeto é open source. Dúvidas sobre como funciona? Consulte o código-fonte";
+    public string WelcomeDialogContinue => "Continuar";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Val : IStrings
@@ -521,7 +549,7 @@ public class Val : IStrings
     public string SettingsDownloadDir => "Directori de descàrregues";
     public string SettingsTheme => "Tema";
     public string BtnBrowse => "Explorar...";
-    public string SettingsCheckForUpdates => "Buscar actualitzacions";
+    public string SettingsCheckForUpdates => "Buscar actualitzacions del launcher";
     public string CheckForUpdatesTitle => "Buscar actualitzacions";
     public string CheckForUpdatesMessage => "Buscar actualitzacions requereix reiniciar el launcher. Si hi ha alguna descàrrega en curs, podria danyar-se o interrompre's. Vols continuar?";
     public string ChangeDownloadDirTitle => "Canviar directori de descàrregues";
@@ -550,6 +578,10 @@ public class Val : IStrings
     public string StatusExtracting => "Descomprimint...";
     public string GameExeNotFoundTitle => "Joc no trobat";
     public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
+    public string WelcomeDialogTitle => "Benvingut al EricLostie Launcher!";
+    public string WelcomeDialogDescription => "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim dades personals. Només consultem informació bàsica del teu PC, com els nuclis del processador o la RAM disponible per a optimitzar els teus jocs.\n\nEst projecte és opensource. Dubtes sobre com funciona? Consulta el codi font";
+    public string WelcomeDialogContinue => "Continuar";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }
 
 public class Fra : IStrings
@@ -590,7 +622,7 @@ public class Fra : IStrings
     public string SettingsDownloadDir => "Répertoire de téléchargement";
     public string SettingsTheme => "Thème";
     public string BtnBrowse => "Parcourir...";
-    public string SettingsCheckForUpdates => "Vérifier les mises à jour";
+    public string SettingsCheckForUpdates => "Vérifier les mises à jour du launcher";
     public string CheckForUpdatesTitle => "Vérifier les mises à jour";
     public string CheckForUpdatesMessage => "La vérification des mises à jour nécessite de redémarrer le lanceur. Tout téléchargement en cours peut être interrompu ou corrompu. Voulez-vous continuer ?";
     public string ChangeDownloadDirTitle => "Modifier le répertoire de téléchargement";
@@ -617,6 +649,10 @@ public class Fra : IStrings
     public string DownloadErrorMessage => "Le téléchargement n'a pas pu être complété. Veuillez réessayer plus tard. Si le problème persiste, écrivez dans #bugs-launcher sur Discord.";
     public string BtnCancel => "Annuler";
     public string StatusExtracting => "Extraction en cours...";
-    public string GameExeNotFoundTitle => "Jeu non trouv\u00e9";
-    public string GameExeNotFoundMessage => "L'ex\u00e9cutable du jeu est introuvable. Essayez de le r\u00e9installer.";
+    public string GameExeNotFoundTitle => "Jeu non trouvé";
+    public string GameExeNotFoundMessage => "L'exécutable du jeu est introuvable. Essayez de le réinstaller.";
+    public string WelcomeDialogTitle => "Bienvenue dans EricLostie Launcher !";
+    public string WelcomeDialogDescription => "Téléchargez, mettez à jour et jouez à vos jeux préférés en un seul endroit. Simple, rapide et sans tracas.\n\nVotre vie privée compte. Nous ne collectons pas de données personnelles. Nous consultons uniquement des informations basiques sur votre PC, comme les cœurs du processeur ou la RAM disponible pour optimiser vos jeux.\n\nCe projet est open source. Des questions sur le fonctionnement ? Consultez le code source";
+    public string WelcomeDialogContinue => "Continuer";
+    public string RepositoryUrl => "https://github.com/jagobainda/EricLostieLauncher";
 }

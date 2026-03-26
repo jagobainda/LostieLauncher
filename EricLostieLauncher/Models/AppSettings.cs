@@ -8,4 +8,5 @@ public class AppSettings
     public bool StartMinimized { get; set; }
     public bool AutoUpdate { get; set; } = true;
     public string DownloadDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    public bool HasSeenWelcome { get; set; } = false;
 }

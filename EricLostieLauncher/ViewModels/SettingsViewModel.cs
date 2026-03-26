@@ -42,6 +42,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private readonly ISettingsService _settingsService;
     private readonly IWindowsStartupService _windowsStartupService;
+    private bool _hasSeenWelcome;
     private bool _isLoading;
 
     public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService)
@@ -70,6 +71,7 @@ public partial class SettingsViewModel : ObservableObject
         StartMinimized = settings.StartMinimized;
         AutoUpdate = settings.AutoUpdate;
         DownloadDirectory = settings.DownloadDirectory;
+        _hasSeenWelcome = settings.HasSeenWelcome;
         _isLoading = false;
 
         _settingsService.EnsureGamesRootDirectoryExists();
@@ -87,7 +89,8 @@ public partial class SettingsViewModel : ObservableObject
             StartWithWindows = StartWithWindows,
             StartMinimized = StartMinimized,
             AutoUpdate = AutoUpdate,
-            DownloadDirectory = DownloadDirectory
+            DownloadDirectory = DownloadDirectory,
+            HasSeenWelcome = _hasSeenWelcome
         });
         Logs.DebugLogManager("Settings saved.");
     }
@@ -155,6 +158,15 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         dicts.Add(_activeThemeDict);
+    }
+
+    public bool HasSeenWelcome => _hasSeenWelcome;
+    public static string CurrentVersion => "v" + typeof(SettingsViewModel).Assembly.GetName().Version?.ToString() ?? "Unknown";
+
+    public void MarkWelcomeSeen()
+    {
+        _hasSeenWelcome = true;
+        SaveSettings();
     }
 
     [RelayCommand]
