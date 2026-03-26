@@ -12,7 +12,7 @@ public partial class App : Application
 {
     public static IServiceProvider Services { get; private set; } = null!;
 
-    private readonly string feedUrl = "https://cdn.jagoba.dev/downloads/skinholder-desktop-latest";
+    private readonly string feedUrl = "https://ericlostie-launcher.jagoba.dev/public/installer/";
 
     private NotifyIcon? _notifyIcon;
     private ToolStripMenuItem? _trayOpenItem;
