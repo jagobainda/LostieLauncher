@@ -184,11 +184,18 @@
                             Background="{DynamicResource TertiaryBgBrush}"
                             VerticalAlignment="Top"
                             ClipToBounds="True">
-                        <iconPacks:PackIconMaterial Kind="PokemonGo"
-                                                   Width="28" Height="28"
-                                                   Foreground="{DynamicResource OverlayMediumBrush}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" />
+                        <Grid>
+                            <iconPacks:PackIconMaterial x:Name="GameLogoFallback"
+                                                       Kind="PokemonGo"
+                                                       Width="28" Height="28"
+                                                       Foreground="{DynamicResource OverlayMediumBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                            <Image x:Name="GameLogoImage"
+                                   Stretch="UniformToFill"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="Collapsed" />
+                        </Grid>
                     </Border>
 
                     <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Top">

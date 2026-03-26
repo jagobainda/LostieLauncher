@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using EricLostieLauncher.Content;
 using EricLostieLauncher.Models;
 
@@ -43,6 +44,17 @@ public partial class DownloadConfirmDialog : Window
 
         DownloadButton.Content = strings.BtnDownload;
         CancelButton.Content = strings.BtnCancel;
+
+        if (!string.IsNullOrEmpty(game.LogoUrl))
+        {
+            try
+            {
+                GameLogoImage.Source = new BitmapImage(new Uri(game.LogoUrl));
+                GameLogoImage.Visibility = Visibility.Visible;
+                GameLogoFallback.Visibility = Visibility.Collapsed;
+            }
+            catch { }
+        }
     }
 
     public static GameDownloadArgs? Show(GameInfo game, GameDownloadArgs args, string downloadPath, IStrings strings, Window? owner = null)
