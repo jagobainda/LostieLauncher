@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="EricLostieLauncher/Assets/app.ico" width="96" height="96" alt="EricLostieLauncher icon" />
+<img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="30" height="30" alt="EricLostieLauncher icon" />
 
 # EricLostieLauncher
 
