@@ -1,8 +1,9 @@
 <div align="center">
 
-<img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="30" height="30" alt="EricLostieLauncher icon" />
-
-# EricLostieLauncher
+<div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="30" height="30" alt="EricLostieLauncher icon" />
+    <h1 style="margin: 0;">EricLostieLauncher</h1>
+</div>
 
 **Lanzador de juegos moderno para Windows**
 
