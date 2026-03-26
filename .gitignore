@@ -67,3 +67,5 @@ secrets.json
 # ----- Crash dumps -----
 *.dmp
 *.mdmp
+
+.github/
