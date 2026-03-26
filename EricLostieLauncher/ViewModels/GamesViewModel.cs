@@ -40,7 +40,7 @@ public partial class GamesViewModel : ObservableObject
             var remote = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             if (existing != null) InstalledGames.Remove(existing);
-            InstalledGames.Add(new InstalledGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, InstalledVersion = version });
+            InstalledGames.Add(new InstalledGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, InstalledVersion = version, Logo = remote?.Logo ?? string.Empty });
         });
         Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}.");
     }
@@ -69,6 +69,7 @@ public partial class GamesViewModel : ObservableObject
                 InstalledVersion = local.Version,
                 HasUpdate = hasUpdate,
                 UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
+                Logo = remote?.Logo ?? string.Empty,
                 PlaytimeMinutes = playtimeMinutes
             };
         })];

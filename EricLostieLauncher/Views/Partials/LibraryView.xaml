@@ -61,6 +61,7 @@
                             CardMode="Library"
                             GameId="{Binding GameId}"
                             GameTitle="{Binding Nombre}"
+                            GameLogo="{Binding LogoUrl, Converter={StaticResource UriStringToImageSourceConverter}}"
                             GameSize="{Binding PesoFormateado}"
                             TotalDownloads="{Binding TotalDownloads}"
                             LatestVersion="{Binding Version}"

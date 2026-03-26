@@ -1,3 +1,3 @@
 namespace EricLostieLauncher.Models;
 
-public record ContentOptions(string Endpoint, string NotificationsEndpoint);
+public record ContentOptions(string ContentEndpoint, string NotificationsEndpoint);

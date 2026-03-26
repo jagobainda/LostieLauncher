@@ -47,6 +47,7 @@
                         <components:GameCardComponent
                             CardMode="Games"
                             GameTitle="{Binding Nombre}"
+                            GameLogo="{Binding LogoUrl, Converter={StaticResource UriStringToImageSourceConverter}}"
                             InstalledVersion="{Binding InstalledVersion}"
                             HasUpdate="{Binding HasUpdate}"
                             UpdateVersion="{Binding UpdateVersion}"

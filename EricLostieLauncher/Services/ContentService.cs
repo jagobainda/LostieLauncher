@@ -36,7 +36,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         {
             Logs.DebugLogManager("Fetching games list from remote.");
             var client = _httpClientFactory.CreateClient("Content");
-            using var response = await client.GetAsync(_contentOptions.Endpoint).ConfigureAwait(false);
+            using var response = await client.GetAsync(_contentOptions.ContentEndpoint).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
