@@ -69,3 +69,4 @@ secrets.json
 *.mdmp
 
 .github/
+releases/

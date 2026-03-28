@@ -111,13 +111,14 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
-                    Width="80" Height="80"
+                    Width="110" Height="80"
                     CornerRadius="6"
                     Background="{DynamicResource TertiaryBgBrush}"
                     VerticalAlignment="Center"
-                    ClipToBounds="True">
+                    ClipToBounds="True"
+                    Padding="5">
                 <Grid>
-                    <iconPacks:PackIconMaterial Kind="PokemonGo"
+                    <iconPacks:PackIconMaterial Kind="Pokeball"
                                                Width="32" Height="32"
                                                Foreground="{DynamicResource OverlayMediumBrush}"
                                                HorizontalAlignment="Center"
@@ -134,7 +135,7 @@
                         </iconPacks:PackIconMaterial.Style>
                     </iconPacks:PackIconMaterial>
                     <Image Source="{Binding GameLogo, ElementName=Root}"
-                           Stretch="UniformToFill"
+                           Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality">
                         <Image.Style>
                             <Style TargetType="Image">

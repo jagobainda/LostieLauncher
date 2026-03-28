@@ -14,6 +14,13 @@ public partial class App : Application
 
     private readonly string feedUrl = "https://ericlostie-launcher.jagoba.dev/public/installer/";
 
+    private Mutex? _instanceMutex;
+    private EventWaitHandle? _showWindowEvent;
+    private CancellationTokenSource? _singleInstanceListenerCts;
+
+    private const string MutexName = "EricLostieLauncherSingleInstance";
+    private const string EventName = "EricLostieLauncherShowWindow";
+
     private NotifyIcon? _notifyIcon;
     private ToolStripMenuItem? _trayOpenItem;
     private ToolStripMenuItem? _trayExitItem;
@@ -21,6 +28,31 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         VelopackApp.Build().Run();
+
+        _instanceMutex = new Mutex(true, MutexName, out bool isNewInstance);
+        if (!isNewInstance)
+        {
+            _instanceMutex.Dispose();
+            _instanceMutex = null;
+            if (EventWaitHandle.TryOpenExisting(EventName, out var showEvent))
+            {
+                showEvent.Set();
+                showEvent.Dispose();
+            }
+            Shutdown();
+            return;
+        }
+
+        _showWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, EventName);
+        _singleInstanceListenerCts = new CancellationTokenSource();
+        _ = Task.Run(() =>
+        {
+            var token = _singleInstanceListenerCts.Token;
+            while (!token.IsCancellationRequested)
+            {
+                if (_showWindowEvent.WaitOne(1000)) Dispatcher.BeginInvoke(RestoreMainWindow);
+            }
+        });
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -166,6 +198,10 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Logs.InfoLogManager("Application exiting.");
+        _singleInstanceListenerCts?.Cancel();
+        _showWindowEvent?.Dispose();
+        _instanceMutex?.ReleaseMutex();
+        _instanceMutex?.Dispose();
         _notifyIcon?.Dispose();
         base.OnExit(e);
     }

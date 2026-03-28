@@ -180,20 +180,21 @@
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0"
-                            Width="72" Height="72"
+                            Width="90" Height="72"
                             CornerRadius="6"
                             Background="{DynamicResource TertiaryBgBrush}"
                             VerticalAlignment="Top"
-                            ClipToBounds="True">
+                            ClipToBounds="True"
+                            Padding="5">
                         <Grid>
                             <iconPacks:PackIconMaterial x:Name="GameLogoFallback"
-                                                       Kind="PokemonGo"
+                                                       Kind="Pokeball"
                                                        Width="28" Height="28"
                                                        Foreground="{DynamicResource OverlayMediumBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center" />
                             <Image x:Name="GameLogoImage"
-                                   Stretch="UniformToFill"
+                                   Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="HighQuality"
                                    Visibility="Collapsed" />
                         </Grid>

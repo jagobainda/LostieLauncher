@@ -45,6 +45,7 @@ public partial class MainViewModel : ObservableObject
         _settingsViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(SettingsViewModel.Strings)) UpdateCurrentTitle();
+            if (e.PropertyName == nameof(SettingsViewModel.DownloadDirectory)) _ = _libraryViewModel.RefreshAsync();
         };
 
         _globalViewModel.PropertyChanged += (_, e) =>

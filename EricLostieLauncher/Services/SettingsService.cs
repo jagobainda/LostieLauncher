@@ -15,11 +15,14 @@ public interface ISettingsService
 public class SettingsService : ISettingsService
 {
     private const string AppSubfolder = "EricLostieLauncher";
-    private static readonly string SettingsPath = Path.Combine(AppContext.BaseDirectory, "launcher_settings.json");
+    private static readonly string SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppSubfolder);
+    private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "launcher_settings.json");
+    private static readonly string LegacySettingsPath = Path.Combine(AppContext.BaseDirectory, "launcher_settings.json");
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public AppSettings Load()
     {
+        MigrateLegacySettings();
         Logs.DebugLogManager("Loading settings from disk.");
         if (!File.Exists(SettingsPath)) return new AppSettings();
 
@@ -39,9 +42,25 @@ public class SettingsService : ISettingsService
     {
         try
         {
+            Directory.CreateDirectory(SettingsDirectory);
             var json = JsonSerializer.Serialize(settings, JsonOptions);
             File.WriteAllText(SettingsPath, json);
             Logs.DebugLogManager("Settings saved to disk.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
+    }
+
+    private static void MigrateLegacySettings()
+    {
+        if (File.Exists(SettingsPath) || !File.Exists(LegacySettingsPath)) return;
+        try
+        {
+            Directory.CreateDirectory(SettingsDirectory);
+            File.Move(LegacySettingsPath, SettingsPath);
+            Logs.DebugLogManager("Legacy settings migrated to persistent path.");
         }
         catch (Exception ex)
         {

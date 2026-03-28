@@ -37,6 +37,7 @@ $RepoRoot    = Split-Path $PSScriptRoot -Parent
 $ProjectFile = Join-Path $RepoRoot "EricLostieLauncher\EricLostieLauncher.csproj"
 $PublishDir  = Join-Path $RepoRoot "publish"
 $ReleasesDir = Join-Path $RepoRoot "releases"
+$IconFile    = Join-Path $RepoRoot "EricLostieLauncher\Assets\app.ico"
 
 # ── Read version from .csproj ─────────────────────────────────────────────────
 [xml]$csproj = Get-Content $ProjectFile
@@ -60,7 +61,7 @@ Write-Host ""
 # ── Clean ─────────────────────────────────────────────────────────────────────
 Write-Host "[1/3] Cleaning previous output..." -ForegroundColor Yellow
 Remove-Item $PublishDir  -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item $ReleasesDir -Recurse -Force -ErrorAction SilentlyContinue
+
 
 # ── Publish ───────────────────────────────────────────────────────────────────
 Write-Host "[2/3] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
@@ -82,6 +83,7 @@ vpk pack `
     --packDir     $PublishDir `
     --mainExe     EricLostieLauncher.exe `
     --packTitle   "EricLostie Launcher" `
+    --icon        $IconFile `
     --outputDir   $ReleasesDir
 
 if ($LASTEXITCODE -ne 0) { Write-Error "vpk pack failed."; exit 1 }

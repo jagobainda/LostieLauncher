@@ -1,13 +1,19 @@
 <div align="center">
 
 <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="30" height="30" alt="EricLostieLauncher icon" />
+    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="45" height="45" alt="EricLostieLauncher icon" />
     <h1 style="margin: 20 0;">EricLostieLauncher</h1>
 </div>
 
+<p align="center">
+  <a href="https://ericlostie-launcher.jagoba.dev/public/installer/EricLostieLauncher-win-Setup.exe">
+    <img src="https://img.shields.io/badge/Download%20Installer-EricLostie%20Launcher-blue?style=for-the-badge" alt="Download EricLostie Launcher" />
+  </a>
+</p>
+
 **Lanzador de juegos moderno para Windows**
 
-[![Version](https://img.shields.io/badge/version-0.8.0-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.8.2-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y con soporte multidioma.
 
@@ -36,7 +42,7 @@ Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y co
 
 Español · English · Català · Euskera · Galego · Português · Valencià · Français
 
-El idioma se selecciona en los ajustes y se aplica al reiniciar la aplicación.
+El idioma se selecciona en los ajustes y se aplica dinámicamente la aplicación.
 
 ---
 
