@@ -4,4 +4,6 @@ public enum AppTheme
 {
     Volcarona,
     Zoroark,
+    Cefireon,
+    Sylveon,
 }

@@ -9,16 +9,16 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-	<Version>0.8.2.0</Version>
-	<FileVersion>0.8.2.0</FileVersion>
-	<AssemblyVersion>0.8.2.0</AssemblyVersion>
+	<Version>0.8.3.0</Version>
+	<FileVersion>0.8.3.0</FileVersion>
+	<AssemblyVersion>0.8.3.0</AssemblyVersion>
 
 	<!-- Icon embedded into the .exe (taskbar, Alt+Tab, file explorer) -->
 	<ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
+	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="MahApps.Metro.IconPacks" Version="6.2.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />

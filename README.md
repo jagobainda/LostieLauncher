@@ -42,7 +42,7 @@ Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y co
 
 Español · English · Català · Euskera · Galego · Português · Valencià · Français
 
-El idioma se selecciona en los ajustes y se aplica dinámicamente la aplicación.
+El idioma se selecciona en los ajustes y se aplica dinámicamente en la aplicación.
 
 ---
 
