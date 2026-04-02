@@ -46,6 +46,8 @@ public interface IStrings
     string TrayOpen { get; }
     string TrayExit { get; }
     string LibraryNoContent { get; }
+    string GamesNoContent { get; }
+    string GamesGoToLibrary { get; }
     string HomeNews { get; }
     string HomeNotifications { get; }
     string HomeLoading { get; }
@@ -119,6 +121,8 @@ public class Esp : IStrings
     public string TrayOpen => "Abrir";
     public string TrayExit => "Salir";
     public string LibraryNoContent => "No disponible";
+    public string GamesNoContent => "No tienes juegos instalados";
+    public string GamesGoToLibrary => "Ir a la biblioteca";
     public string HomeNews => "Novedades";
     public string HomeNotifications => "Notificaciones";
     public string HomeLoading => "Cargando...";
@@ -192,6 +196,8 @@ public class Eng : IStrings
     public string TrayOpen => "Open";
     public string TrayExit => "Exit";
     public string LibraryNoContent => "Not available";
+    public string GamesNoContent => "No games installed";
+    public string GamesGoToLibrary => "Go to Library";
     public string HomeNews => "News";
     public string HomeNotifications => "Notifications";
     public string HomeLoading => "Loading...";
@@ -265,6 +271,8 @@ public class Cat : IStrings
     public string TrayOpen => "Obrir";
     public string TrayExit => "Sortir";
     public string LibraryNoContent => "No disponible";
+    public string GamesNoContent => "No tens cap joc instal\u00b7lat";
+    public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
     public string HomeLoading => "Carregant...";
@@ -338,6 +346,8 @@ public class Eus : IStrings
     public string TrayOpen => "Ireki";
     public string TrayExit => "Irten";
     public string LibraryNoContent => "Ez dago eskuragarri";
+    public string GamesNoContent => "Ez daukazu jokorik instalatuta";
+    public string GamesGoToLibrary => "Liburutegira joan";
     public string HomeNews => "Berriak";
     public string HomeNotifications => "Jakinarazpenak";
     public string HomeLoading => "Kargatzen...";
@@ -411,6 +421,8 @@ public class Gal : IStrings
     public string TrayOpen => "Abrir";
     public string TrayExit => "Saír";
     public string LibraryNoContent => "Non dispoñible";
+    public string GamesNoContent => "Non tes ningún xogo instalado";
+    public string GamesGoToLibrary => "Ir á biblioteca";
     public string HomeNews => "Novidades";
     public string HomeNotifications => "Notificacións";
     public string HomeLoading => "Cargando...";
@@ -484,6 +496,8 @@ public class Por : IStrings
     public string TrayOpen => "Abrir";
     public string TrayExit => "Sair";
     public string LibraryNoContent => "Não disponível";
+    public string GamesNoContent => "Nenhum jogo instalado";
+    public string GamesGoToLibrary => "Ir à biblioteca";
     public string HomeNews => "Novidades";
     public string HomeNotifications => "Notificações";
     public string HomeLoading => "Carregando...";
@@ -557,6 +571,8 @@ public class Val : IStrings
     public string TrayOpen => "Obrir";
     public string TrayExit => "Eixir";
     public string LibraryNoContent => "No disponible";
+    public string GamesNoContent => "No tens cap joc instal\u00b7lat";
+    public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
     public string HomeLoading => "Carregant...";
@@ -630,6 +646,8 @@ public class Fra : IStrings
     public string TrayOpen => "Ouvrir";
     public string TrayExit => "Quitter";
     public string LibraryNoContent => "Non disponible";
+    public string GamesNoContent => "Aucun jeu installé";
+    public string GamesGoToLibrary => "Aller à la bibliothèque";
     public string HomeNews => "Actualités";
     public string HomeNotifications => "Notifications";
     public string HomeLoading => "Chargement...";

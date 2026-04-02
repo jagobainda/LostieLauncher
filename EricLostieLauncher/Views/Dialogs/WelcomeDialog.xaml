@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:viewmodels="clr-namespace:EricLostieLauncher.ViewModels"
         mc:Ignorable="d"
         Height="500"
         Width="480"
@@ -114,6 +115,7 @@
                                            Foreground="{DynamicResource PrimaryFgBrush}"
                                            VerticalAlignment="Center" />
                 <TextBlock x:Name="TitleText"
+                           Text="{Binding Strings.WelcomeDialogTitle}"
                            Foreground="{DynamicResource SecondaryFgBrush}"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
@@ -154,11 +156,34 @@
                 </StackPanel>
 
                 <TextBlock x:Name="DescriptionText"
+                           Text="{Binding Strings.WelcomeDialogDescription}"
                            Foreground="{DynamicResource SecondaryFgDimBrush}"
                            FontSize="12"
                            TextWrapping="Wrap"
                            LineHeight="18"
                            Margin="0,0,0,12" />
+
+                <Grid Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <iconPacks:PackIconMaterial Kind="Translate"
+                                                   Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding Strings.SettingsLanguage}"
+                                   Foreground="{DynamicResource SecondaryFgBrush}"
+                                   FontSize="13" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                              ItemsSource="{x:Static viewmodels:SettingsViewModel.LanguageOptions}"
+                              SelectedItem="{Binding Language}"
+                              HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
 
                 <Button x:Name="RepositoryButton"
                         Style="{StaticResource LinkButtonStyle}"
@@ -182,6 +207,7 @@
                 Padding="20,0">
             <Button x:Name="ContinueButton"
                     Style="{StaticResource AccentButtonStyle}"
+                    Content="{Binding Strings.WelcomeDialogContinue}"
                     Width="160"
                     HorizontalAlignment="Right"
                     Click="ContinueButton_Click" />

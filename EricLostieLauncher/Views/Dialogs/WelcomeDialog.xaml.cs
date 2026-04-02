@@ -1,26 +1,20 @@
 using System.Windows;
 using System.Windows.Input;
-using EricLostieLauncher.Content;
+using EricLostieLauncher.ViewModels;
 
 namespace EricLostieLauncher.Views.Dialogs;
 
 public partial class WelcomeDialog : Window
 {
-    private readonly IStrings _strings;
-
-    private WelcomeDialog(IStrings strings)
+    private WelcomeDialog()
     {
-        _strings = strings;
         InitializeComponent();
-
-        TitleText.Text = strings.WelcomeDialogTitle;
-        DescriptionText.Text = strings.WelcomeDialogDescription;
-        ContinueButton.Content = strings.WelcomeDialogContinue;
+        DataContext = SettingsViewModel.Instance;
     }
 
-    public static void Show(IStrings strings, Window? owner = null)
+    public static void Show(Window? owner = null)
     {
-        var dialog = new WelcomeDialog(strings);
+        var dialog = new WelcomeDialog();
 
         var candidateOwner = owner ?? Application.Current.MainWindow;
         if (candidateOwner?.IsLoaded == true) dialog.Owner = candidateOwner;
@@ -40,13 +34,13 @@ public partial class WelcomeDialog : Window
         {
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                FileName = _strings.RepositoryUrl,
+                FileName = SettingsViewModel.Instance.Strings.RepositoryUrl,
                 UseShellExecute = true
             });
         }
         catch (Exception ex)
         {
-            Logs.ErrorLogManager($"Failed to open repository URL: {_strings.RepositoryUrl}. Exception: {ex}");
+            Logs.ErrorLogManager($"Failed to open repository URL: {SettingsViewModel.Instance.Strings.RepositoryUrl}. Exception: {ex}");
         }
     }
 }

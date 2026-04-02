@@ -143,10 +143,10 @@
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center"
                         Margin="16,0,0,0">
-                <iconPacks:PackIconMaterial Kind="Pokeball"
-                                           Width="22" Height="22"
-                                           Foreground="{DynamicResource PrimaryFgBrush}"
-                                           VerticalAlignment="Center" />
+                <Image Source="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Icon}"
+                       Width="22" Height="22"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
                 <TextBlock Text="{Binding CurrentTitle}"
                            Foreground="{DynamicResource SecondaryFgBrush}"
                            VerticalAlignment="Center"

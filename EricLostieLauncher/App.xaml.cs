@@ -86,15 +86,12 @@ public partial class App : Application
 
         if (!SettingsViewModel.Instance.HasSeenWelcome)
         {
-            Logs.InfoLogManager("First launch detected — navigating to settings.");
+            Logs.InfoLogManager("First launch detected — navigating to library and showing welcome dialog.");
             var mainViewModel = Services.GetRequiredService<MainViewModel>();
-            mainViewModel.NavigateToSettingsCommand.Execute(null);
-            mainViewModel.WelcomeDialogRequested += () =>
-            {
-                Logs.InfoLogManager("User navigated away from settings — showing welcome dialog.");
-                WelcomeDialog.Show(SettingsViewModel.Instance.Strings, mainWindow);
-                Logs.InfoLogManager("Welcome dialog shown.");
-            };
+            mainViewModel.NavigateToLibraryCommand.Execute(null);
+            SettingsViewModel.Instance.MarkWelcomeSeen();
+            WelcomeDialog.Show(mainWindow);
+            Logs.InfoLogManager("Welcome dialog shown.");
         }
 
         base.OnStartup(e);

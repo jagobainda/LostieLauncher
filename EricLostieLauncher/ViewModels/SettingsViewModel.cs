@@ -30,7 +30,7 @@ public partial class SettingsViewModel : ObservableObject
     public partial bool StartMinimized { get; set; }
 
     [ObservableProperty]
-    public partial bool AutoUpdate { get; set; } = true;
+    public partial bool AutoUpdate { get; set; } = false;
 
     [ObservableProperty]
     public partial string DownloadDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);

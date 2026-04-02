@@ -8,11 +8,13 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Volcarona.xaml" />
                 <ResourceDictionary Source="Styles/ScrollViewerStyle.xaml" />
+                <ResourceDictionary Source="Styles/ComboBoxStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:BoolToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:BoolToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" Invert="True" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:UriStringToImageSourceConverter x:Key="UriStringToImageSourceConverter" />
+            <converters:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

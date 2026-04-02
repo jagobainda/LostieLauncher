@@ -18,10 +18,17 @@ public partial class GamesViewModel : ObservableObject
     public event Action? NavigateToLibraryRequested;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     public partial ObservableCollection<InstalledGameInfo> InstalledGames { get; set; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsListVisible))]
     public partial bool IsLoading { get; set; }
+
+    public bool IsEmpty => !IsLoading && InstalledGames.Count == 0;
+    public bool IsListVisible => !IsLoading && InstalledGames.Count > 0;
 
     public GamesViewModel(IContentService contentService, LibraryViewModel libraryViewModel)
     {
@@ -105,6 +112,9 @@ public partial class GamesViewModel : ObservableObject
 
         if (installedGame is not null) installedGame.IsUpdating = false;
     }
+
+    [RelayCommand]
+    private void NavigateToLibrary() => NavigateToLibraryRequested?.Invoke();
 
     [RelayCommand]
     private void Play(string gameName)
@@ -210,7 +220,12 @@ public partial class GamesViewModel : ObservableObject
         await _contentService.RemoveGameRegistryAsync(gameName);
 
         var toRemove = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-        if (toRemove != null) InstalledGames.Remove(toRemove);
+        if (toRemove != null)
+        {
+            InstalledGames.Remove(toRemove);
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(IsListVisible));
+        }
 
         var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
         if (libraryGame != null) libraryGame.DownloadStatus = GameDownloadStatus.Available;
