@@ -14,6 +14,7 @@ public partial class GamesViewModel : ObservableObject
 {
     private readonly IContentService _contentService;
     private readonly LibraryViewModel _libraryViewModel;
+    private readonly ITelemetryService _telemetryService;
 
     public event Action? NavigateToLibraryRequested;
 
@@ -30,10 +31,11 @@ public partial class GamesViewModel : ObservableObject
     public bool IsEmpty => !IsLoading && InstalledGames.Count == 0;
     public bool IsListVisible => !IsLoading && InstalledGames.Count > 0;
 
-    public GamesViewModel(IContentService contentService, LibraryViewModel libraryViewModel)
+    public GamesViewModel(IContentService contentService, LibraryViewModel libraryViewModel, ITelemetryService telemetryService)
     {
         _contentService = contentService;
         _libraryViewModel = libraryViewModel;
+        _telemetryService = telemetryService;
         _libraryViewModel.GameInstalled += OnGameInstalled;
         _ = LoadInstalledGamesAsync(waitForLibrary: true);
     }
@@ -121,7 +123,8 @@ public partial class GamesViewModel : ObservableObject
     {
         Logs.DebugLogManager($"Launching game: {gameName}.");
         var exePath = Path.Combine(_contentService.GetGameDirectory(gameName), "Game.exe");
-        var gameId = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase))?.Id ?? Guid.Empty;
+        var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+        var gameGuid = installedGame?.Id ?? Guid.Empty;
 
         if (!File.Exists(exePath))
         {
@@ -131,6 +134,10 @@ public partial class GamesViewModel : ObservableObject
 
         try
         {
+            var gameVersion = installedGame?.InstalledVersion ?? "0.0.0";
+            var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+            _telemetryService.TrackGameLaunched(libraryGame?.GameId ?? gameName.ToLowerInvariant(), gameVersion);
+
             var startTime = DateTime.UtcNow;
             var process = Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exePath)! });
             if (process is not null)
@@ -140,8 +147,8 @@ public partial class GamesViewModel : ObservableObject
                 {
                     var minutes = (int)(DateTime.UtcNow - startTime).TotalMinutes;
                     Logs.DebugLogManager($"Game process exited: {gameName}. Session: {minutes} min.");
-                    if (minutes > 0 && gameId != Guid.Empty)
-                        await _contentService.AddPlaytimeAsync(gameId, minutes).ConfigureAwait(false);
+                    if (minutes > 0 && gameGuid != Guid.Empty)
+                        await _contentService.AddPlaytimeAsync(gameGuid, minutes).ConfigureAwait(false);
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         if (minutes > 0)

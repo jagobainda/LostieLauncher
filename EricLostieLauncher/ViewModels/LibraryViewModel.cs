@@ -126,7 +126,6 @@ public partial class LibraryViewModel : ObservableObject
             if (confirmed is null) return;
 
             args = confirmed;
-            _telemetryService.TrackDownloadStarted(confirmed.GameId, confirmed.Version);
         }
 
         _activeDownloadArgs = args;
@@ -249,16 +248,19 @@ public partial class LibraryViewModel : ObservableObject
                         {
                             ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
                         };
+                        var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
                         using (var stream = File.OpenRead(zipPath))
                         using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
                         {
                             foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
                             {
-                                entry.WriteToDirectory(extractDir, new ExtractionOptions
-                                {
-                                    ExtractFullPath = true,
-                                    Overwrite = true
-                                });
+                                var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key));
+                                if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
+                                    throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
+                                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                                using var entryStream = entry.OpenEntryStream();
+                                using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                entryStream.CopyTo(outStream);
                             }
                         }
                         File.Delete(zipPath);

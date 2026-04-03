@@ -10,7 +10,7 @@ namespace EricLostieLauncher.Services;
 
 public interface ITelemetryService
 {
-    void TrackDownloadStarted(string gameId, string gameVersion);
+    void TrackGameLaunched(string gameId, string gameVersion);
     Task<Dictionary<string, int>> GetDownloadCountsAsync();
 }
 
@@ -25,13 +25,13 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
     private readonly Lock _cooldownLock = new();
 
     private readonly string _cpuName = GetCpuName();
-    private readonly int _cpuCores = Environment.ProcessorCount;
+    private readonly int _cpuCores = GetCpuCores();
     private readonly string _gpuName = GetGpuName();
     private readonly int _ramGb = GetRamGb();
     private readonly string _osVersion = GetOsVersion();
     private readonly string _launcherVersion = GetLauncherVersion();
 
-    public void TrackDownloadStarted(string gameId, string gameVersion)
+    public void TrackGameLaunched(string gameId, string gameVersion)
     {
         if (string.IsNullOrWhiteSpace(_telemetryOptions.ApiKey)) return;
 
@@ -53,7 +53,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             GpuName = _gpuName,
             RamGb = _ramGb
         };
-        Logs.DebugLogManager($"Tracking download started: {gameId} v{gameVersion}.");
+        Logs.DebugLogManager($"Tracking game launched: {gameId} v{gameVersion}.");
         _ = SendAsync(_httpClientFactory.CreateClient("Telemetry"), payload, $"{_telemetryOptions.Endpoint}telemetry", _telemetryOptions.ApiKey);
     }
 
@@ -87,9 +87,19 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             var json = JsonSerializer.Serialize(payload, JsonOptions);
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-            request.Headers.TryAddWithoutValidation("X-Launcher-Key", apiKey);
-            await httpClient.SendAsync(request).ConfigureAwait(false);
-            Logs.DebugLogManager($"Telemetry sent for game: {payload.GameId}.");
+            request.Headers.TryAddWithoutValidation("x-launcher-key", apiKey);
+
+            using var response = await httpClient.SendAsync(request).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logs.DebugLogManager($"Telemetry sent for game: {payload.GameId}.");
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Logs.DebugLogManager($"[Telemetry] Error {(int)response.StatusCode}: {body}");
+            }
         }
         catch (Exception ex)
         {
@@ -121,12 +131,12 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         try
         {
             var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
-            if (!GlobalMemoryStatusEx(ref status)) return 0;
+            if (!GlobalMemoryStatusEx(ref status)) return 2;
 
             double ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
-            return (int)Math.Round(ramGb);
+            return Math.Clamp((int)Math.Round(ramGb), 2, 256);
         }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); return 0; }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return 2; }
     }
 
     private static string GetOsVersion()
@@ -138,7 +148,18 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             if (int.TryParse(buildStr, out int build)) return build >= 22000 ? "Windows 11" : "Windows 10";
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
-        return "Windows";
+        return "Unknown";
+    }
+
+    private static int GetCpuCores()
+    {
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor");
+            int count = key?.GetSubKeyNames().Length ?? Environment.ProcessorCount;
+            return Math.Clamp(count, 1, 128);
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return Math.Clamp(Environment.ProcessorCount, 1, 128); }
     }
 
     private static string GetLauncherVersion()

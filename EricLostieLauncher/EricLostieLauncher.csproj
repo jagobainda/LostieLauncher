@@ -9,11 +9,10 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-	<Version>0.8.3.0</Version>
-	<FileVersion>0.8.3.0</FileVersion>
-	<AssemblyVersion>0.8.3.0</AssemblyVersion>
+	<Version>0.8.4.0</Version>
+	<FileVersion>0.8.4.0</FileVersion>
+	<AssemblyVersion>0.8.4.0</AssemblyVersion>
 
-	<!-- Icon embedded into the .exe (taskbar, Alt+Tab, file explorer) -->
 	<ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 

@@ -8,7 +8,7 @@ namespace EricLostieLauncher.Core;
 
 public static class DependencyInjection
 {
-    private const string TelemetryEndpoint = "http://localhost:6969/placeholder/";
+    private const string TelemetryEndpoint = "https://ericlostie-launcher.jagoba.dev/";
     private const string ContentEndpoint = "https://ericlostie-launcher.jagoba.dev/games/listado.json";
     private const string NotificationsEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json";
     private const string DownloadBaseUrl = "https://ericlostie-launcher.jagoba.dev/games";

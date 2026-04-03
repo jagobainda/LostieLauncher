@@ -156,7 +156,13 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     public string GetGameDirectory(string gameName)
     {
         var gamesRoot = _settingsService.GetGamesRootDirectory();
-        return Path.Combine(gamesRoot, gameName);
+        var resolved = Path.GetFullPath(Path.Combine(gamesRoot, gameName));
+        var canonicalRoot = Path.GetFullPath(gamesRoot) + Path.DirectorySeparatorChar;
+
+        if (!resolved.StartsWith(canonicalRoot, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Invalid game directory: '{gameName}' escapes the games root.");
+
+        return resolved;
     }
 
     public async Task RegisterGameAsync(Guid gameId, string gameName, string version)
