@@ -13,5 +13,6 @@ public enum GameDownloadStatus
     Paused,
     Downloaded,
     UpdateAvailable,
-    Extracting
+    Extracting,
+    VerifyingIntegrity
 }

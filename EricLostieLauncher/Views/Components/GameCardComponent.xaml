@@ -17,6 +17,7 @@
         <converters:EnumToVisibilityConverter x:Key="DownloadedVisibility" TargetValue="Downloaded" />
         <converters:EnumToVisibilityConverter x:Key="UpdateAvailableVisibility" TargetValue="UpdateAvailable" />
         <converters:EnumToVisibilityConverter x:Key="ExtractingVisibility" TargetValue="Extracting" />
+        <converters:EnumToVisibilityConverter x:Key="VerifyingIntegrityVisibility" TargetValue="VerifyingIntegrity" />
         <converters:GameDownloadArgsConverter x:Key="GameDownloadArgsConverter" />
         <converters:PercentToWidthConverter x:Key="PercentToWidthConverter" />
 
@@ -262,6 +263,9 @@
                                         <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.Extracting}">
                                             <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.VerifyingIntegrity}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
@@ -282,6 +286,9 @@
                                             <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.Extracting}">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.VerifyingIntegrity}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -293,6 +300,9 @@
                             <TextBlock Text="{Binding Strings.StatusExtracting, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                                        Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="11"
                                        Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource ExtractingVisibility}}" />
+                            <TextBlock Text="{Binding Strings.StatusVerifying, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                       Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="11"
+                                       Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource VerifyingIntegrityVisibility}}" />
                         </StackPanel>
                         <TextBlock Text="{Binding DownloadSpeedText, ElementName=Root}"
                                    Foreground="{DynamicResource SecondaryFgDimBrush}"

@@ -31,6 +31,9 @@ public partial class GameInfo : ObservableObject
     [JsonPropertyName("logo")]
     public string Logo { get; init; } = string.Empty;
 
+    [JsonPropertyName("sha256")]
+    public string Sha256 { get; init; } = string.Empty;
+
     [JsonIgnore]
     public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"https://ericlostie-launcher.jagoba.dev{Logo}";
 

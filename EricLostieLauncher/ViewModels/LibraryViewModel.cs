@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using EricLostieLauncher.Models;
 using EricLostieLauncher.Services;
 using EricLostieLauncher.Views.Dialogs;
+using System.Security.Cryptography;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -213,6 +214,29 @@ public partial class LibraryViewModel : ObservableObject
                 try
                 {
                     Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
+
+                    if (!string.IsNullOrEmpty(game.Sha256))
+                    {
+                        game.DownloadStatus = GameDownloadStatus.VerifyingIntegrity;
+                        var hashValid = await Task.Run(() =>
+                        {
+                            using var sha = SHA256.Create();
+                            using var fs = File.OpenRead(zipPath);
+                            var actualHash = Convert.ToHexString(sha.ComputeHash(fs));
+                            return actualHash.Equals(game.Sha256, StringComparison.OrdinalIgnoreCase);
+                        });
+
+                        if (!hashValid)
+                        {
+                            File.Delete(zipPath);
+                            Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {game.Sha256}");
+                            game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
+                            game.DownloadProgressValue = 0;
+                            _activeDownloadArgs = null;
+                            CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                            break;
+                        }
+                    }
 
                     game.DownloadStatus = GameDownloadStatus.Extracting;
                     game.DownloadProgressValue = 100;

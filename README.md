@@ -11,158 +11,158 @@
   </a>
 </p>
 
-**Lanzador de juegos moderno para Windows**
+**Modern game launcher for Windows**
 
 [![Version](https://img.shields.io/badge/version-0.8.3-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
-Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y con soporte multidioma.
+Discover, download, install, and manage your games from a clean interface with multi-language support.
 
 </div>
 
 ---
 
-## ✨ Características
+## ✨ Features
 
-| Característica                     | Descripción                                                                                 |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| 🎮 **Biblioteca de juegos**        | Explora el catálogo completo de juegos disponibles desde el servidor de contenido           |
-| ⬇️ **Descargas reanudables**       | Soporta pausar y reanudar descargas con archivos `.part` y barra de progreso en tiempo real |
-| 🔑 **Sistema de claves**           | Acceso a contenido exclusivo mediante claves de descarga validadas por el servidor          |
-| 🕹️ **Mis juegos**                  | Vista dedicada con los juegos instalados, seguimiento de versión y tiempo de juego          |
-| 🔄 **Actualizaciones automáticas** | Delta updates con [Velopack](https://velopack.io/) — el launcher se actualiza solo          |
-| 📰 **Noticias y notificaciones**   | Feed de novedades y anuncios desde la pantalla de inicio                                    |
-| 🎨 **Temas**                       | Temas visuales intercambiables: **Volcarona**, **Zoroark**, **Cefireon** y **Sylveon**      |
-| 🌍 **Multiidioma**                 | 8 idiomas disponibles con traducciones completas de la interfaz                             |
-| 🖥️ **Bandeja del sistema**         | Minimizar a bandeja con menú contextual (Abrir / Salir)                                     |
-| 🚀 **Inicio con Windows**          | Opción de arrancar el launcher al iniciar sesión, en modo normal o minimizado               |
+| Feature                       | Description                                                                             |
+| ----------------------------- | --------------------------------------------------------------------------------------- |
+| 🎮 **Game library**           | Browse the full catalog of available games from the content server                      |
+| ⬇️ **Resumable downloads**    | Supports pausing and resuming downloads with `.part` files and a real-time progress bar |
+| 🔑 **Key system**             | Access to exclusive content via download keys validated by the server                   |
+| 🕹️ **My games**               | Dedicated view with installed games, version tracking and playtime                      |
+| 🔄 **Automatic updates**      | Delta updates with [Velopack](https://velopack.io/) — the launcher updates itself       |
+| 📰 **News and notifications** | News feed and announcements from the home screen                                        |
+| 🎨 **Themes**                 | Swappable visual themes: **Volcarona**, **Zoroark**, **Cefireon**, and **Sylveon**      |
+| 🌍 **Multi-language**         | 8 available languages with full UI translations                                         |
+| 🖥️ **System tray**            | Minimize to tray with a context menu (Open / Exit)                                      |
+| 🚀 **Start with Windows**     | Option to launch the launcher on login, in normal or minimized mode                     |
 
 ---
 
-## 🌍 Idiomas soportados
+## 🌍 Supported languages
 
 Español · English · Català · Euskera · Galego · Português · Valencià · Français
 
-El idioma se selecciona en los ajustes y se aplica dinámicamente en la aplicación.
+The language is selected in the settings and applied dynamically throughout the application.
 
 ---
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
-El proyecto sigue el patrón **MVVM** con **Inyección de Dependencias** centralizada.
+The project follows the **MVVM** pattern with centralized **Dependency Injection**.
 
 ```
 EricLostieLauncher/
-├── Core/               # Configuración del contenedor DI
-├── Models/             # Modelos de datos
-├── Services/           # Capa de servicios
-├── ViewModels/         # ViewModels con CommunityToolkit.Mvvm
-├── Views/              # Ventanas, diálogos y componentes WPF
+├── Core/               # DI container configuration
+├── Models/             # Data models
+├── Services/           # Service layer
+├── ViewModels/         # ViewModels with CommunityToolkit.Mvvm
+├── Views/              # Windows, dialogs and WPF components
 │   ├── Components/     # GameCard, NewsCard, NotificationCard
 │   └── Dialogs/        # DownloadConfirmDialog, WelcomeDialog, CustomMessageBox
-├── Converters/         # Value converters XAML
-├── Styles/             # Estilos globales
-├── Themes/             # Recursos de tema
-├── Content/            # Strings localizados
-└── Assets/             # Iconos y recursos gráficos
+├── Converters/         # XAML value converters
+├── Styles/             # Global styles
+├── Themes/             # Theme resources
+├── Content/            # Localized strings
+└── Assets/             # Icons and graphic resources
 ```
 
-### Servicios principales
+### Main services
 
-| Servicio                 | Responsabilidad                                                      |
-| ------------------------ | -------------------------------------------------------------------- |
-| `IContentService`        | Obtiene el catálogo de juegos, noticias y registra juegos instalados |
-| `IDownloadService`       | Gestiona descargas, extracción de archivos y sistema de claves       |
-| `ISettingsService`       | Carga y persiste la configuración en `launcher_settings.json`        |
-| `ITelemetryService`      | Envía datos de descarga y consulta estadísticas                      |
-| `IWindowsStartupService` | Integración con el registro de Windows para el inicio automático     |
+| Service                  | Responsibility                                                |
+| ------------------------ | ------------------------------------------------------------- |
+| `IContentService`        | Fetches the game catalog, news, and registers installed games |
+| `IDownloadService`       | Manages downloads, file extraction, and the key system        |
+| `ISettingsService`       | Loads and persists configuration in `launcher_settings.json`  |
+| `ITelemetryService`      | Sends download data and queries statistics                    |
+| `IWindowsStartupService` | Integration with the Windows registry for automatic startup   |
 
 ### ViewModels
 
-| ViewModel           | Vista                                                 |
-| ------------------- | ----------------------------------------------------- |
-| `MainViewModel`     | Hub de navegación principal                           |
-| `HomeViewModel`     | Pantalla de inicio con noticias y notificaciones      |
-| `LibraryViewModel`  | Catálogo de juegos disponibles y gestión de descargas |
-| `GamesViewModel`    | Juegos instalados                                     |
-| `SettingsViewModel` | Panel de configuración                                |
-| `GlobalViewModel`   | Estado global compartido                              |
+| ViewModel           | View                                           |
+| ------------------- | ---------------------------------------------- |
+| `MainViewModel`     | Main navigation hub                            |
+| `HomeViewModel`     | Home screen with news and notifications        |
+| `LibraryViewModel`  | Available game catalog and download management |
+| `GamesViewModel`    | Installed games                                |
+| `SettingsViewModel` | Settings panel                                 |
+| `GlobalViewModel`   | Shared global state                            |
 
 ---
 
-## 🛠️ Tecnologías
+## 🛠️ Technologies
 
-| Paquete                                                                                                             | Versión  | Uso                                            |
-| ------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------- |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM con `ObservableProperty` y `RelayCommand` |
-| [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Iconos vectoriales en la UI                    |
-| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.5   | Contenedor IoC                                 |
-| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.5   | `IHttpClientFactory` con clientes nombrados    |
-| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.47.3   | Extracción de archivos ZIP/7z descargados      |
-| [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Sistema de delta updates automáticos           |
+| Package                                                                                                             | Version  | Usage                                             |
+| ------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------- |
+| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM with `ObservableProperty` and `RelayCommand` |
+| [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Vector icons in the UI                            |
+| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.5   | IoC container                                     |
+| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.5   | `IHttpClientFactory` with named clients           |
+| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.47.3   | ZIP/7z extraction of downloaded files             |
+| [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Automatic delta update system                     |
 
 ---
 
-## 🚀 Compilar y publicar
+## 🚀 Build and publish
 
-### Requisitos previos
+### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - Windows 10/11
-- PowerShell 7+ (para el script de release)
-- `vpk` CLI de Velopack instalado globalmente
+- PowerShell 7+ (for the release script)
+- `vpk` Velopack CLI installed globally
 
-### Build de desarrollo
+### Development build
 
 ```powershell
 cd EricLostieLauncher
 dotnet build
 ```
 
-### Build de release (local)
+### Release build (local)
 
 ```powershell
 .\scripts\build-release.ps1
 ```
 
-Los artefactos se generan en `releases/`:
+Artifacts are generated in `releases/`:
 
-- `EricLostieLauncher-0.8.0-full.nupkg` — paquete de instalación inicial
-- Paquetes delta (en builds sucesivas)
-- `releases.win.json` — manifiesto de actualizaciones
-- `RELEASES` — metadatos de Velopack
+- `EricLostieLauncher-0.8.0-full.nupkg` — initial installation package
+- Delta packages (on successive builds)
+- `releases.win.json` — update manifest
+- `RELEASES` — Velopack metadata
 
-### Build de release con subida al servidor
+### Release build with server upload
 
 ```powershell
-.\scripts\build-release.ps1 -Upload -SshHost "user@mi-servidor.com" -SshPath "/var/www/installer/"
+.\scripts\build-release.ps1 -Upload -SshHost "user@my-server.com" -SshPath "/var/www/installer/"
 ```
 
 ---
 
-## ⚙️ Configuración
+## ⚙️ Configuration
 
-La configuración se guarda automáticamente en `launcher_settings.json` junto al ejecutable.
+Configuration is automatically saved to `launcher_settings.json` next to the executable.
 
-| Opción              | Tipo          | Por defecto    | Descripción                                     |
-| ------------------- | ------------- | -------------- | ----------------------------------------------- |
-| `Language`          | `AppLanguage` | `Esp`          | Idioma de la interfaz                           |
-| `Theme`             | `AppTheme`    | `Volcarona`    | Tema visual                                     |
-| `StartWithWindows`  | `bool`        | `false`        | Arrancar al iniciar Windows                     |
-| `StartMinimized`    | `bool`        | `false`        | Iniciar en la bandeja del sistema               |
-| `AutoUpdate`        | `bool`        | `false`        | Buscar actualizaciones al iniciar               |
-| `DownloadDirectory` | `string`      | Mis Documentos | Carpeta de instalación de juegos                |
-| `HasSeenWelcome`    | `bool`        | `false`        | Controla si se muestra el diálogo de bienvenida |
+| Option              | Type          | Default      | Description                                  |
+| ------------------- | ------------- | ------------ | -------------------------------------------- |
+| `Language`          | `AppLanguage` | `Esp`        | Interface language                           |
+| `Theme`             | `AppTheme`    | `Volcarona`  | Visual theme                                 |
+| `StartWithWindows`  | `bool`        | `false`      | Launch on Windows startup                    |
+| `StartMinimized`    | `bool`        | `false`      | Start in the system tray                     |
+| `AutoUpdate`        | `bool`        | `false`      | Check for updates on startup                 |
+| `DownloadDirectory` | `string`      | My Documents | Game installation folder                     |
+| `HasSeenWelcome`    | `bool`        | `false`      | Controls whether the welcome dialog is shown |
 
 ---
 
-## 📡 Endpoints de la API
+## 📡 API Endpoints
 
-| Endpoint                                                                 | Descripción                          |
-| ------------------------------------------------------------------------ | ------------------------------------ |
-| `https://ericlostie-launcher.jagoba.dev/games/listado.json`              | Catálogo de juegos disponibles       |
-| `https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json` | Noticias y notificaciones del inicio |
-| `https://ericlostie-launcher.jagoba.dev/games`                           | Base URL para descargas              |
-| `https://ericlostie-launcher.jagoba.dev/public/installer/`               | Feed de actualizaciones Velopack     |
+| Endpoint                                                                 | Description                        |
+| ------------------------------------------------------------------------ | ---------------------------------- |
+| `https://ericlostie-launcher.jagoba.dev/games/listado.json`              | Available game catalog             |
+| `https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json` | Home screen news and notifications |
+| `https://ericlostie-launcher.jagoba.dev/games`                           | Base URL for downloads             |
+| `https://ericlostie-launcher.jagoba.dev/public/installer/`               | Velopack update feed               |
 
 ---
 
