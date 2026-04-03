@@ -13,7 +13,7 @@
 
 **Lanzador de juegos moderno para Windows**
 
-[![Version](https://img.shields.io/badge/version-0.8.2-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.8.3-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y con soporte multidioma.
 
@@ -31,7 +31,7 @@ Descubre, descarga, instala y gestiona tus juegos desde una interfaz limpia y co
 | 🕹️ **Mis juegos**                  | Vista dedicada con los juegos instalados, seguimiento de versión y tiempo de juego          |
 | 🔄 **Actualizaciones automáticas** | Delta updates con [Velopack](https://velopack.io/) — el launcher se actualiza solo          |
 | 📰 **Noticias y notificaciones**   | Feed de novedades y anuncios desde la pantalla de inicio                                    |
-| 🎨 **Temas**                       | Temas visuales intercambiables: **Volcarona** y **Zoroark**                                 |
+| 🎨 **Temas**                       | Temas visuales intercambiables: **Volcarona**, **Zoroark**, **Cefireon** y **Sylveon**      |
 | 🌍 **Multiidioma**                 | 8 idiomas disponibles con traducciones completas de la interfaz                             |
 | 🖥️ **Bandeja del sistema**         | Minimizar a bandeja con menú contextual (Abrir / Salir)                                     |
 | 🚀 **Inicio con Windows**          | Opción de arrancar el launcher al iniciar sesión, en modo normal o minimizado               |
@@ -93,7 +93,7 @@ EricLostieLauncher/
 
 | Paquete                                                                                                             | Versión  | Uso                                            |
 | ------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------- |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.1    | MVVM con `ObservableProperty` y `RelayCommand` |
+| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM con `ObservableProperty` y `RelayCommand` |
 | [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Iconos vectoriales en la UI                    |
 | [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.5   | Contenedor IoC                                 |
 | [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.5   | `IHttpClientFactory` con clientes nombrados    |
@@ -149,7 +149,7 @@ La configuración se guarda automáticamente en `launcher_settings.json` junto a
 | `Theme`             | `AppTheme`    | `Volcarona`    | Tema visual                                     |
 | `StartWithWindows`  | `bool`        | `false`        | Arrancar al iniciar Windows                     |
 | `StartMinimized`    | `bool`        | `false`        | Iniciar en la bandeja del sistema               |
-| `AutoUpdate`        | `bool`        | `true`         | Buscar actualizaciones al iniciar               |
+| `AutoUpdate`        | `bool`        | `false`        | Buscar actualizaciones al iniciar               |
 | `DownloadDirectory` | `string`      | Mis Documentos | Carpeta de instalación de juegos                |
 | `HasSeenWelcome`    | `bool`        | `false`        | Controla si se muestra el diálogo de bienvenida |
 
