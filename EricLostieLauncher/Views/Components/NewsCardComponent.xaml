@@ -13,7 +13,6 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Tag + Date -->
             <DockPanel Grid.Row="0">
                 <Border Background="{DynamicResource PrimaryFgBrush}" CornerRadius="4" Padding="8,2"
                         DockPanel.Dock="Left" VerticalAlignment="Center">
@@ -27,13 +26,11 @@
                            HorizontalAlignment="Right" />
             </DockPanel>
 
-            <!-- Title -->
             <TextBlock Grid.Row="1" Text="{Binding Title, ElementName=Root}"
                        Foreground="{DynamicResource SecondaryFgBrush}"
                        FontSize="15" FontWeight="SemiBold"
                        Margin="0,10,0,4" TextWrapping="Wrap" />
 
-            <!-- Description -->
             <TextBlock Grid.Row="2" Text="{Binding Description, ElementName=Root}"
                        Foreground="{DynamicResource SecondaryFgDimBrush}"
                        FontSize="13" TextWrapping="Wrap" />

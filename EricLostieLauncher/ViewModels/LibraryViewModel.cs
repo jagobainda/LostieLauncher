@@ -188,7 +188,6 @@ public partial class LibraryViewModel : ObservableObject
         var gamesRoot = _settingsService.GetGamesRootDirectory();
         var zipPath = Path.Combine(gamesRoot, ".downloads", $"{args.GameId}.zip");
         var extractDir = _contentService.GetGameDirectory(game.Nombre);
-        var strings = SettingsViewModel.Instance.Strings;
 
         game.DownloadStatus = GameDownloadStatus.Downloading;
         game.DownloadProgressValue = 0;
@@ -210,112 +209,13 @@ public partial class LibraryViewModel : ObservableObject
         switch (result.Outcome)
         {
             case DownloadOutcome.Success:
-                try
-                {
-                    Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
-
-                    if (!string.IsNullOrEmpty(game.Sha256))
-                    {
-                        game.DownloadStatus = GameDownloadStatus.VerifyingIntegrity;
-                        var hashValid = await Task.Run(() =>
-                        {
-                            using var sha = SHA256.Create();
-                            using var fs = File.OpenRead(zipPath);
-                            var actualHash = Convert.ToHexString(sha.ComputeHash(fs));
-                            return actualHash.Equals(game.Sha256, StringComparison.OrdinalIgnoreCase);
-                        });
-
-                        if (!hashValid)
-                        {
-                            File.Delete(zipPath);
-                            Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {game.Sha256}");
-                            game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
-                            game.DownloadProgressValue = 0;
-                            _activeDownloadArgs = null;
-                            CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                            break;
-                        }
-                    }
-
-                    game.DownloadStatus = GameDownloadStatus.Extracting;
-                    game.DownloadProgressValue = 100;
-                    game.DownloadRemainingText = string.Empty;
-
-                    await Task.Run(() =>
-                    {
-                        Directory.CreateDirectory(extractDir);
-                        var readerOptions = new ReaderOptions
-                        {
-                            ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
-                        };
-                        var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
-                        using (var stream = File.OpenRead(zipPath))
-                        using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
-                        {
-                            foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
-                            {
-                                var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key));
-                                if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
-                                    throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
-                                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                                using var entryStream = entry.OpenEntryStream();
-                                using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                                entryStream.CopyTo(outStream);
-                            }
-                        }
-                        File.Delete(zipPath);
-                    });
-
-                    await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version);
-
-                    game.DownloadStatus = GameDownloadStatus.Downloaded;
-                    game.DownloadProgressValue = 100;
-                    _activeDownloadArgs = null;
-                    Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}.");
-                    GameInstalled?.Invoke(game.Nombre, args.Version);
-                }
-                catch (Exception ex)
-                {
-                    Logs.ErrorLogManager(ex);
-                    game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
-                    game.DownloadProgressValue = 0;
-                    _activeDownloadArgs = null;
-                }
+                await HandleDownloadSuccessAsync(game, args, zipPath, extractDir, isUpdate);
                 break;
-
             case DownloadOutcome.Cancelled:
-                if (isKeyedDownload)
-                {
-                    Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
-                    game.DownloadStatus = GameDownloadStatus.Available;
-                    game.DownloadProgressValue = 0;
-                    _activeDownloadArgs = null;
-                    CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
-                }
-                else if (isUpdate)
-                {
-                    Logs.InfoLogManager($"Update cancelled: {args.GameId}.");
-                    game.DownloadStatus = GameDownloadStatus.UpdateAvailable;
-                    game.DownloadProgressValue = 0;
-                    _activeDownloadArgs = null;
-                }
-                else
-                {
-                    Logs.InfoLogManager($"Download paused: {args.GameId}.");
-                    game.DownloadStatus = GameDownloadStatus.Paused;
-                }
+                HandleDownloadCancelled(game, args, isKeyedDownload, isUpdate);
                 break;
-
             case DownloadOutcome.Failed:
-                Logs.ErrorLogManager($"Download failed: {args.GameId}: {result.ErrorMessage}");
-                game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
-                game.DownloadProgressValue = 0;
-                _activeDownloadArgs = null;
-
-                if (isKeyedDownload)
-                    CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                else
-                    CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                HandleDownloadFailed(game, args, isKeyedDownload, isUpdate, result.ErrorMessage);
                 break;
         }
 
@@ -323,6 +223,123 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadRemainingText = string.Empty;
         _globalViewModel.IsDownloading = false;
         _downloadCts = null;
+    }
+
+    private async Task HandleDownloadSuccessAsync(GameInfo game, GameDownloadArgs args, string zipPath, string extractDir, bool isUpdate)
+    {
+        try
+        {
+            Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
+
+            if (!string.IsNullOrEmpty(game.Sha256) && !await VerifyIntegrityAsync(game, zipPath))
+            {
+                File.Delete(zipPath);
+                Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {game.Sha256}");
+                ResetDownloadState(game, isUpdate);
+                var strings = SettingsViewModel.Instance.Strings;
+                CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                return;
+            }
+
+            game.DownloadStatus = GameDownloadStatus.Extracting;
+            game.DownloadProgressValue = 100;
+            game.DownloadRemainingText = string.Empty;
+
+            await ExtractArchiveAsync(zipPath, extractDir);
+            await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version);
+
+            game.DownloadStatus = GameDownloadStatus.Downloaded;
+            game.DownloadProgressValue = 100;
+            _activeDownloadArgs = null;
+            Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}.");
+            GameInstalled?.Invoke(game.Nombre, args.Version);
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            ResetDownloadState(game, isUpdate);
+        }
+    }
+
+    private static async Task<bool> VerifyIntegrityAsync(GameInfo game, string zipPath)
+    {
+        game.DownloadStatus = GameDownloadStatus.VerifyingIntegrity;
+        return await Task.Run(() =>
+        {
+            using var sha = SHA256.Create();
+            using var fs = File.OpenRead(zipPath);
+            var actualHash = Convert.ToHexString(sha.ComputeHash(fs));
+            return actualHash.Equals(game.Sha256, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    private static async Task ExtractArchiveAsync(string zipPath, string extractDir)
+    {
+        await Task.Run(() =>
+        {
+            Directory.CreateDirectory(extractDir);
+            var readerOptions = new ReaderOptions
+            {
+                ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
+            };
+
+            var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
+            using (var stream = File.OpenRead(zipPath))
+            using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
+            {
+                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
+                {
+                    var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
+                    if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                    using var entryStream = entry.OpenEntryStream();
+                    using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    entryStream.CopyTo(outStream);
+                }
+            }
+            File.Delete(zipPath);
+        });
+    }
+
+    private void HandleDownloadCancelled(GameInfo game, GameDownloadArgs args, bool isKeyedDownload, bool isUpdate)
+    {
+        if (isKeyedDownload)
+        {
+            var strings = SettingsViewModel.Instance.Strings;
+            Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
+            ResetDownloadState(game, isUpdate: false);
+            CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
+        }
+        else if (isUpdate)
+        {
+            Logs.InfoLogManager($"Update cancelled: {args.GameId}.");
+            ResetDownloadState(game, isUpdate: true);
+        }
+        else
+        {
+            Logs.InfoLogManager($"Download paused: {args.GameId}.");
+            game.DownloadStatus = GameDownloadStatus.Paused;
+        }
+    }
+
+    private void HandleDownloadFailed(GameInfo game, GameDownloadArgs args, bool isKeyedDownload, bool isUpdate, string? errorMessage)
+    {
+        var strings = SettingsViewModel.Instance.Strings;
+        Logs.ErrorLogManager($"Download failed: {args.GameId}: {errorMessage}");
+        ResetDownloadState(game, isUpdate);
+
+        if (isKeyedDownload)
+            CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+        else
+            CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+    }
+
+    private void ResetDownloadState(GameInfo game, bool isUpdate)
+    {
+        game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
+        game.DownloadProgressValue = 0;
+        _activeDownloadArgs = null;
     }
 
     private static string FormatRemainingTime(double seconds)

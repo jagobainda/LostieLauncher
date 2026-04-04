@@ -13,8 +13,6 @@ public partial class GameCardComponent : UserControl
         InitializeComponent();
     }
 
-    // --- Common properties ---
-
     public static readonly DependencyProperty GameLogoProperty = DependencyProperty.Register(nameof(GameLogo), typeof(ImageSource), typeof(GameCardComponent));
 
     public ImageSource? GameLogo
@@ -38,8 +36,6 @@ public partial class GameCardComponent : UserControl
         get => (GameCardMode)GetValue(CardModeProperty);
         set => SetValue(CardModeProperty, value);
     }
-
-    // --- Library properties ---
 
     public static readonly DependencyProperty GameIdProperty = DependencyProperty.Register(nameof(GameId), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
 
@@ -128,8 +124,6 @@ public partial class GameCardComponent : UserControl
         get => (ICommand?)GetValue(PauseDownloadCommandProperty);
         set => SetValue(PauseDownloadCommandProperty, value);
     }
-
-    // --- Games properties ---
 
     public static readonly DependencyProperty InstalledVersionProperty = DependencyProperty.Register(nameof(InstalledVersion), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
 

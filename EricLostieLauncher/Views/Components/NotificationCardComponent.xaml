@@ -20,12 +20,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Type indicator -->
             <Border Grid.Column="0" Width="4" CornerRadius="2"
                     VerticalAlignment="Stretch" Margin="0,0,12,0"
                     Background="{Binding NotificationType, ElementName=Root, Converter={StaticResource TypeToBrushConverter}}" />
 
-            <!-- Content -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Title, ElementName=Root}"
                            Foreground="{DynamicResource SecondaryFgBrush}"
@@ -37,7 +35,6 @@
                            Margin="0,4,0,0" />
             </StackPanel>
 
-            <!-- Date -->
             <TextBlock Grid.Column="2"
                        Text="{Binding Date, ElementName=Root, StringFormat='{}{0:dd MMM}'}"
                        Foreground="{DynamicResource SecondaryFgDimBrush}"

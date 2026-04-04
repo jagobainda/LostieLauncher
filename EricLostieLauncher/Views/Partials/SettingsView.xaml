@@ -10,7 +10,6 @@
 
     <UserControl.Resources>
 
-        <!-- Toggle switch -->
         <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">

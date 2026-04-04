@@ -10,22 +10,10 @@ namespace EricLostieLauncher.Services;
 
 public interface IDownloadService
 {
-    /// <summary>Current download state (Idle, Downloading, Paused, Completed, Failed).</summary>
     DownloadState State { get; }
 
-    /// <summary>
-    /// Exchanges a one-time key for a temporary download URL via the key-manager.
-    /// The key is consumed immediately — never retry with the same key after a success.
-    /// </summary>
     Task<KeyExchangeResult> ExchangeKeyAsync(string key, CancellationToken ct = default);
 
-    /// <summary>
-    /// Downloads a file from <paramref name="url"/> to <paramref name="destinationPath"/>.
-    /// When <paramref name="resumable"/> is true (default): supports pause/resume via .part file,
-    /// Range headers, and retries. When false (keyed downloads): no .part resume, no retries,
-    /// cleans up on failure.
-    /// Never throws to the caller — returns a <see cref="DownloadResult"/> instead.
-    /// </summary>
     Task<DownloadResult> DownloadAsync(string url, string destinationPath, bool resumable = true, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
 }
 
@@ -164,10 +152,6 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         catch { Logs.ErrorLogManager("Something went wrong while trying to delete part files"); }
     }
 
-    /// <summary>
-    /// Core download logic: sends HTTP Range requests for resume, streams content to a .part file,
-    /// and atomically renames to the final path on success.
-    /// </summary>
     private async Task DownloadCoreAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("Download");

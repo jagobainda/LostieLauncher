@@ -1,7 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Modern ScrollBar: Thumb -->
     <Style x:Key="ModernScrollBarThumb" TargetType="{x:Type Thumb}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
@@ -25,7 +24,6 @@
         </Setter>
     </Style>
 
-    <!-- Modern ScrollBar: vertical track -->
     <Style x:Key="ModernVerticalScrollBar" TargetType="{x:Type ScrollBar}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Width" Value="8" />
@@ -58,7 +56,6 @@
         </Setter>
     </Style>
 
-    <!-- Modern ScrollViewer (implicit, applies to all ScrollViewers) -->
     <Style TargetType="{x:Type ScrollViewer}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Template">

@@ -66,11 +66,10 @@ public partial class GamesViewModel : ObservableObject
 
         IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
         {
-            var remote = remoteGames.FirstOrDefault(r =>
-                (local.Id != Guid.Empty && r.Id == local.Id) ||
-                string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
+            var remote = remoteGames.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
             var hasUpdate = remote != null && remote.Version != local.Version;
             var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
+
             return new InstalledGameInfo
             {
                 Id = local.Id,
@@ -87,13 +86,9 @@ public partial class GamesViewModel : ObservableObject
         Logs.DebugLogManager($"Installed games loaded: {InstalledGames.Count} games.");
         IsLoading = false;
 
-        if (waitForLibrary && SettingsViewModel.Instance.AutoUpdate)
-        {
-            foreach (var game in InstalledGames.Where(g => g.HasUpdate).ToList())
-            {
-                await UpdateCoreAsync(game.Nombre, navigateToLibrary: false);
-            }
-        }
+        if (!waitForLibrary || !SettingsViewModel.Instance.AutoUpdate) return;
+
+        foreach (var game in InstalledGames.Where(g => g.HasUpdate).ToList()) await UpdateCoreAsync(game.Nombre, navigateToLibrary: false);
     }
 
     [RelayCommand]
@@ -105,14 +100,14 @@ public partial class GamesViewModel : ObservableObject
         if (libraryGame is null) return;
 
         var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-        if (installedGame is not null) installedGame.IsUpdating = true;
+        installedGame?.IsUpdating = true;
 
         if (navigateToLibrary) NavigateToLibraryRequested?.Invoke();
 
         var args = new GameDownloadArgs(libraryGame.GameId, libraryGame.Version, libraryGame.RutaRelativa);
         await _libraryViewModel.StartUpdateCommand.ExecuteAsync(args);
 
-        if (installedGame is not null) installedGame.IsUpdating = false;
+        installedGame?.IsUpdating = false;
     }
 
     [RelayCommand]
@@ -154,9 +149,9 @@ public partial class GamesViewModel : ObservableObject
                         if (minutes > 0)
                         {
                             var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                            if (installedGame is not null) installedGame.PlaytimeMinutes += minutes;
+                            installedGame?.PlaytimeMinutes += minutes;
                             var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                            if (libraryGame is not null) libraryGame.PlaytimeMinutes += minutes;
+                            libraryGame?.PlaytimeMinutes += minutes;
                         }
                         Application.Current.MainWindow.WindowState = WindowState.Normal;
                         Application.Current.MainWindow.Activate();
@@ -235,13 +230,10 @@ public partial class GamesViewModel : ObservableObject
         }
 
         var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-        if (libraryGame != null) libraryGame.DownloadStatus = GameDownloadStatus.Available;
+        libraryGame?.DownloadStatus = GameDownloadStatus.Available;
 
         Logs.InfoLogManager($"Game uninstalled: {gameName}.");
 
-        if (!folderExisted)
-        {
-            CustomMessageBox.Show(strings.UninstallNotFoundTitle, strings.UninstallNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
-        }
+        if (!folderExisted) CustomMessageBox.Show(strings.UninstallNotFoundTitle, strings.UninstallNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
     }
 }

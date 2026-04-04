@@ -1,33 +1,25 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- === SYLVEON === -->
-
-    <!-- Surfaces -->
     <Color x:Key="PrimaryBgColor">#fde8f0</Color>
     <Color x:Key="SecondaryBgColor">#f0b0cc</Color>
     <Color x:Key="TertiaryBgColor">#fde8f0</Color>
 
-    <!-- Accent -->
     <Color x:Key="PrimaryFgColor">#5aaad8</Color>
     <Color x:Key="PrimaryFgHoverColor">#3888b8</Color>
     <Color x:Key="PrimaryFgPressedColor">#1868a0</Color>
 
-    <!-- Text -->
     <Color x:Key="SecondaryFgColor">#3a2030</Color>
     <Color x:Key="SecondaryFgDimColor">#883a2030</Color>
 
-    <!-- Semantic -->
     <Color x:Key="SuccessColor">#3aaa6a</Color>
 
-    <!-- Overlays (dark tints for light surfaces) -->
     <Color x:Key="OverlaySubtleColor">#1A000000</Color>
     <Color x:Key="OverlayLightColor">#22000000</Color>
     <Color x:Key="OverlayMutedColor">#33000000</Color>
     <Color x:Key="OverlayMediumColor">#55000000</Color>
     <Color x:Key="OverlayStrongColor">#88000000</Color>
 
-    <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBgBrush"       Color="{StaticResource PrimaryBgColor}" />
     <SolidColorBrush x:Key="SecondaryBgBrush"      Color="{StaticResource SecondaryBgColor}" />
     <SolidColorBrush x:Key="TertiaryBgBrush"       Color="{StaticResource TertiaryBgColor}" />
