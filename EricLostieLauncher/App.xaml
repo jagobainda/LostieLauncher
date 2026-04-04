@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="Themes/Volcarona.xaml" />
                 <ResourceDictionary Source="Styles/ScrollViewerStyle.xaml" />
                 <ResourceDictionary Source="Styles/ComboBoxStyle.xaml" />
+                <ResourceDictionary Source="Styles/DialogStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <converters:BoolToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:BoolToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" Invert="True" />
