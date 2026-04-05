@@ -197,6 +197,22 @@ public partial class GameCardComponent : UserControl
         set => SetValue(OpenFolderCommandProperty, value);
     }
 
+    public static readonly DependencyProperty OpenHelpFolderCommandProperty = DependencyProperty.Register(nameof(OpenHelpFolderCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? OpenHelpFolderCommand
+    {
+        get => (ICommand?)GetValue(OpenHelpFolderCommandProperty);
+        set => SetValue(OpenHelpFolderCommandProperty, value);
+    }
+
+    public static readonly DependencyProperty HasHelpFolderProperty = DependencyProperty.Register(nameof(HasHelpFolder), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false));
+
+    public bool HasHelpFolder
+    {
+        get => (bool)GetValue(HasHelpFolderProperty);
+        set => SetValue(HasHelpFolderProperty, value);
+    }
+
     public static readonly DependencyProperty UninstallCommandProperty = DependencyProperty.Register(nameof(UninstallCommand), typeof(ICommand), typeof(GameCardComponent));
 
     public ICommand? UninstallCommand

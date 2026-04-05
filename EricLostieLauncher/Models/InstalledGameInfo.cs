@@ -16,6 +16,9 @@ public partial class InstalledGameInfo : ObservableObject
     public partial bool IsUpdating { get; set; }
 
     [ObservableProperty]
+    public partial bool HasHelpFolder { get; set; }
+
+    [ObservableProperty]
     public partial int PlaytimeMinutes { get; set; }
 
     partial void OnPlaytimeMinutesChanged(int value) => OnPropertyChanged(nameof(PlaytimeText));

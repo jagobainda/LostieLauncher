@@ -17,6 +17,7 @@ public interface IStrings
     string BtnUpdate { get; }
     string BtnPlay { get; }
     string TooltipOpenFolder { get; }
+    string TooltipOpenHelp { get; }
     string TooltipUninstall { get; }
     string TooltipRefresh { get; }
     string FolderNotFoundTitle { get; }
@@ -97,6 +98,7 @@ public class Esp : IStrings
     public string BtnUpdate => "Actualizar";
     public string BtnPlay => "Jugar";
     public string TooltipOpenFolder => "Abrir carpeta del juego";
+    public string TooltipOpenHelp => "Abrir carpeta de ayuda";
     public string TooltipUninstall => "Desinstalar juego";
     public string TooltipRefresh => "Actualizar";
     public string FolderNotFoundTitle => "Carpeta no encontrada";
@@ -177,6 +179,7 @@ public class Eng : IStrings
     public string BtnUpdate => "Update";
     public string BtnPlay => "Play";
     public string TooltipOpenFolder => "Open game folder";
+    public string TooltipOpenHelp => "Open help folder";
     public string TooltipUninstall => "Uninstall game";
     public string TooltipRefresh => "Refresh";
     public string FolderNotFoundTitle => "Folder not found";
@@ -256,8 +259,7 @@ public class Cat : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
-    public string TooltipOpenFolder => "Obrir carpeta del joc";
-    public string TooltipUninstall => "Desinstal·lar joc";
+    public string TooltipOpenFolder => "Obrir carpeta del joc";    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";    public string TooltipUninstall => "Desinstal·lar joc";
     public string TooltipRefresh => "Actualitzar";
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
@@ -337,6 +339,7 @@ public class Eus : IStrings
     public string BtnUpdate => "Eguneratu";
     public string BtnPlay => "Jolastu";
     public string TooltipOpenFolder => "Jokoaren karpeta ireki";
+    public string TooltipOpenHelp => "Laguntza karpeta ireki";
     public string TooltipUninstall => "Jokoa desinstalatu";
     public string TooltipRefresh => "Freskatu";
     public string FolderNotFoundTitle => "Karpeta ez da aurkitu";
@@ -417,6 +420,7 @@ public class Gal : IStrings
     public string BtnUpdate => "Actualizar";
     public string BtnPlay => "Xogar";
     public string TooltipOpenFolder => "Abrir cartafol do xogo";
+    public string TooltipOpenHelp => "Abrir cartafol de axuda";
     public string TooltipUninstall => "Desinstalar xogo";
     public string TooltipRefresh => "Actualizar";
     public string FolderNotFoundTitle => "Cartafol non atopado";
@@ -496,8 +500,7 @@ public class Por : IStrings
     public string BtnResume => "Retomar";
     public string BtnUpdate => "Atualizar";
     public string BtnPlay => "Jogar";
-    public string TooltipOpenFolder => "Abrir pasta do jogo";
-    public string TooltipUninstall => "Desinstalar jogo";
+    public string TooltipOpenFolder => "Abrir pasta do jogo";    public string TooltipOpenHelp => "Abrir pasta de ajuda";    public string TooltipUninstall => "Desinstalar jogo";
     public string TooltipRefresh => "Atualizar";
     public string FolderNotFoundTitle => "Pasta não encontrada";
     public string FolderNotFoundMessage => "A pasta do jogo não foi encontrada. Deseja reinstalar os arquivos?";
@@ -576,8 +579,7 @@ public class Val : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
-    public string TooltipOpenFolder => "Obrir carpeta del joc";
-    public string TooltipUninstall => "Desinstal·lar joc";
+    public string TooltipOpenFolder => "Obrir carpeta del joc";    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";    public string TooltipUninstall => "Desinstal·lar joc";
     public string TooltipRefresh => "Actualitzar";
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
@@ -656,8 +658,7 @@ public class Fra : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Mettre à jour";
     public string BtnPlay => "Jouer";
-    public string TooltipOpenFolder => "Ouvrir le dossier du jeu";
-    public string TooltipUninstall => "Désinstaller le jeu";
+    public string TooltipOpenFolder => "Ouvrir le dossier du jeu";    public string TooltipOpenHelp => "Ouvrir le dossier d'aide";    public string TooltipUninstall => "Désinstaller le jeu";
     public string TooltipRefresh => "Actualiser";
     public string FolderNotFoundTitle => "Dossier non trouvé";
     public string FolderNotFoundMessage => "Le dossier du jeu n'a pas été trouvé. Voulez-vous réinstaller les fichiers ?";

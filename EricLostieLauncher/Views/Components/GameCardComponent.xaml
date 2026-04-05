@@ -476,6 +476,24 @@
                             </StackPanel>
                         </Button>
 
+                        <Button Command="{Binding OpenHelpFolderCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameTitle, ElementName=Root}"
+                                Margin="0,0,6,0"
+                                ToolTip="{Binding Strings.TooltipOpenHelp, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasHelpFolder, ElementName=Root}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <iconPacks:PackIconMaterial Kind="HelpCircleOutline" Width="14" Height="14"
+                                                       VerticalAlignment="Center" />
+                        </Button>
+
                         <Button Command="{Binding OpenFolderCommand, ElementName=Root}"
                                 CommandParameter="{Binding GameTitle, ElementName=Root}"
                                 Margin="0,0,6,0"

@@ -78,7 +78,8 @@ public partial class GamesViewModel : ObservableObject
                 HasUpdate = hasUpdate,
                 UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
                 Logo = remote?.Logo ?? string.Empty,
-                PlaytimeMinutes = playtimeMinutes
+                PlaytimeMinutes = playtimeMinutes,
+                HasHelpFolder = HasHelpSubfolder(_contentService.GetGameDirectory(local.Nombre))
             };
         })];
 
@@ -93,6 +94,13 @@ public partial class GamesViewModel : ObservableObject
 
     [RelayCommand]
     private Task UpdateAsync(string gameName) => UpdateCoreAsync(gameName, navigateToLibrary: true);
+
+    private static bool HasHelpSubfolder(string gameDir)
+    {
+        if (!Directory.Exists(gameDir)) return false;
+        return Directory.EnumerateDirectories(gameDir)
+            .Any(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
+    }
 
     private async Task UpdateCoreAsync(string gameName, bool navigateToLibrary)
     {
@@ -188,6 +196,23 @@ public partial class GamesViewModel : ObservableObject
         try
         {
             Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
+    [RelayCommand]
+    private void OpenHelpFolder(string gameName)
+    {
+        Logs.DebugLogManager($"Opening help folder for: {gameName}.");
+        var gameDir = _contentService.GetGameDirectory(gameName);
+        var helpDir = Directory.EnumerateDirectories(gameDir)
+            .FirstOrDefault(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
+
+        if (helpDir is null) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", helpDir) { UseShellExecute = true });
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
