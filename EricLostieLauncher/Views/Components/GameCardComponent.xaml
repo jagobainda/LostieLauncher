@@ -353,32 +353,48 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding PauseDownloadCommand, ElementName=Root}"
-                            Style="{StaticResource CardAccentButtonStyle}"
-                            Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadingVisibility}}">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Pause" Width="13" Height="13"
-                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="{Binding Strings.BtnPause, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadingVisibility}}">
+                        <Button Command="{Binding PauseDownloadCommand, ElementName=Root}"
+                                Style="{StaticResource CardAccentButtonStyle}"
+                                Margin="0,0,6,0">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Pause" Width="13" Height="13"
+                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="{Binding Strings.BtnPause, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CancelDownloadCommand, ElementName=Root}"
+                                Style="{StaticResource CardSecondaryButtonStyle}"
+                                ToolTip="{Binding Strings.BtnCancel, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13" VerticalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
 
-                    <Button Command="{Binding DownloadCommand, ElementName=Root}"
-                            Style="{StaticResource CardAccentButtonStyle}"
-                            Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource PausedVisibility}}">
-                        <Button.CommandParameter>
-                            <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
-                                <Binding Path="GameId" ElementName="Root" />
-                                <Binding Path="LatestVersion" ElementName="Root" />
-                                <Binding Path="RutaRelativa" ElementName="Root" />
-                            </MultiBinding>
-                        </Button.CommandParameter>
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="Play" Width="13" Height="13"
-                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="{Binding Strings.BtnResume, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource PausedVisibility}}">
+                        <Button Command="{Binding DownloadCommand, ElementName=Root}"
+                                Style="{StaticResource CardAccentButtonStyle}"
+                                Margin="0,0,6,0">
+                            <Button.CommandParameter>
+                                <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
+                                    <Binding Path="GameId" ElementName="Root" />
+                                    <Binding Path="LatestVersion" ElementName="Root" />
+                                    <Binding Path="RutaRelativa" ElementName="Root" />
+                                </MultiBinding>
+                            </Button.CommandParameter>
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Play" Width="13" Height="13"
+                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBlock Text="{Binding Strings.BtnResume, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CancelDownloadCommand, ElementName=Root}"
+                                Style="{StaticResource CardSecondaryButtonStyle}"
+                                ToolTip="{Binding Strings.BtnCancel, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13" VerticalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
 
                     <Button Style="{StaticResource CardDisabledButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadedVisibility}}">

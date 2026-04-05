@@ -26,6 +26,7 @@ public partial class LibraryViewModel : ObservableObject
     private CancellationTokenSource? _downloadCts;
     private GameDownloadArgs? _activeDownloadArgs;
     private bool _isKeyedDownload;
+    private bool _isCancelling;
 
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$", RegexOptions.Compiled);
 
@@ -304,7 +305,14 @@ public partial class LibraryViewModel : ObservableObject
 
     private void HandleDownloadCancelled(GameInfo game, GameDownloadArgs args, bool isKeyedDownload, bool isUpdate)
     {
-        if (isKeyedDownload)
+        if (_isCancelling)
+        {
+            Logs.InfoLogManager($"Download cancelled: {args.GameId}.");
+            CleanupDownloadFiles(game);
+            ResetDownloadState(game, isUpdate);
+            _isCancelling = false;
+        }
+        else if (isKeyedDownload)
         {
             var strings = SettingsViewModel.Instance.Strings;
             Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
@@ -355,5 +363,47 @@ public partial class LibraryViewModel : ObservableObject
     private void PauseDownload()
     {
         _downloadCts?.Cancel();
+    }
+
+    [RelayCommand]
+    private void CancelDownload()
+    {
+        var game = _activeDownloadArgs is not null
+            ? Games.FirstOrDefault(g => g.GameId == _activeDownloadArgs.GameId)
+            : null;
+
+        if (game is null) return;
+
+        var strings = SettingsViewModel.Instance.Strings;
+        var confirmed = CustomMessageBox.Show(
+            strings.CancelDownloadConfirmTitle,
+            strings.CancelDownloadConfirmMessage,
+            CustomMessageBoxButton.YesNo,
+            CustomMessageBoxIcon.Information);
+
+        if (confirmed != true) return;
+
+        if (game.DownloadStatus == GameDownloadStatus.Paused)
+        {
+            CleanupDownloadFiles(game);
+            ResetDownloadState(game, isUpdate: false);
+            _globalViewModel.IsDownloading = false;
+            return;
+        }
+
+        _isCancelling = true;
+        _downloadCts?.Cancel();
+    }
+
+    private void CleanupDownloadFiles(GameInfo game)
+    {
+        if (_activeDownloadArgs is null) return;
+
+        var gamesRoot = _settingsService.GetGamesRootDirectory();
+        var zipPath = Path.Combine(gamesRoot, ".downloads", $"{_activeDownloadArgs.GameId}.zip");
+        var partPath = zipPath + ".part";
+
+        try { if (File.Exists(partPath)) File.Delete(partPath); } catch { }
+        try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch { }
     }
 }

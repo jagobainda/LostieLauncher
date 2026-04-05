@@ -66,6 +66,8 @@ public interface IStrings
     string DownloadErrorTitle { get; }
     string DownloadErrorMessage { get; }
     string BtnCancel { get; }
+    string CancelDownloadConfirmTitle { get; }
+    string CancelDownloadConfirmMessage { get; }
     string StatusExtracting { get; }
     string StatusVerifying { get; }
     string GameExeNotFoundTitle { get; }
@@ -144,6 +146,8 @@ public class Esp : IStrings
     public string DownloadErrorTitle => "Error en la descarga";
     public string DownloadErrorMessage => "No se pudo completar la descarga. Por favor, intenta más tarde. Si el problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
+    public string CancelDownloadConfirmTitle => "Cancelar descarga";
+    public string CancelDownloadConfirmMessage => "¿Seguro que quieres cancelar la descarga? Se eliminarán los archivos parcialmente descargados.";
     public string StatusExtracting => "Descomprimiendo...";
     public string StatusVerifying => "Comprobando integridad...";
     public string GameExeNotFoundTitle => "Juego no encontrado";
@@ -222,6 +226,8 @@ public class Eng : IStrings
     public string DownloadErrorTitle => "Download failed";
     public string DownloadErrorMessage => "The download could not be completed. Please try again later. If the problem persists, write in #bugs-launcher on Discord.";
     public string BtnCancel => "Cancel";
+    public string CancelDownloadConfirmTitle => "Cancel download";
+    public string CancelDownloadConfirmMessage => "Are you sure you want to cancel the download? Partially downloaded files will be deleted.";
     public string StatusExtracting => "Extracting...";
     public string StatusVerifying => "Verifying integrity...";
     public string GameExeNotFoundTitle => "Game not found";
@@ -300,6 +306,8 @@ public class Cat : IStrings
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
     public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
+    public string CancelDownloadConfirmTitle => "Cancel·lar descàrrega";
+    public string CancelDownloadConfirmMessage => "Estàs segur que vols cancel·lar la descàrrega? Els fitxers descarregats parcialment seran eliminats.";
     public string StatusExtracting => "Descomprimint...";
     public string StatusVerifying => "Comprovant integritat...";
     public string GameExeNotFoundTitle => "Joc no trobat";
@@ -378,6 +386,8 @@ public class Eus : IStrings
     public string DownloadErrorTitle => "Deskargetak huts egin du";
     public string DownloadErrorMessage => "Deskargetak ezin izan du osatu. Mesedez, geroago saiatu. Arazoa jarraitzen badu, idatzi #bugs-launcher kanalean Discord-en.";
     public string BtnCancel => "Utzi";
+    public string CancelDownloadConfirmTitle => "Deskarga utzi";
+    public string CancelDownloadConfirmMessage => "Ziur zaude deskarga utzi nahi duzula? Partzialki deskargatutako fitxategiak ezabatuko dira.";
     public string StatusExtracting => "Deskonprimatzen...";
     public string StatusVerifying => "Osotasuna egiaztatzen...";
     public string GameExeNotFoundTitle => "Jokoa ez da aurkitu";
@@ -456,6 +466,8 @@ public class Gal : IStrings
     public string DownloadErrorTitle => "Erro na descarga";
     public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
+    public string CancelDownloadConfirmTitle => "Cancelar descarga";
+    public string CancelDownloadConfirmMessage => "Seguro que queres cancelar a descarga? Os ficheiros parcialmente descargados ser\u00e1n eliminados.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Comprobando integridade...";
     public string GameExeNotFoundTitle => "Xogo non atopado";
@@ -534,6 +546,8 @@ public class Por : IStrings
     public string DownloadErrorTitle => "Falha no download";
     public string DownloadErrorMessage => "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, escreva em #bugs-launcher no Discord.";
     public string BtnCancel => "Cancelar";
+    public string CancelDownloadConfirmTitle => "Cancelar download";
+    public string CancelDownloadConfirmMessage => "Tem certeza que deseja cancelar o download? Os arquivos parcialmente baixados ser\u00e3o exclu\u00eddos.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Verificando integridade...";
     public string GameExeNotFoundTitle => "Jogo não encontrado";
@@ -612,6 +626,8 @@ public class Val : IStrings
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
     public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
+    public string CancelDownloadConfirmTitle => "Cancel·lar descàrrega";
+    public string CancelDownloadConfirmMessage => "Estàs segur que vols cancel·lar la descàrrega? Els fitxers descarregats parcialment seran eliminats.";
     public string StatusExtracting => "Descomprimint...";
     public string StatusVerifying => "Comprovant integritat...";
     public string GameExeNotFoundTitle => "Joc no trobat";
@@ -690,6 +706,8 @@ public class Fra : IStrings
     public string DownloadErrorTitle => "Échec du téléchargement";
     public string DownloadErrorMessage => "Le téléchargement n'a pas pu être complété. Veuillez réessayer plus tard. Si le problème persiste, écrivez dans #bugs-launcher sur Discord.";
     public string BtnCancel => "Annuler";
+    public string CancelDownloadConfirmTitle => "Annuler le téléchargement";
+    public string CancelDownloadConfirmMessage => "Êtes-vous sûr de vouloir annuler le téléchargement ? Les fichiers partiellement téléchargés seront supprimés.";
     public string StatusExtracting => "Extraction en cours...";
     public string StatusVerifying => "Vérification de l'intégrité...";
     public string GameExeNotFoundTitle => "Jeu non trouvé";

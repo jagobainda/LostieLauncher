@@ -73,7 +73,8 @@
                             DownloadRemainingText="{Binding DownloadRemainingText}"
                             DownloadCommand="{Binding DataContext.StartDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             LibraryUpdateCommand="{Binding DataContext.StartUpdateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            PauseDownloadCommand="{Binding DataContext.PauseDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                            PauseDownloadCommand="{Binding DataContext.PauseDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CancelDownloadCommand="{Binding DataContext.CancelDownloadCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

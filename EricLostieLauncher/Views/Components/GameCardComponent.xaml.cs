@@ -125,6 +125,14 @@ public partial class GameCardComponent : UserControl
         set => SetValue(PauseDownloadCommandProperty, value);
     }
 
+    public static readonly DependencyProperty CancelDownloadCommandProperty = DependencyProperty.Register(nameof(CancelDownloadCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? CancelDownloadCommand
+    {
+        get => (ICommand?)GetValue(CancelDownloadCommandProperty);
+        set => SetValue(CancelDownloadCommandProperty, value);
+    }
+
     public static readonly DependencyProperty InstalledVersionProperty = DependencyProperty.Register(nameof(InstalledVersion), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
 
     public string InstalledVersion
