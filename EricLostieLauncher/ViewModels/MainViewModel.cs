@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
 
 namespace EricLostieLauncher.ViewModels;
 
@@ -104,6 +105,14 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentViewModel = _settingsViewModel;
         CurrentTitle = _settingsViewModel.Strings.TitleSettings;
+    }
+
+    [RelayCommand]
+    private static void OpenSavedGames()
+    {
+        var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Saved Games");
+        
+        if (Directory.Exists(path)) System.Diagnostics.Process.Start("explorer.exe", path);
     }
 
     [RelayCommand(CanExecute = nameof(CanRefreshData))]

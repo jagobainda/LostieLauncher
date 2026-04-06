@@ -126,13 +126,22 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Stretch"
+                            Visibility="{Binding IsGamesActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Command="{Binding OpenSavedGamesCommand}"
+                            ToolTip="Saved Games">
+                        <iconPacks:PackIconLucide Kind="Save" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
                 <Button Click="MinimizeButton_Click"
                         Style="{StaticResource TitleBarButtonStyle}">
-                    <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="12" Height="12" />
+                    <iconPacks:PackIconLucide Kind="Minus" Width="12" Height="12" />
                 </Button>
                 <Button Click="CloseButton_Click"
                         Style="{StaticResource CloseButtonStyle}">
-                    <iconPacks:PackIconMaterial Kind="WindowClose" Width="12" Height="12" />
+                    <iconPacks:PackIconLucide Kind="X" Width="12" Height="12" />
                 </Button>
             </StackPanel>
         </Grid>

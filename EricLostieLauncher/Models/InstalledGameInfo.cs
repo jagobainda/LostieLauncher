@@ -28,7 +28,7 @@ public partial class InstalledGameInfo : ObservableObject
         get
         {
             if (PlaytimeMinutes <= 0) return string.Empty;
-            if (PlaytimeMinutes < 60) return "< 1 h";
+            if (PlaytimeMinutes < 60) return $"{PlaytimeMinutes} min";
             var h = PlaytimeMinutes / 60;
             var m = PlaytimeMinutes % 60;
             return m > 0 ? $"{h} h {m} min" : $"{h} h";
