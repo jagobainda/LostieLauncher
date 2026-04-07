@@ -128,6 +128,15 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Stretch"
+                            Visibility="{Binding IsSettingsActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Command="{Binding OpenGitHubCommand}"
+                            ToolTip="GitHub">
+                        <iconPacks:PackIconSimpleIcons Kind="Github" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Stretch"
                             Visibility="{Binding IsHomeActive, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Button Style="{StaticResource TitleBarButtonStyle}"
                             Command="{Binding OpenTwitchCommand}"

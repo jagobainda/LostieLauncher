@@ -19,11 +19,13 @@ public partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsHomeActive))]
     [NotifyPropertyChangedFor(nameof(IsGamesActive))]
     [NotifyPropertyChangedFor(nameof(IsLibraryActive))]
+    [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
     public partial ObservableObject CurrentViewModel { get; set; } = null!;
 
     public bool IsHomeActive => CurrentViewModel is HomeViewModel;
     public bool IsGamesActive => CurrentViewModel is GamesViewModel;
     public bool IsLibraryActive => CurrentViewModel is LibraryViewModel;
+    public bool IsSettingsActive => CurrentViewModel is SettingsViewModel;
 
     public MainViewModel(GlobalViewModel globalViewModel, HomeViewModel homeViewModel, GamesViewModel gamesViewModel, LibraryViewModel libraryViewModel, SettingsViewModel settingsViewModel)
     {
@@ -114,6 +116,10 @@ public partial class MainViewModel : ObservableObject
         
         if (Directory.Exists(path)) System.Diagnostics.Process.Start("explorer.exe", path);
     }
+
+    [RelayCommand]
+    private static void OpenGitHub() =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/EricLostieLauncher") { UseShellExecute = true });
 
     [RelayCommand]
     private static void OpenTwitch() =>
