@@ -115,6 +115,18 @@ public partial class MainViewModel : ObservableObject
         if (Directory.Exists(path)) System.Diagnostics.Process.Start("explorer.exe", path);
     }
 
+    [RelayCommand]
+    private static void OpenTwitch() =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true });
+
+    [RelayCommand]
+    private static void OpenYouTube() =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true });
+
+    [RelayCommand]
+    private static void OpenTwitter() =>
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true });
+
     [RelayCommand(CanExecute = nameof(CanRefreshData))]
     private async Task RefreshDataAsync()
     {

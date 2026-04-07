@@ -128,6 +128,25 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Stretch"
+                            Visibility="{Binding IsHomeActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Command="{Binding OpenTwitchCommand}"
+                            ToolTip="Twitch">
+                        <iconPacks:PackIconSimpleIcons Kind="Twitch" Width="14" Height="14" />
+                    </Button>
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Command="{Binding OpenYouTubeCommand}"
+                            ToolTip="YouTube">
+                        <iconPacks:PackIconSimpleIcons Kind="Youtube" Width="14" Height="14" />
+                    </Button>
+                    <Button Style="{StaticResource TitleBarButtonStyle}"
+                            Command="{Binding OpenTwitterCommand}"
+                            ToolTip="Twitter / X">
+                        <iconPacks:PackIconSimpleIcons Kind="X" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Stretch"
                             Visibility="{Binding IsGamesActive, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Button Style="{StaticResource TitleBarButtonStyle}"
                             Command="{Binding OpenSavedGamesCommand}"
