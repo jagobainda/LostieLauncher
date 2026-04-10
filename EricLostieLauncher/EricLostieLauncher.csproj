@@ -9,9 +9,9 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-	<Version>0.8.6.0</Version>
-	<FileVersion>0.8.6.0</FileVersion>
-	<AssemblyVersion>0.8.6.0</AssemblyVersion>
+	<Version>0.8.7.0</Version>
+	<FileVersion>0.8.7.0</FileVersion>
+	<AssemblyVersion>0.8.7.0</AssemblyVersion>
 
 	<ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>

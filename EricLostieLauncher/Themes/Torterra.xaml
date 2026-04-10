@@ -1,16 +1,16 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Color x:Key="PrimaryBgColor">#4d4949</Color>
-    <Color x:Key="SecondaryBgColor">#3a3737</Color>
-    <Color x:Key="TertiaryBgColor">#2e2c2c</Color>
+    <Color x:Key="PrimaryBgColor">#3a3020</Color>
+    <Color x:Key="SecondaryBgColor">#2c2418</Color>
+    <Color x:Key="TertiaryBgColor">#221c12</Color>
 
-    <Color x:Key="PrimaryFgColor">#f08058</Color>
-    <Color x:Key="PrimaryFgHoverColor">#d06038</Color>
-    <Color x:Key="PrimaryFgPressedColor">#b04020</Color>
+    <Color x:Key="PrimaryFgColor">#5a9e42</Color>
+    <Color x:Key="PrimaryFgHoverColor">#447a30</Color>
+    <Color x:Key="PrimaryFgPressedColor">#8bc34a</Color>
 
-    <Color x:Key="SecondaryFgColor">#f3f7fa</Color>
-    <Color x:Key="SecondaryFgDimColor">#88f3f7fa</Color>
+    <Color x:Key="SecondaryFgColor">#e8dcc8</Color>
+    <Color x:Key="SecondaryFgDimColor">#99e8dcc8</Color>
 
     <Color x:Key="SuccessColor">#2e7d32</Color>
 

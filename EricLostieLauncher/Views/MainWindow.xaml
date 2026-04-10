@@ -154,15 +154,6 @@
                         <iconPacks:PackIconSimpleIcons Kind="X" Width="14" Height="14" />
                     </Button>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Stretch"
-                            Visibility="{Binding IsGamesActive, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <Button Style="{StaticResource TitleBarButtonStyle}"
-                            Command="{Binding OpenSavedGamesCommand}"
-                            ToolTip="Saved Games">
-                        <iconPacks:PackIconLucide Kind="Save" Width="14" Height="14" />
-                    </Button>
-                </StackPanel>
                 <Button Click="MinimizeButton_Click"
                         Style="{StaticResource TitleBarButtonStyle}">
                     <iconPacks:PackIconLucide Kind="Minus" Width="12" Height="12" />
@@ -187,26 +178,31 @@
                                  IsChecked="{Binding IsHomeActive, Mode=OneWay}"
                                  Command="{Binding NavigateToHomeCommand}"
                                  ToolTip="{Binding Strings.TitleHome, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconMaterial Kind="Home" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                        <iconPacks:PackIconLucide Kind="House" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
                                  IsChecked="{Binding IsGamesActive, Mode=OneWay}"
                                  Command="{Binding NavigateToGamesCommand}"
                                  ToolTip="{Binding Strings.TitleGames, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconMaterial Kind="Play" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                        <iconPacks:PackIconLucide Kind="Play" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
                                  IsChecked="{Binding IsLibraryActive, Mode=OneWay}"
                                  Command="{Binding NavigateToLibraryCommand}"
                                  ToolTip="{Binding Strings.TitleLibrary, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconMaterial Kind="Download" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                        <iconPacks:PackIconLucide Kind="Download" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
+                    <Button Style="{StaticResource NavActionButtonStyle}"
+                                Command="{Binding OpenSavedGamesCommand}"
+                                ToolTip="Saved Games">
+                        <iconPacks:PackIconLucide Kind="Save" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
                     <Button Style="{StaticResource NavActionButtonStyle}"
                             Command="{Binding RefreshDataCommand}"
                             ToolTip="{Binding Strings.TooltipRefresh, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconMaterial Kind="Refresh" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <iconPacks:PackIconLucide Kind="RefreshCw" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Bottom">
@@ -214,7 +210,7 @@
                                  GroupName="Navigation"
                                  Command="{Binding NavigateToSettingsCommand}"
                                  ToolTip="{Binding Strings.TitleSettings, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconMaterial Kind="Cog" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
+                        <iconPacks:PackIconLucide Kind="Cog" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />
                     </RadioButton>
                 </StackPanel>
             </Grid>

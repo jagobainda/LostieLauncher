@@ -85,6 +85,20 @@
             <Setter Property="Opacity" Value="0.6" />
         </Style>
 
+        <Style x:Key="CardSuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource CardAccentButtonStyle}">
+            <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+                    <Setter Property="Opacity" Value="0.85" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+                    <Setter Property="Opacity" Value="0.7" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="DownloadProgressBarStyle" TargetType="ProgressBar">
             <Setter Property="Template">
                 <Setter.Value>
@@ -407,7 +421,7 @@
                     </Button>
 
                     <Button Command="{Binding LibraryUpdateCommand, ElementName=Root}"
-                            Style="{StaticResource CardAccentButtonStyle}"
+                            Style="{StaticResource CardSuccessButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource UpdateAvailableVisibility}}">
                         <Button.CommandParameter>
                             <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
@@ -419,7 +433,8 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                       VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -446,6 +461,9 @@
                                         <DataTrigger Binding="{Binding IsUpdating, ElementName=Root}" Value="True">
                                             <Setter Property="IsEnabled" Value="False" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding HasUpdate, ElementName=Root}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
@@ -460,7 +478,7 @@
                                 CommandParameter="{Binding GameTitle, ElementName=Root}"
                                 Margin="0,0,6,0">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
+                                <Style TargetType="Button" BasedOn="{StaticResource CardSuccessButtonStyle}">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasUpdate, ElementName=Root}" Value="True">
@@ -472,7 +490,8 @@
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                            VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Strings.BtnUpdate, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                           VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 

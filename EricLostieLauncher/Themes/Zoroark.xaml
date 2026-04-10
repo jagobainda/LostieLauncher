@@ -12,7 +12,7 @@
     <Color x:Key="SecondaryFgColor">#f5ede0</Color>
     <Color x:Key="SecondaryFgDimColor">#88f5ede0</Color>
 
-    <Color x:Key="SuccessColor">#78c878</Color>
+    <Color x:Key="SuccessColor">#2e7d32</Color>
 
     <Color x:Key="OverlaySubtleColor">#1AFFFFFF</Color>
     <Color x:Key="OverlayLightColor">#22FFFFFF</Color>
