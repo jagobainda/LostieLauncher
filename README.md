@@ -13,7 +13,7 @@
 
 **Modern game launcher for Windows**
 
-[![Version](https://img.shields.io/badge/version-0.8.6-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.8.7-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Discover, download, install, and manage your games from a clean interface with multi-language support.
 
@@ -31,8 +31,10 @@ Discover, download, install, and manage your games from a clean interface with m
 | 🕹️ **My games**               | Dedicated view with installed games, version tracking and playtime                      |
 | 🔄 **Automatic updates**      | Delta updates with [Velopack](https://velopack.io/) — the launcher updates itself       |
 | 📰 **News and notifications** | News feed and announcements from the home screen                                        |
-| 🎨 **Themes**                 | Swappable visual themes: **Volcarona**, **Zoroark**, **Cefireon**, and **Sylveon**      |
+| 🎨 **Themes**                 | 10 swappable visual themes: **Volcarona**, **Zoroark**, **Cefireon**, **Sylveon**, **Infernape**, **Torterra**, **Empoleon**, **Mewtwo**, **Astrem**, and **Auretoskos** |
 | 🌍 **Multi-language**         | 8 available languages with full UI translations                                         |
+| 💾 **Save shortcut**          | Quick-access button to open the save folder of an installed game                        |
+| 📺 **Social links**           | Direct buttons to open EricLostie's Twitch, YouTube, and Twitter from the main UI       |
 | 🖥️ **System tray**            | Minimize to tray with a context menu (Open / Exit)                                      |
 | 🚀 **Start with Windows**     | Option to launch the launcher on login, in normal or minimized mode                     |
 
@@ -128,7 +130,7 @@ dotnet build
 
 Artifacts are generated in `releases/`:
 
-- `EricLostieLauncher-0.8.5-full.nupkg` — initial installation package
+- `EricLostieLauncher-0.8.7-full.nupkg` — initial installation package
 - Delta packages (on successive builds)
 - `releases.win.json` — update manifest
 - `RELEASES` — Velopack metadata
