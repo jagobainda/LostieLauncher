@@ -1,19 +1,19 @@
 <div align="center">
 
 <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="45" height="45" alt="EricLostieLauncher icon" />
-    <h1 style="margin: 20 0;">EricLostieLauncher</h1>
+    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="45" height="45" alt="LostieLauncher icon" />
+    <h1 style="margin: 20 0;">LostieLauncher</h1>
 </div>
 
 <p align="center">
-  <a href="https://ericlostie-launcher.jagoba.dev/public/installer/EricLostieLauncher-win-Setup.exe">
-    <img src="https://img.shields.io/badge/Download%20Installer-EricLostie%20Launcher-blue?style=for-the-badge" alt="Download EricLostie Launcher" />
+  <a href="https://ericlostie-launcher.jagoba.dev/public/installer/LostieLauncher-win-Setup.exe">
+    <img src="https://img.shields.io/badge/Download%20Installer-Lostie%20Launcher-blue?style=for-the-badge" alt="Download Lostie Launcher" />
   </a>
 </p>
 
 **Modern game launcher for Windows**
 
-[![Version](https://img.shields.io/badge/version-0.8.7-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.8.8-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Discover, download, install, and manage your games from a clean interface with multi-language support.
 
@@ -53,7 +53,7 @@ The language is selected in the settings and applied dynamically throughout the 
 The project follows the **MVVM** pattern with centralized **Dependency Injection**.
 
 ```
-EricLostieLauncher/
+LostieLauncher/
 ├── Core/               # DI container configuration
 ├── Models/             # Data models
 ├── Services/           # Service layer
@@ -118,7 +118,7 @@ EricLostieLauncher/
 ### Development build
 
 ```powershell
-cd EricLostieLauncher
+cd LostieLauncher
 dotnet build
 ```
 
@@ -130,7 +130,7 @@ dotnet build
 
 Artifacts are generated in `releases/`:
 
-- `EricLostieLauncher-0.8.7-full.nupkg` — initial installation package
+- `LostieLauncher-0.8.8-full.nupkg` — initial installation package
 - Delta packages (on successive builds)
 - `releases.win.json` — update manifest
 - `RELEASES` — Velopack metadata
@@ -172,6 +172,6 @@ Configuration is automatically saved to `launcher_settings.json` next to the exe
 
 <div align="center">
 
-EricLostieLauncher © 2026
+LostieLauncher © 2026
 
 </div>

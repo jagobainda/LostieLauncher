@@ -1,0 +1,39 @@
+<UserControl x:Class="LostieLauncher.Views.Components.NewsCardComponent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Name="Root">
+    <Border Background="{DynamicResource OverlaySubtleBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0">
+                <Border Background="{DynamicResource PrimaryFgBrush}" CornerRadius="4" Padding="8,2"
+                        DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Tag, ElementName=Root}"
+                               Foreground="{DynamicResource SecondaryFgBrush}"
+                               FontSize="11" FontWeight="SemiBold" />
+                </Border>
+                <TextBlock Text="{Binding Date, ElementName=Root, StringFormat='{}{0:dd MMM yyyy}'}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="11" VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+            </DockPanel>
+
+            <TextBlock Grid.Row="1" Text="{Binding Title, ElementName=Root}"
+                       Foreground="{DynamicResource SecondaryFgBrush}"
+                       FontSize="15" FontWeight="SemiBold"
+                       Margin="0,10,0,4" TextWrapping="Wrap" />
+
+            <TextBlock Grid.Row="2" Text="{Binding Description, ElementName=Root}"
+                       Foreground="{DynamicResource SecondaryFgDimBrush}"
+                       FontSize="13" TextWrapping="Wrap" />
+        </Grid>
+    </Border>
+</UserControl>

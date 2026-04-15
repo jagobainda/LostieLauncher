@@ -1,0 +1,114 @@
+<UserControl x:Class="LostieLauncher.Views.Partials.GamesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:LostieLauncher.ViewModels"
+             xmlns:components="clr-namespace:LostieLauncher.Views.Components"
+             xmlns:models="clr-namespace:LostieLauncher.Models"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             d:DataContext="{d:DesignInstance Type=viewmodels:GamesViewModel}"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource PrimaryFgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True" CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryFgHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryFgPressedBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="Pokeball"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PrimaryFgBrush}"
+                                           RenderTransformOrigin="0.5,0.5">
+                    <iconPacks:PackIconMaterial.RenderTransform>
+                        <RotateTransform x:Name="PokeballRotation" />
+                    </iconPacks:PackIconMaterial.RenderTransform>
+                </iconPacks:PackIconMaterial>
+                <TextBlock Text="Cargando juegos instalados..."
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+            <Grid.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard>
+                        <Storyboard RepeatBehavior="Forever">
+                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
+                                             Storyboard.TargetProperty="Angle"
+                                             From="0" To="360" Duration="0:0:1" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Grid.Triggers>
+        </Grid>
+
+        <Grid Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <iconPacks:PackIconMaterial Kind="GamepadVariantOutline"
+                                           Width="48" Height="48"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SecondaryFgDimBrush}" />
+                <TextBlock Text="{Binding Strings.GamesNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,12" />
+                <Button Content="{Binding Strings.GamesGoToLibrary, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                        Command="{Binding NavigateToLibraryCommand}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        HorizontalAlignment="Center"
+                        Padding="20,8" />
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsListVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ItemsControl ItemsSource="{Binding InstalledGames}" Margin="20">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:InstalledGameInfo}">
+                        <components:GameCardComponent
+                            CardMode="Games"
+                            GameTitle="{Binding Nombre}"
+                            GameLogo="{Binding LogoUrl, Converter={StaticResource UriStringToImageSourceConverter}}"
+                            InstalledVersion="{Binding InstalledVersion}"
+                            HasUpdate="{Binding HasUpdate}"
+                            UpdateVersion="{Binding UpdateVersion}"
+                            IsUpdating="{Binding IsUpdating}"
+                            PlaytimeText="{Binding PlaytimeText}"
+                            HasHelpFolder="{Binding HasHelpFolder}"
+                            PlayCommand="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            UpdateCommand="{Binding DataContext.UpdateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            OpenFolderCommand="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            OpenHelpFolderCommand="{Binding DataContext.OpenHelpFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            UninstallCommand="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

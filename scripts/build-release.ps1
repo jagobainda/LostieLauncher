@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Builds and packages EricLostieLauncher for release using Velopack.
+    Builds and packages LostieLauncher for release using Velopack.
 
 .DESCRIPTION
     1. Reads the version from the .csproj
@@ -34,10 +34,10 @@ $ErrorActionPreference = "Stop"
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 $RepoRoot    = Split-Path $PSScriptRoot -Parent
-$ProjectFile = Join-Path $RepoRoot "EricLostieLauncher\EricLostieLauncher.csproj"
+$ProjectFile = Join-Path $RepoRoot "LostieLauncher\LostieLauncher.csproj"
 $PublishDir  = Join-Path $RepoRoot "publish"
 $ReleasesDir = Join-Path $RepoRoot "releases"
-$IconFile    = Join-Path $RepoRoot "EricLostieLauncher\Assets\app.ico"
+$IconFile    = Join-Path $RepoRoot "LostieLauncher\Assets\app.ico"
 
 # ── Read version from .csproj ─────────────────────────────────────────────────
 [xml]$csproj = Get-Content $ProjectFile
@@ -53,7 +53,7 @@ if (-not $Version) {
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "  EricLostieLauncher — Velopack Release Build" -ForegroundColor Cyan
+Write-Host "  LostieLauncher — Velopack Release Build" -ForegroundColor Cyan
 Write-Host "  Version : $Version" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -78,11 +78,11 @@ if ($LASTEXITCODE -ne 0) { Write-Error "dotnet publish failed."; exit 1 }
 # ── Pack with vpk ─────────────────────────────────────────────────────────────
 Write-Host "[3/3] Packaging with vpk..." -ForegroundColor Yellow
 vpk pack `
-    --packId      EricLostieLauncher `
+    --packId      LostieLauncher `
     --packVersion $Version `
     --packDir     $PublishDir `
-    --mainExe     EricLostieLauncher.exe `
-    --packTitle   "EricLostie Launcher" `
+    --mainExe     LostieLauncher.exe `
+    --packTitle   "Lostie Launcher" `
     --icon        $IconFile `
     --outputDir   $ReleasesDir
 

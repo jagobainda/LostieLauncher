@@ -1,0 +1,135 @@
+<Window x:Class="LostieLauncher.Views.Dialogs.WelcomeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:viewmodels="clr-namespace:LostieLauncher.ViewModels"
+        mc:Ignorable="d"
+        Height="500"
+        Width="480"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        Background="{DynamicResource PrimaryBgBrush}"
+        BorderBrush="{DynamicResource PrimaryFgBrush}"
+        BorderThickness="1"
+        Icon="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="60" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0"
+              Background="Transparent"
+              MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="16,0,0,0">
+                <iconPacks:PackIconMaterial Kind="PartyPopper"
+                                           Width="18" Height="18"
+                                           Foreground="{DynamicResource PrimaryFgBrush}"
+                                           VerticalAlignment="Center" />
+                <TextBlock x:Name="TitleText"
+                           Text="{Binding Strings.WelcomeDialogTitle}"
+                           Foreground="{DynamicResource SecondaryFgBrush}"
+                           VerticalAlignment="Center"
+                           Margin="8,0,0,0"
+                           FontSize="13"
+                           FontWeight="SemiBold" />
+            </StackPanel>
+            <Button Click="CloseButton_Click"
+                    HorizontalAlignment="Right"
+                    Style="{StaticResource CloseButtonStyle}">
+                <iconPacks:PackIconMaterial Kind="WindowClose" Width="12" Height="12" />
+            </Button>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Margin="24,8,24,0">
+            <StackPanel>
+
+                <StackPanel HorizontalAlignment="Center"
+                            Margin="0,12,0,20">
+                    <Border Width="64" Height="64"
+                            CornerRadius="16"
+                            Background="{DynamicResource TertiaryBgBrush}"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,12">
+                        <iconPacks:PackIconMaterial Kind="Gamepad"
+                                                   Width="30" Height="30"
+                                                   Foreground="{DynamicResource PrimaryFgBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock x:Name="LauncherNameText"
+                               Text="Lostie Launcher"
+                               Foreground="{DynamicResource SecondaryFgBrush}"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock x:Name="DescriptionText"
+                           Text="{Binding Strings.WelcomeDialogDescription}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           LineHeight="18"
+                           Margin="0,0,0,12" />
+
+                <Grid Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <iconPacks:PackIconMaterial Kind="Translate"
+                                                   Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding Strings.SettingsLanguage}"
+                                   Foreground="{DynamicResource SecondaryFgBrush}"
+                                   FontSize="13" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ComboBox Style="{StaticResource SettingsComboBoxStyle}"
+                              ItemContainerStyle="{StaticResource SettingsComboBoxItemStyle}"
+                              ItemsSource="{x:Static viewmodels:SettingsViewModel.LanguageOptions}"
+                              SelectedItem="{Binding Language}"
+                              HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Button x:Name="RepositoryButton"
+                        Style="{StaticResource LinkButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Click="RepositoryButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconMaterial Kind="Github" Width="12" Height="12"
+                                                   VerticalAlignment="Center" Margin="0,0,4,0"
+                                                   Foreground="{DynamicResource PrimaryFgBrush}" />
+                        <TextBlock Text="github.com/jagobainda/LostieLauncher"
+                                   Foreground="{DynamicResource PrimaryFgBrush}"
+                                   FontSize="12"
+                                   TextDecorations="Underline" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2"
+                Background="{DynamicResource SecondaryBgBrush}"
+                Padding="20,0">
+            <Button x:Name="ContinueButton"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Content="{Binding Strings.WelcomeDialogContinue}"
+                    Width="160"
+                    HorizontalAlignment="Right"
+                    Click="ContinueButton_Click" />
+        </Border>
+    </Grid>
+</Window>
