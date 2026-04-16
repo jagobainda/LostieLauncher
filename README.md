@@ -99,8 +99,8 @@ LostieLauncher/
 | ------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------- |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM with `ObservableProperty` and `RelayCommand` |
 | [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Vector icons in the UI                            |
-| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.5   | IoC container                                     |
-| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.5   | `IHttpClientFactory` with named clients           |
+| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.6   | IoC container                                     |
+| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.6   | `IHttpClientFactory` with named clients           |
 | [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.47.4   | ZIP/7z extraction of downloaded files             |
 | [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Automatic delta update system                     |
 
