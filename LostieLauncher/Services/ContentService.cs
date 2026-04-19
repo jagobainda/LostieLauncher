@@ -12,7 +12,7 @@ public interface IContentService
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
     Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
     string GetGameDirectory(string gameName);
-    Task RegisterGameAsync(Guid gameId, string gameName, string version);
+    Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null);
     Task RemoveGameRegistryAsync(string gameName);
     Task AddPlaytimeAsync(Guid gameId, int minutes);
     Task<Dictionary<Guid, int>> GetAllPlaytimesAsync();
@@ -165,11 +165,11 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         return resolved;
     }
 
-    public async Task RegisterGameAsync(Guid gameId, string gameName, string version)
+    public async Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null)
     {
         try
         {
-            Logs.DebugLogManager($"Registering game in local registry: {gameName} v{version}.");
+            Logs.DebugLogManager($"Registering game in local registry: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
             var gamesRoot = _settingsService.GetGamesRootDirectory();
             Directory.CreateDirectory(gamesRoot);
             var path = Path.Combine(gamesRoot, "local_games.json");
@@ -182,7 +182,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             }
 
             games.RemoveAll(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-            games.Add(new LocalGameInfo { Id = gameId, Nombre = gameName, Version = version });
+            games.Add(new LocalGameInfo { Id = gameId, Nombre = gameName, Version = version, Tipo = tipo });
 
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
         }

@@ -25,12 +25,12 @@ public partial class LibraryViewModel : ObservableObject
 
     private CancellationTokenSource? _downloadCts;
     private GameDownloadArgs? _activeDownloadArgs;
-    private bool _isKeyedDownload;
+    private SpecialVersionConfig? _activeSpecialConfig;
     private bool _isCancelling;
 
-    private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$", RegexOptions.Compiled);
+    private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}(-[A-Za-z0-9]{4}){4}$", RegexOptions.Compiled);
 
-    public event Action<string, string>? GameInstalled;
+    public event Action<string, string, string?>? GameInstalled;
     public event Action<string>? ScrollToGameRequested;
     public string? PendingScrollGameId { get; private set; }
 
@@ -86,7 +86,7 @@ public partial class LibraryViewModel : ObservableObject
                 installedByName.TryGetValue(game.Nombre, out var byName) ? byName : null;
 
             if (local is not null)
-                game.DownloadStatus = game.Version == local.Version ? GameDownloadStatus.Downloaded : GameDownloadStatus.UpdateAvailable;
+                game.DownloadStatus = Utils.VersionUtils.IsNewerVersion(game.Version, local.Version) ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Downloaded;
 
             if (game.Id != Guid.Empty && playtimes.TryGetValue(game.Id, out var pt))
                 game.PlaytimeMinutes = pt;
@@ -130,10 +130,10 @@ public partial class LibraryViewModel : ObservableObject
         }
 
         _activeDownloadArgs = args;
-        _isKeyedDownload = !string.IsNullOrEmpty(args.Key);
+        _activeSpecialConfig = null;
         string url;
 
-        if (_isKeyedDownload)
+        if (!string.IsNullOrEmpty(args.Key))
         {
             if (!KeyFormatRegex.IsMatch(args.Key!))
             {
@@ -143,23 +143,33 @@ public partial class LibraryViewModel : ObservableObject
                 return;
             }
 
-            var exchangeResult = await _downloadService.ExchangeKeyAsync(args.Key!);
+            var config = await _downloadService.FetchSpecialVersionConfigAsync(args.Key!);
 
-            if (!exchangeResult.IsSuccess)
+            if (config is null)
             {
-                CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
                 _activeDownloadArgs = null;
                 return;
             }
 
-            url = exchangeResult.DownloadUrl!;
+            if (config.JuegoPrincipal != game.Id)
+            {
+                CustomMessageBox.Show(strings.DownloadKeyMismatchTitle, strings.DownloadKeyMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                _activeDownloadArgs = null;
+                return;
+            }
+
+            _activeSpecialConfig = config;
+            args = args with { Version = config.Version };
+            _activeDownloadArgs = args;
+            url = $"{_downloadOptions.BaseUrl}/{args.Key}/{config.Archivo}";
         }
         else
         {
             url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
         }
 
-        await ExecuteDownloadAndInstallAsync(game, args, url, resumable: !_isKeyedDownload, isKeyedDownload: _isKeyedDownload, isUpdate: false);
+        await ExecuteDownloadAndInstallAsync(game, args, url, isUpdate: false);
     }
 
     [RelayCommand]
@@ -175,16 +185,64 @@ public partial class LibraryViewModel : ObservableObject
         if (game is null) return;
 
         _activeDownloadArgs = args;
-        _isKeyedDownload = false;
+        _activeSpecialConfig = null;
         var url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
 
         PendingScrollGameId = args.GameId;
         ScrollToGameRequested?.Invoke(args.GameId);
-        await ExecuteDownloadAndInstallAsync(game, args, url, resumable: true, isKeyedDownload: false, isUpdate: true);
+        await ExecuteDownloadAndInstallAsync(game, args, url, isUpdate: true);
         PendingScrollGameId = null;
     }
 
-    private async Task ExecuteDownloadAndInstallAsync(GameInfo game, GameDownloadArgs args, string url, bool resumable, bool isKeyedDownload, bool isUpdate)
+    [RelayCommand]
+    private async Task SwitchToSpecialVersionAsync(GameDownloadArgs args)
+    {
+        if (_globalViewModel.IsDownloading)
+        {
+            Logs.DebugLogManager($"Switch request ignored for {args.GameId}: another download is already active.");
+            return;
+        }
+
+        var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
+        if (game is null) return;
+
+        var strings = SettingsViewModel.Instance.Strings;
+        var key = SpecialVersionDialog.Show(strings);
+        if (key is null) return;
+
+        if (!KeyFormatRegex.IsMatch(key))
+        {
+            Logs.InfoLogManager($"Special version key rejected for {args.GameId}: invalid format.");
+            CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyInvalidMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+            return;
+        }
+
+        var config = await _downloadService.FetchSpecialVersionConfigAsync(key);
+
+        if (config is null)
+        {
+            CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+            return;
+        }
+
+        if (config.JuegoPrincipal != game.Id)
+        {
+            CustomMessageBox.Show(strings.DownloadKeyMismatchTitle, strings.DownloadKeyMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+            return;
+        }
+
+        _activeSpecialConfig = config;
+        var switchArgs = new GameDownloadArgs(args.GameId, config.Version, args.RutaRelativa, key);
+        _activeDownloadArgs = switchArgs;
+        var url = $"{_downloadOptions.BaseUrl}/{key}/{config.Archivo}";
+
+        PendingScrollGameId = args.GameId;
+        ScrollToGameRequested?.Invoke(args.GameId);
+        await ExecuteDownloadAndInstallAsync(game, switchArgs, url, isUpdate: true);
+        PendingScrollGameId = null;
+    }
+
+    private async Task ExecuteDownloadAndInstallAsync(GameInfo game, GameDownloadArgs args, string url, bool isUpdate)
     {
         var gamesRoot = _settingsService.GetGamesRootDirectory();
         var zipPath = Path.Combine(gamesRoot, ".downloads", $"{args.GameId}.zip");
@@ -204,8 +262,9 @@ public partial class LibraryViewModel : ObservableObject
                 : string.Empty;
         });
 
-        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(isKeyedDownload ? " (keyed)" : "")}.");
-        var result = await _downloadService.DownloadAsync(url, zipPath, resumable, progress, _downloadCts.Token);
+        var isSpecial = _activeSpecialConfig is not null;
+        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(isSpecial ? $" (special: {_activeSpecialConfig!.Tipo})" : "")}.");
+        var result = await _downloadService.DownloadAsync(url, zipPath, progress, _downloadCts.Token);
 
         switch (result.Outcome)
         {
@@ -213,10 +272,10 @@ public partial class LibraryViewModel : ObservableObject
                 await HandleDownloadSuccessAsync(game, args, zipPath, extractDir, isUpdate);
                 break;
             case DownloadOutcome.Cancelled:
-                HandleDownloadCancelled(game, args, isKeyedDownload, isUpdate);
+                HandleDownloadCancelled(game, args, isUpdate);
                 break;
             case DownloadOutcome.Failed:
-                HandleDownloadFailed(game, args, isKeyedDownload, isUpdate, result.ErrorMessage);
+                HandleDownloadFailed(game, args, isUpdate, result.ErrorMessage);
                 break;
         }
 
@@ -232,10 +291,11 @@ public partial class LibraryViewModel : ObservableObject
         {
             Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
 
-            if (!string.IsNullOrEmpty(game.Sha256) && !await VerifyIntegrityAsync(game, zipPath))
+            var expectedHash = _activeSpecialConfig?.Sha256 ?? game.Sha256;
+            if (!string.IsNullOrEmpty(expectedHash) && !await VerifyIntegrityAsync(game, zipPath, expectedHash))
             {
                 File.Delete(zipPath);
-                Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {game.Sha256}");
+                Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {expectedHash}");
                 ResetDownloadState(game, isUpdate);
                 var strings = SettingsViewModel.Instance.Strings;
                 CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
@@ -247,13 +307,16 @@ public partial class LibraryViewModel : ObservableObject
             game.DownloadRemainingText = string.Empty;
 
             await ExtractArchiveAsync(zipPath, extractDir);
-            await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version);
+
+            var tipo = _activeSpecialConfig?.Tipo;
+            await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version, tipo);
 
             game.DownloadStatus = GameDownloadStatus.Downloaded;
             game.DownloadProgressValue = 100;
             _activeDownloadArgs = null;
-            Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}.");
-            GameInstalled?.Invoke(game.Nombre, args.Version);
+            _activeSpecialConfig = null;
+            Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}{(tipo is not null ? $" ({tipo})" : "")}.");
+            GameInstalled?.Invoke(game.Nombre, args.Version, tipo);
         }
         catch (Exception ex)
         {
@@ -262,7 +325,7 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private static async Task<bool> VerifyIntegrityAsync(GameInfo game, string zipPath)
+    private static async Task<bool> VerifyIntegrityAsync(GameInfo game, string zipPath, string expectedHash)
     {
         game.DownloadStatus = GameDownloadStatus.VerifyingIntegrity;
         return await Task.Run(() =>
@@ -270,7 +333,7 @@ public partial class LibraryViewModel : ObservableObject
             using var sha = SHA256.Create();
             using var fs = File.OpenRead(zipPath);
             var actualHash = Convert.ToHexString(sha.ComputeHash(fs));
-            return actualHash.Equals(game.Sha256, StringComparison.OrdinalIgnoreCase);
+            return actualHash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase);
         });
     }
 
@@ -303,7 +366,7 @@ public partial class LibraryViewModel : ObservableObject
         });
     }
 
-    private void HandleDownloadCancelled(GameInfo game, GameDownloadArgs args, bool isKeyedDownload, bool isUpdate)
+    private void HandleDownloadCancelled(GameInfo game, GameDownloadArgs args, bool isUpdate)
     {
         if (_isCancelling)
         {
@@ -311,13 +374,6 @@ public partial class LibraryViewModel : ObservableObject
             CleanupDownloadFiles(game);
             ResetDownloadState(game, isUpdate);
             _isCancelling = false;
-        }
-        else if (isKeyedDownload)
-        {
-            var strings = SettingsViewModel.Instance.Strings;
-            Logs.InfoLogManager($"Keyed download cancelled: {args.GameId}. Token consumed.");
-            ResetDownloadState(game, isUpdate: false);
-            CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
         }
         else if (isUpdate)
         {
@@ -331,16 +387,12 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private void HandleDownloadFailed(GameInfo game, GameDownloadArgs args, bool isKeyedDownload, bool isUpdate, string? errorMessage)
+    private void HandleDownloadFailed(GameInfo game, GameDownloadArgs args, bool isUpdate, string? errorMessage)
     {
         var strings = SettingsViewModel.Instance.Strings;
         Logs.ErrorLogManager($"Download failed: {args.GameId}: {errorMessage}");
         ResetDownloadState(game, isUpdate);
-
-        if (isKeyedDownload)
-            CustomMessageBox.Show(strings.DownloadKeyConsumedTitle, strings.DownloadKeyConsumedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-        else
-            CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+        CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
     }
 
     private void ResetDownloadState(GameInfo game, bool isUpdate)

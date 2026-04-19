@@ -12,4 +12,7 @@ public class LocalGameInfo
 
     [JsonPropertyName("version")]
     public string Version { get; init; } = string.Empty;
+
+    [JsonPropertyName("tipo")]
+    public string? Tipo { get; init; }
 }

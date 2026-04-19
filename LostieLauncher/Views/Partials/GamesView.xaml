@@ -101,10 +101,13 @@
                             IsUpdating="{Binding IsUpdating}"
                             PlaytimeText="{Binding PlaytimeText}"
                             HasHelpFolder="{Binding HasHelpFolder}"
+                            Tipo="{Binding Tipo}"
+                            IsSpecialVersion="{Binding IsSpecialVersion}"
                             PlayCommand="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             UpdateCommand="{Binding DataContext.UpdateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             OpenFolderCommand="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             OpenHelpFolderCommand="{Binding DataContext.OpenHelpFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            SwitchToSpecialVersionCommand="{Binding DataContext.SwitchToSpecialVersionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                             UninstallCommand="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

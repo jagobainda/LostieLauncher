@@ -233,6 +233,15 @@
                                    Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="12" Margin="4,0,0,0"
                                    VerticalAlignment="Center" />
 
+                        <Border Margin="8,0,0,0" CornerRadius="3" Padding="6,2"
+                                Background="{DynamicResource PrimaryFgBrush}"
+                                Visibility="{Binding Tipo, ElementName=Root, Converter={StaticResource StringToVisibilityConverter}}">
+                            <TextBlock Text="{Binding Tipo, ElementName=Root}"
+                                       Foreground="{DynamicResource SecondaryBgBrush}"
+                                       FontSize="10" FontWeight="Bold"
+                                       VerticalAlignment="Center" />
+                        </Border>
+
                         <StackPanel Orientation="Horizontal">
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
@@ -461,9 +470,13 @@
                                         <DataTrigger Binding="{Binding IsUpdating, ElementName=Root}" Value="True">
                                             <Setter Property="IsEnabled" Value="False" />
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding HasUpdate, ElementName=Root}" Value="True">
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasUpdate, ElementName=Root}" Value="True" />
+                                                <Condition Binding="{Binding IsSpecialVersion, ElementName=Root}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
                                             <Setter Property="IsEnabled" Value="False" />
-                                        </DataTrigger>
+                                        </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
@@ -510,6 +523,23 @@
                                 </Style>
                             </Button.Style>
                             <iconPacks:PackIconMaterial Kind="HelpCircleOutline" Width="14" Height="14"
+                                                       VerticalAlignment="Center" />
+                        </Button>
+
+                        <Button Command="{Binding SwitchToSpecialVersionCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameTitle, ElementName=Root}"
+                                Margin="0,0,6,0"
+                                ToolTip="{Binding Strings.TooltipSwitchSpecialVersion, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardSecondaryButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUpdating, ElementName=Root}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <iconPacks:PackIconMaterial Kind="KeyVariant" Width="14" Height="14"
                                                        VerticalAlignment="Center" />
                         </Button>
 

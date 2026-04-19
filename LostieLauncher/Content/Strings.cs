@@ -79,6 +79,15 @@ public interface IStrings
     string WelcomeDialogDescription { get; }
     string WelcomeDialogContinue { get; }
     string RepositoryUrl { get; }
+    string SpecialVersionDialogTitle { get; }
+    string SpecialVersionDialogDescription { get; }
+    string SpecialVersionDialogKeyLabel { get; }
+    string BtnConfirm { get; }
+    string DownloadKeyNotFoundTitle { get; }
+    string DownloadKeyNotFoundMessage { get; }
+    string DownloadKeyMismatchTitle { get; }
+    string DownloadKeyMismatchMessage { get; }
+    string TooltipSwitchSpecialVersion { get; }
 }
 
 public class Esp : IStrings
@@ -142,7 +151,7 @@ public class Esp : IStrings
     public string DownloadDialogNoDescription => "Sin descripción disponible.";
     public string DownloadDialogKey => "Clave para versiones especiales (opcional)";
     public string DownloadKeyInvalidTitle => "Clave no válida";
-    public string DownloadKeyInvalidMessage => "El formato de la clave no es válido. Comprueba e inténtalo de nuevo.";
+    public string DownloadKeyInvalidMessage => "El formato de la clave no es válido. Debe seguir el formato XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Clave consumida";
     public string DownloadKeyConsumedMessage => "Esta clave ya no es válida o ha sido utilizada. Solicita una nueva clave.";
     public string DownloadErrorTitle => "Error en la descarga";
@@ -160,6 +169,15 @@ public class Esp : IStrings
     public string WelcomeDialogDescription => "Descarga, actualiza y juega tus títulos favoritos en un solo lugar. Simple, rápido y sin complicaciones.\n\nTu privacidad es importante. No recogemos datos personales. Solo consultamos información básica de tu PC, como los núcleos del procesador o la RAM disponible para optimizar los juegos.\n\nEste proyecto es opensource. ¿Dudas sobre cómo funciona? Consulta el código fuente";
     public string WelcomeDialogContinue => "Continuar";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Cambiar a versión especial";
+    public string SpecialVersionDialogDescription => "Al cambiar a una versión especial no se pierde nada, funciona como una actualización normal.";
+    public string SpecialVersionDialogKeyLabel => "Clave de versión especial";
+    public string BtnConfirm => "Confirmar";
+    public string DownloadKeyNotFoundTitle => "Clave no encontrada";
+    public string DownloadKeyNotFoundMessage => "No se ha encontrado una versión especial con esta clave. Comprueba la clave e inténtalo de nuevo.";
+    public string DownloadKeyMismatchTitle => "Clave incorrecta";
+    public string DownloadKeyMismatchMessage => "La clave no corresponde a este juego.";
+    public string TooltipSwitchSpecialVersion => "Cambiar a versión especial";
 }
 
 public class Eng : IStrings
@@ -223,7 +241,7 @@ public class Eng : IStrings
     public string DownloadDialogNoDescription => "No description available.";
     public string DownloadDialogKey => "Access key for special versions (optional)";
     public string DownloadKeyInvalidTitle => "Invalid key";
-    public string DownloadKeyInvalidMessage => "The key format is invalid. Please check and try again.";
+    public string DownloadKeyInvalidMessage => "The key format is invalid. It must follow the format XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Key consumed";
     public string DownloadKeyConsumedMessage => "This key is invalid or has already been used. Please request a new key.";
     public string DownloadErrorTitle => "Download failed";
@@ -241,6 +259,15 @@ public class Eng : IStrings
     public string WelcomeDialogDescription => "Download, update, and play your favorite games in one place. Simple, fast, and hassle-free.\n\nYour privacy is important. We don't collect personal data. We only check basic information about your PC, like processor cores or available RAM to optimize your games.\n\nThis project is open source. Questions about how it works? Check the source code";
     public string WelcomeDialogContinue => "Continue";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Switch to special version";
+    public string SpecialVersionDialogDescription => "Switching to a special version won't lose anything, it works like a normal update.";
+    public string SpecialVersionDialogKeyLabel => "Special version key";
+    public string BtnConfirm => "Confirm";
+    public string DownloadKeyNotFoundTitle => "Key not found";
+    public string DownloadKeyNotFoundMessage => "No special version was found with this key. Please check the key and try again.";
+    public string DownloadKeyMismatchTitle => "Incorrect key";
+    public string DownloadKeyMismatchMessage => "The key does not match this game.";
+    public string TooltipSwitchSpecialVersion => "Switch to special version";
 }
 
 public class Cat : IStrings
@@ -302,7 +329,7 @@ public class Cat : IStrings
     public string DownloadDialogNoDescription => "Sense descripció disponible.";
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
     public string DownloadKeyInvalidTitle => "Clau no vàlida";
-    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Comprova-ho i torna-ho a intentar.";
+    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Ha de tenir el format XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Clau consumida";
     public string DownloadKeyConsumedMessage => "Aquesta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
@@ -320,6 +347,15 @@ public class Cat : IStrings
     public string WelcomeDialogDescription => "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim dades personals. Només consultem informació bàsica del teu PC, com els nuclis del processador o la RAM disponible per a optimitzar els teus jocs.\n\nAquest projecte és opensource. Dubtes sobre com funciona? Consulta el codi font";
     public string WelcomeDialogContinue => "Continuar";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Canviar a versió especial";
+    public string SpecialVersionDialogDescription => "En canviar a una versió especial no es perd res, funciona com una actualització normal.";
+    public string SpecialVersionDialogKeyLabel => "Clau de versió especial";
+    public string BtnConfirm => "Confirmar";
+    public string DownloadKeyNotFoundTitle => "Clau no trobada";
+    public string DownloadKeyNotFoundMessage => "No s'ha trobat cap versió especial amb aquesta clau. Comprova la clau i torna-ho a intentar.";
+    public string DownloadKeyMismatchTitle => "Clau incorrecta";
+    public string DownloadKeyMismatchMessage => "La clau no correspon a aquest joc.";
+    public string TooltipSwitchSpecialVersion => "Canviar a versió especial";
 }
 
 public class Eus : IStrings
@@ -383,7 +419,7 @@ public class Eus : IStrings
     public string DownloadDialogNoDescription => "Deskribapenik ez.";
     public string DownloadDialogKey => "Bertsio berezietarako gakoa (aukerakoa)";
     public string DownloadKeyInvalidTitle => "Gako baliogabea";
-    public string DownloadKeyInvalidMessage => "Gakoaren formatua ez da baliozkoa. Egiaztatu eta saiatu berriro.";
+    public string DownloadKeyInvalidMessage => "Gakoaren formatua ez da baliozkoa. Formatua XXXX-XXXX-XXXX-XXXX-XXXX izan behar da.";
     public string DownloadKeyConsumedTitle => "Gakoa kontsumituta";
     public string DownloadKeyConsumedMessage => "Gako hau baliogabea da edo dagoeneko erabili da. Eskatu gako berri bat.";
     public string DownloadErrorTitle => "Deskargetak huts egin du";
@@ -401,6 +437,15 @@ public class Eus : IStrings
     public string WelcomeDialogDescription => "Deskargatu, eguneratu eta jolastu zure joko gogokoak leku batean. Sinplea, azkarra eta konplikazio gabe.\n\nZure pribatutasuna garrantzitsua da. Ez dugu datu pertsonalik biltzen. PCaren oinarrizko informazioa bakarrik kontsultatzen dugu, prozesadoreko nukleak edo eskuragarri dagoen RAMa adibidez, zure jokoak optimizatzeko.\n\nProiektu hau opensource. Zalantzak nola funtzionatzen duen jakin nahi? Bilatu iturburu kodea";
     public string WelcomeDialogContinue => "Jarraitu";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Bertsio berezira aldatu";
+    public string SpecialVersionDialogDescription => "Bertsio berezi batera aldatzean ez da ezer galtzen, eguneraketa normal bat bezala funtzionatzen du.";
+    public string SpecialVersionDialogKeyLabel => "Bertsio bereziaren gakoa";
+    public string BtnConfirm => "Berretsi";
+    public string DownloadKeyNotFoundTitle => "Gakoa ez da aurkitu";
+    public string DownloadKeyNotFoundMessage => "Ez da gako honekin bertsio berezirik aurkitu. Egiaztatu gakoa eta saiatu berriro.";
+    public string DownloadKeyMismatchTitle => "Gako okerra";
+    public string DownloadKeyMismatchMessage => "Gakoa ez dator bat joko honekin.";
+    public string TooltipSwitchSpecialVersion => "Bertsio berezira aldatu";
 }
 
 public class Gal : IStrings
@@ -464,7 +509,7 @@ public class Gal : IStrings
     public string DownloadDialogNoDescription => "Sen descrición dispoñible.";
     public string DownloadDialogKey => "Clave para versións especiais (opcional)";
     public string DownloadKeyInvalidTitle => "Clave non válida";
-    public string DownloadKeyInvalidMessage => "O formato da clave non é válido. Comproba e téntao de novo.";
+    public string DownloadKeyInvalidMessage => "O formato da clave non é válido. Debe ter o formato XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Clave consumida";
     public string DownloadKeyConsumedMessage => "Esta clave xa non é válida ou xa foi utilizada. Solicita unha nova clave.";
     public string DownloadErrorTitle => "Erro na descarga";
@@ -482,6 +527,15 @@ public class Gal : IStrings
     public string WelcomeDialogDescription => "Descarga, actualiza e xoga os teus xogos favoritos nun só lugar. Simple, rápido e sen complicacións.\n\nA túa privacidade é importante. Non recollemos datos persoais. Só consultamos información básica do teu PC, como os núcleos do procesador ou a RAM dispoñible para optimizar os teus xogos.\n\nEste proxecto é opensource. Dúbidas sobre como funciona? Consulta o código fonte";
     public string WelcomeDialogContinue => "Continuar";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Cambiar a versión especial";
+    public string SpecialVersionDialogDescription => "Ao cambiar a unha versión especial non se perde nada, funciona como unha actualización normal.";
+    public string SpecialVersionDialogKeyLabel => "Clave de versión especial";
+    public string BtnConfirm => "Confirmar";
+    public string DownloadKeyNotFoundTitle => "Clave non atopada";
+    public string DownloadKeyNotFoundMessage => "Non se atopou ningunha versión especial con esta clave. Comproba a clave e téntao de novo.";
+    public string DownloadKeyMismatchTitle => "Clave incorrecta";
+    public string DownloadKeyMismatchMessage => "A clave non corresponde a este xogo.";
+    public string TooltipSwitchSpecialVersion => "Cambiar a versión especial";
 }
 
 public class Por : IStrings
@@ -543,7 +597,7 @@ public class Por : IStrings
     public string DownloadDialogNoDescription => "Sem descrição disponível.";
     public string DownloadDialogKey => "Chave para versões especiais (opcional)";
     public string DownloadKeyInvalidTitle => "Chave inválida";
-    public string DownloadKeyInvalidMessage => "O formato da chave é inválido. Verifique e tente novamente.";
+    public string DownloadKeyInvalidMessage => "O formato da chave é inválido. Deve seguir o formato XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Chave consumida";
     public string DownloadKeyConsumedMessage => "Esta chave é inválida ou já foi utilizada. Solicite uma nova chave.";
     public string DownloadErrorTitle => "Falha no download";
@@ -561,6 +615,15 @@ public class Por : IStrings
     public string WelcomeDialogDescription => "Baixe, atualize e jogue seus jogos favoritos em um único lugar. Simples, rápido e sem complicações.\n\nSua privacidade é importante. Não coletamos dados pessoais. Apenas consultamos informações básicas do seu PC, como núcleos do processador ou RAM disponível para otimizar seus jogos.\n\nEste projeto é open source. Dúvidas sobre como funciona? Consulte o código-fonte";
     public string WelcomeDialogContinue => "Continuar";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Mudar para versão especial";
+    public string SpecialVersionDialogDescription => "Ao mudar para uma versão especial não se perde nada, funciona como uma atualização normal.";
+    public string SpecialVersionDialogKeyLabel => "Chave de versão especial";
+    public string BtnConfirm => "Confirmar";
+    public string DownloadKeyNotFoundTitle => "Chave não encontrada";
+    public string DownloadKeyNotFoundMessage => "Não foi encontrada nenhuma versão especial com esta chave. Verifique a chave e tente novamente.";
+    public string DownloadKeyMismatchTitle => "Chave incorreta";
+    public string DownloadKeyMismatchMessage => "A chave não corresponde a este jogo.";
+    public string TooltipSwitchSpecialVersion => "Mudar para versão especial";
 }
 
 public class Val : IStrings
@@ -622,7 +685,7 @@ public class Val : IStrings
     public string DownloadDialogNoDescription => "Sense descripció disponible.";
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
     public string DownloadKeyInvalidTitle => "Clau no vàlida";
-    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Comprova-ho i torna-ho a intentar.";
+    public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Ha de tindre el format XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Clau consumida";
     public string DownloadKeyConsumedMessage => "Esta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
@@ -640,6 +703,15 @@ public class Val : IStrings
     public string WelcomeDialogDescription => "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim dades personals. Només consultem informació bàsica del teu PC, com els nuclis del processador o la RAM disponible per a optimitzar els teus jocs.\n\nEst projecte és opensource. Dubtes sobre com funciona? Consulta el codi font";
     public string WelcomeDialogContinue => "Continuar";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Canviar a versió especial";
+    public string SpecialVersionDialogDescription => "En canviar a una versió especial no es perd res, funciona com una actualització normal.";
+    public string SpecialVersionDialogKeyLabel => "Clau de versió especial";
+    public string BtnConfirm => "Confirmar";
+    public string DownloadKeyNotFoundTitle => "Clau no trobada";
+    public string DownloadKeyNotFoundMessage => "No s'ha trobat cap versió especial amb esta clau. Comprova la clau i torna-ho a intentar.";
+    public string DownloadKeyMismatchTitle => "Clau incorrecta";
+    public string DownloadKeyMismatchMessage => "La clau no correspon a este joc.";
+    public string TooltipSwitchSpecialVersion => "Canviar a versió especial";
 }
 
 public class Fra : IStrings
@@ -701,7 +773,7 @@ public class Fra : IStrings
     public string DownloadDialogNoDescription => "Aucune description disponible.";
     public string DownloadDialogKey => "Clé pour les versions spéciales (optionnel)";
     public string DownloadKeyInvalidTitle => "Clé invalide";
-    public string DownloadKeyInvalidMessage => "Le format de la clé est invalide. Veuillez vérifier et réessayer.";
+    public string DownloadKeyInvalidMessage => "Le format de la clé est invalide. Il doit suivre le format XXXX-XXXX-XXXX-XXXX-XXXX.";
     public string DownloadKeyConsumedTitle => "Clé consommée";
     public string DownloadKeyConsumedMessage => "Cette clé est invalide ou a déjà été utilisée. Veuillez demander une nouvelle clé.";
     public string DownloadErrorTitle => "Échec du téléchargement";
@@ -719,4 +791,13 @@ public class Fra : IStrings
     public string WelcomeDialogDescription => "Téléchargez, mettez à jour et jouez à vos jeux préférés en un seul endroit. Simple, rapide et sans tracas.\n\nVotre vie privée compte. Nous ne collectons pas de données personnelles. Nous consultons uniquement des informations basiques sur votre PC, comme les cœurs du processeur ou la RAM disponible pour optimiser vos jeux.\n\nCe projet est open source. Des questions sur le fonctionnement ? Consultez le code source";
     public string WelcomeDialogContinue => "Continuer";
     public string RepositoryUrl => "https://github.com/jagobainda/LostieLauncher";
+    public string SpecialVersionDialogTitle => "Passer à la version spéciale";
+    public string SpecialVersionDialogDescription => "En passant à une version spéciale, vous ne perdez rien, cela fonctionne comme une mise à jour normale.";
+    public string SpecialVersionDialogKeyLabel => "Clé de version spéciale";
+    public string BtnConfirm => "Confirmer";
+    public string DownloadKeyNotFoundTitle => "Clé non trouvée";
+    public string DownloadKeyNotFoundMessage => "Aucune version spéciale n'a été trouvée avec cette clé. Vérifiez la clé et réessayez.";
+    public string DownloadKeyMismatchTitle => "Clé incorrecte";
+    public string DownloadKeyMismatchMessage => "La clé ne correspond pas à ce jeu.";
+    public string TooltipSwitchSpecialVersion => "Passer à la version spéciale";
 }

@@ -228,4 +228,28 @@ public partial class GameCardComponent : UserControl
         get => (string)GetValue(PlaytimeTextProperty);
         set => SetValue(PlaytimeTextProperty, value);
     }
+
+    public static readonly DependencyProperty TipoProperty = DependencyProperty.Register(nameof(Tipo), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+
+    public string Tipo
+    {
+        get => (string)GetValue(TipoProperty);
+        set => SetValue(TipoProperty, value);
+    }
+
+    public static readonly DependencyProperty IsSpecialVersionProperty = DependencyProperty.Register(nameof(IsSpecialVersion), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false));
+
+    public bool IsSpecialVersion
+    {
+        get => (bool)GetValue(IsSpecialVersionProperty);
+        set => SetValue(IsSpecialVersionProperty, value);
+    }
+
+    public static readonly DependencyProperty SwitchToSpecialVersionCommandProperty = DependencyProperty.Register(nameof(SwitchToSpecialVersionCommand), typeof(ICommand), typeof(GameCardComponent));
+
+    public ICommand? SwitchToSpecialVersionCommand
+    {
+        get => (ICommand?)GetValue(SwitchToSpecialVersionCommandProperty);
+        set => SetValue(SwitchToSpecialVersionCommandProperty, value);
+    }
 }

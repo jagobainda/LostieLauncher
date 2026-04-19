@@ -11,6 +11,8 @@ public partial class InstalledGameInfo : ObservableObject
     public string UpdateVersion { get; init; } = string.Empty;
     public string Logo { get; init; } = string.Empty;
     public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"https://ericlostie-launcher.jagoba.dev{Logo}";
+    public string? Tipo { get; init; }
+    public bool IsSpecialVersion => !string.IsNullOrEmpty(Tipo);
 
     [ObservableProperty]
     public partial bool IsUpdating { get; set; }

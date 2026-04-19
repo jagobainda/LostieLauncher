@@ -42,16 +42,16 @@ public partial class GamesViewModel : ObservableObject
 
     public async Task RefreshAsync() => await LoadInstalledGamesAsync(waitForLibrary: false);
 
-    private void OnGameInstalled(string gameName, string version)
+    private void OnGameInstalled(string gameName, string version, string? tipo)
     {
         App.Current.Dispatcher.Invoke(() =>
         {
             var remote = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             if (existing != null) InstalledGames.Remove(existing);
-            InstalledGames.Add(new InstalledGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, InstalledVersion = version, Logo = remote?.Logo ?? string.Empty });
+            InstalledGames.Add(new InstalledGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, InstalledVersion = version, Logo = remote?.Logo ?? string.Empty, Tipo = tipo });
         });
-        Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}.");
+        Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
     }
 
     private async Task LoadInstalledGamesAsync(bool waitForLibrary = true)
@@ -67,7 +67,7 @@ public partial class GamesViewModel : ObservableObject
         IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
         {
             var remote = remoteGames.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
-            var hasUpdate = remote != null && remote.Version != local.Version;
+            var hasUpdate = remote != null && Utils.VersionUtils.IsNewerVersion(remote.Version, local.Version);
             var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
 
             return new InstalledGameInfo
@@ -78,6 +78,7 @@ public partial class GamesViewModel : ObservableObject
                 HasUpdate = hasUpdate,
                 UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
                 Logo = remote?.Logo ?? string.Empty,
+                Tipo = local.Tipo,
                 PlaytimeMinutes = playtimeMinutes,
                 HasHelpFolder = HasHelpSubfolder(_contentService.GetGameDirectory(local.Nombre))
             };
@@ -88,8 +89,7 @@ public partial class GamesViewModel : ObservableObject
         IsLoading = false;
 
         if (!waitForLibrary || !SettingsViewModel.Instance.AutoUpdate) return;
-
-        foreach (var game in InstalledGames.Where(g => g.HasUpdate).ToList()) await UpdateCoreAsync(game.Nombre, navigateToLibrary: false);
+        foreach (var game in InstalledGames.Where(g => g.HasUpdate && !g.IsSpecialVersion).ToList()) await UpdateCoreAsync(game.Nombre, navigateToLibrary: false);
     }
 
     [RelayCommand]
@@ -120,6 +120,18 @@ public partial class GamesViewModel : ObservableObject
 
     [RelayCommand]
     private void NavigateToLibrary() => NavigateToLibraryRequested?.Invoke();
+
+    [RelayCommand]
+    private async Task SwitchToSpecialVersionAsync(string gameName)
+    {
+        var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+        if (libraryGame is null) return;
+
+        NavigateToLibraryRequested?.Invoke();
+
+        var args = new GameDownloadArgs(libraryGame.GameId, libraryGame.Version, libraryGame.RutaRelativa);
+        await _libraryViewModel.SwitchToSpecialVersionCommand.ExecuteAsync(args);
+    }
 
     [RelayCommand]
     private void Play(string gameName)

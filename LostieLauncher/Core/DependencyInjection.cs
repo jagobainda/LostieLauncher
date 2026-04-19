@@ -12,7 +12,6 @@ public static class DependencyInjection
     private const string ContentEndpoint = "https://ericlostie-launcher.jagoba.dev/games/listado.json";
     private const string NotificationsEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json";
     private const string DownloadBaseUrl = "https://ericlostie-launcher.jagoba.dev/games";
-    private const string KeyManagerEndpoint = "http://localhost:6969/placeholder/";
 
     public static IServiceProvider Configure()
     {
@@ -21,7 +20,7 @@ public static class DependencyInjection
         // Configuration
         services.AddSingleton(new TelemetryOptions(ApiKey: "4V7p0XSJ9C6FgCE7ae3c", Endpoint: TelemetryEndpoint));
         services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint));
-        services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl, KeyManagerEndpoint: KeyManagerEndpoint));
+        services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl));
 
         // Services
         services.AddSingleton<ISettingsService, SettingsService>();

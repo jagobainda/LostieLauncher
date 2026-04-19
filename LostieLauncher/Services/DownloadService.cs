@@ -12,9 +12,9 @@ public interface IDownloadService
 {
     DownloadState State { get; }
 
-    Task<KeyExchangeResult> ExchangeKeyAsync(string key, CancellationToken ct = default);
+    Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
 
-    Task<DownloadResult> DownloadAsync(string url, string destinationPath, bool resumable = true, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
+    Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
 }
 
 public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions) : IDownloadService
@@ -27,51 +27,46 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
 
     public DownloadState State { get; private set; } = DownloadState.Idle;
 
-    public async Task<KeyExchangeResult> ExchangeKeyAsync(string key, CancellationToken ct = default)
+    public async Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default)
     {
         try
         {
-            var client = _httpClientFactory.CreateClient("Download");
-            using var request = new HttpRequestMessage(HttpMethod.Post, $"{_downloadOptions.KeyManagerEndpoint}/download");
-            request.Headers.Add("X-Version-Key", key);
+            var client = _httpClientFactory.CreateClient("Content");
+            var configUrl = $"{_downloadOptions.BaseUrl}/{key}/game.config";
+            using var response = await client.GetAsync(configUrl, ct).ConfigureAwait(false);
 
-            using var response = await client.SendAsync(request, ct).ConfigureAwait(false);
-
-            if (response.StatusCode == HttpStatusCode.Forbidden)
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                Logs.InfoLogManager("Key exchange failed: key is invalid, expired, or already used.");
-                return KeyExchangeResult.Failed("Key is invalid, expired, or already used.", 403);
-            }
-
-            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
-            {
-                Logs.InfoLogManager("Key exchange failed: malformed key format.");
-                return KeyExchangeResult.Failed("Invalid key format.", 422);
+                Logs.InfoLogManager($"Special version config not found for key: {key}");
+                return null;
             }
 
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            using var doc = JsonDocument.Parse(json);
-            var url = doc.RootElement.GetProperty("url").GetString();
+            var content = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var config = SpecialVersionConfig.Parse(content);
 
-            if (string.IsNullOrEmpty(url)) return KeyExchangeResult.Failed("Server returned empty download URL.", (int)response.StatusCode);
+            if (config is null)
+            {
+                Logs.InfoLogManager($"Failed to parse special version config for key: {key}");
+                return null;
+            }
 
-            Logs.InfoLogManager("Key exchanged successfully, download URL obtained.");
-            return KeyExchangeResult.Success(url);
+            Logs.InfoLogManager($"Special version config loaded: {config.Tipo} v{config.Version}");
+            return config;
         }
         catch (OperationCanceledException)
         {
-            return KeyExchangeResult.Failed("Key exchange was cancelled.", 0);
+            return null;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            return KeyExchangeResult.Failed(ex.Message, 0);
+            return null;
         }
     }
 
-    public async Task<DownloadResult> DownloadAsync(string url, string destinationPath, bool resumable = true, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default)
+    public async Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default)
     {
         var partPath = destinationPath + ".part";
 
@@ -81,32 +76,6 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
             State = DownloadState.Downloading;
-
-            if (!resumable)
-            {
-                try
-                {
-                    if (File.Exists(partPath)) File.Delete(partPath);
-
-                    await DownloadCoreAsync(url, partPath, destinationPath, progress, ct).ConfigureAwait(false);
-                    State = DownloadState.Completed;
-                    return DownloadResult.Succeeded();
-                }
-                catch (OperationCanceledException)
-                {
-                    CleanupPartFile(partPath);
-                    State = DownloadState.Failed;
-                    Logs.InfoLogManager("Keyed download cancelled — token is now consumed.");
-                    return DownloadResult.Cancelled();
-                }
-                catch (Exception ex)
-                {
-                    CleanupPartFile(partPath);
-                    State = DownloadState.Failed;
-                    Logs.ErrorLogManager(ex);
-                    return DownloadResult.Failed(ex.Message);
-                }
-            }
 
             for (int attempt = 0; attempt <= MaxRetries; attempt++)
             {
