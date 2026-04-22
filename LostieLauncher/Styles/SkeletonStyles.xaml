@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        SkeletonBlockStyle — applied to Border elements that represent placeholder blocks inside skeleton cards.
+        The shimmer sweeps left-to-right by animating the LinearGradientBrush StartPoint / EndPoint.
+        Semi-transparent white stops layer naturally over any themed card background (dark or light themes).
+        IsHitTestVisible=False ensures the skeleton never captures mouse events.
+    -->
+    <Style x:Key="SkeletonBlockStyle" TargetType="Border">
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="-1,0" EndPoint="0,0">
+                    <GradientStop Color="#22FFFFFF" Offset="0" />
+                    <GradientStop Color="#55FFFFFF" Offset="0.5" />
+                    <GradientStop Color="#22FFFFFF" Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard>
+                    <Storyboard RepeatBehavior="Forever">
+                        <PointAnimation
+                            Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.StartPoint)"
+                            From="-1,0" To="1,0" Duration="0:0:1.2" />
+                        <PointAnimation
+                            Storyboard.TargetProperty="(Border.Background).(LinearGradientBrush.EndPoint)"
+                            From="0,0" To="2,0" Duration="0:0:1.2" />
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

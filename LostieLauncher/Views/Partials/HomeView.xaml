@@ -10,33 +10,40 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
              mc:Ignorable="d">
     <Grid>
+        <!-- Skeleton loading state: two-column layout matching the real content area -->
         <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
-              VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <iconPacks:PackIconMaterial Kind="Pokeball"
-                                           Width="48" Height="48"
-                                           HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource PrimaryFgBrush}"
-                                           RenderTransformOrigin="0.5,0.5">
-                    <iconPacks:PackIconMaterial.RenderTransform>
-                        <RotateTransform x:Name="PokeballRotation" />
-                    </iconPacks:PackIconMaterial.RenderTransform>
-                </iconPacks:PackIconMaterial>
-                <TextBlock Text="{Binding Strings.HomeLoading, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
-                           Foreground="{DynamicResource SecondaryFgDimBrush}"
-                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
-            </StackPanel>
-            <Grid.Triggers>
-                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard>
-                        <Storyboard RepeatBehavior="Forever">
-                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
-                                             Storyboard.TargetProperty="Angle"
-                                             From="0" To="360" Duration="0:0:1" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Grid.Triggers>
+              Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="{Binding Strings.HomeNews, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgBrush}"
+                           FontSize="18" FontWeight="SemiBold"
+                           Margin="0,0,0,14" />
+                <StackPanel>
+                    <components:NewsCardSkeleton />
+                    <components:NewsCardSkeleton />
+                    <components:NewsCardSkeleton />
+                    <components:NewsCardSkeleton />
+                </StackPanel>
+            </DockPanel>
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="{Binding Strings.HomeNotifications, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgBrush}"
+                           FontSize="18" FontWeight="SemiBold"
+                           Margin="0,0,0,14" />
+                <StackPanel>
+                    <components:NotificationCardSkeleton />
+                    <components:NotificationCardSkeleton />
+                    <components:NotificationCardSkeleton />
+                    <components:NotificationCardSkeleton />
+                </StackPanel>
+            </DockPanel>
         </Grid>
 
         <Grid Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"

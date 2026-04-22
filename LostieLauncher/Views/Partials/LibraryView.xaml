@@ -10,34 +10,18 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:LibraryViewModel}"
              mc:Ignorable="d">
     <Grid>
-        <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
-              VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <iconPacks:PackIconMaterial Kind="Pokeball"
-                                           Width="48" Height="48"
-                                           HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource PrimaryFgBrush}"
-                                           RenderTransformOrigin="0.5,0.5">
-                    <iconPacks:PackIconMaterial.RenderTransform>
-                        <RotateTransform x:Name="PokeballRotation" />
-                    </iconPacks:PackIconMaterial.RenderTransform>
-                </iconPacks:PackIconMaterial>
-                <TextBlock Text="Cargando juegos..."
-                           Foreground="{DynamicResource SecondaryFgDimBrush}"
-                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+        <!-- Skeleton loading state: matches ScrollViewer > ItemsControl[Margin=20] structure of real content -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel Margin="20">
+                <components:GameCardSkeleton />
+                <components:GameCardSkeleton />
+                <components:GameCardSkeleton />
+                <components:GameCardSkeleton />
+                <components:GameCardSkeleton />
+                <components:GameCardSkeleton />
             </StackPanel>
-            <Grid.Triggers>
-                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                    <BeginStoryboard>
-                        <Storyboard RepeatBehavior="Forever">
-                            <DoubleAnimation Storyboard.TargetName="PokeballRotation"
-                                             Storyboard.TargetProperty="Angle"
-                                             From="0" To="360" Duration="0:0:1" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Grid.Triggers>
-        </Grid>
+        </ScrollViewer>
 
         <Grid Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
               VerticalAlignment="Center" HorizontalAlignment="Center">
