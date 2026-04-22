@@ -113,7 +113,7 @@ public class Esp : IStrings
     public string FolderNotFoundTitle => "Carpeta no encontrada";
     public string FolderNotFoundMessage => "La carpeta del juego no se encontró. ¿Quieres reinstalar los archivos?";
     public string UninstallConfirmTitle => "Desinstalar juego";
-    public string UninstallConfirmMessage => "¿Seguro que quieres desinstalar {0}? Esta acción no se puede deshacer.";
+    public string UninstallConfirmMessage => "¿Seguro que quieres desinstalar {0}? Las partidas guardadas y el registro de tiempo jugado no se perderán.";
     public string UninstallNotFoundTitle => "Archivos no encontrados";
     public string UninstallNotFoundMessage => "No se encontraron los archivos del juego, pero se ha limpiado el registro de la lista.";
     public string UninstallErrorTitle => "Error al desinstalar";
@@ -203,7 +203,7 @@ public class Eng : IStrings
     public string FolderNotFoundTitle => "Folder not found";
     public string FolderNotFoundMessage => "The game folder was not found. Do you want to reinstall the files?";
     public string UninstallConfirmTitle => "Uninstall game";
-    public string UninstallConfirmMessage => "Are you sure you want to uninstall {0}? This action cannot be undone.";
+    public string UninstallConfirmMessage => "Are you sure you want to uninstall {0}? Your saved games and playtime record will not be lost.";
     public string UninstallNotFoundTitle => "Files not found";
     public string UninstallNotFoundMessage => "The game files were not found, but the entry has been cleaned up from the list.";
     public string UninstallErrorTitle => "Uninstall error";
@@ -291,7 +291,7 @@ public class Cat : IStrings
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
     public string UninstallConfirmTitle => "Desinstal·lar joc";
-    public string UninstallConfirmMessage => "Estàs segur que vols desinstal·lar {0}? Aquesta acció no es pot desfer.";
+    public string UninstallConfirmMessage => "Estàs segur que vols desinstal·lar {0}? Les teves partides desades i el registre de temps jugat no es perdran.";
     public string UninstallNotFoundTitle => "Fitxers no trobats";
     public string UninstallNotFoundMessage => "No s'han trobat els fitxers del joc, però s'ha netejat el registre de la llista.";
     public string UninstallErrorTitle => "Error en desinstal·lar";
@@ -381,7 +381,7 @@ public class Eus : IStrings
     public string FolderNotFoundTitle => "Karpeta ez da aurkitu";
     public string FolderNotFoundMessage => "Jokoaren karpeta ez da aurkitu. Fitxategiak berrinstalatu nahi dituzu?";
     public string UninstallConfirmTitle => "Jokoa desinstalatu";
-    public string UninstallConfirmMessage => "{0} desinstalatu nahi duzu? Ekintza hau ezin da desegin.";
+    public string UninstallConfirmMessage => "{0} desinstalatu nahi duzu? Gordetako partidak eta jolasdenbora ez dira galduko.";
     public string UninstallNotFoundTitle => "Fitxategiak ez dira aurkitu";
     public string UninstallNotFoundMessage => "Jokoaren fitxategiak ez dira aurkitu, baina zerrenda garbi utzi da.";
     public string UninstallErrorTitle => "Desinstalazio errorea";
@@ -471,7 +471,7 @@ public class Gal : IStrings
     public string FolderNotFoundTitle => "Cartafol non atopado";
     public string FolderNotFoundMessage => "O cartafol do xogo non foi atopado. Queres reinstalar os ficheiros?";
     public string UninstallConfirmTitle => "Desinstalar xogo";
-    public string UninstallConfirmMessage => "Seguro que queres desinstalar {0}? Esta acción non se pode desfacer.";
+    public string UninstallConfirmMessage => "Seguro que queres desinstalar {0}? As partidas gardadas e o rexistro de tempo xogado non se perderán.";
     public string UninstallNotFoundTitle => "Ficheiros non atopados";
     public string UninstallNotFoundMessage => "Non se atoparon os ficheiros do xogo, pero limpouse o rexistro da lista.";
     public string UninstallErrorTitle => "Erro ao desinstalar";
@@ -559,7 +559,7 @@ public class Por : IStrings
     public string FolderNotFoundTitle => "Pasta não encontrada";
     public string FolderNotFoundMessage => "A pasta do jogo não foi encontrada. Deseja reinstalar os arquivos?";
     public string UninstallConfirmTitle => "Desinstalar jogo";
-    public string UninstallConfirmMessage => "Tem certeza que deseja desinstalar {0}? Esta ação não pode ser desfeita.";
+    public string UninstallConfirmMessage => "Tem certeza que deseja desinstalar {0}? Seus saves e o registro de tempo de jogo não serão perdidos.";
     public string UninstallNotFoundTitle => "Arquivos não encontrados";
     public string UninstallNotFoundMessage => "Os arquivos do jogo não foram encontrados, mas o registro foi limpo da lista.";
     public string UninstallErrorTitle => "Erro ao desinstalar";
@@ -647,7 +647,7 @@ public class Val : IStrings
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
     public string UninstallConfirmTitle => "Desinstal·lar joc";
-    public string UninstallConfirmMessage => "Estàs segur que vols desinstal·lar {0}? Esta acció no es pot desfer.";
+    public string UninstallConfirmMessage => "Estàs segur que vols desinstal·lar {0}? Les teues partides guardades i el registre de temps jugat no es perdran.";
     public string UninstallNotFoundTitle => "Fitxers no trobats";
     public string UninstallNotFoundMessage => "No s'han trobat els fitxers del joc, però s'ha netejat el registre de la llista.";
     public string UninstallErrorTitle => "Error en desinstal·lar";
@@ -735,7 +735,7 @@ public class Fra : IStrings
     public string FolderNotFoundTitle => "Dossier non trouvé";
     public string FolderNotFoundMessage => "Le dossier du jeu n'a pas été trouvé. Voulez-vous réinstaller les fichiers ?";
     public string UninstallConfirmTitle => "Désinstaller le jeu";
-    public string UninstallConfirmMessage => "Êtes-vous sûr de vouloir désinstaller {0} ? Cette action ne peut pas être annulée.";
+    public string UninstallConfirmMessage => "Êtes-vous sûr de vouloir désinstaller {0} ? Vos sauvegardes et le registre de temps de jeu ne seront pas perdus.";
     public string UninstallNotFoundTitle => "Fichiers non trouvés";
     public string UninstallNotFoundMessage => "Les fichiers du jeu n'ont pas été trouvés, mais l'entrée a été supprimée de la liste.";
     public string UninstallErrorTitle => "Erreur de désinstallation";
