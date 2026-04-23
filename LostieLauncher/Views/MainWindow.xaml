@@ -208,6 +208,7 @@
                 <StackPanel VerticalAlignment="Bottom">
                     <RadioButton Style="{StaticResource NavItemStyle}"
                                  GroupName="Navigation"
+                                 IsChecked="{Binding IsSettingsActive, Mode=OneWay}"
                                  Command="{Binding NavigateToSettingsCommand}"
                                  ToolTip="{Binding Strings.TitleSettings, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconLucide Kind="Cog" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" />

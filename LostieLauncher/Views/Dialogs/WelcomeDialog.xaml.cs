@@ -10,6 +10,11 @@ public partial class WelcomeDialog : Window
     {
         InitializeComponent();
         DataContext = SettingsViewModel.Instance;
+
+        KeyboardShortcuts.RegisterDialog(
+            this,
+            onConfirm: Close,
+            onCancel: Close);
     }
 
     public static void Show(Window? owner = null)

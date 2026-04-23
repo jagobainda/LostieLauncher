@@ -37,6 +37,20 @@ public partial class CustomMessageBox : Window
         {
             OkPanel.Visibility = Visibility.Collapsed;
             YesNoPanel.Visibility = Visibility.Visible;
+
+            KeyboardShortcuts.RegisterDialog(
+                this,
+                onConfirm: () => DialogResult = true,
+                onCancel: () => DialogResult = false,
+                onYes: () => DialogResult = true,
+                onNo: () => DialogResult = false);
+        }
+        else
+        {
+            KeyboardShortcuts.RegisterDialog(
+                this,
+                onConfirm: () => DialogResult = true,
+                onCancel: Close);
         }
     }
 

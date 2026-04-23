@@ -17,6 +17,20 @@ public partial class SpecialVersionDialog : Window
         KeyLabel.Text = strings.SpecialVersionDialogKeyLabel;
         ConfirmButton.Content = strings.BtnConfirm;
         CancelButton.Content = strings.BtnCancel;
+
+        KeyboardShortcuts.RegisterDialog(
+            this,
+            onConfirm: ConfirmFromShortcut,
+            onCancel: () => DialogResult = false);
+    }
+
+    private void ConfirmFromShortcut()
+    {
+        var key = KeyBox.Text.Trim();
+        if (key.Length == 0) return;
+
+        _resultKey = key;
+        DialogResult = true;
     }
 
     public static string? Show(IStrings strings, Window? owner = null)

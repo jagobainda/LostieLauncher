@@ -55,6 +55,18 @@ public partial class DownloadConfirmDialog : Window
             }
             catch { }
         }
+
+        KeyboardShortcuts.RegisterDialog(
+            this,
+            onConfirm: ConfirmFromShortcut,
+            onCancel: () => DialogResult = false);
+    }
+
+    private void ConfirmFromShortcut()
+    {
+        var key = KeyBox.Text.Trim();
+        _resultKey = key.Length > 0 ? key : null;
+        DialogResult = true;
     }
 
     public static GameDownloadArgs? Show(GameInfo game, GameDownloadArgs args, string downloadPath, IStrings strings, Window? owner = null)

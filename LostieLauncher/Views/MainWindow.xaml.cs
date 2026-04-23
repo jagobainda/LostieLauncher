@@ -11,7 +11,25 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        RegisterShortcuts(viewModel);
     }
+
+    private void RegisterShortcuts(MainViewModel vm)
+    {
+        KeyboardShortcuts.BindCommand(this, Key.D1, ModifierKeys.Alt, vm.NavigateToHomeCommand);
+        KeyboardShortcuts.BindCommand(this, Key.D2, ModifierKeys.Alt, vm.NavigateToGamesCommand);
+        KeyboardShortcuts.BindCommand(this, Key.D3, ModifierKeys.Alt, vm.NavigateToLibraryCommand);
+        KeyboardShortcuts.BindCommand(this, Key.D4, ModifierKeys.Alt, vm.NavigateToSettingsCommand);
+
+        KeyboardShortcuts.BindCommand(this, Key.F5, ModifierKeys.None, vm.RefreshDataCommand);
+        KeyboardShortcuts.BindCommand(this, Key.G, ModifierKeys.Control, vm.OpenSavedGamesCommand);
+        KeyboardShortcuts.Bind(this, Key.Escape, ModifierKeys.None, MinimizeToTray);
+
+        KeyboardShortcuts.Bind(this, Key.M, ModifierKeys.Control, () => WindowState = WindowState.Minimized);
+        KeyboardShortcuts.Bind(this, Key.Q, ModifierKeys.Control | ModifierKeys.Shift, Application.Current.Shutdown);
+    }
+
+    private void MinimizeToTray() => Hide();
 
     protected override void OnClosing(CancelEventArgs e)
     {
