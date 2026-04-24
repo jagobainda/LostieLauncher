@@ -5,8 +5,13 @@
 .DESCRIPTION
     1. Reads the version from the .csproj
     2. Publishes a self-contained win-x64 build
-    3. Packages it with `vpk pack`
-    4. Optionally uploads the releases/ folder to the server via SCP
+    3. Signs the main executable with the Certum smart card certificate
+    4. Packages it with `vpk pack`
+    5. Optionally uploads the releases/ folder to the server via SCP
+
+.PARAMETER Sign
+    If set, signs the .exe with the Certum smart card before packaging.
+    Requires the ACS ACR39U reader connected with the Certum card inserted.
 
 .PARAMETER Upload
     If set, uploads the output to the configured remote server.
@@ -20,10 +25,12 @@
 
 .EXAMPLE
     .\scripts\build-release.ps1
-    .\scripts\build-release.ps1 -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
+    .\scripts\build-release.ps1 -Sign
+    .\scripts\build-release.ps1 -Sign -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
 #>
 
 param(
+    [switch]$Sign,
     [switch]$Upload,
     [string]$SshHost = "",
     [string]$SshPath = "/var/www/ericlostie-launcher/public/installer/"
@@ -42,8 +49,6 @@ $IconFile    = Join-Path $RepoRoot "LostieLauncher\Assets\app.ico"
 # ── Read version from .csproj ─────────────────────────────────────────────────
 [xml]$csproj = Get-Content $ProjectFile
 $Version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-
-# Velopack requires 3-part semver (major.minor.patch) — strip the 4th segment if present
 $Version = ($Version -split "\.")[0..2] -join "."
 
 if (-not $Version) {
@@ -55,16 +60,18 @@ Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  LostieLauncher — Velopack Release Build" -ForegroundColor Cyan
 Write-Host "  Version : $Version" -ForegroundColor Cyan
+if ($Sign) {
+Write-Host "  Signing : Enabled (Certum smart card)" -ForegroundColor Cyan
+}
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # ── Clean ─────────────────────────────────────────────────────────────────────
-Write-Host "[1/3] Cleaning previous output..." -ForegroundColor Yellow
-Remove-Item $PublishDir  -Recurse -Force -ErrorAction SilentlyContinue
-
+Write-Host "[1/4] Cleaning previous output..." -ForegroundColor Yellow
+Remove-Item $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
 
 # ── Publish ───────────────────────────────────────────────────────────────────
-Write-Host "[2/3] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
+Write-Host "[2/4] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
 dotnet publish $ProjectFile `
     --configuration Release `
     --runtime win-x64 `
@@ -75,8 +82,38 @@ dotnet publish $ProjectFile `
 
 if ($LASTEXITCODE -ne 0) { Write-Error "dotnet publish failed."; exit 1 }
 
+# ── Sign ──────────────────────────────────────────────────────────────────────
+if ($Sign) {
+    Write-Host "[3/4] Signing with Certum smart card..." -ForegroundColor Yellow
+
+    # Find signtool.exe
+    $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
+        -Recurse -Filter signtool.exe `
+        | Where-Object { $_.FullName -match "x64" } `
+        | Sort-Object FullName -Descending `
+        | Select-Object -First 1 -ExpandProperty FullName
+
+    if (-not $signtool) { Write-Error "signtool.exe not found. Install Windows SDK."; exit 1 }
+
+    $ExeToSign = Join-Path $PublishDir "LostieLauncher.exe"
+
+    & $signtool sign `
+        /fd  SHA256 `
+        /td  SHA256 `
+        /tr  http://timestamp.certum.pl `
+        /n   "Open Source Developer Jagoba Inda" `
+        /sm `
+        $ExeToSign
+
+    if ($LASTEXITCODE -ne 0) { Write-Error "signtool signing failed. Is the smart card inserted?"; exit 1 }
+
+    Write-Host "✅ Signed successfully." -ForegroundColor Green
+} else {
+    Write-Host "[3/4] Signing skipped (use -Sign to enable)." -ForegroundColor DarkGray
+}
+
 # ── Pack with vpk ─────────────────────────────────────────────────────────────
-Write-Host "[3/3] Packaging with vpk..." -ForegroundColor Yellow
+Write-Host "[4/4] Packaging with vpk..." -ForegroundColor Yellow
 vpk pack `
     --packId      LostieLauncher `
     --packVersion $Version `
