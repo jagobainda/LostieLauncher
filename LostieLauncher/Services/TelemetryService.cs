@@ -107,6 +107,19 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         }
     }
 
+    private static int GetRamGb()
+    {
+        try
+        {
+            var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
+            if (!GlobalMemoryStatusEx(ref status)) return 2;
+
+            double ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
+            return Math.Clamp((int)Math.Round(ramGb), 2, 256);
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); return 2; }
+    }
+
     private static string GetCpuName()
     {
         try
@@ -124,19 +137,6 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             return ((string?)Registry.GetValue(keyPath, "DriverDesc", null))?.Trim() ?? "Unknown";
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); return "Unknown"; }
-    }
-
-    private static int GetRamGb()
-    {
-        try
-        {
-            var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
-            if (!GlobalMemoryStatusEx(ref status)) return 2;
-
-            double ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
-            return Math.Clamp((int)Math.Round(ramGb), 2, 256);
-        }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); return 2; }
     }
 
     private static string GetOsVersion()

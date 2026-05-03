@@ -45,11 +45,13 @@ public partial class DownloadConfirmDialog : Window
         DownloadButton.Content = strings.BtnDownload;
         CancelButton.Content = strings.BtnCancel;
 
-        if (!string.IsNullOrEmpty(game.LogoUrl))
+        if (!string.IsNullOrEmpty(game.LogoUrl) &&
+            Uri.TryCreate(game.LogoUrl, UriKind.Absolute, out var logoUri) &&
+            logoUri.Scheme == Uri.UriSchemeHttps)
         {
             try
             {
-                GameLogoImage.Source = new BitmapImage(new Uri(game.LogoUrl));
+                GameLogoImage.Source = new BitmapImage(logoUri);
                 GameLogoImage.Visibility = Visibility.Visible;
                 GameLogoFallback.Visibility = Visibility.Collapsed;
             }
@@ -125,9 +127,11 @@ public partial class DownloadConfirmDialog : Window
     {
         if (string.IsNullOrWhiteSpace(_gameUrl)) return;
 
+        if (!Uri.TryCreate(_gameUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps) return;
+
         try
         {
-            Process.Start(new ProcessStartInfo(_gameUrl) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
         }
         catch
         {

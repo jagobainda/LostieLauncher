@@ -9,9 +9,12 @@ public class UriStringToImageSourceConverter : IValueConverter
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not string url || string.IsNullOrEmpty(url)) return null;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps) return null;
+
         try
         {
-            return new BitmapImage(new Uri(url));
+            return new BitmapImage(uri);
         }
         catch
         {

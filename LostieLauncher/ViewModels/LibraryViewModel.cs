@@ -29,6 +29,8 @@ public partial class LibraryViewModel : ObservableObject
     private bool _isCancelling;
 
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}(-[A-Za-z0-9]{4}){4}$", RegexOptions.Compiled);
+    private static readonly Regex ArchivoFormatRegex = new(@"^[A-Za-z0-9._-]+\.zip$", RegexOptions.Compiled);
+    private static readonly Regex Sha256FormatRegex = new(@"^[A-Fa-f0-9]{64}$", RegexOptions.Compiled);
 
     public event Action<string, string, string?>? GameInstalled;
     public event Action<string>? ScrollToGameRequested;
@@ -152,6 +154,14 @@ public partial class LibraryViewModel : ObservableObject
                 return;
             }
 
+            if (!IsValidSpecialVersionConfig(config))
+            {
+                Logs.ErrorLogManager($"Invalid special version config for key {args.Key}: archivo='{config.Archivo}'.");
+                CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                _activeDownloadArgs = null;
+                return;
+            }
+
             if (config.JuegoPrincipal != game.Id)
             {
                 CustomMessageBox.Show(strings.DownloadKeyMismatchTitle, strings.DownloadKeyMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
@@ -221,6 +231,13 @@ public partial class LibraryViewModel : ObservableObject
 
         if (config is null)
         {
+            CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+            return;
+        }
+
+        if (!IsValidSpecialVersionConfig(config))
+        {
+            Logs.ErrorLogManager($"Invalid special version config for key {key}: archivo='{config.Archivo}'.");
             CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
             return;
         }
@@ -410,6 +427,11 @@ public partial class LibraryViewModel : ObservableObject
         if (ts.TotalMinutes >= 1) return $"{ts.Minutes}m {ts.Seconds}s";
         return $"{ts.Seconds}s";
     }
+
+    private static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) =>
+        ArchivoFormatRegex.IsMatch(config.Archivo) &&
+        (string.IsNullOrEmpty(config.Sha256) || Sha256FormatRegex.IsMatch(config.Sha256)) &&
+        !string.IsNullOrWhiteSpace(config.Version);
 
     [RelayCommand]
     private void PauseDownload()
