@@ -117,31 +117,23 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         try
         {
             var blocked = await CheckServerActionFlagAsync(ct).ConfigureAwait(false);
-
-            if (blocked)
-            {
-                _serverActionBlockedCache = true;
-                _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
-            }
-            else
-            {
-                _serverActionBlockedCache = false;
-                _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
-            }
-
+            _serverActionBlockedCache = blocked;
+            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
             return blocked;
         }
         catch (OperationCanceledException)
         {
-            Logs.InfoLogManager("Maintenance flag check timed out or was cancelled; blocking server-backed actions.");
-            CacheBlockedFlagResult();
-            return true;
+            Logs.InfoLogManager("Maintenance flag check timed out or was cancelled; assuming not blocked.");
+            _serverActionBlockedCache = false;
+            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            return false;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            CacheBlockedFlagResult();
-            return true;
+            _serverActionBlockedCache = false;
+            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            return false;
         }
     }
 
@@ -163,22 +155,13 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     private static bool IsBlockingFlagStatus(HttpStatusCode statusCode)
     {
-        if (statusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone) return false;
-
         if ((int)statusCode is >= 200 and <= 299)
         {
             Logs.InfoLogManager("Maintenance flag detected. Server-backed actions are temporarily blocked.");
             return true;
         }
 
-        Logs.InfoLogManager($"Maintenance flag check returned {(int)statusCode} {statusCode}; blocking server-backed actions.");
-        return true;
-    }
-
-    private void CacheBlockedFlagResult()
-    {
-        _serverActionBlockedCache = true;
-        _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+        return false;
     }
 
     private static string GetLanguageCode(AppLanguage language) => language switch
