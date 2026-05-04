@@ -88,6 +88,11 @@ public interface IStrings
     string DownloadKeyMismatchTitle { get; }
     string DownloadKeyMismatchMessage { get; }
     string TooltipSwitchSpecialVersion { get; }
+    string ServerActionsUnavailableTitle { get; }
+    string ServerActionsUnavailableMessage { get; }
+    string OfflineModeLabel { get; }
+    string ServerMaintenanceNotificationTitle { get; }
+    string ServerMaintenanceNotificationMessage { get; }
 }
 
 public class Esp : IStrings
@@ -178,6 +183,11 @@ public class Esp : IStrings
     public string DownloadKeyMismatchTitle => "Clave incorrecta";
     public string DownloadKeyMismatchMessage => "La clave no corresponde a este juego.";
     public string TooltipSwitchSpecialVersion => "Cambiar a versión especial";
+    public string ServerActionsUnavailableTitle => "Servidor en mantenimiento";
+    public string ServerActionsUnavailableMessage => "El servidor está en mantenimiento. Las descargas, actualizaciones y versiones especiales volverán en cuanto termine.";
+    public string OfflineModeLabel => "Modo offline";
+    public string ServerMaintenanceNotificationTitle => "Servidor en mantenimiento";
+    public string ServerMaintenanceNotificationMessage => "El launcher está en modo offline. Puedes seguir viendo tus juegos instalados; las descargas y actualizaciones se reactivarán automáticamente cuando el servicio vuelva.";
 }
 
 public class Eng : IStrings
@@ -268,6 +278,11 @@ public class Eng : IStrings
     public string DownloadKeyMismatchTitle => "Incorrect key";
     public string DownloadKeyMismatchMessage => "The key does not match this game.";
     public string TooltipSwitchSpecialVersion => "Switch to special version";
+    public string ServerActionsUnavailableTitle => "Server maintenance";
+    public string ServerActionsUnavailableMessage => "The server is under maintenance. Downloads, updates, and special versions will return as soon as it is finished.";
+    public string OfflineModeLabel => "Offline mode";
+    public string ServerMaintenanceNotificationTitle => "Server maintenance";
+    public string ServerMaintenanceNotificationMessage => "The launcher is in offline mode. You can keep viewing your installed games; downloads and updates will reactivate automatically when the service returns.";
 }
 
 public class Cat : IStrings
@@ -356,6 +371,11 @@ public class Cat : IStrings
     public string DownloadKeyMismatchTitle => "Clau incorrecta";
     public string DownloadKeyMismatchMessage => "La clau no correspon a aquest joc.";
     public string TooltipSwitchSpecialVersion => "Canviar a versió especial";
+    public string ServerActionsUnavailableTitle => "Servidor en manteniment";
+    public string ServerActionsUnavailableMessage => "El servidor està en manteniment. Les descàrregues, actualitzacions i versions especials tornaran quan acabe.";
+    public string OfflineModeLabel => "Mode offline";
+    public string ServerMaintenanceNotificationTitle => "Servidor en manteniment";
+    public string ServerMaintenanceNotificationMessage => "El launcher està en mode offline. Pots continuar veient els jocs instal·lats; les descàrregues i actualitzacions es reactivaran automàticament quan torne el servei.";
 }
 
 public class Eus : IStrings
@@ -446,6 +466,11 @@ public class Eus : IStrings
     public string DownloadKeyMismatchTitle => "Gako okerra";
     public string DownloadKeyMismatchMessage => "Gakoa ez dator bat joko honekin.";
     public string TooltipSwitchSpecialVersion => "Bertsio berezira aldatu";
+    public string ServerActionsUnavailableTitle => "Zerbitzaria mantentze-lanetan";
+    public string ServerActionsUnavailableMessage => "Zerbitzaria mantentze-lanetan dago. Deskargak, eguneraketak eta bertsio bereziak amaitzean itzuliko dira.";
+    public string OfflineModeLabel => "Offline modua";
+    public string ServerMaintenanceNotificationTitle => "Zerbitzaria mantentze-lanetan";
+    public string ServerMaintenanceNotificationMessage => "Launcher-a offline moduan dago. Instalatutako jokoak ikusten jarrai dezakezu; deskargak eta eguneraketak automatikoki berraktibatuko dira zerbitzua itzultzen denean.";
 }
 
 public class Gal : IStrings
@@ -536,6 +561,11 @@ public class Gal : IStrings
     public string DownloadKeyMismatchTitle => "Clave incorrecta";
     public string DownloadKeyMismatchMessage => "A clave non corresponde a este xogo.";
     public string TooltipSwitchSpecialVersion => "Cambiar a versión especial";
+    public string ServerActionsUnavailableTitle => "Servidor en mantemento";
+    public string ServerActionsUnavailableMessage => "O servidor está en mantemento. As descargas, actualizacións e versións especiais volverán cando remate.";
+    public string OfflineModeLabel => "Modo offline";
+    public string ServerMaintenanceNotificationTitle => "Servidor en mantemento";
+    public string ServerMaintenanceNotificationMessage => "O launcher está en modo offline. Podes seguir vendo os teus xogos instalados; as descargas e actualizacións reactivaranse automaticamente cando volva o servizo.";
 }
 
 public class Por : IStrings
@@ -624,6 +654,11 @@ public class Por : IStrings
     public string DownloadKeyMismatchTitle => "Chave incorreta";
     public string DownloadKeyMismatchMessage => "A chave não corresponde a este jogo.";
     public string TooltipSwitchSpecialVersion => "Mudar para versão especial";
+    public string ServerActionsUnavailableTitle => "Servidor em manutenção";
+    public string ServerActionsUnavailableMessage => "O servidor está em manutenção. Downloads, atualizações e versões especiais voltarão assim que terminar.";
+    public string OfflineModeLabel => "Modo offline";
+    public string ServerMaintenanceNotificationTitle => "Servidor em manutenção";
+    public string ServerMaintenanceNotificationMessage => "O launcher está em modo offline. Você pode continuar vendo seus jogos instalados; downloads e atualizações serão reativados automaticamente quando o serviço voltar.";
 }
 
 public class Val : IStrings
@@ -712,6 +747,11 @@ public class Val : IStrings
     public string DownloadKeyMismatchTitle => "Clau incorrecta";
     public string DownloadKeyMismatchMessage => "La clau no correspon a este joc.";
     public string TooltipSwitchSpecialVersion => "Canviar a versió especial";
+    public string ServerActionsUnavailableTitle => "Servidor en manteniment";
+    public string ServerActionsUnavailableMessage => "El servidor està en manteniment. Les descàrregues, actualitzacions i versions especials tornaran quan acabe.";
+    public string OfflineModeLabel => "Mode offline";
+    public string ServerMaintenanceNotificationTitle => "Servidor en manteniment";
+    public string ServerMaintenanceNotificationMessage => "El launcher està en mode offline. Pots continuar veient els jocs instal·lats; les descàrregues i actualitzacions es reactivaran automàticament quan torne el servei.";
 }
 
 public class Fra : IStrings
@@ -800,4 +840,9 @@ public class Fra : IStrings
     public string DownloadKeyMismatchTitle => "Clé incorrecte";
     public string DownloadKeyMismatchMessage => "La clé ne correspond pas à ce jeu.";
     public string TooltipSwitchSpecialVersion => "Passer à la version spéciale";
+    public string ServerActionsUnavailableTitle => "Serveur en maintenance";
+    public string ServerActionsUnavailableMessage => "Le serveur est en maintenance. Les téléchargements, mises à jour et versions spéciales reviendront dès que ce sera terminé.";
+    public string OfflineModeLabel => "Mode hors ligne";
+    public string ServerMaintenanceNotificationTitle => "Serveur en maintenance";
+    public string ServerMaintenanceNotificationMessage => "Le launcher est en mode hors ligne. Vous pouvez continuer à voir vos jeux installés ; les téléchargements et mises à jour se réactiveront automatiquement au retour du service.";
 }

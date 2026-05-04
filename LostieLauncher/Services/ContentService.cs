@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,7 @@ public interface IContentService
     Task<List<GameInfo>> GetGamesAsync();
     Task<List<LocalGameInfo>> GetLocalGamesAsync();
     Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
+    Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default);
     string GetGameDirectory(string gameName);
     Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null);
     Task RemoveGameRegistryAsync(string gameName);
@@ -24,6 +26,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private readonly ContentOptions _contentOptions = contentOptions;
     private readonly ISettingsService _settingsService = settingsService;
     private HomeContentDto? _homeContentCache;
+    private bool _serverActionBlockedCache;
+    private DateTime _serverActionBlockedCacheExpiresAtUtc;
+    private static readonly TimeSpan ServerActionBlockedCacheDuration = TimeSpan.FromSeconds(30);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -34,6 +39,12 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
+            if (await IsServerActionBlockedAsync().ConfigureAwait(false))
+            {
+                Logs.InfoLogManager("Games list request skipped because server actions are blocked by the maintenance flag.");
+                return [];
+            }
+
             Logs.DebugLogManager("Fetching games list from remote.");
             var client = _httpClientFactory.CreateClient("Content");
             using var response = await client.GetAsync(_contentOptions.ContentEndpoint).ConfigureAwait(false);
@@ -96,6 +107,78 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             Logs.ErrorLogManager(ex);
             return new HomeContent();
         }
+    }
+
+    public async Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default)
+    {
+        if (!forceRefresh && DateTime.UtcNow < _serverActionBlockedCacheExpiresAtUtc)
+            return _serverActionBlockedCache;
+
+        try
+        {
+            var blocked = await CheckServerActionFlagAsync(ct).ConfigureAwait(false);
+
+            if (blocked)
+            {
+                _serverActionBlockedCache = true;
+                _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            }
+            else
+            {
+                _serverActionBlockedCache = false;
+                _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            }
+
+            return blocked;
+        }
+        catch (OperationCanceledException)
+        {
+            Logs.InfoLogManager("Maintenance flag check timed out or was cancelled; blocking server-backed actions.");
+            CacheBlockedFlagResult();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            CacheBlockedFlagResult();
+            return true;
+        }
+    }
+
+    private async Task<bool> CheckServerActionFlagAsync(CancellationToken ct)
+    {
+        var client = _httpClientFactory.CreateClient("SecurityFlag");
+        using var headRequest = new HttpRequestMessage(HttpMethod.Head, _contentOptions.FlagEndpoint);
+        using var headResponse = await client.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+
+        if (headResponse.StatusCode == HttpStatusCode.MethodNotAllowed)
+        {
+            using var getRequest = new HttpRequestMessage(HttpMethod.Get, _contentOptions.FlagEndpoint);
+            using var getResponse = await client.SendAsync(getRequest, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            return IsBlockingFlagStatus(getResponse.StatusCode);
+        }
+
+        return IsBlockingFlagStatus(headResponse.StatusCode);
+    }
+
+    private static bool IsBlockingFlagStatus(HttpStatusCode statusCode)
+    {
+        if (statusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone) return false;
+
+        if ((int)statusCode is >= 200 and <= 299)
+        {
+            Logs.InfoLogManager("Maintenance flag detected. Server-backed actions are temporarily blocked.");
+            return true;
+        }
+
+        Logs.InfoLogManager($"Maintenance flag check returned {(int)statusCode} {statusCode}; blocking server-backed actions.");
+        return true;
+    }
+
+    private void CacheBlockedFlagResult()
+    {
+        _serverActionBlockedCache = true;
+        _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
     }
 
     private static string GetLanguageCode(AppLanguage language) => language switch

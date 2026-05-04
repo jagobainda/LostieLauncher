@@ -26,6 +26,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsGamesActive => CurrentViewModel is GamesViewModel;
     public bool IsLibraryActive => CurrentViewModel is LibraryViewModel;
     public bool IsSettingsActive => CurrentViewModel is SettingsViewModel;
+    public bool IsOfflineMode => _homeViewModel.IsOfflineMode;
 
     public MainViewModel(GlobalViewModel globalViewModel, HomeViewModel homeViewModel, GamesViewModel gamesViewModel, LibraryViewModel libraryViewModel, SettingsViewModel settingsViewModel)
     {
@@ -67,6 +68,7 @@ public partial class MainViewModel : ObservableObject
         _homeViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(HomeViewModel.IsLoading)) RefreshDataCommand.NotifyCanExecuteChanged();
+            if (e.PropertyName == nameof(HomeViewModel.IsOfflineMode)) OnPropertyChanged(nameof(IsOfflineMode));
         };
     }
 

@@ -123,6 +123,29 @@
                            Margin="8,0,0,0"
                            FontSize="13"
                            FontWeight="SemiBold" />
+                <Border Margin="10,0,0,0"
+                        Height="22"
+                        Padding="8,0"
+                        CornerRadius="4"
+                        BorderThickness="1"
+                        BorderBrush="#FFFFC107"
+                        Background="{DynamicResource OverlaySubtleBrush}"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding IsOfflineMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        ToolTip="{Binding Strings.ServerMaintenanceNotificationTitle, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <iconPacks:PackIconMaterial Kind="CloudOffOutline"
+                                                   Width="12" Height="12"
+                                                   Foreground="#FFFFC107"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,5,0" />
+                        <TextBlock Text="{Binding Strings.OfflineModeLabel, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                   Foreground="{DynamicResource SecondaryFgBrush}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

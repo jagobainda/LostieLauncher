@@ -11,6 +11,7 @@ public static class DependencyInjection
     private const string TelemetryEndpoint = "https://ericlostie-launcher.jagoba.dev/";
     private const string ContentEndpoint = "https://ericlostie-launcher.jagoba.dev/games/listado.json";
     private const string NotificationsEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json";
+    private const string FlagEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/flag.txt";
     private const string DownloadBaseUrl = "https://ericlostie-launcher.jagoba.dev/games";
 
     public static IServiceProvider Configure()
@@ -19,7 +20,7 @@ public static class DependencyInjection
 
         // Configuration
         services.AddSingleton(new TelemetryOptions(ApiKey: "4V7p0XSJ9C6FgCE7ae3c", Endpoint: TelemetryEndpoint));
-        services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint));
+        services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint, FlagEndpoint: FlagEndpoint));
         services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl));
 
         // Services
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<ITelemetryService, TelemetryService>();
         services.AddHttpClient("Telemetry", client => { client.Timeout = TimeSpan.FromSeconds(5); });
         services.AddHttpClient("Content", client => { client.Timeout = TimeSpan.FromSeconds(10); });
+        services.AddHttpClient("SecurityFlag", client => { client.Timeout = TimeSpan.FromSeconds(3); });
         services.AddHttpClient("Download", client => { client.Timeout = Timeout.InfiniteTimeSpan; });
 
         // ViewModels

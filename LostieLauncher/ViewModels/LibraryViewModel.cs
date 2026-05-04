@@ -26,6 +26,7 @@ public partial class LibraryViewModel : ObservableObject
     private CancellationTokenSource? _downloadCts;
     private GameDownloadArgs? _activeDownloadArgs;
     private SpecialVersionConfig? _activeSpecialConfig;
+    private bool _serverActionsBlockedMessageShown;
     private bool _isCancelling;
 
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}(-[A-Za-z0-9]{4}){4}$", RegexOptions.Compiled);
@@ -112,6 +113,8 @@ public partial class LibraryViewModel : ObservableObject
             return;
         }
 
+        if (!await EnsureServerActionsAvailableAsync()) return;
+
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
@@ -191,6 +194,8 @@ public partial class LibraryViewModel : ObservableObject
             return;
         }
 
+        if (!await EnsureServerActionsAvailableAsync()) return;
+
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
@@ -212,6 +217,8 @@ public partial class LibraryViewModel : ObservableObject
             Logs.DebugLogManager($"Switch request ignored for {args.GameId}: another download is already active.");
             return;
         }
+
+        if (!await EnsureServerActionsAvailableAsync()) return;
 
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
@@ -300,6 +307,27 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadRemainingText = string.Empty;
         _globalViewModel.IsDownloading = false;
         _downloadCts = null;
+    }
+
+    private async Task<bool> EnsureServerActionsAvailableAsync()
+    {
+        var blocked = await _contentService.IsServerActionBlockedAsync();
+        if (!blocked)
+        {
+            _serverActionsBlockedMessageShown = false;
+            return true;
+        }
+
+        Logs.InfoLogManager("Server-backed action blocked by maintenance flag.");
+
+        if (!_serverActionsBlockedMessageShown)
+        {
+            var strings = SettingsViewModel.Instance.Strings;
+            CustomMessageBox.Show(strings.ServerActionsUnavailableTitle, strings.ServerActionsUnavailableMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
+            _serverActionsBlockedMessageShown = true;
+        }
+
+        return false;
     }
 
     private async Task HandleDownloadSuccessAsync(GameInfo game, GameDownloadArgs args, string zipPath, string extractDir, bool isUpdate)

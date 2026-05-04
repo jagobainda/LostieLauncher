@@ -8,8 +8,10 @@ namespace LostieLauncher.ViewModels;
 
 public partial class HomeViewModel : ObservableObject
 {
+    private static readonly TimeSpan BackgroundRefreshInterval = TimeSpan.FromMinutes(2);
     private readonly IContentService _contentService;
     private readonly SettingsViewModel _settingsViewModel;
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
@@ -30,6 +32,9 @@ public partial class HomeViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsNotificationsEmpty))]
     public partial bool IsLoading { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsOfflineMode { get; set; }
+
     public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
     public bool IsListVisible => !IsLoading && (News.Count > 0 || Notifications.Count > 0);
     public bool IsNewsEmpty => !IsLoading && News.Count == 0;
@@ -41,6 +46,7 @@ public partial class HomeViewModel : ObservableObject
         _settingsViewModel = settingsViewModel;
         _settingsViewModel.PropertyChanged += OnSettingsPropertyChanged;
         _ = LoadHomeContentAsync();
+        _ = RefreshHomeContentPeriodicallyAsync();
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -50,16 +56,45 @@ public partial class HomeViewModel : ObservableObject
 
     public async Task RefreshAsync() => await LoadHomeContentAsync(forceRefresh: true);
 
-    private async Task LoadHomeContentAsync(bool forceRefresh = false)
+    private async Task LoadHomeContentAsync(bool forceRefresh = false, bool showLoading = true)
     {
-        IsLoading = true;
+        await _refreshGate.WaitAsync();
 
-        var content = await _contentService.GetHomeContentAsync(forceRefresh);
-        News = new ObservableCollection<NewsItem>(content.News);
-        Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
+        try
+        {
+            if (showLoading) IsLoading = true;
 
-        Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications.");
+            var offlineMode = await _contentService.IsServerActionBlockedAsync(forceRefresh);
+            var content = await _contentService.GetHomeContentAsync(forceRefresh);
 
-        IsLoading = false;
+            News = new ObservableCollection<NewsItem>(content.News);
+            Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
+            IsOfflineMode = offlineMode;
+
+            Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}.");
+        }
+        finally
+        {
+            if (showLoading) IsLoading = false;
+            _refreshGate.Release();
+        }
     }
+
+    private async Task RefreshHomeContentPeriodicallyAsync()
+    {
+        using var timer = new PeriodicTimer(BackgroundRefreshInterval);
+
+        while (await timer.WaitForNextTickAsync())
+        {
+            try
+            {
+                await LoadHomeContentAsync(forceRefresh: true, showLoading: false);
+            }
+            catch (Exception ex)
+            {
+                Logs.ErrorLogManager(ex);
+            }
+        }
+    }
+
 }
