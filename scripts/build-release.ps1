@@ -5,12 +5,11 @@
 .DESCRIPTION
     1. Reads the version from the .csproj
     2. Publishes a self-contained win-x64 build
-    3. Signs the main executable with the Certum smart card certificate
-    4. Packages it with `vpk pack`
-    5. Optionally uploads the releases/ folder to the server via SCP
+    3. Packages it with `vpk pack` (Velopack signs its own binaries + the app)
+    4. Optionally uploads the releases/ folder to the server via SCP
 
 .PARAMETER Sign
-    If set, signs the .exe with the Certum smart card before packaging.
+    If set, signs all binaries (app + Velopack internals) with the Certum smart card.
     Requires the ACS ACR39U reader connected with the Certum card inserted.
 
 .PARAMETER Upload
@@ -39,6 +38,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# ── Config ────────────────────────────────────────────────────────────────────
+$CertThumbprint = "20ed2e50b3c08a196ae371d1fcc2fa9891bb714e"
+$TimestampUrl   = "http://time.certum.pl"
+$SigntoolExe    = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 $RepoRoot    = Split-Path $PSScriptRoot -Parent
 $ProjectFile = Join-Path $RepoRoot "LostieLauncher\LostieLauncher.csproj"
@@ -61,17 +65,26 @@ Write-Host "============================================================" -Foreg
 Write-Host "  LostieLauncher — Velopack Release Build" -ForegroundColor Cyan
 Write-Host "  Version : $Version" -ForegroundColor Cyan
 if ($Sign) {
-Write-Host "  Signing : Enabled (Certum smart card)" -ForegroundColor Cyan
+    Write-Host "  Signing : Enabled (Certum smart card)" -ForegroundColor Cyan
+    Write-Host "  Thumbprint: $CertThumbprint" -ForegroundColor Cyan
 }
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
+# ── Validate signtool if signing ──────────────────────────────────────────────
+if ($Sign) {
+    if (-not (Test-Path $SigntoolExe)) {
+        Write-Error "signtool.exe not found at: $SigntoolExe`nInstall Windows SDK or update the path in this script."
+        exit 1
+    }
+}
+
 # ── Clean ─────────────────────────────────────────────────────────────────────
-Write-Host "[1/4] Cleaning previous output..." -ForegroundColor Yellow
+Write-Host "[1/3] Cleaning previous output..." -ForegroundColor Yellow
 Remove-Item $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
 
 # ── Publish ───────────────────────────────────────────────────────────────────
-Write-Host "[2/4] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
+Write-Host "[2/3] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
 dotnet publish $ProjectFile `
     --configuration Release `
     --runtime win-x64 `
@@ -82,46 +95,34 @@ dotnet publish $ProjectFile `
 
 if ($LASTEXITCODE -ne 0) { Write-Error "dotnet publish failed."; exit 1 }
 
-# ── Sign ──────────────────────────────────────────────────────────────────────
+# ── Pack with vpk (+ signing) ─────────────────────────────────────────────────
+# NOTE: Velopack must handle ALL signing itself because it signs its own
+# internal binaries (Setup.exe, Update.exe) during the pack process.
+# Signing only the app .exe beforehand is NOT sufficient.
+Write-Host "[3/3] Packaging with vpk..." -ForegroundColor Yellow
+
+$vpkArgs = @(
+    "pack"
+    "--packId",      "LostieLauncher"
+    "--packVersion", $Version
+    "--packDir",     $PublishDir
+    "--mainExe",     "LostieLauncher.exe"
+    "--packTitle",   "Lostie Launcher"
+    "--icon",        $IconFile
+    "--outputDir",   $ReleasesDir
+)
+
 if ($Sign) {
-    Write-Host "[3/4] Signing with Certum smart card..." -ForegroundColor Yellow
-
-    # Find signtool.exe
-    $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" `
-        -Recurse -Filter signtool.exe `
-        | Where-Object { $_.FullName -match "x64" } `
-        | Sort-Object FullName -Descending `
-        | Select-Object -First 1 -ExpandProperty FullName
-
-    if (-not $signtool) { Write-Error "signtool.exe not found. Install Windows SDK."; exit 1 }
-
-    $ExeToSign = Join-Path $PublishDir "LostieLauncher.exe"
-
-    & $signtool sign `
-        /fd  SHA256 `
-        /td  SHA256 `
-        /tr  http://timestamp.certum.pl `
-        /n   "Open Source Developer Jagoba Inda" `
-        /sm `
-        $ExeToSign
-
-    if ($LASTEXITCODE -ne 0) { Write-Error "signtool signing failed. Is the smart card inserted?"; exit 1 }
-
-    Write-Host "✅ Signed successfully." -ForegroundColor Green
-} else {
-    Write-Host "[3/4] Signing skipped (use -Sign to enable)." -ForegroundColor DarkGray
+    # Pass sign params to vpk — it will call signtool for every binary it needs
+    # to sign (Setup.exe, Update.exe and your app exe).
+    # /sha1 selects the cert by thumbprint (most reliable with smart cards).
+    # --signParallel 1 forces signing one file at a time so the smart card
+    # PIN prompt (if any) is not hit concurrently.
+    $vpkArgs += "--signParams", "/sha1 $CertThumbprint /fd SHA256 /td SHA256 /tr $TimestampUrl"
+    $vpkArgs += "--signParallel", "1"
 }
 
-# ── Pack with vpk ─────────────────────────────────────────────────────────────
-Write-Host "[4/4] Packaging with vpk..." -ForegroundColor Yellow
-vpk pack `
-    --packId      LostieLauncher `
-    --packVersion $Version `
-    --packDir     $PublishDir `
-    --mainExe     LostieLauncher.exe `
-    --packTitle   "Lostie Launcher" `
-    --icon        $IconFile `
-    --outputDir   $ReleasesDir
+& vpk @vpkArgs
 
 if ($LASTEXITCODE -ne 0) { Write-Error "vpk pack failed."; exit 1 }
 
