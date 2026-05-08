@@ -13,7 +13,7 @@
 
 **Modern game launcher for Windows**
 
-[![Version](https://img.shields.io/badge/version-0.8.10-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.8.11-blue?style=flat-square)](releases/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Discover, download, install, and manage your games from a clean interface with multi-language support.
 
@@ -47,6 +47,9 @@ Español · English · Català · Euskera · Galego · Português · Valencià �
 The language is selected in the settings and applied dynamically throughout the application.
 
 ---
+
+> [!NOTE]
+> The following sections are intended for developers.
 
 ## 🏗️ Architecture
 
@@ -101,7 +104,7 @@ LostieLauncher/
 | [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Vector icons in the UI                            |
 | [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.7   | IoC container                                     |
 | [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.7   | `IHttpClientFactory` with named clients           |
-| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.47.4   | ZIP/7z extraction of downloaded files             |
+| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.48.0   | ZIP/7z extraction of downloaded files             |
 | [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Automatic delta update system                     |
 
 ---
@@ -130,7 +133,7 @@ dotnet build
 
 Artifacts are generated in `releases/`:
 
-- `LostieLauncher-0.8.10-full.nupkg` — initial installation package
+- `LostieLauncher-0.8.11-full.nupkg` — initial installation package
 - Delta packages (on successive builds)
 - `releases.win.json` — update manifest
 - `RELEASES` — Velopack metadata

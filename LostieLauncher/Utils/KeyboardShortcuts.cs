@@ -6,10 +6,13 @@ namespace LostieLauncher.Utils;
 public static class KeyboardShortcuts
 {
     public static void Bind(UIElement target, Key key, ModifierKeys modifiers, Action action) =>
-        target.InputBindings.Add(new KeyBinding(new ActionCommand(action), key, modifiers));
+        target.InputBindings.Add(CreateBinding(new ActionCommand(action), key, modifiers));
 
     public static void BindCommand(UIElement target, Key key, ModifierKeys modifiers, ICommand command) =>
-        target.InputBindings.Add(new KeyBinding(command, key, modifiers));
+        target.InputBindings.Add(CreateBinding(command, key, modifiers));
+
+    private static KeyBinding CreateBinding(ICommand command, Key key, ModifierKeys modifiers) =>
+        new() { Command = command, Key = key, Modifiers = modifiers };
 
     public static void RegisterDialog(
         Window window,

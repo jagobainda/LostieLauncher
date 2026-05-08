@@ -12,6 +12,9 @@
     If set, signs all binaries (app + Velopack internals) with the Certum smart card.
     Requires the ACS ACR39U reader connected with the Certum card inserted.
 
+.PARAMETER CertThumbprint
+    SHA1 thumbprint of the code-signing certificate. Required when -Sign is set.
+
 .PARAMETER Upload
     If set, uploads the output to the configured remote server.
 
@@ -24,22 +27,22 @@
 
 .EXAMPLE
     .\scripts\build-release.ps1
-    .\scripts\build-release.ps1 -Sign
-    .\scripts\build-release.ps1 -Sign -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
+    .\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
+    .\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
 #>
 
 param(
     [switch]$Sign,
     [switch]$Upload,
     [string]$SshHost = "",
-    [string]$SshPath = "/var/www/ericlostie-launcher/public/installer/"
+    [string]$SshPath = "/var/www/ericlostie-launcher/public/installer/",
+    [string]$CertThumbprint = ""
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ── Config ────────────────────────────────────────────────────────────────────
-$CertThumbprint = "20ed2e50b3c08a196ae371d1fcc2fa9891bb714e"
 $TimestampUrl   = "http://time.certum.pl"
 $SigntoolExe    = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
 
@@ -73,6 +76,10 @@ Write-Host ""
 
 # ── Validate signtool if signing ──────────────────────────────────────────────
 if ($Sign) {
+    if (-not $CertThumbprint) {
+        Write-Error "-CertThumbprint is required when using -Sign."
+        exit 1
+    }
     if (-not (Test-Path $SigntoolExe)) {
         Write-Error "signtool.exe not found at: $SigntoolExe`nInstall Windows SDK or update the path in this script."
         exit 1
