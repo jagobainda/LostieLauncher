@@ -80,26 +80,32 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var settings = _settingsService.Load();
             var langCode = GetLanguageCode(settings.Language);
 
+            var now = DateTime.Now;
+
             return new HomeContent
             {
-                News = [.. _homeContentCache.News.Select(n => new NewsItem
-                {
-                    Id = n.Id,
-                    Title = Resolve(n.Title, langCode),
-                    Description = Resolve(n.Description, langCode),
-                    Tag = n.Tag,
-                    Date = n.Date,
-                    ExpiresAt = n.ExpiresAt
-                })],
-                Notifications = [.. _homeContentCache.Notifications.Select(n => new NotificationItem
-                {
-                    Id = n.Id,
-                    Title = Resolve(n.Title, langCode),
-                    Message = Resolve(n.Message, langCode),
-                    Type = n.Type,
-                    Date = n.Date,
-                    ExpiresAt = n.ExpiresAt
-                })]
+                News = [.. _homeContentCache.News
+                    .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
+                    .Select(n => new NewsItem
+                    {
+                        Id = n.Id,
+                        Title = Resolve(n.Title, langCode),
+                        Description = Resolve(n.Description, langCode),
+                        Tag = n.Tag,
+                        Date = n.Date,
+                        ExpiresAt = n.ExpiresAt
+                    })],
+                Notifications = [.. _homeContentCache.Notifications
+                    .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
+                    .Select(n => new NotificationItem
+                    {
+                        Id = n.Id,
+                        Title = Resolve(n.Title, langCode),
+                        Message = Resolve(n.Message, langCode),
+                        Type = n.Type,
+                        Date = n.Date,
+                        ExpiresAt = n.ExpiresAt
+                    })]
             };
         }
         catch (Exception ex)
