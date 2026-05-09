@@ -120,13 +120,9 @@ $vpkArgs = @(
 )
 
 if ($Sign) {
-    # Pass sign params to vpk — it will call signtool for every binary it needs
-    # to sign (Setup.exe, Update.exe and your app exe).
-    # /sha1 selects the cert by thumbprint (most reliable with smart cards).
-    # --signParallel 1 forces signing one file at a time so the smart card
-    # PIN prompt (if any) is not hit concurrently.
-    $vpkArgs += "--signParams", "/sha1 $CertThumbprint /fd SHA256 /td SHA256 /tr $TimestampUrl"
-    $vpkArgs += "--signParallel", "1"
+    Write-Host "Registrando clave de tarjeta inteligente..." -ForegroundColor Yellow
+    certutil -repairstore -user MY $CertThumbprint "C:\Users\Jagoba\keyinfo.inf"
+    if ($LASTEXITCODE -ne 0) { Write-Error "certutil -repairstore falló."; exit 1 }
 }
 
 & vpk @vpkArgs
