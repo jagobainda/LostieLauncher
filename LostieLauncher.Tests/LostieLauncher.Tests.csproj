@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      net10.0-windows is required because the project under test (LostieLauncher) is a WPF
+      application targeting net10.0-windows. We intentionally do NOT enable UseWPF nor
+      UseWindowsForms here: unit tests must not load XAML, instantiate Windows or pump a
+      real Dispatcher, so they can run on a headless Windows CI agent (no desktop session).
+    -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- Treat warnings as errors in tests too, but allow xUnit analyzer suggestions. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);xUnit1031</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test framework -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <!-- Mocking -->
+    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- Assertions: Shouldly is MIT-licensed (FluentAssertions v8+ is paid). -->
+    <PackageReference Include="Shouldly" Version="4.2.1" />
+
+    <!-- DI helpers (the production project uses Microsoft.Extensions.DI). -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+
+    <!-- Coverage -->
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LostieLauncher\LostieLauncher.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Mirror production folders so authors can find the matching tests easily. -->
+    <Folder Include="Services\" />
+    <Folder Include="ViewModels\" />
+    <Folder Include="Utils\" />
+    <Folder Include="Models\" />
+    <Folder Include="Helpers\" />
+    <!-- Reserved for future integration tests; keep separate from unit tests. -->
+    <Folder Include="Integration\" />
+  </ItemGroup>
+
+</Project>
