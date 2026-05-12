@@ -12,39 +12,53 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
 
+    <!--
+      xUnit v3 ships tests as a standalone executable instead of a class library.
+      OutputType=Exe is mandatory for the v3 runner; Microsoft.NET.Test.Sdk 18.x plus
+      xunit.runner.visualstudio 3.x still let `dotnet test` discover and run them.
+    -->
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
 
-    <!-- Treat warnings as errors in tests too, but allow xUnit analyzer suggestions. -->
+    <!--
+      Treat warnings as errors in tests too. Suppress:
+        xUnit1031 — async wait inside test (we drain via PumpAsync helpers).
+        xUnit1051 — recommends TestContext.Current.CancellationToken; opt-in style only,
+                    not a correctness issue. Migrate per-test if/when desired.
+    -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);xUnit1031</NoWarn>
+    <NoWarn>$(NoWarn);xUnit1031;xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Test framework -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+    <!--
+      Test framework: xUnit v3 (xunit 2.x is now in maintenance-only mode).
+      The xunit.v3 metapackage transitively pulls xunit.v3.core and xunit.v3.assert.
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 
     <!-- Mocking -->
-    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
     <!-- Assertions: Shouldly is MIT-licensed (FluentAssertions v8+ is paid). -->
-    <PackageReference Include="Shouldly" Version="4.2.1" />
+    <PackageReference Include="Shouldly" Version="4.3.0" />
 
     <!-- DI helpers (the production project uses Microsoft.Extensions.DI). -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
 
     <!-- Coverage -->
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
+    <PackageReference Include="coverlet.collector" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
