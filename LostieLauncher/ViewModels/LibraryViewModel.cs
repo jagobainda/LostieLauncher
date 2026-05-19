@@ -1,15 +1,15 @@
-using System.Collections.ObjectModel;
-using System.IO;
-using SharpCompress.Archives;
-using SharpCompress.Common;
-using SharpCompress.Readers;
-using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Views.Dialogs;
+using SharpCompress.Archives;
+using SharpCompress.Common;
+using SharpCompress.Readers;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace LostieLauncher.ViewModels;
 

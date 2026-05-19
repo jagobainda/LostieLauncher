@@ -1,6 +1,6 @@
+using LostieLauncher.ViewModels;
 using System.Windows;
 using System.Windows.Input;
-using LostieLauncher.ViewModels;
 
 namespace LostieLauncher.Views.Dialogs;
 

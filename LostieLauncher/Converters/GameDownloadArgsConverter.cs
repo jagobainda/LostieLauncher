@@ -1,6 +1,6 @@
+using LostieLauncher.Models;
 using System.Globalization;
 using System.Windows.Data;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Converters;
 

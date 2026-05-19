@@ -1,8 +1,7 @@
+using LostieLauncher.Models;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using LostieLauncher.Models;
-
 using Color = System.Windows.Media.Color;
 
 namespace LostieLauncher.Converters;

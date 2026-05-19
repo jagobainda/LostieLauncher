@@ -1,5 +1,5 @@
-using System.Globalization;
 using LostieLauncher.Models;
+using System.Globalization;
 
 namespace LostieLauncher.Tests.Models;
 

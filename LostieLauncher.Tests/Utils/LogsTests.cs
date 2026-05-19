@@ -1,6 +1,6 @@
+using LostieLauncher.Utils;
 using System.Globalization;
 using System.Reflection;
-using LostieLauncher.Utils;
 
 namespace LostieLauncher.Tests.Utils;
 

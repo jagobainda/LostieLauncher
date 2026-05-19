@@ -1,7 +1,7 @@
-using System.Net;
-using System.Text;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
+using System.Net;
+using System.Text;
 
 namespace LostieLauncher.Tests.Services;
 

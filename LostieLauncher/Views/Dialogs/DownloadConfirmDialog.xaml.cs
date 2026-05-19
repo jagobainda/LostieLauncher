@@ -1,11 +1,11 @@
+using LostieLauncher.Content;
+using LostieLauncher.Models;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using LostieLauncher.Content;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Views.Dialogs;
 

@@ -1,10 +1,10 @@
+using LostieLauncher.Models;
+using Microsoft.Win32;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using LostieLauncher.Models;
-using Microsoft.Win32;
 
 namespace LostieLauncher.Services;
 
@@ -144,7 +144,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         try
         {
             var buildStr = (string?)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuildNumber", null);
-            
+
             if (int.TryParse(buildStr, out int build)) return build >= 22000 ? "Windows 11" : "Windows 10";
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
@@ -179,8 +179,8 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         return parts.Length switch
         {
             >= 3 => $"{parts[0]}.{parts[1]}.{parts[2]}",
-            2    => $"{parts[0]}.{parts[1]}.0",
-            _    => $"{parts[0]}.0.0"
+            2 => $"{parts[0]}.{parts[1]}.0",
+            _ => $"{parts[0]}.0.0"
         };
     }
 
@@ -191,8 +191,8 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
     [StructLayout(LayoutKind.Sequential)]
     private struct MEMORYSTATUSEX
     {
-        public uint  dwLength;
-        public uint  dwMemoryLoad;
+        public uint dwLength;
+        public uint dwMemoryLoad;
         public ulong ullTotalPhys;
         public ulong ullAvailPhys;
         public ulong ullTotalPageFile;

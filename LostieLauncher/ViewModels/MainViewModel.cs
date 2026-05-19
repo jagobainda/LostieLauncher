@@ -115,7 +115,7 @@ public partial class MainViewModel : ObservableObject
     private static void OpenSavedGames()
     {
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Saved Games");
-        
+
         if (Directory.Exists(path)) System.Diagnostics.Process.Start("explorer.exe", path);
     }
 

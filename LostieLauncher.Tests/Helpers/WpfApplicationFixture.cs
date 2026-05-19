@@ -1,6 +1,6 @@
+using LostieLauncher.ViewModels;
 using System.Reflection;
 using System.Windows;
-using LostieLauncher.ViewModels;
 
 namespace LostieLauncher.Tests.Helpers;
 

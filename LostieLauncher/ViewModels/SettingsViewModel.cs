@@ -1,4 +1,3 @@
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LostieLauncher.Content;
@@ -7,6 +6,7 @@ using LostieLauncher.Services;
 using LostieLauncher.Utils;
 using LostieLauncher.Views.Dialogs;
 using Microsoft.Win32;
+using System.Windows;
 
 namespace LostieLauncher.ViewModels;
 

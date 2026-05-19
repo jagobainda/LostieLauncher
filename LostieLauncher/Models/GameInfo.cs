@@ -1,7 +1,7 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace LostieLauncher.Models;
 

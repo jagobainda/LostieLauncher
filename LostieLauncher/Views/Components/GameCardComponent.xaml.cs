@@ -1,8 +1,8 @@
+using LostieLauncher.Models;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Views.Components;
 

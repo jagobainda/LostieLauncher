@@ -1,7 +1,7 @@
-using System.Collections.ObjectModel;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.ViewModels;
+using System.Collections.ObjectModel;
 
 namespace LostieLauncher.Tests.ViewModels;
 

@@ -1,8 +1,8 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace LostieLauncher.ViewModels;
 

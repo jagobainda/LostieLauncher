@@ -12,36 +12,36 @@ public static class TestData
         AppLanguage language = AppLanguage.Esp,
         AppTheme theme = AppTheme.Volcarona,
         string? downloadDirectory = null) => new()
-    {
-        Language = language,
-        Theme = theme,
-        DownloadDirectory = downloadDirectory ?? Path.Combine(Path.GetTempPath(), "LostieLauncherTests-default"),
-    };
+        {
+            Language = language,
+            Theme = theme,
+            DownloadDirectory = downloadDirectory ?? Path.Combine(Path.GetTempPath(), "LostieLauncherTests-default"),
+        };
 
     public static GameInfo Game(
         string name = "Test Game",
         string version = "1.0.0",
         double pesoGB = 0.5,
         Guid? id = null) => new()
-    {
-        Id = id ?? Guid.NewGuid(),
-        Nombre = name,
-        Version = version,
-        PesoGB = pesoGB,
-        Url = "/games/test.zip",
-        RutaRelativa = "test/test.exe",
-        Sha256 = string.Empty,
-    };
+        {
+            Id = id ?? Guid.NewGuid(),
+            Nombre = name,
+            Version = version,
+            PesoGB = pesoGB,
+            Url = "/games/test.zip",
+            RutaRelativa = "test/test.exe",
+            Sha256 = string.Empty,
+        };
 
     public static LocalGameInfo LocalGame(
         string name = "Test Game",
         string version = "1.0.0",
         Guid? id = null,
         string? tipo = null) => new()
-    {
-        Id = id ?? Guid.NewGuid(),
-        Nombre = name,
-        Version = version,
-        Tipo = tipo,
-    };
+        {
+            Id = id ?? Guid.NewGuid(),
+            Nombre = name,
+            Version = version,
+            Tipo = tipo,
+        };
 }

@@ -301,7 +301,9 @@ public class Cat : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
-    public string TooltipOpenFolder => "Obrir carpeta del joc";    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";    public string TooltipUninstall => "Desinstal·lar joc";
+    public string TooltipOpenFolder => "Obrir carpeta del joc";
+    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";
+    public string TooltipUninstall => "Desinstal·lar joc";
     public string TooltipRefresh => "Actualitzar";
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
@@ -330,7 +332,7 @@ public class Cat : IStrings
     public string TrayOpen => "Obrir";
     public string TrayExit => "Sortir";
     public string LibraryNoContent => "No disponible";
-    public string GamesNoContent => "No tens cap joc instal\u00b7lat";
+    public string GamesNoContent => "No tens cap joc instal·lat";
     public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
@@ -541,7 +543,7 @@ public class Gal : IStrings
     public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
     public string CancelDownloadConfirmTitle => "Cancelar descarga";
-    public string CancelDownloadConfirmMessage => "Seguro que queres cancelar a descarga? Os ficheiros parcialmente descargados ser\u00e1n eliminados.";
+    public string CancelDownloadConfirmMessage => "Seguro que queres cancelar a descarga? Os ficheiros parcialmente descargados serán eliminados.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Comprobando integridade...";
     public string GameExeNotFoundTitle => "Xogo non atopado";
@@ -584,7 +586,9 @@ public class Por : IStrings
     public string BtnResume => "Retomar";
     public string BtnUpdate => "Atualizar";
     public string BtnPlay => "Jogar";
-    public string TooltipOpenFolder => "Abrir pasta do jogo";    public string TooltipOpenHelp => "Abrir pasta de ajuda";    public string TooltipUninstall => "Desinstalar jogo";
+    public string TooltipOpenFolder => "Abrir pasta do jogo";
+    public string TooltipOpenHelp => "Abrir pasta de ajuda";
+    public string TooltipUninstall => "Desinstalar jogo";
     public string TooltipRefresh => "Atualizar";
     public string FolderNotFoundTitle => "Pasta não encontrada";
     public string FolderNotFoundMessage => "A pasta do jogo não foi encontrada. Deseja reinstalar os arquivos?";
@@ -634,7 +638,7 @@ public class Por : IStrings
     public string DownloadErrorMessage => "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, escreva em #bugs-launcher no Discord.";
     public string BtnCancel => "Cancelar";
     public string CancelDownloadConfirmTitle => "Cancelar download";
-    public string CancelDownloadConfirmMessage => "Tem certeza que deseja cancelar o download? Os arquivos parcialmente baixados ser\u00e3o exclu\u00eddos.";
+    public string CancelDownloadConfirmMessage => "Tem certeza que deseja cancelar o download? Os arquivos parcialmente baixados serão excluídos.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Verificando integridade...";
     public string GameExeNotFoundTitle => "Jogo não encontrado";
@@ -677,7 +681,9 @@ public class Val : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Actualitzar";
     public string BtnPlay => "Jugar";
-    public string TooltipOpenFolder => "Obrir carpeta del joc";    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";    public string TooltipUninstall => "Desinstal·lar joc";
+    public string TooltipOpenFolder => "Obrir carpeta del joc";
+    public string TooltipOpenHelp => "Obrir carpeta d'ajuda";
+    public string TooltipUninstall => "Desinstal·lar joc";
     public string TooltipRefresh => "Actualitzar";
     public string FolderNotFoundTitle => "Carpeta no trobada";
     public string FolderNotFoundMessage => "La carpeta del joc no s'ha trobat. Vols reinstal·lar els fitxers?";
@@ -706,7 +712,7 @@ public class Val : IStrings
     public string TrayOpen => "Obrir";
     public string TrayExit => "Eixir";
     public string LibraryNoContent => "No disponible";
-    public string GamesNoContent => "No tens cap joc instal\u00b7lat";
+    public string GamesNoContent => "No tens cap joc instal·lat";
     public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
@@ -770,7 +776,9 @@ public class Fra : IStrings
     public string BtnResume => "Reprendre";
     public string BtnUpdate => "Mettre à jour";
     public string BtnPlay => "Jouer";
-    public string TooltipOpenFolder => "Ouvrir le dossier du jeu";    public string TooltipOpenHelp => "Ouvrir le dossier d'aide";    public string TooltipUninstall => "Désinstaller le jeu";
+    public string TooltipOpenFolder => "Ouvrir le dossier du jeu";
+    public string TooltipOpenHelp => "Ouvrir le dossier d'aide";
+    public string TooltipUninstall => "Désinstaller le jeu";
     public string TooltipRefresh => "Actualiser";
     public string FolderNotFoundTitle => "Dossier non trouvé";
     public string FolderNotFoundMessage => "Le dossier du jeu n'a pas été trouvé. Voulez-vous réinstaller les fichiers ?";

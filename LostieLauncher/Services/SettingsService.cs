@@ -1,6 +1,6 @@
+using LostieLauncher.Models;
 using System.IO;
 using System.Text.Json;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Services;
 

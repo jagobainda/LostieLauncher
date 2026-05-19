@@ -1,9 +1,9 @@
+using LostieLauncher.Models;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Services;
 

@@ -1,10 +1,10 @@
+using LostieLauncher.Models;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using LostieLauncher.Models;
 
 namespace LostieLauncher.Services;
 
@@ -176,31 +176,31 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         await using (var fileStream = new FileStream(partPath, fileMode, FileAccess.Write, FileShare.None, BufferSize, useAsync: true))
         {
             var buffer = new byte[BufferSize];
-                long totalRead = existingBytes;
-                int bytesRead;
-                var speedwatch = Stopwatch.StartNew();
-                long lastSpeedBytes = existingBytes;
-                double currentSpeed = 0;
+            long totalRead = existingBytes;
+            int bytesRead;
+            var speedwatch = Stopwatch.StartNew();
+            long lastSpeedBytes = existingBytes;
+            double currentSpeed = 0;
 
-                while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, BufferSize), ct).ConfigureAwait(false)) > 0)
+            while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, BufferSize), ct).ConfigureAwait(false)) > 0)
+            {
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
+                totalRead += bytesRead;
+
+                var elapsedMs = speedwatch.ElapsedMilliseconds;
+                if (elapsedMs >= 500)
                 {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
-                    totalRead += bytesRead;
-
-                    var elapsedMs = speedwatch.ElapsedMilliseconds;
-                    if (elapsedMs >= 500)
-                    {
-                        var deltaBytes = totalRead - lastSpeedBytes;
-                        currentSpeed = deltaBytes / (elapsedMs / 1000.0);
-                        lastSpeedBytes = totalRead;
-                        speedwatch.Restart();
-                    }
-
-                    if (totalBytes > 0)
-                    {
-                        progress?.Report(new DownloadProgressInfo((double)totalRead / totalBytes * 100.0, currentSpeed, totalBytes, totalRead));
-                    }
+                    var deltaBytes = totalRead - lastSpeedBytes;
+                    currentSpeed = deltaBytes / (elapsedMs / 1000.0);
+                    lastSpeedBytes = totalRead;
+                    speedwatch.Restart();
                 }
+
+                if (totalBytes > 0)
+                {
+                    progress?.Report(new DownloadProgressInfo((double)totalRead / totalBytes * 100.0, currentSpeed, totalBytes, totalRead));
+                }
+            }
 
             await fileStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
         }
