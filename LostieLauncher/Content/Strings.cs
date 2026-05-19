@@ -2,97 +2,97 @@ namespace LostieLauncher.Content;
 
 public interface IStrings
 {
-    string TitleHome { get; }
-    string TitleGames { get; }
-    string TitleLibrary { get; }
-    string TitleSettings { get; }
-    string BtnOk { get; }
-    string BtnYes { get; }
-    string BtnNo { get; }
-    string BtnDownload { get; }
-    string BtnDownloading { get; }
-    string BtnDownloaded { get; }
-    string BtnPause { get; }
-    string BtnResume { get; }
-    string BtnUpdate { get; }
-    string BtnPlay { get; }
-    string TooltipOpenFolder { get; }
-    string TooltipOpenHelp { get; }
-    string TooltipUninstall { get; }
-    string TooltipRefresh { get; }
-    string FolderNotFoundTitle { get; }
-    string FolderNotFoundMessage { get; }
-    string UninstallConfirmTitle { get; }
-    string UninstallConfirmMessage { get; }
-    string UninstallNotFoundTitle { get; }
-    string UninstallNotFoundMessage { get; }
-    string UninstallErrorTitle { get; }
-    string UninstallErrorMessage { get; }
-    string UpdateAvailableTitle { get; }
-    string UpdateAvailableMessage { get; }
-    string SettingsGeneral { get; }
-    string SettingsAppearance { get; }
-    string SettingsStartWithWindows { get; }
-    string SettingsStartMinimized { get; }
-    string SettingsAutoUpdate { get; }
-    string SettingsLanguage { get; }
-    string SettingsDownloadDir { get; }
-    string SettingsTheme { get; }
-    string BtnBrowse { get; }
-    string SettingsCheckForUpdates { get; }
-    string CheckForUpdatesTitle { get; }
-    string CheckForUpdatesMessage { get; }
-    string ChangeDownloadDirTitle { get; }
-    string ChangeDownloadDirMessage { get; }
-    string TrayOpen { get; }
-    string TrayExit { get; }
-    string LibraryNoContent { get; }
-    string GamesNoContent { get; }
-    string GamesGoToLibrary { get; }
-    string HomeNews { get; }
-    string HomeNotifications { get; }
-    string HomeLoading { get; }
-    string HomeNoContent { get; }
-    string DownloadDialogTitle { get; }
-    string DownloadDialogPath { get; }
-    string DownloadDialogGameSize { get; }
-    string DownloadDialogFreeSpace { get; }
-    string DownloadDialogViewPage { get; }
-    string DownloadDialogNoDescription { get; }
-    string DownloadDialogKey { get; }
-    string DownloadKeyInvalidTitle { get; }
-    string DownloadKeyInvalidMessage { get; }
-    string DownloadKeyConsumedTitle { get; }
-    string DownloadKeyConsumedMessage { get; }
-    string DownloadErrorTitle { get; }
-    string DownloadErrorMessage { get; }
-    string BtnCancel { get; }
-    string CancelDownloadConfirmTitle { get; }
-    string CancelDownloadConfirmMessage { get; }
-    string StatusExtracting { get; }
-    string StatusVerifying { get; }
-    string GameExeNotFoundTitle { get; }
-    string GameExeNotFoundMessage { get; }
-    string HashMismatchTitle { get; }
-    string HashMismatchMessage { get; }
-    string WelcomeDialogTitle { get; }
-    string WelcomeDialogDescription { get; }
-    string WelcomeDialogContinue { get; }
-    string RepositoryUrl { get; }
-    string SpecialVersionDialogTitle { get; }
-    string SpecialVersionDialogDescription { get; }
-    string SpecialVersionDialogKeyLabel { get; }
-    string BtnConfirm { get; }
-    string DownloadKeyNotFoundTitle { get; }
-    string DownloadKeyNotFoundMessage { get; }
-    string DownloadKeyMismatchTitle { get; }
-    string DownloadKeyMismatchMessage { get; }
-    string TooltipSwitchSpecialVersion { get; }
-    string ServerActionsUnavailableTitle { get; }
-    string ServerActionsUnavailableMessage { get; }
-    string OfflineModeLabel { get; }
-    string ServerMaintenanceNotificationTitle { get; }
-    string ServerMaintenanceNotificationMessage { get; }
+    public string TitleHome { get; }
+    public string TitleGames { get; }
+    public string TitleLibrary { get; }
+    public string TitleSettings { get; }
+    public string BtnOk { get; }
+    public string BtnYes { get; }
+    public string BtnNo { get; }
+    public string BtnDownload { get; }
+    public string BtnDownloading { get; }
+    public string BtnDownloaded { get; }
+    public string BtnPause { get; }
+    public string BtnResume { get; }
+    public string BtnUpdate { get; }
+    public string BtnPlay { get; }
+    public string TooltipOpenFolder { get; }
+    public string TooltipOpenHelp { get; }
+    public string TooltipUninstall { get; }
+    public string TooltipRefresh { get; }
+    public string FolderNotFoundTitle { get; }
+    public string FolderNotFoundMessage { get; }
+    public string UninstallConfirmTitle { get; }
+    public string UninstallConfirmMessage { get; }
+    public string UninstallNotFoundTitle { get; }
+    public string UninstallNotFoundMessage { get; }
+    public string UninstallErrorTitle { get; }
+    public string UninstallErrorMessage { get; }
+    public string UpdateAvailableTitle { get; }
+    public string UpdateAvailableMessage { get; }
+    public string SettingsGeneral { get; }
+    public string SettingsAppearance { get; }
+    public string SettingsStartWithWindows { get; }
+    public string SettingsStartMinimized { get; }
+    public string SettingsAutoUpdate { get; }
+    public string SettingsLanguage { get; }
+    public string SettingsDownloadDir { get; }
+    public string SettingsTheme { get; }
+    public string BtnBrowse { get; }
+    public string SettingsCheckForUpdates { get; }
+    public string CheckForUpdatesTitle { get; }
+    public string CheckForUpdatesMessage { get; }
+    public string ChangeDownloadDirTitle { get; }
+    public string ChangeDownloadDirMessage { get; }
+    public string TrayOpen { get; }
+    public string TrayExit { get; }
+    public string LibraryNoContent { get; }
+    public string GamesNoContent { get; }
+    public string GamesGoToLibrary { get; }
+    public string HomeNews { get; }
+    public string HomeNotifications { get; }
+    public string HomeLoading { get; }
+    public string HomeNoContent { get; }
+    public string DownloadDialogTitle { get; }
+    public string DownloadDialogPath { get; }
+    public string DownloadDialogGameSize { get; }
+    public string DownloadDialogFreeSpace { get; }
+    public string DownloadDialogViewPage { get; }
+    public string DownloadDialogNoDescription { get; }
+    public string DownloadDialogKey { get; }
+    public string DownloadKeyInvalidTitle { get; }
+    public string DownloadKeyInvalidMessage { get; }
+    public string DownloadKeyConsumedTitle { get; }
+    public string DownloadKeyConsumedMessage { get; }
+    public string DownloadErrorTitle { get; }
+    public string DownloadErrorMessage { get; }
+    public string BtnCancel { get; }
+    public string CancelDownloadConfirmTitle { get; }
+    public string CancelDownloadConfirmMessage { get; }
+    public string StatusExtracting { get; }
+    public string StatusVerifying { get; }
+    public string GameExeNotFoundTitle { get; }
+    public string GameExeNotFoundMessage { get; }
+    public string HashMismatchTitle { get; }
+    public string HashMismatchMessage { get; }
+    public string WelcomeDialogTitle { get; }
+    public string WelcomeDialogDescription { get; }
+    public string WelcomeDialogContinue { get; }
+    public string RepositoryUrl { get; }
+    public string SpecialVersionDialogTitle { get; }
+    public string SpecialVersionDialogDescription { get; }
+    public string SpecialVersionDialogKeyLabel { get; }
+    public string BtnConfirm { get; }
+    public string DownloadKeyNotFoundTitle { get; }
+    public string DownloadKeyNotFoundMessage { get; }
+    public string DownloadKeyMismatchTitle { get; }
+    public string DownloadKeyMismatchMessage { get; }
+    public string TooltipSwitchSpecialVersion { get; }
+    public string ServerActionsUnavailableTitle { get; }
+    public string ServerActionsUnavailableMessage { get; }
+    public string OfflineModeLabel { get; }
+    public string ServerMaintenanceNotificationTitle { get; }
+    public string ServerMaintenanceNotificationMessage { get; }
 }
 
 public class Esp : IStrings
