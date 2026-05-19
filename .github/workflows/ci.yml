@@ -45,3 +45,28 @@ jobs:
 
             - name: Test
               run: dotnet test LostieLauncher.slnx --no-build --configuration Release --verbosity normal
+
+    vulnerable-dependencies:
+        runs-on: windows-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "10.0.x"
+
+            - name: Restore dependencies
+              run: dotnet restore LostieLauncher.slnx
+
+            - name: Check for vulnerable NuGet packages
+              shell: pwsh
+              run: |
+                  $output = dotnet list LostieLauncher.slnx package --vulnerable --include-transitive 2>&1 | Out-String
+                  Write-Host $output
+                  if ($output -match 'has the following vulnerable packages') {
+                      Write-Error 'Vulnerable NuGet packages detected.'
+                      exit 1
+                  }
