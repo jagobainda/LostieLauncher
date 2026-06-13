@@ -1,6 +1,7 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace LostieLauncher.Tests.Services;
@@ -180,6 +181,231 @@ public class DownloadServiceTests : IDisposable
         result.Outcome.ShouldBe(DownloadOutcome.Failed);
         attempts.ShouldBeGreaterThanOrEqualTo(2);
         sut.State.ShouldBe(DownloadState.Failed);
+    }
+
+    // -------------------- DownloadAsync: resume identity validation (BUG-002) --------------------
+
+    private const string DownloadUrl = "https://download.test/file";
+
+    private static byte[] Repeat(char c, int count) => Enumerable.Repeat((byte)c, count).ToArray();
+
+    /// <summary>
+    /// Drives a first download that writes <paramref name="chunk"/> and then blocks, cancelling it
+    /// so a partial <c>.part</c> (and its <c>.part.meta</c> sidecar) is left on disk — the precondition
+    /// for every resume test. The handler is left registered with a phase counter so the resume request
+    /// is served by <paramref name="onResume"/>.
+    /// </summary>
+    private async Task<string> ArrangePausedDownloadAsync(
+        DownloadService sut,
+        byte[] chunk,
+        Action<HttpResponseMessage>? configureInitial,
+        Func<HttpRequestMessage, HttpResponseMessage> onResume)
+    {
+        var phase = 0;
+        _httpFactory.HandlerFor("Download").Respond(req =>
+        {
+            phase++;
+            if (phase == 1)
+            {
+                var resp = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StreamContent(new ChunkThenBlockStream(chunk)),
+                };
+                configureInitial?.Invoke(resp);
+                return resp;
+            }
+
+            return onResume(req);
+        });
+
+        var dest = Path.Combine(_temp.Path, "game.zip");
+        using var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromMilliseconds(150));
+
+        var paused = await sut.DownloadAsync(DownloadUrl, dest, ct: cts.Token);
+
+        // Sanity: the first phase must have paused, leaving a partial file behind.
+        paused.Outcome.ShouldBe(DownloadOutcome.Cancelled);
+        File.Exists(dest + ".part").ShouldBeTrue();
+        new FileInfo(dest + ".part").Length.ShouldBe(chunk.Length);
+
+        return dest;
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenResumingUnchangedResource_SendsIfRangeAndAppendsRemainder()
+    {
+        // Arrange
+        var chunk = Repeat('A', 100);          // bytes already on disk
+        var remainder = Repeat('B', 100);      // bytes the server still owes us
+        var sut = CreateSut();
+        HttpRequestMessage? resumeRequest = null;
+
+        var dest = await ArrangePausedDownloadAsync(
+            sut,
+            chunk,
+            initial => { initial.Headers.ETag = new EntityTagHeaderValue("\"v1\""); initial.Content.Headers.ContentLength = 200; },
+            req =>
+            {
+                resumeRequest = req;
+                var resp = new HttpResponseMessage(HttpStatusCode.PartialContent)
+                {
+                    Content = new ByteArrayContent(remainder),
+                };
+                resp.Content.Headers.ContentRange = new ContentRangeHeaderValue(100, 199, 200);
+                return resp;
+            });
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — resume must carry both Range and a validating If-Range, and the file is the exact concatenation.
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        resumeRequest.ShouldNotBeNull();
+        resumeRequest!.Headers.Range.ShouldNotBeNull();
+        resumeRequest.Headers.IfRange.ShouldNotBeNull();
+        File.ReadAllBytes(dest).ShouldBe([.. chunk, .. remainder]);
+        File.Exists(dest + ".part").ShouldBeFalse();
+        File.Exists(dest + ".part.meta").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenResumingChangedResource_ServerReturns200_RewritesWithoutCorruption()
+    {
+        // Arrange — server now serves a *different* file and ignores the stale validator (responds 200, not 206).
+        var chunk = Repeat('A', 100);
+        var newContent = Repeat('C', 150);
+        var sut = CreateSut();
+
+        var dest = await ArrangePausedDownloadAsync(
+            sut,
+            chunk,
+            initial => { initial.Headers.ETag = new EntityTagHeaderValue("\"v1\""); initial.Content.Headers.ContentLength = 200; },
+            _ =>
+            {
+                var resp = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent(newContent),
+                };
+                resp.Headers.ETag = new EntityTagHeaderValue("\"v2\"");
+                return resp;
+            });
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — the stale 100 'A' bytes must be discarded, NOT prepended to the new content.
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        File.ReadAllBytes(dest).ShouldBe(newContent);
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenResuming416AndSizeMatches_TreatsPartialAsComplete()
+    {
+        // Arrange — the partial already holds the full resource (ContentLength == chunk length).
+        var chunk = Repeat('A', 100);
+        var sut = CreateSut();
+
+        var dest = await ArrangePausedDownloadAsync(
+            sut,
+            chunk,
+            initial => { initial.Headers.ETag = new EntityTagHeaderValue("\"v1\""); initial.Content.Headers.ContentLength = 100; },
+            _ => new HttpResponseMessage(HttpStatusCode.RequestedRangeNotSatisfiable));
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        File.ReadAllBytes(dest).ShouldBe(chunk);
+        File.Exists(dest + ".part").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenResuming416AndSizeMismatch_DiscardsPartialAndRestarts()
+    {
+        // Arrange — the partial (100 B) is smaller than the expected total (200 B), so a 416 means it is corrupt.
+        var chunk = Repeat('A', 100);
+        var freshContent = Repeat('D', 200);
+        var sut = CreateSut();
+
+        var dest = await ArrangePausedDownloadAsync(
+            sut,
+            chunk,
+            initial => { initial.Headers.ETag = new EntityTagHeaderValue("\"v1\""); initial.Content.Headers.ContentLength = 200; },
+            req =>
+            {
+                // First resume attempt: 416 (size mismatch → discard + retry). Retry (no Range): serve full fresh content.
+                if (req.Headers.Range is not null)
+                    return new HttpResponseMessage(HttpStatusCode.RequestedRangeNotSatisfiable);
+
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(freshContent) };
+            });
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — the corrupt partial is gone and the file is the clean re-download.
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        File.ReadAllBytes(dest).ShouldBe(freshContent);
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenResumingWithoutValidator_DoesNotSendRangeAndRestarts()
+    {
+        // Arrange — initial response carries neither ETag nor Last-Modified, so the partial cannot be validated.
+        var chunk = Repeat('A', 100);
+        var freshContent = Repeat('E', 120);
+        var sut = CreateSut();
+        HttpRequestMessage? resumeRequest = null;
+
+        var dest = await ArrangePausedDownloadAsync(
+            sut,
+            chunk,
+            configureInitial: null,
+            req =>
+            {
+                resumeRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(freshContent) };
+            });
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — without a validator we must NOT blindly resume: no Range header, full re-download.
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        resumeRequest.ShouldNotBeNull();
+        resumeRequest!.Headers.Range.ShouldBeNull();
+        File.ReadAllBytes(dest).ShouldBe(freshContent);
+    }
+
+    /// <summary>Stream that yields a single chunk on the first read, then blocks until cancelled.</summary>
+    private sealed class ChunkThenBlockStream(byte[] chunk) : Stream
+    {
+        private readonly byte[] _chunk = chunk;
+        private bool _sent;
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => 0; set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
+        {
+            if (!_sent)
+            {
+                _sent = true;
+                var n = Math.Min(_chunk.Length, buffer.Length);
+                _chunk.AsMemory(0, n).CopyTo(buffer);
+                return n;
+            }
+            await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            return 0;
+        }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     /// <summary>Stream that blocks indefinitely on read until the cancellation token cancels.</summary>

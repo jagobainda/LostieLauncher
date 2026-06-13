@@ -504,8 +504,10 @@ public partial class LibraryViewModel : ObservableObject
         var gamesRoot = _settingsService.GetGamesRootDirectory();
         var zipPath = Path.Combine(gamesRoot, ".downloads", $"{_activeDownloadArgs.GameId}.zip");
         var partPath = zipPath + ".part";
+        var metaPath = partPath + ".meta";
 
         try { if (File.Exists(partPath)) File.Delete(partPath); } catch { }
         try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch { }
+        try { if (File.Exists(metaPath)) File.Delete(metaPath); } catch { }
     }
 }

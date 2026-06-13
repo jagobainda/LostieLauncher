@@ -124,39 +124,65 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
     private async Task DownloadCoreAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("Download");
+        var metaPath = partPath + ".meta";
         long existingBytes = 0;
+        DownloadResumeMetadata? meta = null;
 
         if (File.Exists(partPath))
         {
             existingBytes = new FileInfo(partPath).Length;
+            meta = ReadResumeMetadata(metaPath);
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         if (existingBytes > 0)
         {
-            request.Headers.Range = new RangeHeaderValue(existingBytes, null);
-            Logs.DebugLogManager($"Resuming download from byte {existingBytes}.");
+            if (TrySetIfRange(request, meta))
+            {
+                request.Headers.Range = new RangeHeaderValue(existingBytes, null);
+                Logs.DebugLogManager($"Resuming download from byte {existingBytes}.");
+            }
+            else
+            {
+                Logs.InfoLogManager("No usable If-Range validator for the partial file — restarting download from scratch to avoid corruption.");
+                File.Delete(partPath);
+                DeleteResumeMetadata(metaPath);
+                existingBytes = 0;
+                meta = null;
+            }
         }
 
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
         if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
         {
-            Logs.InfoLogManager("Server returned 416 — partial file is already complete.");
-            File.Move(partPath, finalPath, overwrite: true);
-            progress?.Report(new DownloadProgressInfo(100, 0));
-            return;
+            if (meta?.TotalBytes is long expectedTotal && existingBytes == expectedTotal)
+            {
+                Logs.InfoLogManager("Server returned 416 — partial file matches expected size, treating as complete.");
+                File.Move(partPath, finalPath, overwrite: true);
+                DeleteResumeMetadata(metaPath);
+                progress?.Report(new DownloadProgressInfo(100, 0));
+                return;
+            }
+
+            Logs.InfoLogManager("Server returned 416 but the partial file size is unexpected — discarding and restarting.");
+            File.Delete(partPath);
+            DeleteResumeMetadata(metaPath);
+            throw new IOException("Partial download is invalid (416 with size mismatch); restarting.");
         }
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
             if (existingBytes > 0)
             {
-                Logs.InfoLogManager("Server returned 200 instead of 206 — restarting download from scratch.");
+                Logs.InfoLogManager("Server returned 200 instead of 206 — remote resource changed, restarting download from scratch.");
                 File.Delete(partPath);
                 existingBytes = 0;
             }
+
+            meta = BuildResumeMetadata(response);
+            WriteResumeMetadata(metaPath, meta);
         }
         else if (response.StatusCode == HttpStatusCode.PartialContent)
         {
@@ -206,6 +232,79 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         }
 
         File.Move(partPath, finalPath, overwrite: true);
+        DeleteResumeMetadata(metaPath);
         progress?.Report(new DownloadProgressInfo(100, 0));
+    }
+
+    private sealed record DownloadResumeMetadata(string? ETag, DateTimeOffset? LastModified, long? TotalBytes);
+
+    private static DownloadResumeMetadata BuildResumeMetadata(HttpResponseMessage response)
+    {
+        var etag = response.Headers.ETag;
+        // If-Range exige un validador fuerte: los ETag débiles no sirven para reanudar.
+        var strongETag = etag is not null && !etag.IsWeak ? etag.ToString() : null;
+        return new DownloadResumeMetadata(strongETag, response.Content.Headers.LastModified, response.Content.Headers.ContentLength);
+    }
+
+    private static bool TrySetIfRange(HttpRequestMessage request, DownloadResumeMetadata? meta)
+    {
+        if (meta is null) return false;
+
+        if (!string.IsNullOrEmpty(meta.ETag))
+        {
+            try
+            {
+                var tag = EntityTagHeaderValue.Parse(meta.ETag);
+                if (!tag.IsWeak)
+                {
+                    request.Headers.IfRange = new RangeConditionHeaderValue(tag);
+                    return true;
+                }
+            }
+            catch (FormatException ex)
+            {
+                Logs.ErrorLogManager(ex);
+            }
+        }
+
+        if (meta.LastModified.HasValue)
+        {
+            request.Headers.IfRange = new RangeConditionHeaderValue(meta.LastModified.Value);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static DownloadResumeMetadata? ReadResumeMetadata(string metaPath)
+    {
+        try
+        {
+            if (!File.Exists(metaPath)) return null;
+            return JsonSerializer.Deserialize<DownloadResumeMetadata>(File.ReadAllText(metaPath));
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            return null;
+        }
+    }
+
+    private static void WriteResumeMetadata(string metaPath, DownloadResumeMetadata meta)
+    {
+        try
+        {
+            File.WriteAllText(metaPath, JsonSerializer.Serialize(meta));
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
+    }
+
+    private static void DeleteResumeMetadata(string metaPath)
+    {
+        try { if (File.Exists(metaPath)) File.Delete(metaPath); }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 }

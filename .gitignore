@@ -69,4 +69,5 @@ secrets.json
 *.mdmp
 
 .claude/
+.docs/
 releases/
