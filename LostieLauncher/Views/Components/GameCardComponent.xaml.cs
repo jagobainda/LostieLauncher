@@ -165,6 +165,14 @@ public partial class GameCardComponent : UserControl
         set => SetValue(IsUpdatingProperty, value);
     }
 
+    public static readonly DependencyProperty IsUninstallingProperty = DependencyProperty.Register(nameof(IsUninstalling), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false));
+
+    public bool IsUninstalling
+    {
+        get => (bool)GetValue(IsUninstallingProperty);
+        set => SetValue(IsUninstallingProperty, value);
+    }
+
     public static readonly DependencyProperty PlayCommandProperty = DependencyProperty.Register(nameof(PlayCommand), typeof(ICommand), typeof(GameCardComponent));
 
     public ICommand? PlayCommand

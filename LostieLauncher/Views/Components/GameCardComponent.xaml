@@ -461,6 +461,15 @@
                     </StackPanel.Style>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsUninstalling, ElementName=Root}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
                         <Button Command="{Binding PlayCommand, ElementName=Root}"
                                 CommandParameter="{Binding GameTitle, ElementName=Root}"
                                 Margin="0,0,6,0">
@@ -567,6 +576,52 @@
                             <iconPacks:PackIconMaterial Kind="TrashCanOutline" Width="14" Height="14"
                                                        VerticalAlignment="Center" />
                         </Button>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsUninstalling, ElementName=Root}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Ellipse Width="13" Height="13" Margin="0,0,6,0"
+                                 VerticalAlignment="Center"
+                                 StrokeThickness="2"
+                                 Stroke="{DynamicResource SecondaryFgDimBrush}"
+                                 StrokeDashArray="13 7"
+                                 StrokeDashCap="Round"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform Angle="0" />
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsVisible" Value="True">
+                                            <Trigger.EnterActions>
+                                                <BeginStoryboard x:Name="UninstallSpinStoryboard">
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                         From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </Trigger.EnterActions>
+                                            <Trigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="UninstallSpinStoryboard" />
+                                            </Trigger.ExitActions>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding Strings.StatusUninstalling, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                   VerticalAlignment="Center" FontSize="11"
+                                   Foreground="{DynamicResource SecondaryFgDimBrush}" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

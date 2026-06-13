@@ -242,15 +242,19 @@ public partial class GamesViewModel : ObservableObject
         var path = _contentService.GetGameDirectory(gameName);
         var folderExisted = Directory.Exists(path);
 
+        var target = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+        target?.IsUninstalling = true;
+
         if (folderExisted)
         {
             try
             {
-                Directory.Delete(path, recursive: true);
+                await Task.Run(() => Directory.Delete(path, recursive: true));
             }
             catch (Exception ex)
             {
                 Logs.ErrorLogManager(ex);
+                target?.IsUninstalling = false;
                 CustomMessageBox.Show(strings.UninstallErrorTitle, strings.UninstallErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
                 return;
             }
@@ -258,10 +262,9 @@ public partial class GamesViewModel : ObservableObject
 
         await _contentService.RemoveGameRegistryAsync(gameName);
 
-        var toRemove = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-        if (toRemove != null)
+        if (target != null)
         {
-            InstalledGames.Remove(toRemove);
+            InstalledGames.Remove(target);
             OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(IsListVisible));
         }

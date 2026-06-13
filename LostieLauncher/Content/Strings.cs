@@ -71,6 +71,7 @@ public interface IStrings
     public string CancelDownloadConfirmMessage { get; }
     public string StatusExtracting { get; }
     public string StatusVerifying { get; }
+    public string StatusUninstalling { get; }
     public string GameExeNotFoundTitle { get; }
     public string GameExeNotFoundMessage { get; }
     public string HashMismatchTitle { get; }
@@ -166,6 +167,7 @@ public class Esp : IStrings
     public string CancelDownloadConfirmMessage => "¿Seguro que quieres cancelar la descarga? Se eliminarán los archivos parcialmente descargados.";
     public string StatusExtracting => "Descomprimiendo...";
     public string StatusVerifying => "Comprobando integridad...";
+    public string StatusUninstalling => "Desinstalando...";
     public string GameExeNotFoundTitle => "Juego no encontrado";
     public string GameExeNotFoundMessage => "No se encontró el ejecutable del juego. Intenta reinstalarlo.";
     public string HashMismatchTitle => "Error de integridad";
@@ -261,6 +263,7 @@ public class Eng : IStrings
     public string CancelDownloadConfirmMessage => "Are you sure you want to cancel the download? Partially downloaded files will be deleted.";
     public string StatusExtracting => "Extracting...";
     public string StatusVerifying => "Verifying integrity...";
+    public string StatusUninstalling => "Uninstalling...";
     public string GameExeNotFoundTitle => "Game not found";
     public string GameExeNotFoundMessage => "The game executable was not found. Try reinstalling the game.";
     public string HashMismatchTitle => "Integrity error";
@@ -356,6 +359,7 @@ public class Cat : IStrings
     public string CancelDownloadConfirmMessage => "Estàs segur que vols cancel·lar la descàrrega? Els fitxers descarregats parcialment seran eliminats.";
     public string StatusExtracting => "Descomprimint...";
     public string StatusVerifying => "Comprovant integritat...";
+    public string StatusUninstalling => "Desinstal·lant...";
     public string GameExeNotFoundTitle => "Joc no trobat";
     public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
     public string HashMismatchTitle => "Error d'integritat";
@@ -451,6 +455,7 @@ public class Eus : IStrings
     public string CancelDownloadConfirmMessage => "Ziur zaude deskarga utzi nahi duzula? Partzialki deskargatutako fitxategiak ezabatuko dira.";
     public string StatusExtracting => "Deskonprimatzen...";
     public string StatusVerifying => "Osotasuna egiaztatzen...";
+    public string StatusUninstalling => "Desinstalatzen...";
     public string GameExeNotFoundTitle => "Jokoa ez da aurkitu";
     public string GameExeNotFoundMessage => "Jokoaren exekutagarria ez da aurkitu. Saiatu berrinstalatzea.";
     public string HashMismatchTitle => "Osotasun errorea";
@@ -546,6 +551,7 @@ public class Gal : IStrings
     public string CancelDownloadConfirmMessage => "Seguro que queres cancelar a descarga? Os ficheiros parcialmente descargados serán eliminados.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Comprobando integridade...";
+    public string StatusUninstalling => "Desinstalando...";
     public string GameExeNotFoundTitle => "Xogo non atopado";
     public string GameExeNotFoundMessage => "Non se atopou o executable do xogo. Intenta reinstalalo.";
     public string HashMismatchTitle => "Erro de integridade";
@@ -641,6 +647,7 @@ public class Por : IStrings
     public string CancelDownloadConfirmMessage => "Tem certeza que deseja cancelar o download? Os arquivos parcialmente baixados serão excluídos.";
     public string StatusExtracting => "Descomprimindo...";
     public string StatusVerifying => "Verificando integridade...";
+    public string StatusUninstalling => "Desinstalando...";
     public string GameExeNotFoundTitle => "Jogo não encontrado";
     public string GameExeNotFoundMessage => "O executável do jogo não foi encontrado. Tente reinstalá-lo.";
     public string HashMismatchTitle => "Erro de integridade";
@@ -736,6 +743,7 @@ public class Val : IStrings
     public string CancelDownloadConfirmMessage => "Estàs segur que vols cancel·lar la descàrrega? Els fitxers descarregats parcialment seran eliminats.";
     public string StatusExtracting => "Descomprimint...";
     public string StatusVerifying => "Comprovant integritat...";
+    public string StatusUninstalling => "Desinstal·lant...";
     public string GameExeNotFoundTitle => "Joc no trobat";
     public string GameExeNotFoundMessage => "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo.";
     public string HashMismatchTitle => "Error d'integritat";
@@ -831,6 +839,7 @@ public class Fra : IStrings
     public string CancelDownloadConfirmMessage => "Êtes-vous sûr de vouloir annuler le téléchargement ? Les fichiers partiellement téléchargés seront supprimés.";
     public string StatusExtracting => "Extraction en cours...";
     public string StatusVerifying => "Vérification de l'intégrité...";
+    public string StatusUninstalling => "Désinstallation en cours...";
     public string GameExeNotFoundTitle => "Jeu non trouvé";
     public string GameExeNotFoundMessage => "L'exécutable du jeu est introuvable. Essayez de le réinstaller.";
     public string HashMismatchTitle => "Erreur d'intégrité";

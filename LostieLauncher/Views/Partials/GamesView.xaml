@@ -82,6 +82,7 @@
                             HasUpdate="{Binding HasUpdate}"
                             UpdateVersion="{Binding UpdateVersion}"
                             IsUpdating="{Binding IsUpdating}"
+                            IsUninstalling="{Binding IsUninstalling}"
                             PlaytimeText="{Binding PlaytimeText}"
                             HasHelpFolder="{Binding HasHelpFolder}"
                             Tipo="{Binding Tipo}"
