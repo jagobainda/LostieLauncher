@@ -204,7 +204,7 @@ public class LibraryViewModelTests
         Should.NotThrow(act);
     }
 
-    
+
     [Fact]
     public async Task ResumingPausedGame_ContinuesItsOwnDownload_NotAnotherPausedGame()
     {
