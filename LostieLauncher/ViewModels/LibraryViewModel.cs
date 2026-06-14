@@ -23,11 +23,14 @@ public partial class LibraryViewModel : ObservableObject
     private readonly DownloadOptions _downloadOptions;
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
 
-    private CancellationTokenSource? _downloadCts;
-    private GameDownloadArgs? _activeDownloadArgs;
-    private SpecialVersionConfig? _activeSpecialConfig;
+    // Estado de descarga modelado como una sesión por juego (keyed por GameId), nunca como
+    // campos globales de un solo slot. Cada sesión es dueña de sus propios args, config especial,
+    // CTS, rutas y versión/clave, de modo que es imposible reutilizar el estado de un juego en otro.
+    // Pueden coexistir varias sesiones en estado Paused; solo una puede estar activa a la vez
+    // (lo garantiza el guard _globalViewModel.IsDownloading).
+    private readonly Dictionary<string, DownloadSession> _sessions = [];
+    private DownloadSession? _activeSession;
     private bool _serverActionsBlockedMessageShown;
-    private bool _isCancelling;
 
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}(-[A-Za-z0-9]{4}){4}$", RegexOptions.Compiled);
     private static readonly Regex ArchivoFormatRegex = new(@"^[A-Za-z0-9._-]+\.zip$", RegexOptions.Compiled);
@@ -118,24 +121,23 @@ public partial class LibraryViewModel : ObservableObject
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
+        // Reanudación: la sesión se resuelve por el GameId del juego de la tarjeta, nunca por un
+        // slot global. Así, reanudar A continúa exactamente la descarga de A (su URL, config
+        // especial, versión/clave y rutas), aunque B exista también en estado Paused.
+        if (game.DownloadStatus == GameDownloadStatus.Paused && _sessions.TryGetValue(game.GameId, out var paused))
+        {
+            await ExecuteDownloadAndInstallAsync(game, paused);
+            return;
+        }
+
         var strings = SettingsViewModel.Instance.Strings;
+        var downloadPath = _contentService.GetGameDirectory(game.Nombre);
 
-        if (game.DownloadStatus == GameDownloadStatus.Paused && _activeDownloadArgs is not null)
-        {
-            args = _activeDownloadArgs;
-        }
-        else
-        {
-            var downloadPath = _contentService.GetGameDirectory(game.Nombre);
+        var confirmed = DownloadConfirmDialog.Show(game, args, downloadPath, strings);
+        if (confirmed is null) return;
 
-            var confirmed = DownloadConfirmDialog.Show(game, args, downloadPath, strings);
-            if (confirmed is null) return;
-
-            args = confirmed;
-        }
-
-        _activeDownloadArgs = args;
-        _activeSpecialConfig = null;
+        args = confirmed;
+        SpecialVersionConfig? specialConfig = null;
         string url;
 
         if (!string.IsNullOrEmpty(args.Key))
@@ -144,7 +146,6 @@ public partial class LibraryViewModel : ObservableObject
             {
                 Logs.InfoLogManager($"Download key rejected for {args.GameId}: invalid format.");
                 CustomMessageBox.Show(strings.DownloadKeyInvalidTitle, strings.DownloadKeyInvalidMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                _activeDownloadArgs = null;
                 return;
             }
 
@@ -153,7 +154,6 @@ public partial class LibraryViewModel : ObservableObject
             if (config is null)
             {
                 CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                _activeDownloadArgs = null;
                 return;
             }
 
@@ -161,20 +161,17 @@ public partial class LibraryViewModel : ObservableObject
             {
                 Logs.ErrorLogManager($"Invalid special version config for key {args.Key}: archivo='{config.Archivo}'.");
                 CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                _activeDownloadArgs = null;
                 return;
             }
 
             if (config.JuegoPrincipal != game.Id)
             {
                 CustomMessageBox.Show(strings.DownloadKeyMismatchTitle, strings.DownloadKeyMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
-                _activeDownloadArgs = null;
                 return;
             }
 
-            _activeSpecialConfig = config;
+            specialConfig = config;
             args = args with { Version = config.Version };
-            _activeDownloadArgs = args;
             url = $"{_downloadOptions.BaseUrl}/{args.Key}/{config.Archivo}";
         }
         else
@@ -182,7 +179,8 @@ public partial class LibraryViewModel : ObservableObject
             url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
         }
 
-        await ExecuteDownloadAndInstallAsync(game, args, url, isUpdate: false);
+        var session = CreateSession(game, args, url, specialConfig, isUpdate: false);
+        await ExecuteDownloadAndInstallAsync(game, session);
     }
 
     [RelayCommand]
@@ -199,13 +197,12 @@ public partial class LibraryViewModel : ObservableObject
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
-        _activeDownloadArgs = args;
-        _activeSpecialConfig = null;
         var url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
+        var session = CreateSession(game, args, url, specialConfig: null, isUpdate: true);
 
         PendingScrollGameId = args.GameId;
         ScrollToGameRequested?.Invoke(args.GameId);
-        await ExecuteDownloadAndInstallAsync(game, args, url, isUpdate: true);
+        await ExecuteDownloadAndInstallAsync(game, session);
         PendingScrollGameId = null;
     }
 
@@ -255,28 +252,63 @@ public partial class LibraryViewModel : ObservableObject
             return;
         }
 
-        _activeSpecialConfig = config;
         var switchArgs = new GameDownloadArgs(args.GameId, config.Version, args.RutaRelativa, key);
-        _activeDownloadArgs = switchArgs;
         var url = $"{_downloadOptions.BaseUrl}/{key}/{config.Archivo}";
+        var session = CreateSession(game, switchArgs, url, config, isUpdate: true);
 
         PendingScrollGameId = args.GameId;
         ScrollToGameRequested?.Invoke(args.GameId);
-        await ExecuteDownloadAndInstallAsync(game, switchArgs, url, isUpdate: true);
+        await ExecuteDownloadAndInstallAsync(game, session);
         PendingScrollGameId = null;
     }
 
-    private async Task ExecuteDownloadAndInstallAsync(GameInfo game, GameDownloadArgs args, string url, bool isUpdate)
+    /// <summary>
+    /// Crea (o reemplaza) la sesión de descarga del juego y la registra en <see cref="_sessions"/>.
+    /// La ruta del <c>.zip</c> incluye un token derivado de la versión y la clave, de modo que
+    /// descargas distintas del mismo juego (p. ej. versión especial vs. estándar) nunca comparten
+    /// el mismo <c>.part</c>/<c>.part.meta</c>.
+    /// </summary>
+    private DownloadSession CreateSession(GameInfo game, GameDownloadArgs args, string url, SpecialVersionConfig? specialConfig, bool isUpdate)
+    {
+        var session = new DownloadSession
+        {
+            GameId = game.GameId,
+            Args = args,
+            SpecialConfig = specialConfig,
+            Url = url,
+            ZipPath = BuildZipPath(args),
+            ExtractDir = _contentService.GetGameDirectory(game.Nombre),
+            IsUpdate = isUpdate,
+        };
+
+        // Si quedaba una sesión previa para este juego (p. ej. una pausada que se reinicia desde
+        // cero), liberamos su CTS antes de reemplazarla para no fugar el recurso.
+        if (_sessions.TryGetValue(game.GameId, out var previous) && !ReferenceEquals(previous, session))
+            previous.Cts?.Dispose();
+
+        _sessions[game.GameId] = session;
+        return session;
+    }
+
+    private string BuildZipPath(GameDownloadArgs args)
     {
         var gamesRoot = _settingsService.GetGamesRootDirectory();
-        var zipPath = Path.Combine(gamesRoot, ".downloads", $"{args.GameId}.zip");
-        var extractDir = _contentService.GetGameDirectory(game.Nombre);
+        return Path.Combine(gamesRoot, ".downloads", Utils.DownloadPathUtils.GetZipFileName(args));
+    }
 
+    private async Task ExecuteDownloadAndInstallAsync(GameInfo game, DownloadSession session)
+    {
         game.DownloadStatus = GameDownloadStatus.Downloading;
         game.DownloadProgressValue = 0;
         _globalViewModel.IsDownloading = true;
 
-        _downloadCts = new CancellationTokenSource();
+        // El estado de cancelación es por sesión y se reinicia en cada (re)lanzamiento, de modo que
+        // un flag "pegado" de una descarga anterior no puede afectar a esta.
+        session.IsCancelling = false;
+        session.Cts?.Dispose();
+        session.Cts = new CancellationTokenSource();
+        _activeSession = session;
+
         var progress = new Progress<DownloadProgressInfo>(p =>
         {
             game.DownloadProgressValue = p.Percent;
@@ -286,27 +318,40 @@ public partial class LibraryViewModel : ObservableObject
                 : string.Empty;
         });
 
-        var isSpecial = _activeSpecialConfig is not null;
-        Logs.InfoLogManager($"Downloading: {args.GameId} v{args.Version}{(isSpecial ? $" (special: {_activeSpecialConfig!.Tipo})" : "")}.");
-        var result = await _downloadService.DownloadAsync(url, zipPath, progress, _downloadCts.Token);
+        var isSpecial = session.SpecialConfig is not null;
+        Logs.InfoLogManager($"Downloading: {session.Args.GameId} v{session.Args.Version}{(isSpecial ? $" (special: {session.SpecialConfig!.Tipo})" : "")}.");
+        var result = await _downloadService.DownloadAsync(session.Url, session.ZipPath, progress, session.Cts.Token);
+
+        // Esta invocación tomó el slot activo arriba. Capturamos esa pertenencia ANTES de despachar
+        // el resultado, porque los handlers terminales (éxito, fallo, cancelación) llaman a
+        // RemoveSession, que ya pone _activeSession = null: si lo comprobáramos después, el guard
+        // global no se liberaría nunca salvo en la pausa.
+        var wasActiveSession = ReferenceEquals(_activeSession, session);
 
         switch (result.Outcome)
         {
             case DownloadOutcome.Success:
-                await HandleDownloadSuccessAsync(game, args, zipPath, extractDir, isUpdate);
+                await HandleDownloadSuccessAsync(game, session);
                 break;
             case DownloadOutcome.Cancelled:
-                HandleDownloadCancelled(game, args, isUpdate);
+                HandleDownloadCancelled(game, session);
                 break;
             case DownloadOutcome.Failed:
-                HandleDownloadFailed(game, args, isUpdate, result.ErrorMessage);
+                HandleDownloadFailed(game, session, result.ErrorMessage);
                 break;
         }
 
         game.DownloadSpeedBytesPerSec = 0;
         game.DownloadRemainingText = string.Empty;
-        _globalViewModel.IsDownloading = false;
-        _downloadCts = null;
+
+        // Al terminar esta descarga —por éxito, fallo, cancelación o pausa— ya no hay descarga
+        // activa: liberar el guard global y soltar el puntero activo. Solo si esta invocación seguía
+        // siendo la dueña del slot (no si otra descarga tomó el relevo durante un await).
+        if (wasActiveSession)
+        {
+            _activeSession = null;
+            _globalViewModel.IsDownloading = false;
+        }
     }
 
     private async Task<bool> EnsureServerActionsAvailableAsync()
@@ -330,18 +375,18 @@ public partial class LibraryViewModel : ObservableObject
         return false;
     }
 
-    private async Task HandleDownloadSuccessAsync(GameInfo game, GameDownloadArgs args, string zipPath, string extractDir, bool isUpdate)
+    private async Task HandleDownloadSuccessAsync(GameInfo game, DownloadSession session)
     {
         try
         {
-            Logs.InfoLogManager($"Download complete, extracting: {args.GameId}.");
+            Logs.InfoLogManager($"Download complete, extracting: {session.Args.GameId}.");
 
-            var expectedHash = _activeSpecialConfig?.Sha256 ?? game.Sha256;
-            if (!string.IsNullOrEmpty(expectedHash) && !await VerifyIntegrityAsync(game, zipPath, expectedHash))
+            var expectedHash = session.SpecialConfig?.Sha256 ?? game.Sha256;
+            if (!string.IsNullOrEmpty(expectedHash) && !await VerifyIntegrityAsync(game, session.ZipPath, expectedHash))
             {
-                File.Delete(zipPath);
-                Logs.ErrorLogManager($"Hash mismatch for {args.GameId}. Expected: {expectedHash}");
-                ResetDownloadState(game, isUpdate);
+                File.Delete(session.ZipPath);
+                Logs.ErrorLogManager($"Hash mismatch for {session.Args.GameId}. Expected: {expectedHash}");
+                ResetDownloadState(game, session);
                 var strings = SettingsViewModel.Instance.Strings;
                 CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
                 return;
@@ -351,22 +396,21 @@ public partial class LibraryViewModel : ObservableObject
             game.DownloadProgressValue = 100;
             game.DownloadRemainingText = string.Empty;
 
-            await ExtractArchiveAsync(zipPath, extractDir);
+            await ExtractArchiveAsync(session.ZipPath, session.ExtractDir);
 
-            var tipo = _activeSpecialConfig?.Tipo;
-            await _contentService.RegisterGameAsync(game.Id, game.Nombre, args.Version, tipo);
+            var tipo = session.SpecialConfig?.Tipo;
+            await _contentService.RegisterGameAsync(game.Id, game.Nombre, session.Args.Version, tipo);
 
             game.DownloadStatus = GameDownloadStatus.Downloaded;
             game.DownloadProgressValue = 100;
-            _activeDownloadArgs = null;
-            _activeSpecialConfig = null;
-            Logs.InfoLogManager($"Game installed: {args.GameId} v{args.Version}{(tipo is not null ? $" ({tipo})" : "")}.");
-            GameInstalled?.Invoke(game.Nombre, args.Version, tipo);
+            RemoveSession(session);
+            Logs.InfoLogManager($"Game installed: {session.Args.GameId} v{session.Args.Version}{(tipo is not null ? $" ({tipo})" : "")}.");
+            GameInstalled?.Invoke(game.Nombre, session.Args.Version, tipo);
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            ResetDownloadState(game, isUpdate);
+            ResetDownloadState(game, session);
         }
     }
 
@@ -411,40 +455,47 @@ public partial class LibraryViewModel : ObservableObject
         });
     }
 
-    private void HandleDownloadCancelled(GameInfo game, GameDownloadArgs args, bool isUpdate)
+    private void HandleDownloadCancelled(GameInfo game, DownloadSession session)
     {
-        if (_isCancelling)
+        if (session.IsCancelling)
         {
-            Logs.InfoLogManager($"Download cancelled: {args.GameId}.");
-            CleanupDownloadFiles(game);
-            ResetDownloadState(game, isUpdate);
-            _isCancelling = false;
-        }
-        else if (isUpdate)
-        {
-            Logs.InfoLogManager($"Update cancelled: {args.GameId}.");
-            ResetDownloadState(game, isUpdate: true);
+            Logs.InfoLogManager($"Download cancelled: {session.Args.GameId}.");
+            CleanupDownloadFiles(session);
+            ResetDownloadState(game, session);
         }
         else
         {
-            Logs.InfoLogManager($"Download paused: {args.GameId}.");
+            // Pausa unificada para instalaciones y actualizaciones: la sesión sobrevive en
+            // _sessions con todo su contexto (URL, config especial, isUpdate, rutas), y el botón
+            // Reanudar la continúa fielmente. El .part se conserva para reanudar desde su offset.
+            Logs.InfoLogManager($"Download paused: {session.Args.GameId}.");
             game.DownloadStatus = GameDownloadStatus.Paused;
         }
     }
 
-    private void HandleDownloadFailed(GameInfo game, GameDownloadArgs args, bool isUpdate, string? errorMessage)
+    private void HandleDownloadFailed(GameInfo game, DownloadSession session, string? errorMessage)
     {
         var strings = SettingsViewModel.Instance.Strings;
-        Logs.ErrorLogManager($"Download failed: {args.GameId}: {errorMessage}");
-        ResetDownloadState(game, isUpdate);
+        Logs.ErrorLogManager($"Download failed: {session.Args.GameId}: {errorMessage}");
+        ResetDownloadState(game, session);
         CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
     }
 
-    private void ResetDownloadState(GameInfo game, bool isUpdate)
+    private void ResetDownloadState(GameInfo game, DownloadSession session)
     {
-        game.DownloadStatus = isUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
+        game.DownloadStatus = session.IsUpdate ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Available;
         game.DownloadProgressValue = 0;
-        _activeDownloadArgs = null;
+        RemoveSession(session);
+    }
+
+    // Saca la sesión del diccionario y libera su CTS. Es el único punto de baja de una sesión
+    // (éxito, fallo o cancelación explícita); una pausa NO la elimina.
+    private void RemoveSession(DownloadSession session)
+    {
+        session.Cts?.Dispose();
+        session.Cts = null;
+        _sessions.Remove(session.GameId);
+        if (ReferenceEquals(_activeSession, session)) _activeSession = null;
     }
 
     private static string FormatRemainingTime(double seconds)
@@ -462,18 +513,21 @@ public partial class LibraryViewModel : ObservableObject
         !string.IsNullOrWhiteSpace(config.Version);
 
     [RelayCommand]
-    private void PauseDownload()
+    private void PauseDownload(string? gameId)
     {
-        _downloadCts?.Cancel();
+        // Solo la descarga activa puede pausarse. Resolver por GameId (parámetro de la tarjeta)
+        // y, en su defecto, caer en la sesión activa por compatibilidad.
+        var session = ResolveSession(gameId);
+        session?.Cts?.Cancel();
     }
 
     [RelayCommand]
-    private void CancelDownload()
+    private void CancelDownload(string? gameId)
     {
-        var game = _activeDownloadArgs is not null
-            ? Games.FirstOrDefault(g => g.GameId == _activeDownloadArgs.GameId)
-            : null;
+        var session = ResolveSession(gameId);
+        if (session is null) return;
 
+        var game = Games.FirstOrDefault(g => g.GameId == session.GameId);
         if (game is null) return;
 
         var strings = SettingsViewModel.Instance.Strings;
@@ -485,29 +539,62 @@ public partial class LibraryViewModel : ObservableObject
 
         if (confirmed != true) return;
 
+        // El diálogo modal bombea el dispatcher: la descarga puede haber terminado (e incluso haber
+        // arrancado otra del mismo juego) mientras estaba abierto. Comprobamos IDENTIDAD, no solo
+        // existencia: si la sesión que el usuario quería cancelar ya no es la registrada para ese
+        // juego, no tocamos nada para no cancelar una descarga distinta.
+        if (!_sessions.TryGetValue(session.GameId, out var current) || !ReferenceEquals(current, session)) return;
+
         if (game.DownloadStatus == GameDownloadStatus.Paused)
         {
-            CleanupDownloadFiles(game);
-            ResetDownloadState(game, isUpdate: false);
-            _globalViewModel.IsDownloading = false;
+            // Sesión pausada (puede no ser la activa). Limpiar SUS archivos y bajarla, tocando el
+            // guard global solo si resultaba ser la descarga activa.
+            var wasActive = ReferenceEquals(_activeSession, session);
+            CleanupDownloadFiles(session);
+            ResetDownloadState(game, session);
+            if (wasActive) _globalViewModel.IsDownloading = false;
             return;
         }
 
-        _isCancelling = true;
-        _downloadCts?.Cancel();
+        session.IsCancelling = true;
+        session.Cts?.Cancel();
     }
 
-    private void CleanupDownloadFiles(GameInfo game)
+    // Resuelve la sesión sobre la que opera un comando. Si la tarjeta manda un GameId, operamos
+    // ESTRICTAMENTE sobre la sesión de ese juego (o ninguna): nunca caemos a la activa, para no
+    // pausar/cancelar una descarga distinta. Solo sin parámetro (binding antiguo) usamos la activa.
+    private DownloadSession? ResolveSession(string? gameId)
     {
-        if (_activeDownloadArgs is null) return;
+        if (string.IsNullOrEmpty(gameId)) return _activeSession;
+        return _sessions.TryGetValue(gameId, out var session) ? session : null;
+    }
 
-        var gamesRoot = _settingsService.GetGamesRootDirectory();
-        var zipPath = Path.Combine(gamesRoot, ".downloads", $"{_activeDownloadArgs.GameId}.zip");
+    private static void CleanupDownloadFiles(DownloadSession session)
+    {
+        var zipPath = session.ZipPath;
         var partPath = zipPath + ".part";
         var metaPath = partPath + ".meta";
 
         try { if (File.Exists(partPath)) File.Delete(partPath); } catch { }
         try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch { }
         try { if (File.Exists(metaPath)) File.Delete(metaPath); } catch { }
+    }
+
+    /// <summary>
+    /// Estado completo de una descarga concreta de un juego. Reemplaza los antiguos campos
+    /// globales de un solo slot: cada sesión es dueña de sus args, config especial, CTS, rutas y
+    /// versión/clave, de modo que el estado de un juego nunca puede reutilizarse en otro.
+    /// </summary>
+    private sealed class DownloadSession
+    {
+        public required string GameId { get; init; }
+        public required GameDownloadArgs Args { get; init; }
+        public SpecialVersionConfig? SpecialConfig { get; init; }
+        public required string Url { get; init; }
+        public required string ZipPath { get; init; }
+        public required string ExtractDir { get; init; }
+        public required bool IsUpdate { get; init; }
+        public CancellationTokenSource? Cts { get; set; }
+        public bool IsCancelling { get; set; }
     }
 }

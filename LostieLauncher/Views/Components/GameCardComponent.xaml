@@ -379,6 +379,7 @@
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadingVisibility}}">
                         <Button Command="{Binding PauseDownloadCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameId, ElementName=Root}"
                                 Style="{StaticResource CardAccentButtonStyle}"
                                 Margin="0,0,6,0">
                             <StackPanel Orientation="Horizontal">
@@ -388,6 +389,7 @@
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding CancelDownloadCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameId, ElementName=Root}"
                                 Style="{StaticResource CardSecondaryButtonStyle}"
                                 ToolTip="{Binding Strings.BtnCancel, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                             <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13" VerticalAlignment="Center" />
@@ -413,6 +415,7 @@
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding CancelDownloadCommand, ElementName=Root}"
+                                CommandParameter="{Binding GameId, ElementName=Root}"
                                 Style="{StaticResource CardSecondaryButtonStyle}"
                                 ToolTip="{Binding Strings.BtnCancel, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                             <iconPacks:PackIconMaterial Kind="Close" Width="13" Height="13" VerticalAlignment="Center" />

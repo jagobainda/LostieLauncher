@@ -203,4 +203,129 @@ public class LibraryViewModelTests
         // Assert
         Should.NotThrow(act);
     }
+
+    
+    [Fact]
+    public async Task ResumingPausedGame_ContinuesItsOwnDownload_NotAnotherPausedGame()
+    {
+        // Arrange — two games that will both end up Paused. The download service records every
+        // (url, destination) it is asked to fetch and reports "paused" so the games stay Paused.
+        var calls = new List<(string Url, string Dest)>();
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                calls.Add((ci.ArgAt<string>(0), ci.ArgAt<string>(1)));
+                return Task.FromResult(DownloadResult.Cancelled());
+            });
+        _settingsService.GetGamesRootDirectory().Returns(Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root"));
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()));
+        _contentService.GetGamesAsync().Returns([
+            TestData.Game(name: "Alpha", version: "1.0.0"),
+            TestData.Game(name: "Bravo", version: "1.0.0"),
+        ]);
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+
+        var argsA = new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip");
+        var argsB = new GameDownloadArgs("bravo", "1.0.0", "/b/bravo.zip");
+
+        // Act — start+pause A, then start+pause B (the update path shows no modal dialog), resume A.
+        await vm.StartUpdateCommand.ExecuteAsync(argsA);
+        await vm.StartUpdateCommand.ExecuteAsync(argsB);
+
+        vm.Games.Single(g => g.GameId == "alpha").DownloadStatus.ShouldBe(GameDownloadStatus.Paused);
+        vm.Games.Single(g => g.GameId == "bravo").DownloadStatus.ShouldBe(GameDownloadStatus.Paused);
+
+        calls.Clear();
+        await vm.StartDownloadCommand.ExecuteAsync(argsA);   // Resume A
+
+        // Assert — the resume fetched A's own URL/destination, never B's (the BUG-003 regression
+        // reused the last global args, which were B's).
+        calls.ShouldHaveSingleItem();
+        calls[0].Url.ShouldBe("https://download.test/a/alpha.zip");
+        calls[0].Url.ShouldNotContain("bravo");
+        calls[0].Dest.ShouldContain("alpha.");
+    }
+
+    [Fact]
+    public async Task PauseDownloadCommand_PausesActiveDownload_FreesTheGlobalGuard_AndKeepsItResumable()
+    {
+        // Arrange — the first fetch blocks until its token is cancelled (a real pause); any later
+        // fetch (the resume) returns immediately so the test does not hang.
+        var fetches = 0;
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns(async ci =>
+            {
+                fetches++;
+                if (fetches == 1)
+                {
+                    var ct = ci.ArgAt<CancellationToken>(3);
+                    try { await Task.Delay(Timeout.Infinite, ct); }
+                    catch (OperationCanceledException) { }
+                }
+                return DownloadResult.Cancelled();
+            });
+        _settingsService.GetGamesRootDirectory().Returns(Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root"));
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+        var args = new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip");
+
+        // Act — kick off the (blocking) download, then pause it by GameId.
+        var downloadTask = vm.StartUpdateCommand.ExecuteAsync(args);
+        var game = vm.Games.Single();
+        game.DownloadStatus.ShouldBe(GameDownloadStatus.Downloading);   // sanity: in flight
+        _globalViewModel.IsDownloading.ShouldBeTrue();
+
+        vm.PauseDownloadCommand.Execute("alpha");
+        await downloadTask;
+
+        // Assert — paused, the single-download guard is released, and the session survives so a
+        // subsequent resume actually launches another fetch.
+        game.DownloadStatus.ShouldBe(GameDownloadStatus.Paused);
+        _globalViewModel.IsDownloading.ShouldBeFalse();
+
+        await vm.StartDownloadCommand.ExecuteAsync(args);   // Resume
+        fetches.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task DownloadFinishing_ReleasesTheGlobalGuard_SoFurtherDownloadsArePossible()
+    {
+        // Arrange — the fetch reports Success. The per-game session refactor must still release the
+        // single-download guard on a terminal outcome (not only on pause): otherwise the first
+        // completed download would leave IsDownloading stuck true and block every later download.
+        var fetches = 0;
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                fetches++;
+                return Task.FromResult(DownloadResult.Succeeded());
+            });
+        _settingsService.GetGamesRootDirectory().Returns(Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root"));
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+        var args = new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip");
+
+        // Act — the success handler runs (extraction fails harmlessly because no .zip exists on
+        // disk, exercising the terminal RemoveSession path either way).
+        await vm.StartUpdateCommand.ExecuteAsync(args);
+
+        // Assert — guard released, and a second download is actually allowed through (not early-out).
+        _globalViewModel.IsDownloading.ShouldBeFalse();
+        await vm.StartUpdateCommand.ExecuteAsync(args);
+        fetches.ShouldBe(2);
+    }
 }
