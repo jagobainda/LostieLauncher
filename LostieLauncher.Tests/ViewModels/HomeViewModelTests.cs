@@ -12,10 +12,7 @@ public class HomeViewModelTests
     private readonly ISettingsService _settingsService = Substitute.For<ISettingsService>();
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
 
-    public HomeViewModelTests(WpfApplicationFixture _)
-    {
-        _settingsService.Load().Returns(new AppSettings());
-    }
+    public HomeViewModelTests(WpfApplicationFixture _) => _settingsService.Load().Returns(new AppSettings());
 
     private SettingsViewModel CreateSettings() => new(_settingsService, _startupService);
 

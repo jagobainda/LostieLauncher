@@ -8,10 +8,7 @@ namespace LostieLauncher.Views.Components;
 
 public partial class GameCardComponent : UserControl
 {
-    public GameCardComponent()
-    {
-        InitializeComponent();
-    }
+    public GameCardComponent() => InitializeComponent();
 
     public static readonly DependencyProperty GameLogoProperty = DependencyProperty.Register(nameof(GameLogo), typeof(ImageSource), typeof(GameCardComponent));
 

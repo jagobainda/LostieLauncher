@@ -24,14 +24,11 @@ public partial class LibraryView : System.Windows.Controls.UserControl
 
     private void OnScrollToGameRequested(string gameId) => ScrollToGame(gameId);
 
-    private void ScrollToGame(string gameId)
-    {
-        Dispatcher.BeginInvoke(() =>
-        {
-            var item = GamesItemsControl.Items.Cast<GameInfo>().FirstOrDefault(g => g.GameId == gameId);
-            if (item is null) return;
-            (GamesItemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement)?.BringIntoView();
-        }, DispatcherPriority.Loaded);
-    }
+    private void ScrollToGame(string gameId) => Dispatcher.BeginInvoke(() =>
+                                                     {
+                                                         var item = GamesItemsControl.Items.Cast<GameInfo>().FirstOrDefault(g => g.GameId == gameId);
+                                                         if (item is null) return;
+                                                         (GamesItemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement)?.BringIntoView();
+                                                     }, DispatcherPriority.Loaded);
 }
 

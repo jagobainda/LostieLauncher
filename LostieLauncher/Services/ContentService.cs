@@ -9,15 +9,15 @@ namespace LostieLauncher.Services;
 
 public interface IContentService
 {
-    Task<List<GameInfo>> GetGamesAsync();
-    Task<List<LocalGameInfo>> GetLocalGamesAsync();
-    Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
-    Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default);
-    string GetGameDirectory(string gameName);
-    Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null);
-    Task RemoveGameRegistryAsync(string gameName);
-    Task AddPlaytimeAsync(Guid gameId, int minutes);
-    Task<Dictionary<Guid, int>> GetAllPlaytimesAsync();
+    public Task<List<GameInfo>> GetGamesAsync();
+    public Task<List<LocalGameInfo>> GetLocalGamesAsync();
+    public Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false);
+    public Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default);
+    public string GetGameDirectory(string gameName);
+    public Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null);
+    public Task RemoveGameRegistryAsync(string gameName);
+    public Task AddPlaytimeAsync(Guid gameId, int minutes);
+    public Task<Dictionary<Guid, int>> GetAllPlaytimesAsync();
 }
 
 public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions contentOptions, ISettingsService settingsService) : IContentService
@@ -183,8 +183,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         _ => "es"
     };
 
-    private static string Resolve(Dictionary<string, string> localized, string languageCode) =>
-        localized.TryGetValue(languageCode, out var value) ? value :
+    private static string Resolve(Dictionary<string, string> localized, string languageCode) => localized.TryGetValue(languageCode, out var value) ? value :
         localized.TryGetValue("es", out var fallback) ? fallback :
         localized.Values.FirstOrDefault() ?? string.Empty;
 

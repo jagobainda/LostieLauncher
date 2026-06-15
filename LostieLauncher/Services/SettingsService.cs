@@ -6,10 +6,10 @@ namespace LostieLauncher.Services;
 
 public interface ISettingsService
 {
-    AppSettings Load();
-    void Save(AppSettings settings);
-    string GetGamesRootDirectory();
-    void EnsureGamesRootDirectoryExists();
+    public AppSettings Load();
+    public void Save(AppSettings settings);
+    public string GetGamesRootDirectory();
+    public void EnsureGamesRootDirectoryExists();
 }
 
 public class SettingsService : ISettingsService

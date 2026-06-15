@@ -10,8 +10,8 @@ namespace LostieLauncher.Services;
 
 public interface ITelemetryService
 {
-    void TrackGameLaunched(string gameId, string gameVersion);
-    Task<Dictionary<string, int>> GetDownloadCountsAsync();
+    public void TrackGameLaunched(string gameId, string gameVersion);
+    public Task<Dictionary<string, int>> GetDownloadCountsAsync();
 }
 
 public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOptions telemetryOptions) : ITelemetryService
@@ -114,7 +114,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
             var status = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
             if (!GlobalMemoryStatusEx(ref status)) return 2;
 
-            double ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
+            var ramGb = status.ullTotalPhys / (1024.0 * 1024.0 * 1024.0);
             return Math.Clamp((int)Math.Round(ramGb), 2, 256);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); return 2; }
@@ -145,7 +145,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         {
             var buildStr = (string?)Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuildNumber", null);
 
-            if (int.TryParse(buildStr, out int build)) return build >= 22000 ? "Windows 11" : "Windows 10";
+            if (int.TryParse(buildStr, out var build)) return build >= 22000 ? "Windows 11" : "Windows 10";
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
         return "Unknown";
@@ -156,7 +156,7 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
         try
         {
             using var key = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor");
-            int count = key?.GetSubKeyNames().Length ?? Environment.ProcessorCount;
+            var count = key?.GetSubKeyNames().Length ?? Environment.ProcessorCount;
             return Math.Clamp(count, 1, 128);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); return Math.Clamp(Environment.ProcessorCount, 1, 128); }

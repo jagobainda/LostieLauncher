@@ -29,7 +29,7 @@ public partial class App : Application
     {
         VelopackApp.Build().Run();
 
-        _instanceMutex = new Mutex(true, MutexName, out bool isNewInstance);
+        _instanceMutex = new Mutex(true, MutexName, out var isNewInstance);
         if (!isNewInstance)
         {
             _instanceMutex.Dispose();

@@ -15,6 +15,8 @@ public class DownloadResult
     public string? ErrorMessage { get; init; }
 
     public static DownloadResult Succeeded() => new() { Outcome = DownloadOutcome.Success };
+
     public static DownloadResult Cancelled() => new() { Outcome = DownloadOutcome.Cancelled };
+
     public static DownloadResult Failed(string message) => new() { Outcome = DownloadOutcome.Failed, ErrorMessage = message };
 }

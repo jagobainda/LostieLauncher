@@ -1,5 +1,6 @@
 using LostieLauncher.Content;
 using LostieLauncher.Models;
+using LostieLauncher.Utils;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -55,7 +56,7 @@ public partial class DownloadConfirmDialog : Window
                 GameLogoImage.Visibility = Visibility.Visible;
                 GameLogoFallback.Visibility = Visibility.Collapsed;
             }
-            catch { }
+            catch (Exception ex) { Logs.ErrorLogManager(ex); }
         }
 
         KeyboardShortcuts.RegisterDialog(
@@ -95,8 +96,9 @@ public partial class DownloadConfirmDialog : Window
 
             return freeGB >= 1 ? $"{freeGB.ToString("0.#", CultureInfo.InvariantCulture)} GB" : $"{(freeGB * 1024).ToString("0", CultureInfo.InvariantCulture)} MB";
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return "—";
         }
     }
@@ -106,10 +108,7 @@ public partial class DownloadConfirmDialog : Window
         if (e.ClickCount == 1) DragMove();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     private void DownloadButton_Click(object sender, RoutedEventArgs e)
     {
@@ -118,10 +117,7 @@ public partial class DownloadConfirmDialog : Window
         DialogResult = true;
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-    }
+    private void CancelButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 
     private void ViewPageButton_Click(object sender, RoutedEventArgs e)
     {
@@ -133,9 +129,6 @@ public partial class DownloadConfirmDialog : Window
         {
             Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
         }
-        catch
-        {
-            // Ignore if the URL can't be opened
-        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 }

@@ -48,10 +48,7 @@ public partial class SpecialVersionDialog : Window
         if (e.ClickCount == 1) DragMove();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     private void ConfirmButton_Click(object sender, RoutedEventArgs e)
     {
@@ -62,8 +59,5 @@ public partial class SpecialVersionDialog : Window
         DialogResult = true;
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-    }
+    private void CancelButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 }

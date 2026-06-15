@@ -4,9 +4,9 @@ namespace LostieLauncher.Services;
 
 public interface IWindowsStartupService
 {
-    bool IsEnabled();
-    void Enable();
-    void Disable();
+    public bool IsEnabled();
+    public void Enable();
+    public void Disable();
 }
 
 public class WindowsStartupService : IWindowsStartupService

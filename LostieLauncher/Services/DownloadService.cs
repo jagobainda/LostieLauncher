@@ -10,11 +10,11 @@ namespace LostieLauncher.Services;
 
 public interface IDownloadService
 {
-    DownloadState State { get; }
+    public DownloadState State { get; }
 
-    Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
+    public Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
 
-    Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
+    public Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
 }
 
 public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions) : IDownloadService
@@ -57,6 +57,7 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         }
         catch (OperationCanceledException)
         {
+            Logs.InfoLogManager($"Special version config fetch cancelled for key: {key}");
             return null;
         }
         catch (Exception ex)
@@ -77,7 +78,7 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
 
             State = DownloadState.Downloading;
 
-            for (int attempt = 0; attempt <= MaxRetries; attempt++)
+            for (var attempt = 0; attempt <= MaxRetries; attempt++)
             {
                 try
                 {
@@ -202,10 +203,10 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         await using (var fileStream = new FileStream(partPath, fileMode, FileAccess.Write, FileShare.None, BufferSize, useAsync: true))
         {
             var buffer = new byte[BufferSize];
-            long totalRead = existingBytes;
+            var totalRead = existingBytes;
             int bytesRead;
             var speedwatch = Stopwatch.StartNew();
-            long lastSpeedBytes = existingBytes;
+            var lastSpeedBytes = existingBytes;
             double currentSpeed = 0;
 
             while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, BufferSize), ct).ConfigureAwait(false)) > 0)
@@ -241,7 +242,7 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
     private static DownloadResumeMetadata BuildResumeMetadata(HttpResponseMessage response)
     {
         var etag = response.Headers.ETag;
-        // If-Range exige un validador fuerte: los ETag débiles no sirven para reanudar.
+
         var strongETag = etag is not null && !etag.IsWeak ? etag.ToString() : null;
         return new DownloadResumeMetadata(strongETag, response.Content.Headers.LastModified, response.Content.Headers.ContentLength);
     }

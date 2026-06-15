@@ -23,11 +23,6 @@ public partial class LibraryViewModel : ObservableObject
     private readonly DownloadOptions _downloadOptions;
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
 
-    // Estado de descarga modelado como una sesión por juego (keyed por GameId), nunca como
-    // campos globales de un solo slot. Cada sesión es dueña de sus propios args, config especial,
-    // CTS, rutas y versión/clave, de modo que es imposible reutilizar el estado de un juego en otro.
-    // Pueden coexistir varias sesiones en estado Paused; solo una puede estar activa a la vez
-    // (lo garantiza el guard _globalViewModel.IsDownloading).
     private readonly Dictionary<string, DownloadSession> _sessions = [];
     private DownloadSession? _activeSession;
     private bool _serverActionsBlockedMessageShown;
@@ -87,7 +82,7 @@ public partial class LibraryViewModel : ObservableObject
 
         foreach (var game in result)
         {
-            LocalGameInfo? local =
+            var local =
                 (game.Id != Guid.Empty && installedById.TryGetValue(game.Id, out var byId)) ? byId :
                 installedByName.TryGetValue(game.Nombre, out var byName) ? byName : null;
 
@@ -121,9 +116,6 @@ public partial class LibraryViewModel : ObservableObject
         var game = Games.FirstOrDefault(g => g.GameId == args.GameId);
         if (game is null) return;
 
-        // Reanudación: la sesión se resuelve por el GameId del juego de la tarjeta, nunca por un
-        // slot global. Así, reanudar A continúa exactamente la descarga de A (su URL, config
-        // especial, versión/clave y rutas), aunque B exista también en estado Paused.
         if (game.DownloadStatus == GameDownloadStatus.Paused && _sessions.TryGetValue(game.GameId, out var paused))
         {
             await ExecuteDownloadAndInstallAsync(game, paused);
@@ -262,12 +254,6 @@ public partial class LibraryViewModel : ObservableObject
         PendingScrollGameId = null;
     }
 
-    /// <summary>
-    /// Crea (o reemplaza) la sesión de descarga del juego y la registra en <see cref="_sessions"/>.
-    /// La ruta del <c>.zip</c> incluye un token derivado de la versión y la clave, de modo que
-    /// descargas distintas del mismo juego (p. ej. versión especial vs. estándar) nunca comparten
-    /// el mismo <c>.part</c>/<c>.part.meta</c>.
-    /// </summary>
     private DownloadSession CreateSession(GameInfo game, GameDownloadArgs args, string url, SpecialVersionConfig? specialConfig, bool isUpdate)
     {
         var session = new DownloadSession
@@ -281,8 +267,6 @@ public partial class LibraryViewModel : ObservableObject
             IsUpdate = isUpdate,
         };
 
-        // Si quedaba una sesión previa para este juego (p. ej. una pausada que se reinicia desde
-        // cero), liberamos su CTS antes de reemplazarla para no fugar el recurso.
         if (_sessions.TryGetValue(game.GameId, out var previous) && !ReferenceEquals(previous, session))
             previous.Cts?.Dispose();
 
@@ -302,8 +286,6 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadProgressValue = 0;
         _globalViewModel.IsDownloading = true;
 
-        // El estado de cancelación es por sesión y se reinicia en cada (re)lanzamiento, de modo que
-        // un flag "pegado" de una descarga anterior no puede afectar a esta.
         session.IsCancelling = false;
         session.Cts?.Dispose();
         session.Cts = new CancellationTokenSource();
@@ -322,10 +304,6 @@ public partial class LibraryViewModel : ObservableObject
         Logs.InfoLogManager($"Downloading: {session.Args.GameId} v{session.Args.Version}{(isSpecial ? $" (special: {session.SpecialConfig!.Tipo})" : "")}.");
         var result = await _downloadService.DownloadAsync(session.Url, session.ZipPath, progress, session.Cts.Token);
 
-        // Esta invocación tomó el slot activo arriba. Capturamos esa pertenencia ANTES de despachar
-        // el resultado, porque los handlers terminales (éxito, fallo, cancelación) llaman a
-        // RemoveSession, que ya pone _activeSession = null: si lo comprobáramos después, el guard
-        // global no se liberaría nunca salvo en la pausa.
         var wasActiveSession = ReferenceEquals(_activeSession, session);
 
         switch (result.Outcome)
@@ -344,9 +322,6 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadSpeedBytesPerSec = 0;
         game.DownloadRemainingText = string.Empty;
 
-        // Al terminar esta descarga —por éxito, fallo, cancelación o pausa— ya no hay descarga
-        // activa: liberar el guard global y soltar el puntero activo. Solo si esta invocación seguía
-        // siendo la dueña del slot (no si otra descarga tomó el relevo durante un await).
         if (wasActiveSession)
         {
             _activeSession = null;
@@ -426,34 +401,31 @@ public partial class LibraryViewModel : ObservableObject
         });
     }
 
-    private static async Task ExtractArchiveAsync(string zipPath, string extractDir)
-    {
-        await Task.Run(() =>
-        {
-            Directory.CreateDirectory(extractDir);
-            var readerOptions = new ReaderOptions
-            {
-                ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
-            };
+    private static async Task ExtractArchiveAsync(string zipPath, string extractDir) => await Task.Run(() =>
+                                                                                             {
+                                                                                                 Directory.CreateDirectory(extractDir);
+                                                                                                 var readerOptions = new ReaderOptions
+                                                                                                 {
+                                                                                                     ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
+                                                                                                 };
 
-            var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
-            using (var stream = File.OpenRead(zipPath))
-            using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
-            {
-                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
-                {
-                    var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
-                    if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
-                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                    using var entryStream = entry.OpenEntryStream();
-                    using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    entryStream.CopyTo(outStream);
-                }
-            }
-            File.Delete(zipPath);
-        });
-    }
+                                                                                                 var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
+                                                                                                 using (var stream = File.OpenRead(zipPath))
+                                                                                                 using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
+                                                                                                 {
+                                                                                                     foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
+                                                                                                     {
+                                                                                                         var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
+                                                                                                         if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
+                                                                                                             throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
+                                                                                                         Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                                                                                                         using var entryStream = entry.OpenEntryStream();
+                                                                                                         using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                                                                                         entryStream.CopyTo(outStream);
+                                                                                                     }
+                                                                                                 }
+                                                                                                 File.Delete(zipPath);
+                                                                                             });
 
     private void HandleDownloadCancelled(GameInfo game, DownloadSession session)
     {
@@ -465,9 +437,6 @@ public partial class LibraryViewModel : ObservableObject
         }
         else
         {
-            // Pausa unificada para instalaciones y actualizaciones: la sesión sobrevive en
-            // _sessions con todo su contexto (URL, config especial, isUpdate, rutas), y el botón
-            // Reanudar la continúa fielmente. El .part se conserva para reanudar desde su offset.
             Logs.InfoLogManager($"Download paused: {session.Args.GameId}.");
             game.DownloadStatus = GameDownloadStatus.Paused;
         }
@@ -488,8 +457,6 @@ public partial class LibraryViewModel : ObservableObject
         RemoveSession(session);
     }
 
-    // Saca la sesión del diccionario y libera su CTS. Es el único punto de baja de una sesión
-    // (éxito, fallo o cancelación explícita); una pausa NO la elimina.
     private void RemoveSession(DownloadSession session)
     {
         session.Cts?.Dispose();
@@ -507,16 +474,13 @@ public partial class LibraryViewModel : ObservableObject
         return $"{ts.Seconds}s";
     }
 
-    private static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) =>
-        ArchivoFormatRegex.IsMatch(config.Archivo) &&
+    private static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) => ArchivoFormatRegex.IsMatch(config.Archivo) &&
         (string.IsNullOrEmpty(config.Sha256) || Sha256FormatRegex.IsMatch(config.Sha256)) &&
         !string.IsNullOrWhiteSpace(config.Version);
 
     [RelayCommand]
     private void PauseDownload(string? gameId)
     {
-        // Solo la descarga activa puede pausarse. Resolver por GameId (parámetro de la tarjeta)
-        // y, en su defecto, caer en la sesión activa por compatibilidad.
         var session = ResolveSession(gameId);
         session?.Cts?.Cancel();
     }
@@ -539,16 +503,10 @@ public partial class LibraryViewModel : ObservableObject
 
         if (confirmed != true) return;
 
-        // El diálogo modal bombea el dispatcher: la descarga puede haber terminado (e incluso haber
-        // arrancado otra del mismo juego) mientras estaba abierto. Comprobamos IDENTIDAD, no solo
-        // existencia: si la sesión que el usuario quería cancelar ya no es la registrada para ese
-        // juego, no tocamos nada para no cancelar una descarga distinta.
         if (!_sessions.TryGetValue(session.GameId, out var current) || !ReferenceEquals(current, session)) return;
 
         if (game.DownloadStatus == GameDownloadStatus.Paused)
         {
-            // Sesión pausada (puede no ser la activa). Limpiar SUS archivos y bajarla, tocando el
-            // guard global solo si resultaba ser la descarga activa.
             var wasActive = ReferenceEquals(_activeSession, session);
             CleanupDownloadFiles(session);
             ResetDownloadState(game, session);
@@ -560,9 +518,6 @@ public partial class LibraryViewModel : ObservableObject
         session.Cts?.Cancel();
     }
 
-    // Resuelve la sesión sobre la que opera un comando. Si la tarjeta manda un GameId, operamos
-    // ESTRICTAMENTE sobre la sesión de ese juego (o ninguna): nunca caemos a la activa, para no
-    // pausar/cancelar una descarga distinta. Solo sin parámetro (binding antiguo) usamos la activa.
     private DownloadSession? ResolveSession(string? gameId)
     {
         if (string.IsNullOrEmpty(gameId)) return _activeSession;
@@ -575,16 +530,11 @@ public partial class LibraryViewModel : ObservableObject
         var partPath = zipPath + ".part";
         var metaPath = partPath + ".meta";
 
-        try { if (File.Exists(partPath)) File.Delete(partPath); } catch { }
-        try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch { }
-        try { if (File.Exists(metaPath)) File.Delete(metaPath); } catch { }
+        try { if (File.Exists(partPath)) File.Delete(partPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        try { if (File.Exists(metaPath)) File.Delete(metaPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
     }
 
-    /// <summary>
-    /// Estado completo de una descarga concreta de un juego. Reemplaza los antiguos campos
-    /// globales de un solo slot: cada sesión es dueña de sus args, config especial, CTS, rutas y
-    /// versión/clave, de modo que el estado de un juego nunca puede reutilizarse en otro.
-    /// </summary>
     private sealed class DownloadSession
     {
         public required string GameId { get; init; }

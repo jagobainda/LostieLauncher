@@ -34,8 +34,7 @@ public abstract class ViewModelTestBase : IDisposable
     /// queue is empty (or <paramref name="timeout"/> elapses). Use after triggering an
     /// async command to flush its <c>await</c> continuations before asserting.
     /// </summary>
-    protected Task PumpAsync(TimeSpan? timeout = null) =>
-        SyncContext.PumpAsync(timeout ?? TimeSpan.FromSeconds(5));
+    protected Task PumpAsync(TimeSpan? timeout = null) => SyncContext.PumpAsync(timeout ?? TimeSpan.FromSeconds(5));
 
     /// <summary>Convenience: record property-changed events from <paramref name="source"/>.</summary>
     protected static PropertyChangedRecorder Record(System.ComponentModel.INotifyPropertyChanged source) => new(source);

@@ -25,8 +25,7 @@ public class GamesViewModelTests
         _contentService.GetGameDirectory(Arg.Any<string>()).Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-nonexistent", ci.Arg<string>()));
     }
 
-    private LibraryViewModel CreateLibrary() =>
-        new(_telemetryService, _contentService, _settingsService, _downloadService, _globalViewModel, _downloadOptions);
+    private LibraryViewModel CreateLibrary() => new(_telemetryService, _contentService, _settingsService, _downloadService, _globalViewModel, _downloadOptions);
 
     private async Task<GamesViewModel> CreateSutAsync()
     {

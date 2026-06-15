@@ -72,16 +72,13 @@ public partial class MainViewModel : ObservableObject
         };
     }
 
-    private void UpdateCurrentTitle()
+    private void UpdateCurrentTitle() => CurrentTitle = CurrentViewModel switch
     {
-        CurrentTitle = CurrentViewModel switch
-        {
-            HomeViewModel => _settingsViewModel.Strings.TitleHome,
-            GamesViewModel => _settingsViewModel.Strings.TitleGames,
-            LibraryViewModel => _settingsViewModel.Strings.TitleLibrary,
-            _ => _settingsViewModel.Strings.TitleSettings
-        };
-    }
+        HomeViewModel => _settingsViewModel.Strings.TitleHome,
+        GamesViewModel => _settingsViewModel.Strings.TitleGames,
+        LibraryViewModel => _settingsViewModel.Strings.TitleLibrary,
+        _ => _settingsViewModel.Strings.TitleSettings
+    };
 
     [RelayCommand]
     private void NavigateToHome()
@@ -120,20 +117,16 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private static void OpenGitHub() =>
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/LostieLauncher") { UseShellExecute = true });
+    private static void OpenGitHub() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/LostieLauncher") { UseShellExecute = true });
 
     [RelayCommand]
-    private static void OpenTwitch() =>
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true });
+    private static void OpenTwitch() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true });
 
     [RelayCommand]
-    private static void OpenYouTube() =>
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true });
+    private static void OpenYouTube() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true });
 
     [RelayCommand]
-    private static void OpenTwitter() =>
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true });
+    private static void OpenTwitter() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true });
 
     [RelayCommand(CanExecute = nameof(CanRefreshData))]
     private async Task RefreshDataAsync()
@@ -152,8 +145,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private bool CanRefreshData() =>
-        !_globalViewModel.IsDownloading &&
+    private bool CanRefreshData() => !_globalViewModel.IsDownloading &&
         !_globalViewModel.IsRefreshing &&
         !_homeViewModel.IsLoading &&
         !_libraryViewModel.IsLoading &&

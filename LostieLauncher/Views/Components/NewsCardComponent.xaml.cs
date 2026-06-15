@@ -5,10 +5,7 @@ namespace LostieLauncher.Views.Components;
 
 public partial class NewsCardComponent : UserControl
 {
-    public NewsCardComponent()
-    {
-        InitializeComponent();
-    }
+    public NewsCardComponent() => InitializeComponent();
 
     public static readonly DependencyProperty TitleProperty =
         DependencyProperty.Register(nameof(Title), typeof(string), typeof(NewsCardComponent), new PropertyMetadata(string.Empty));

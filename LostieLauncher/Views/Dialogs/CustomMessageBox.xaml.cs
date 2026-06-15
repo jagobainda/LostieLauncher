@@ -70,23 +70,11 @@ public partial class CustomMessageBox : Window
         if (e.ClickCount == 1) DragMove();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void OkButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = true;
-    }
+    private void OkButton_Click(object sender, RoutedEventArgs e) => DialogResult = true;
 
-    private void YesButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = true;
-    }
+    private void YesButton_Click(object sender, RoutedEventArgs e) => DialogResult = true;
 
-    private void NoButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-    }
+    private void NoButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 }

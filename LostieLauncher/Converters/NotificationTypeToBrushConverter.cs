@@ -12,16 +12,12 @@ public class NotificationTypeToBrushConverter : IValueConverter
     private static readonly SolidColorBrush WarningBrush = new(Color.FromRgb(0xFF, 0xC1, 0x07));
     private static readonly SolidColorBrush ExclamationBrush = new(Color.FromRgb(0xF4, 0x43, 0x36));
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is NotificationType type ? type switch
     {
-        return value is NotificationType type ? type switch
-        {
-            NotificationType.Warning => WarningBrush,
-            NotificationType.Exclamation => ExclamationBrush,
-            _ => InfoBrush
-        } : InfoBrush;
-    }
+        NotificationType.Warning => WarningBrush,
+        NotificationType.Exclamation => ExclamationBrush,
+        _ => InfoBrush
+    } : InfoBrush;
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => throw new NotSupportedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }

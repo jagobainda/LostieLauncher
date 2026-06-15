@@ -42,13 +42,7 @@ public partial class MainWindow : Window
         if (e.ClickCount == 1) DragMove();
     }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        Hide();
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Hide();
 }
