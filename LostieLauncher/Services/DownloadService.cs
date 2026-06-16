@@ -116,12 +116,6 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         }
     }
 
-    private static void CleanupPartFile(string partPath)
-    {
-        try { if (File.Exists(partPath)) File.Delete(partPath); }
-        catch { Logs.ErrorLogManager("Something went wrong while trying to delete part files"); }
-    }
-
     private async Task DownloadCoreAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("Download");
