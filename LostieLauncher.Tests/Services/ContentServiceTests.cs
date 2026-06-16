@@ -293,6 +293,82 @@ public class ContentServiceTests : IDisposable
         all.ShouldBeEmpty();
     }
 
+    // -------------------- Concurrency (BUG-030) --------------------
+
+    [Fact]
+    public async Task AddPlaytimeAsync_WhenManyConcurrentWritesForSameId_DoesNotLoseUpdates()
+    {
+        // Arrange — without per-file serialisation these overlapping read-modify-write cycles
+        // (as happen when AddPlaytimeAsync runs from Process.Exited on the thread pool) would
+        // clobber each other and the total would fall short.
+        var sut = CreateSut();
+        var id = Guid.NewGuid();
+        const int writes = 100;
+
+        // Act
+        await Task.WhenAll(Enumerable.Range(0, writes).Select(_ => sut.AddPlaytimeAsync(id, 1)));
+        var all = await sut.GetAllPlaytimesAsync();
+
+        // Assert
+        all[id].ShouldBe(writes);
+    }
+
+    [Fact]
+    public async Task RegisterGameAsync_WhenManyConcurrentWritesForDifferentGames_PersistsEveryEntry()
+    {
+        // Arrange
+        var sut = CreateSut();
+        const int games = 50;
+
+        // Act
+        await Task.WhenAll(Enumerable.Range(0, games)
+            .Select(i => sut.RegisterGameAsync(Guid.NewGuid(), $"Game{i}", "1.0.0")));
+        var stored = await sut.GetLocalGamesAsync();
+
+        // Assert — no write was lost or left the file in a state that failed to parse.
+        stored.Count.ShouldBe(games);
+    }
+
+    [Fact]
+    public async Task AddPlaytimeAsync_WhenReadsInterleaveWithWrites_LosesNoWritesAndReadsNeverThrow()
+    {
+        // Arrange — readers acquire the same gate as writers so an open read handle cannot make a
+        // writer's File.Move-with-overwrite fail with a sharing violation (which would drop the
+        // write silently). This exercises that reader<->writer path, not just writer<->writer.
+        var sut = CreateSut();
+        var id = Guid.NewGuid();
+        const int writes = 100;
+        var readFailures = 0;
+
+        // Act — hammer writes while a swarm of readers reads the same file concurrently.
+        var writers = Enumerable.Range(0, writes).Select(_ => sut.AddPlaytimeAsync(id, 1));
+        var readers = Enumerable.Range(0, writes).Select(async _ =>
+        {
+            try { await sut.GetAllPlaytimesAsync(); }
+            catch { Interlocked.Increment(ref readFailures); }
+        });
+        await Task.WhenAll(writers.Concat(readers));
+        var all = await sut.GetAllPlaytimesAsync();
+
+        // Assert — every write landed and no read observed a locked/half-written file.
+        all[id].ShouldBe(writes);
+        readFailures.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task RegisterGameAsync_WritesAtomically_LeavingNoTempFileBehind()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        await sut.RegisterGameAsync(Guid.NewGuid(), "TestGame", "1.0.0");
+
+        // Assert — the temp file used for the atomic rename must not survive.
+        File.Exists(Path.Combine(_temp.Path, "local_games.json.tmp")).ShouldBeFalse();
+        File.Exists(Path.Combine(_temp.Path, "local_games.json")).ShouldBeTrue();
+    }
+
     // -------------------- GetHomeContentAsync --------------------
 
     [Fact]

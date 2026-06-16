@@ -35,6 +35,17 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         Converters = { new JsonStringEnumConverter() }
     };
 
+    // BUG-030: AddPlaytimeAsync runs from Process.Exited (thread-pool) and can overlap with
+    // Register/Remove invoked from the UI. Each registry file gets its own gate so concurrent
+    // read-modify-write cycles cannot interleave and lose updates, and writes land atomically
+    // (temp + rename) so readers never observe a half-written file. Reads acquire the same gate
+    // too: an open read handle (FileShare.Read, no Delete) would otherwise make a concurrent
+    // File.Move-with-overwrite fail with a sharing violation and silently drop the write.
+    // Static because the files are a process-wide resource regardless of how many
+    // ContentService instances exist.
+    private static readonly SemaphoreSlim LocalGamesFileLock = new(1, 1);
+    private static readonly SemaphoreSlim PlaytimeFileLock = new(1, 1);
+
     public async Task<List<GameInfo>> GetGamesAsync()
     {
         try
@@ -207,6 +218,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     public async Task<List<LocalGameInfo>> GetLocalGamesAsync()
     {
+        await LocalGamesFileLock.WaitAsync().ConfigureAwait(false);
         try
         {
             Logs.DebugLogManager("Reading local games registry.");
@@ -222,6 +234,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             Logs.ErrorLogManager(ex);
             return [];
         }
+        finally { LocalGamesFileLock.Release(); }
     }
 
     public string GetGameDirectory(string gameName)
@@ -238,6 +251,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     public async Task RegisterGameAsync(Guid gameId, string gameName, string version, string? tipo = null)
     {
+        await LocalGamesFileLock.WaitAsync().ConfigureAwait(false);
         try
         {
             Logs.DebugLogManager($"Registering game in local registry: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
@@ -255,37 +269,41 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             games.RemoveAll(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             games.Add(new LocalGameInfo { Id = gameId, Nombre = gameName, Version = version, Tipo = tipo });
 
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
+            await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        finally { LocalGamesFileLock.Release(); }
     }
 
     public async Task RemoveGameRegistryAsync(string gameName)
     {
-        var gamesRoot = _settingsService.GetGamesRootDirectory();
-        var path = Path.Combine(gamesRoot, "local_games.json");
-        if (!File.Exists(path)) return;
-
+        await LocalGamesFileLock.WaitAsync().ConfigureAwait(false);
         try
         {
+            var gamesRoot = _settingsService.GetGamesRootDirectory();
+            var path = Path.Combine(gamesRoot, "local_games.json");
+            if (!File.Exists(path)) return;
+
             Logs.DebugLogManager($"Removing game from registry: {gameName}.");
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
             List<LocalGameInfo> updated = [.. games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase))];
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
+            await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        finally { LocalGamesFileLock.Release(); }
     }
 
     public async Task AddPlaytimeAsync(Guid gameId, int minutes)
     {
         if (gameId == Guid.Empty) return;
 
-        var gamesRoot = _settingsService.GetGamesRootDirectory();
-        var path = Path.Combine(gamesRoot, "playtime.json");
-
+        await PlaytimeFileLock.WaitAsync().ConfigureAwait(false);
         try
         {
+            var gamesRoot = _settingsService.GetGamesRootDirectory();
+            var path = Path.Combine(gamesRoot, "playtime.json");
+
             Logs.DebugLogManager($"Adding {minutes} playtime minutes for game id: {gameId}.");
             List<PlaytimeRecord> records = [];
             if (File.Exists(path))
@@ -303,19 +321,33 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                 records.Add(new PlaytimeRecord { Id = gameId, PlaytimeMinutes = minutes });
 
             Directory.CreateDirectory(gamesRoot);
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(records, JsonOptions)).ConfigureAwait(false);
+            await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(records, JsonOptions)).ConfigureAwait(false);
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        finally { PlaytimeFileLock.Release(); }
+    }
+
+    /// <summary>
+    /// Writes <paramref name="content"/> to a sibling temp file and atomically renames it over
+    /// <paramref name="path"/>, so a concurrent reader sees either the whole previous file or the
+    /// whole new one — never a partially written registry (BUG-030).
+    /// </summary>
+    private static async Task WriteAllTextAtomicAsync(string path, string content)
+    {
+        var tempPath = path + ".tmp";
+        await File.WriteAllTextAsync(tempPath, content).ConfigureAwait(false);
+        File.Move(tempPath, path, overwrite: true);
     }
 
     public async Task<Dictionary<Guid, int>> GetAllPlaytimesAsync()
     {
-        var gamesRoot = _settingsService.GetGamesRootDirectory();
-        var path = Path.Combine(gamesRoot, "playtime.json");
-        if (!File.Exists(path)) return [];
-
+        await PlaytimeFileLock.WaitAsync().ConfigureAwait(false);
         try
         {
+            var gamesRoot = _settingsService.GetGamesRootDirectory();
+            var path = Path.Combine(gamesRoot, "playtime.json");
+            if (!File.Exists(path)) return [];
+
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var records = JsonSerializer.Deserialize<List<PlaytimeRecord>>(json, JsonOptions) ?? [];
             return records
@@ -327,5 +359,6 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             Logs.ErrorLogManager(ex);
             return [];
         }
+        finally { PlaytimeFileLock.Release(); }
     }
 }

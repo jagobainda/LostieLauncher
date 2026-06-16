@@ -200,6 +200,9 @@ public partial class App : Application
         _instanceMutex?.ReleaseMutex();
         _instanceMutex?.Dispose();
         _notifyIcon?.Dispose();
+        // Dispose the DI container so IDisposable singletons (e.g. GamesViewModel, which
+        // unsubscribes from LibraryViewModel.GameInstalled) release their resources (BUG-020).
+        (Services as IDisposable)?.Dispose();
         base.OnExit(e);
     }
 }

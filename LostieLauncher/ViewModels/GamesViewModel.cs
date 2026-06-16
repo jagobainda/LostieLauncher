@@ -10,11 +10,12 @@ using System.Windows;
 
 namespace LostieLauncher.ViewModels;
 
-public partial class GamesViewModel : ObservableObject
+public partial class GamesViewModel : ObservableObject, IDisposable
 {
     private readonly IContentService _contentService;
     private readonly LibraryViewModel _libraryViewModel;
     private readonly ITelemetryService _telemetryService;
+    private bool _disposed;
 
     public event Action? NavigateToLibraryRequested;
 
@@ -42,9 +43,25 @@ public partial class GamesViewModel : ObservableObject
 
     public async Task RefreshAsync() => await LoadInstalledGamesAsync(waitForLibrary: false);
 
+    /// <summary>
+    /// Unsubscribes from the library's <c>GameInstalled</c> event so this view model does not
+    /// outlive its subscription (BUG-020). Idempotent and safe to call from app shutdown.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _libraryViewModel.GameInstalled -= OnGameInstalled;
+        GC.SuppressFinalize(this);
+    }
+
     private void OnGameInstalled(string gameName, string version, string? tipo)
     {
-        App.Current.Dispatcher.Invoke(() =>
+        // The launcher may already be shutting down when an install completes; capture the
+        // application in a local and skip the UI update if it is gone, instead of dereferencing
+        // a possibly-null App.Current.
+        var app = Application.Current;
+        app?.Dispatcher.Invoke(() =>
         {
             var remote = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
             var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
@@ -157,30 +174,90 @@ public partial class GamesViewModel : ObservableObject
             var process = Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exePath)! });
             if (process is not null)
             {
-                process.EnableRaisingEvents = true;
-                process.Exited += async (_, _) =>
-                {
-                    var minutes = (int)(DateTime.UtcNow - startTime).TotalMinutes;
-                    Logs.DebugLogManager($"Game process exited: {gameName}. Session: {minutes} min.");
-                    if (minutes > 0 && gameGuid != Guid.Empty)
-                        await _contentService.AddPlaytimeAsync(gameGuid, minutes).ConfigureAwait(false);
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (minutes > 0)
-                        {
-                            var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                            installedGame?.PlaytimeMinutes += minutes;
-                            var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                            libraryGame?.PlaytimeMinutes += minutes;
-                        }
-                        Application.Current.MainWindow.WindowState = WindowState.Normal;
-                        Application.Current.MainWindow.Activate();
-                    });
-                };
+                SetMainWindowState(WindowState.Minimized);
+                TrackPlaySession(process, gameName, gameGuid, startTime);
             }
-            Application.Current.MainWindow.WindowState = WindowState.Minimized;
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
+    private void TrackPlaySession(Process process, string gameName, Guid gameGuid, DateTime startTime)
+    {
+        // Run the exit handling exactly once, whichever path reaches it first: the Exited event,
+        // or the HasExited fast-path below for a game that died before we finished wiring.
+        var handled = 0;
+        Task RunOnce() => Interlocked.Exchange(ref handled, 1) == 0
+            ? OnGameExitedAsync(process, gameName, gameGuid, startTime)
+            : Task.CompletedTask;
+
+        // Process.Exited raises on a thread-pool thread with no synchronization context;
+        // AsyncEventHandler.Wrap guarantees the async body can never escape as an unobserved
+        // exception and tear down the process (BUG-004). Subscribe before enabling events so the
+        // notification can't slip through unobserved.
+        var exitHandler = AsyncEventHandler.Wrap((_, _) => RunOnce());
+        process.Exited += exitHandler;
+        process.EnableRaisingEvents = true;
+
+        // If the game exited in the window between Start and wiring, Exited may never fire; handle
+        // it here so the Process handle is still disposed and the launcher does not stay minimized.
+        if (process.HasExited) exitHandler.Invoke(process, EventArgs.Empty);
+    }
+
+    private async Task OnGameExitedAsync(Process process, string gameName, Guid gameGuid, DateTime startTime)
+    {
+        // Owning the Process here guarantees its handle is released once the session is
+        // accounted for, regardless of how the body completes (BUG-004 resource leak).
+        using (process)
+        {
+            var minutes = (int)(DateTime.UtcNow - startTime).TotalMinutes;
+            Logs.DebugLogManager($"Game process exited: {gameName}. Session: {minutes} min.");
+
+            await RecordPlaySessionAsync(gameGuid, minutes).ConfigureAwait(false);
+            ApplyPlaytimeAndRestoreWindow(gameName, minutes);
+        }
+    }
+
+    /// <summary>
+    /// Persists a finished play session. Deliberately free of <see cref="Process"/>, time and
+    /// UI concerns so it is unit-testable; it runs on the thread-pool thread of
+    /// <c>Process.Exited</c>, so it must not touch the dispatcher or UI-bound collections.
+    /// </summary>
+    internal Task RecordPlaySessionAsync(Guid gameGuid, int minutes)
+    {
+        if (minutes <= 0 || gameGuid == Guid.Empty) return Task.CompletedTask;
+        return _contentService.AddPlaytimeAsync(gameGuid, minutes);
+    }
+
+    private void ApplyPlaytimeAndRestoreWindow(string gameName, int minutes)
+    {
+        // The user may have closed the launcher while the game was running; capture the
+        // application once and bail out if it is gone instead of dereferencing a null
+        // Application.Current from this thread-pool callback (BUG-004 NRE).
+        var app = Application.Current;
+        if (app is null) return;
+
+        app.Dispatcher.Invoke(() =>
+        {
+            if (minutes > 0)
+            {
+                var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                installedGame?.PlaytimeMinutes += minutes;
+                var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                libraryGame?.PlaytimeMinutes += minutes;
+            }
+
+            if (app.MainWindow is { } mainWindow)
+            {
+                mainWindow.WindowState = WindowState.Normal;
+                mainWindow.Activate();
+            }
+        });
+    }
+
+    private static void SetMainWindowState(WindowState state)
+    {
+        if (Application.Current?.MainWindow is { } mainWindow)
+            mainWindow.WindowState = state;
     }
 
     [RelayCommand]
