@@ -68,35 +68,45 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     {
         IsLoading = true;
 
-        if (waitForLibrary) await _libraryViewModel.LibraryLoadedTask;
-
-        var localGames = await _contentService.GetLocalGamesAsync();
-        var playtimes = await _contentService.GetAllPlaytimesAsync();
-        var remoteGames = _libraryViewModel.Games;
-
-        IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
+        try
         {
-            var remote = remoteGames.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
-            var hasUpdate = remote != null && Utils.VersionUtils.IsNewerVersion(remote.Version, local.Version);
-            var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
+            if (waitForLibrary) await _libraryViewModel.LibraryLoadedTask;
 
-            return new InstalledGameInfo
+            var localGames = await _contentService.GetLocalGamesAsync();
+            var playtimes = await _contentService.GetAllPlaytimesAsync();
+            var remoteGames = _libraryViewModel.Games;
+
+            IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
             {
-                Id = local.Id,
-                Nombre = local.Nombre,
-                InstalledVersion = local.Version,
-                HasUpdate = hasUpdate,
-                UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
-                Logo = remote?.Logo ?? string.Empty,
-                Tipo = local.Tipo,
-                PlaytimeMinutes = playtimeMinutes,
-                HasHelpFolder = HasHelpSubfolder(_contentService.GetGameDirectory(local.Nombre))
-            };
-        })];
+                var remote = remoteGames.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
+                var hasUpdate = remote != null && Utils.VersionUtils.IsNewerVersion(remote.Version, local.Version);
+                var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
 
-        InstalledGames = new ObservableCollection<InstalledGameInfo>(installed);
-        Logs.DebugLogManager($"Installed games loaded: {InstalledGames.Count} games.");
-        IsLoading = false;
+                return new InstalledGameInfo
+                {
+                    Id = local.Id,
+                    Nombre = local.Nombre,
+                    InstalledVersion = local.Version,
+                    HasUpdate = hasUpdate,
+                    UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
+                    Logo = remote?.Logo ?? string.Empty,
+                    Tipo = local.Tipo,
+                    PlaytimeMinutes = playtimeMinutes,
+                    HasHelpFolder = HasHelpSubfolder(_contentService.GetGameDirectory(local.Nombre))
+                };
+            })];
+
+            InstalledGames = new ObservableCollection<InstalledGameInfo>(installed);
+            Logs.DebugLogManager($"Installed games loaded: {InstalledGames.Count} games.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
 
         if (!waitForLibrary || !SettingsViewModel.Instance.AutoUpdate) return;
         foreach (var game in InstalledGames.Where(g => g.HasUpdate && !g.IsSpecialVersion).ToList()) await UpdateCoreAsync(game.Nombre, navigateToLibrary: false);
@@ -114,6 +124,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private async Task UpdateCoreAsync(string gameName, bool navigateToLibrary)
     {
+        Logs.DebugLogManager($"Starting update: {gameName}.");
         var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
         if (libraryGame is null) return;
 
@@ -126,6 +137,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         await _libraryViewModel.StartUpdateCommand.ExecuteAsync(args);
 
         installedGame?.IsUpdating = false;
+        Logs.DebugLogManager($"Update completed: {gameName}.");
     }
 
     [RelayCommand]
@@ -134,6 +146,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task SwitchToSpecialVersionAsync(string gameName)
     {
+        Logs.DebugLogManager($"Switching to special version: {gameName}.");
         var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
         if (libraryGame is null) return;
 
@@ -153,6 +166,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
         if (!File.Exists(exePath))
         {
+            Logs.InfoLogManager($"Game executable not found for '{gameName}' at: {exePath}");
             CustomMessageBox.Show(SettingsViewModel.Instance.Strings.GameExeNotFoundTitle, SettingsViewModel.Instance.Strings.GameExeNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
             return;
         }
@@ -167,6 +181,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
             var process = Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exePath)! });
             if (process is not null)
             {
+                Logs.InfoLogManager($"Game launched: {gameName} (PID: {process.Id}).");
                 SetMainWindowState(WindowState.Minimized);
                 TrackPlaySession(process, gameName, gameGuid, startTime);
             }
@@ -184,6 +199,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         var exitHandler = AsyncEventHandler.Wrap((_, _) => RunOnce());
         process.Exited += exitHandler;
         process.EnableRaisingEvents = true;
+        Logs.DebugLogManager($"Tracking play session for: {gameName}.");
 
         if (process.HasExited) exitHandler.Invoke(process, EventArgs.Empty);
     }
@@ -208,25 +224,32 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private void ApplyPlaytimeAndRestoreWindow(string gameName, int minutes)
     {
-        var app = Application.Current;
-        if (app is null) return;
-
-        app.Dispatcher.Invoke(() =>
+        try
         {
-            if (minutes > 0)
-            {
-                var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                installedGame?.PlaytimeMinutes += minutes;
-                var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-                libraryGame?.PlaytimeMinutes += minutes;
-            }
+            var app = Application.Current;
+            if (app is null) return;
 
-            if (app.MainWindow is { } mainWindow)
+            app.Dispatcher.Invoke(() =>
             {
-                mainWindow.WindowState = WindowState.Normal;
-                mainWindow.Activate();
-            }
-        });
+                if (minutes > 0)
+                {
+                    var installedGame = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                    installedGame?.PlaytimeMinutes += minutes;
+                    var libraryGame = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                    libraryGame?.PlaytimeMinutes += minutes;
+                }
+
+                if (app.MainWindow is { } mainWindow)
+                {
+                    mainWindow.WindowState = WindowState.Normal;
+                    mainWindow.Activate();
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     private static void SetMainWindowState(WindowState state)
@@ -243,6 +266,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
         if (!Directory.Exists(path))
         {
+            Logs.InfoLogManager($"Game folder not found for '{gameName}', offering to download.");
             var result = CustomMessageBox.Show(SettingsViewModel.Instance.Strings.FolderNotFoundTitle, SettingsViewModel.Instance.Strings.FolderNotFoundMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Information);
 
             if (result == true)
@@ -272,7 +296,11 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         var helpDir = Directory.EnumerateDirectories(gameDir)
             .FirstOrDefault(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
 
-        if (helpDir is null) return;
+        if (helpDir is null)
+        {
+            Logs.DebugLogManager($"No help folder found for: {gameName}.");
+            return;
+        }
 
         try
         {
@@ -288,7 +316,11 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
         var confirm = CustomMessageBox.Show(strings.UninstallConfirmTitle, string.Format(strings.UninstallConfirmMessage, gameName), CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Information);
 
-        if (confirm != true) return;
+        if (confirm != true)
+        {
+            Logs.DebugLogManager($"Uninstall cancelled by user: {gameName}.");
+            return;
+        }
 
         Logs.InfoLogManager($"Uninstalling game: {gameName}.");
         var path = _contentService.GetGameDirectory(gameName);

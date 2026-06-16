@@ -114,10 +114,15 @@ public partial class DownloadConfirmDialog : Window
     {
         var key = KeyBox.Text.Trim();
         _resultKey = key.Length > 0 ? key : null;
+        Logs.DebugLogManager($"Download confirmed.{(_resultKey is not null ? $" Key provided." : "")}");
         DialogResult = true;
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+    private void CancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        Logs.DebugLogManager("Download confirm dialog cancelled by user.");
+        DialogResult = false;
+    }
 
     private void ViewPageButton_Click(object sender, RoutedEventArgs e)
     {

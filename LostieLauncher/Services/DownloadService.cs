@@ -147,6 +147,10 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
                 meta = null;
             }
         }
+        else
+        {
+            Logs.DebugLogManager("Starting fresh download.");
+        }
 
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
@@ -224,11 +228,13 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
             }
 
             await fileStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
-        }
 
+            Logs.DebugLogManager($"Download data received: {totalRead} bytes total.");
+        }
         File.Move(partPath, finalPath, overwrite: true);
         DeleteResumeMetadata(metaPath);
         progress?.Report(new DownloadProgressInfo(100, 0));
+        Logs.InfoLogManager("Download completed and file finalized.");
     }
 
     private sealed record DownloadResumeMetadata(string? ETag, DateTimeOffset? LastModified, long? TotalBytes);

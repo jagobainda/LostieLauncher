@@ -16,21 +16,55 @@ public class WindowsStartupService : IWindowsStartupService
 
     public bool IsEnabled()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey, false);
-        return key?.GetValue(AppName) != null;
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey, false);
+            var enabled = key?.GetValue(AppName) != null;
+            Logs.DebugLogManager($"Windows startup check: {(enabled ? "enabled" : "disabled")}.");
+            return enabled;
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            return false;
+        }
     }
 
     public void Enable()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
-        key?.SetValue(AppName, $"\"{Environment.ProcessPath}\"");
-        Logs.InfoLogManager("Windows startup entry enabled.");
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
+            if (key is null)
+            {
+                Logs.ErrorLogManager("Could not open registry run key for writing.");
+                return;
+            }
+            key.SetValue(AppName, $"\"{Environment.ProcessPath}\"");
+            Logs.InfoLogManager("Windows startup entry enabled.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     public void Disable()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
-        key?.DeleteValue(AppName, false);
-        Logs.InfoLogManager("Windows startup entry disabled.");
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
+            if (key is null)
+            {
+                Logs.DebugLogManager("Windows startup entry not found to disable.");
+                return;
+            }
+            key.DeleteValue(AppName, false);
+            Logs.InfoLogManager("Windows startup entry disabled.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 }

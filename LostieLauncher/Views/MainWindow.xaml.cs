@@ -12,6 +12,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
         RegisterShortcuts(viewModel);
+        Logs.DebugLogManager("MainWindow initialized and shortcuts registered.");
     }
 
     private void RegisterShortcuts(MainViewModel vm)
@@ -33,6 +34,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
+        Logs.DebugLogManager("MainWindow closing — minimizing to tray.");
         e.Cancel = true;
         Hide();
     }

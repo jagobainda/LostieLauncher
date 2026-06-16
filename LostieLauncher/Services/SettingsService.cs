@@ -24,12 +24,18 @@ public class SettingsService : ISettingsService
     {
         MigrateLegacySettings();
         Logs.DebugLogManager("Loading settings from disk.");
-        if (!File.Exists(SettingsPath)) return new AppSettings();
+        if (!File.Exists(SettingsPath))
+        {
+            Logs.DebugLogManager("Settings file not found, using defaults.");
+            return new AppSettings();
+        }
 
         try
         {
             var json = File.ReadAllText(SettingsPath);
-            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            Logs.DebugLogManager($"Settings loaded successfully (language={settings.Language}, theme={settings.Theme}).");
+            return settings;
         }
         catch (Exception ex)
         {

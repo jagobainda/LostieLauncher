@@ -68,38 +68,48 @@ public partial class LibraryViewModel : ObservableObject
     {
         IsLoading = true;
 
-        var result = await _contentService.GetGamesAsync();
-        var localGames = await _contentService.GetLocalGamesAsync();
-        var playtimes = await _contentService.GetAllPlaytimesAsync();
-        var downloadCounts = await _telemetryService.GetDownloadCountsAsync();
-
-        var installedById = localGames
-            .Where(g => g.Id != Guid.Empty)
-            .ToDictionary(g => g.Id);
-        var installedByName = localGames
-            .Where(g => g.Id == Guid.Empty)
-            .ToDictionary(g => g.Nombre, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var game in result)
+        try
         {
-            var local =
-                (game.Id != Guid.Empty && installedById.TryGetValue(game.Id, out var byId)) ? byId :
-                installedByName.TryGetValue(game.Nombre, out var byName) ? byName : null;
+            var result = await _contentService.GetGamesAsync();
+            var localGames = await _contentService.GetLocalGamesAsync();
+            var playtimes = await _contentService.GetAllPlaytimesAsync();
+            var downloadCounts = await _telemetryService.GetDownloadCountsAsync();
 
-            if (local is not null)
-                game.DownloadStatus = Utils.VersionUtils.IsNewerVersion(game.Version, local.Version) ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Downloaded;
+            var installedById = localGames
+                .Where(g => g.Id != Guid.Empty)
+                .ToDictionary(g => g.Id);
+            var installedByName = localGames
+                .Where(g => g.Id == Guid.Empty)
+                .ToDictionary(g => g.Nombre, StringComparer.OrdinalIgnoreCase);
 
-            if (game.Id != Guid.Empty && playtimes.TryGetValue(game.Id, out var pt))
-                game.PlaytimeMinutes = pt;
+            foreach (var game in result)
+            {
+                var local =
+                    (game.Id != Guid.Empty && installedById.TryGetValue(game.Id, out var byId)) ? byId :
+                    installedByName.TryGetValue(game.Nombre, out var byName) ? byName : null;
 
-            if (downloadCounts.TryGetValue(game.GameId, out var count))
-                game.TotalDownloads = count;
+                if (local is not null)
+                    game.DownloadStatus = Utils.VersionUtils.IsNewerVersion(game.Version, local.Version) ? GameDownloadStatus.UpdateAvailable : GameDownloadStatus.Downloaded;
+
+                if (game.Id != Guid.Empty && playtimes.TryGetValue(game.Id, out var pt))
+                    game.PlaytimeMinutes = pt;
+
+                if (downloadCounts.TryGetValue(game.GameId, out var count))
+                    game.TotalDownloads = count;
+            }
+
+            Games = new ObservableCollection<GameInfo>(result);
+            Logs.DebugLogManager($"Games library loaded: {result.Count} games.");
         }
-
-        Games = new ObservableCollection<GameInfo>(result);
-        Logs.DebugLogManager($"Games library loaded: {result.Count} games.");
-        IsLoading = false;
-        _libraryLoadedTcs.TrySetResult();
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
+        finally
+        {
+            IsLoading = false;
+            _libraryLoadedTcs.TrySetResult();
+        }
     }
 
     [RelayCommand]
@@ -141,6 +151,7 @@ public partial class LibraryViewModel : ObservableObject
                 return;
             }
 
+            Logs.DebugLogManager($"Fetching special version config for key: {args.Key}.");
             var config = await _downloadService.FetchSpecialVersionConfigAsync(args.Key!);
 
             if (config is null)
@@ -172,6 +183,8 @@ public partial class LibraryViewModel : ObservableObject
         }
 
         var session = CreateSession(game, args, url, specialConfig, isUpdate: false);
+        var downloadType = specialConfig is not null ? $" ({specialConfig.Tipo})" : " (regular)";
+        Logs.DebugLogManager($"Starting download session for {args.GameId}{downloadType}.");
         await ExecuteDownloadAndInstallAsync(game, session);
     }
 
@@ -192,6 +205,7 @@ public partial class LibraryViewModel : ObservableObject
         var url = $"{_downloadOptions.BaseUrl}{args.RutaRelativa}";
         var session = CreateSession(game, args, url, specialConfig: null, isUpdate: true);
 
+        Logs.DebugLogManager($"Starting update session for {args.GameId}.");
         PendingScrollGameId = args.GameId;
         ScrollToGameRequested?.Invoke(args.GameId);
         await ExecuteDownloadAndInstallAsync(game, session);
@@ -214,7 +228,11 @@ public partial class LibraryViewModel : ObservableObject
 
         var strings = SettingsViewModel.Instance.Strings;
         var key = SpecialVersionDialog.Show(strings);
-        if (key is null) return;
+        if (key is null)
+        {
+            Logs.DebugLogManager($"Special version switch cancelled by user for {args.GameId}.");
+            return;
+        }
 
         if (!KeyFormatRegex.IsMatch(key))
         {
@@ -248,6 +266,7 @@ public partial class LibraryViewModel : ObservableObject
         var url = $"{_downloadOptions.BaseUrl}/{key}/{config.Archivo}";
         var session = CreateSession(game, switchArgs, url, config, isUpdate: true);
 
+        Logs.DebugLogManager($"Starting special version switch session for {args.GameId} ({config.Tipo} v{config.Version}).");
         PendingScrollGameId = args.GameId;
         ScrollToGameRequested?.Invoke(args.GameId);
         await ExecuteDownloadAndInstallAsync(game, session);
@@ -286,6 +305,7 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadProgressValue = 0;
         _globalViewModel.IsDownloading = true;
 
+        Logs.DebugLogManager($"Executing download/install: {session.Args.GameId} v{session.Args.Version}.");
         session.IsCancelling = false;
         session.Cts?.Dispose();
         session.Cts = new CancellationTokenSource();
@@ -359,7 +379,7 @@ public partial class LibraryViewModel : ObservableObject
             var expectedHash = session.SpecialConfig?.Sha256 ?? game.Sha256;
             if (!string.IsNullOrEmpty(expectedHash) && !await VerifyIntegrityAsync(game, session.ZipPath, expectedHash))
             {
-                File.Delete(session.ZipPath);
+                try { File.Delete(session.ZipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
                 Logs.ErrorLogManager($"Hash mismatch for {session.Args.GameId}. Expected: {expectedHash}");
                 ResetDownloadState(game, session);
                 var strings = SettingsViewModel.Instance.Strings;
@@ -402,30 +422,34 @@ public partial class LibraryViewModel : ObservableObject
     }
 
     private static async Task ExtractArchiveAsync(string zipPath, string extractDir) => await Task.Run(() =>
-                                                                                             {
-                                                                                                 Directory.CreateDirectory(extractDir);
-                                                                                                 var readerOptions = new ReaderOptions
-                                                                                                 {
-                                                                                                     ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
-                                                                                                 };
+                                                                                              {
+                                                                                                  Logs.DebugLogManager($"Extracting archive: {Path.GetFileName(zipPath)}.");
+                                                                                                  Directory.CreateDirectory(extractDir);
+                                                                                                  var readerOptions = new ReaderOptions
+                                                                                                  {
+                                                                                                      ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
+                                                                                                  };
 
-                                                                                                 var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
-                                                                                                 using (var stream = File.OpenRead(zipPath))
-                                                                                                 using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
-                                                                                                 {
-                                                                                                     foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
-                                                                                                     {
-                                                                                                         var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
-                                                                                                         if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
-                                                                                                             throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
-                                                                                                         Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                                                                                                         using var entryStream = entry.OpenEntryStream();
-                                                                                                         using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                                                                                                         entryStream.CopyTo(outStream);
-                                                                                                     }
-                                                                                                 }
-                                                                                                 File.Delete(zipPath);
-                                                                                             });
+                                                                                                  var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
+                                                                                                  var entryCount = 0;
+                                                                                                  using (var stream = File.OpenRead(zipPath))
+                                                                                                  using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
+                                                                                                  {
+                                                                                                      foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
+                                                                                                      {
+                                                                                                          var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
+                                                                                                          if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
+                                                                                                              throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
+                                                                                                          Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                                                                                                          using var entryStream = entry.OpenEntryStream();
+                                                                                                          using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                                                                                                          entryStream.CopyTo(outStream);
+                                                                                                          entryCount++;
+                                                                                                      }
+                                                                                                  }
+                                                                                                  Logs.DebugLogManager($"Extraction complete: {entryCount} files extracted.");
+                                                                                                  File.Delete(zipPath);
+                                                                                              });
 
     private void HandleDownloadCancelled(GameInfo game, DownloadSession session)
     {
@@ -481,6 +505,7 @@ public partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private void PauseDownload(string? gameId)
     {
+        Logs.DebugLogManager($"Pausing download: {gameId ?? "active session"}.");
         var session = ResolveSession(gameId);
         session?.Cts?.Cancel();
     }
@@ -501,12 +526,17 @@ public partial class LibraryViewModel : ObservableObject
             CustomMessageBoxButton.YesNo,
             CustomMessageBoxIcon.Information);
 
-        if (confirmed != true) return;
+        if (confirmed != true)
+        {
+            Logs.DebugLogManager($"Cancel download aborted by user for {session.GameId}.");
+            return;
+        }
 
         if (!_sessions.TryGetValue(session.GameId, out var current) || !ReferenceEquals(current, session)) return;
 
         if (game.DownloadStatus == GameDownloadStatus.Paused)
         {
+            Logs.InfoLogManager($"Cancelling paused download: {session.GameId}.");
             var wasActive = ReferenceEquals(_activeSession, session);
             CleanupDownloadFiles(session);
             ResetDownloadState(game, session);
@@ -515,6 +545,7 @@ public partial class LibraryViewModel : ObservableObject
         }
 
         session.IsCancelling = true;
+        Logs.InfoLogManager($"Cancelling download: {session.GameId}.");
         session.Cts?.Cancel();
     }
 

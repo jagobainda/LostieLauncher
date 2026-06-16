@@ -73,6 +73,10 @@ public partial class HomeViewModel : ObservableObject
 
             Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}.");
         }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
         finally
         {
             if (showLoading) IsLoading = false;

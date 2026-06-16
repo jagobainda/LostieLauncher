@@ -54,7 +54,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return JsonSerializer.Deserialize<List<GameInfo>>(json, JsonOptions) ?? [];
+            var games = JsonSerializer.Deserialize<List<GameInfo>>(json, JsonOptions) ?? [];
+            Logs.InfoLogManager($"Fetched {games.Count} games from remote.");
+            return games;
         }
         catch (Exception ex)
         {
@@ -78,6 +80,11 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, JsonOptions) ?? new HomeContentDto([], []);
+                Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
+            }
+            else
+            {
+                Logs.DebugLogManager("Using cached home content.");
             }
 
             var settings = _settingsService.Load();
@@ -85,9 +92,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
             var now = DateTime.Now;
 
-            return new HomeContent
-            {
-                News = [.. _homeContentCache.News
+            var news = _homeContentCache.News
                     .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
                     .Select(n => new NewsItem
                     {
@@ -97,8 +102,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                         Tag = n.Tag,
                         Date = n.Date,
                         ExpiresAt = n.ExpiresAt
-                    })],
-                Notifications = [.. _homeContentCache.Notifications
+                    }).ToList();
+            var notifications = _homeContentCache.Notifications
                     .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
                     .Select(n => new NotificationItem
                     {
@@ -108,7 +113,13 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                         Type = n.Type,
                         Date = n.Date,
                         ExpiresAt = n.ExpiresAt
-                    })]
+                    }).ToList();
+            Logs.DebugLogManager($"Home content resolved for lang '{langCode}': {news.Count} news, {notifications.Count} notifications.");
+
+            return new HomeContent
+            {
+                News = news,
+                Notifications = notifications
             };
         }
         catch (Exception ex)
@@ -170,6 +181,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             return true;
         }
 
+        Logs.DebugLogManager($"Maintenance flag check: status {(int)statusCode} — not blocking.");
         return false;
     }
 
@@ -219,7 +231,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             if (!File.Exists(path)) return [];
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
+            var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
+            Logs.DebugLogManager($"Local games registry loaded: {games.Count} games.");
+            return games;
         }
         catch (Exception ex)
         {
@@ -262,6 +276,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             games.Add(new LocalGameInfo { Id = gameId, Nombre = gameName, Version = version, Tipo = tipo });
 
             await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(games, JsonOptions)).ConfigureAwait(false);
+            Logs.InfoLogManager($"Game registered in local registry: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
         finally { LocalGamesFileLock.Release(); }
@@ -281,6 +296,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
             List<LocalGameInfo> updated = [.. games.Where(g => !string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase))];
             await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(updated, JsonOptions)).ConfigureAwait(false);
+            Logs.InfoLogManager($"Game removed from registry: {gameName}.");
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
         finally { LocalGamesFileLock.Release(); }
@@ -314,6 +330,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
             Directory.CreateDirectory(gamesRoot);
             await WriteAllTextAtomicAsync(path, JsonSerializer.Serialize(records, JsonOptions)).ConfigureAwait(false);
+            Logs.DebugLogManager($"Playtime recorded: {minutes} min for game id {gameId}.");
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); }
         finally { PlaytimeFileLock.Release(); }
@@ -337,6 +354,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var records = JsonSerializer.Deserialize<List<PlaytimeRecord>>(json, JsonOptions) ?? [];
+            Logs.DebugLogManager($"Playtimes loaded: {records.Count} records.");
             return records
                 .Where(r => r.Id != Guid.Empty)
                 .ToDictionary(r => r.Id, r => r.PlaytimeMinutes);

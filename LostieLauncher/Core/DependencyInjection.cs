@@ -45,6 +45,8 @@ public static class DependencyInjection
         // Views
         services.AddSingleton<MainWindow>();
 
-        return services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider();
+        Logs.InfoLogManager("Dependency injection container built successfully.");
+        return provider;
     }
 }

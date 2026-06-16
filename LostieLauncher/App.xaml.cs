@@ -32,6 +32,7 @@ public partial class App : Application
         _instanceMutex = new Mutex(true, MutexName, out var isNewInstance);
         if (!isNewInstance)
         {
+            Logs.InfoLogManager("Another instance is already running. Signaling it and shutting down.");
             _instanceMutex.Dispose();
             _instanceMutex = null;
             if (EventWaitHandle.TryOpenExisting(EventName, out var showEvent))
@@ -39,12 +40,17 @@ public partial class App : Application
                 showEvent.Set();
                 showEvent.Dispose();
             }
+            else
+            {
+                Logs.DebugLogManager("Could not open existing show-window event.");
+            }
             Shutdown();
             return;
         }
 
         _showWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, EventName);
         _singleInstanceListenerCts = new CancellationTokenSource();
+        Logs.DebugLogManager("Single-instance listener started.");
         _ = Task.Run(() =>
         {
             var token = _singleInstanceListenerCts.Token;
@@ -123,7 +129,11 @@ public partial class App : Application
             Visible = true
         };
 
-        _notifyIcon.DoubleClick += (_, _) => RestoreMainWindow();
+        _notifyIcon.DoubleClick += (_, _) =>
+        {
+            Logs.DebugLogManager("Tray icon double-clicked.");
+            RestoreMainWindow();
+        };
 
         Logs.DebugLogManager("Tray icon initialized.");
 
@@ -138,6 +148,7 @@ public partial class App : Application
         var strings = SettingsViewModel.Instance.Strings;
         _trayOpenItem?.Text = strings.TrayOpen;
         _trayExitItem?.Text = strings.TrayExit;
+        Logs.DebugLogManager("Tray menu text updated.");
     }
 
     private static void RestoreMainWindow()
@@ -196,11 +207,12 @@ public partial class App : Application
     {
         Logs.InfoLogManager("Application exiting.");
         _singleInstanceListenerCts?.Cancel();
+        _singleInstanceListenerCts?.Dispose();
         _showWindowEvent?.Dispose();
-        _instanceMutex?.ReleaseMutex();
+        try { _instanceMutex?.ReleaseMutex(); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
         _instanceMutex?.Dispose();
-        _notifyIcon?.Dispose();
-        (Services as IDisposable)?.Dispose();
+        try { _notifyIcon?.Dispose(); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        try { (Services as IDisposable)?.Dispose(); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
         base.OnExit(e);
     }
 }

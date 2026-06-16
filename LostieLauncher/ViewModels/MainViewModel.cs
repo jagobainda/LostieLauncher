@@ -83,6 +83,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToHome()
     {
+        Logs.DebugLogManager("Navigating to Home.");
         CurrentViewModel = _homeViewModel;
         CurrentTitle = _settingsViewModel.Strings.TitleHome;
     }
@@ -90,6 +91,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToGames()
     {
+        Logs.DebugLogManager("Navigating to Games.");
         CurrentViewModel = _gamesViewModel;
         CurrentTitle = _settingsViewModel.Strings.TitleGames;
     }
@@ -97,6 +99,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToLibrary()
     {
+        Logs.DebugLogManager("Navigating to Library.");
         CurrentViewModel = _libraryViewModel;
         CurrentTitle = _settingsViewModel.Strings.TitleLibrary;
     }
@@ -104,6 +107,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToSettings()
     {
+        Logs.DebugLogManager("Navigating to Settings.");
         CurrentViewModel = _settingsViewModel;
         CurrentTitle = _settingsViewModel.Strings.TitleSettings;
     }
@@ -113,20 +117,44 @@ public partial class MainViewModel : ObservableObject
     {
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Saved Games");
 
-        if (Directory.Exists(path)) System.Diagnostics.Process.Start("explorer.exe", path);
+        if (Directory.Exists(path))
+        {
+            try { System.Diagnostics.Process.Start("explorer.exe", path); }
+            catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        }
+        else
+        {
+            Logs.DebugLogManager($"Saved Games folder not found: {path}");
+        }
     }
 
     [RelayCommand]
-    private static void OpenGitHub() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/LostieLauncher") { UseShellExecute = true });
+    private static void OpenGitHub()
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/LostieLauncher") { UseShellExecute = true }); }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
 
     [RelayCommand]
-    private static void OpenTwitch() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true });
+    private static void OpenTwitch()
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true }); }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
 
     [RelayCommand]
-    private static void OpenYouTube() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true });
+    private static void OpenYouTube()
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true }); }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
 
     [RelayCommand]
-    private static void OpenTwitter() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true });
+    private static void OpenTwitter()
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true }); }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
 
     [RelayCommand(CanExecute = nameof(CanRefreshData))]
     private async Task RefreshDataAsync()
@@ -138,6 +166,10 @@ public partial class MainViewModel : ObservableObject
             await Task.WhenAll(_homeViewModel.RefreshAsync(), _libraryViewModel.RefreshAsync());
             await _gamesViewModel.RefreshAsync();
             Logs.DebugLogManager("Data refresh completed.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
         }
         finally
         {

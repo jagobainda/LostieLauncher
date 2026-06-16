@@ -33,11 +33,19 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
 
     public void TrackGameLaunched(string gameId, string gameVersion)
     {
-        if (string.IsNullOrWhiteSpace(_telemetryOptions.ApiKey)) return;
+        if (string.IsNullOrWhiteSpace(_telemetryOptions.ApiKey))
+        {
+            Logs.DebugLogManager("Telemetry skipped: no API key configured.");
+            return;
+        }
 
         lock (_cooldownLock)
         {
-            if (_lastSentTimes.TryGetValue(gameId, out var lastSent) && DateTime.UtcNow - lastSent < CooldownPeriod) return;
+            if (_lastSentTimes.TryGetValue(gameId, out var lastSent) && DateTime.UtcNow - lastSent < CooldownPeriod)
+            {
+                Logs.DebugLogManager($"Telemetry cooldown active for {gameId}, skipping.");
+                return;
+            }
 
             _lastSentTimes[gameId] = DateTime.UtcNow;
         }
@@ -71,7 +79,9 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
 
             if (stats?.ByGame is null) return [];
 
-            return stats.ByGame.ToDictionary(kv => kv.Key, kv => kv.Value.TotalEvents);
+            var result = stats.ByGame.ToDictionary(kv => kv.Key, kv => kv.Value.TotalEvents);
+            Logs.DebugLogManager($"Download counts fetched: {result.Count} games.");
+            return result;
         }
         catch (Exception ex)
         {

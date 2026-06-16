@@ -56,8 +56,13 @@ public partial class SpecialVersionDialog : Window
         if (key.Length == 0) return;
 
         _resultKey = key;
+        Logs.DebugLogManager("Special version key confirmed.");
         DialogResult = true;
     }
 
-    private void CancelButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+    private void CancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        Logs.DebugLogManager("Special version dialog cancelled by user.");
+        DialogResult = false;
+    }
 }

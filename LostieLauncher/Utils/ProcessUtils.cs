@@ -5,10 +5,17 @@ public static class ProcessUtils
     public static void RestartApplication()
     {
         Logs.InfoLogManager("Restarting application.");
-        var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+        try
+        {
+            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
 
-        if (exePath is not null) System.Diagnostics.Process.Start(exePath);
+            if (exePath is not null) System.Diagnostics.Process.Start(exePath);
 
-        Application.Current.Shutdown();
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 }

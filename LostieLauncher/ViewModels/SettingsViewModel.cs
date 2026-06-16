@@ -51,31 +51,48 @@ public partial class SettingsViewModel : ObservableObject
         _settingsService = settingsService;
         _windowsStartupService = windowsStartupService;
 
-        _activeThemeDict = Application.Current.Resources.MergedDictionaries
-            .FirstOrDefault(d => d.Source != null &&
-                (d.Source.OriginalString.Contains("/Themes/") ||
-                 d.Source.OriginalString.Contains("Themes/")));
+        try
+        {
+            _activeThemeDict = Application.Current.Resources.MergedDictionaries
+                .FirstOrDefault(d => d.Source != null &&
+                    (d.Source.OriginalString.Contains("/Themes/") ||
+                     d.Source.OriginalString.Contains("Themes/")));
 
-        if (_activeThemeDict == null) ApplyTheme(Theme);
+            if (_activeThemeDict == null) ApplyTheme(Theme);
 
-        LoadSettings();
+            LoadSettings();
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     private void LoadSettings()
     {
         _isLoading = true;
-        var settings = _settingsService.Load();
-        Language = settings.Language;
-        Theme = settings.Theme;
-        StartWithWindows = _windowsStartupService.IsEnabled();
-        StartMinimized = settings.StartMinimized;
-        AutoUpdate = settings.AutoUpdate;
-        DownloadDirectory = settings.DownloadDirectory;
-        _hasSeenWelcome = settings.HasSeenWelcome;
-        _isLoading = false;
+        try
+        {
+            var settings = _settingsService.Load();
+            Language = settings.Language;
+            Theme = settings.Theme;
+            StartWithWindows = _windowsStartupService.IsEnabled();
+            StartMinimized = settings.StartMinimized;
+            AutoUpdate = settings.AutoUpdate;
+            DownloadDirectory = settings.DownloadDirectory;
+            _hasSeenWelcome = settings.HasSeenWelcome;
 
-        _settingsService.EnsureGamesRootDirectoryExists();
-        Logs.DebugLogManager("Settings loaded.");
+            _settingsService.EnsureGamesRootDirectoryExists();
+            Logs.DebugLogManager("Settings loaded.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private void SaveSettings()
@@ -148,16 +165,24 @@ public partial class SettingsViewModel : ObservableObject
 
     private void ApplyTheme(AppTheme theme)
     {
-        var dicts = Application.Current.Resources.MergedDictionaries;
-
-        if (_activeThemeDict != null) dicts.Remove(_activeThemeDict);
-
-        _activeThemeDict = new ResourceDictionary
+        try
         {
-            Source = new Uri($"pack://application:,,,/Themes/{theme}.xaml")
-        };
+            var dicts = Application.Current.Resources.MergedDictionaries;
 
-        dicts.Add(_activeThemeDict);
+            if (_activeThemeDict != null) dicts.Remove(_activeThemeDict);
+
+            _activeThemeDict = new ResourceDictionary
+            {
+                Source = new Uri($"pack://application:,,,/Themes/{theme}.xaml")
+            };
+
+            dicts.Add(_activeThemeDict);
+            Logs.DebugLogManager($"Theme applied: {theme}.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     public bool HasSeenWelcome => _hasSeenWelcome;
@@ -192,6 +217,14 @@ public partial class SettingsViewModel : ObservableObject
         Logs.InfoLogManager("Manual update check initiated.");
         var result = CustomMessageBox.Show(Strings.CheckForUpdatesTitle, Strings.CheckForUpdatesMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
 
-        if (result == true) ProcessUtils.RestartApplication();
+        if (result == true)
+        {
+            Logs.InfoLogManager("Manual update check: user chose to restart.");
+            ProcessUtils.RestartApplication();
+        }
+        else
+        {
+            Logs.DebugLogManager("Manual update check: user declined restart.");
+        }
     }
 }

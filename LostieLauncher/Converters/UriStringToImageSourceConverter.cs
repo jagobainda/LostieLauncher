@@ -16,8 +16,9 @@ public class UriStringToImageSourceConverter : IValueConverter
         {
             return new BitmapImage(uri);
         }
-        catch
+        catch (Exception ex)
         {
+            Logs.ErrorLogManager(ex);
             return null;
         }
     }
