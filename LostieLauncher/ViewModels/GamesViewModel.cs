@@ -43,10 +43,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     public async Task RefreshAsync() => await LoadInstalledGamesAsync(waitForLibrary: false);
 
-    /// <summary>
-    /// Unsubscribes from the library's <c>GameInstalled</c> event so this view model does not
-    /// outlive its subscription (BUG-020). Idempotent and safe to call from app shutdown.
-    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;
@@ -57,9 +53,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private void OnGameInstalled(string gameName, string version, string? tipo)
     {
-        // The launcher may already be shutting down when an install completes; capture the
-        // application in a local and skip the UI update if it is gone, instead of dereferencing
-        // a possibly-null App.Current.
         var app = Application.Current;
         app?.Dispatcher.Invoke(() =>
         {
@@ -183,30 +176,20 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private void TrackPlaySession(Process process, string gameName, Guid gameGuid, DateTime startTime)
     {
-        // Run the exit handling exactly once, whichever path reaches it first: the Exited event,
-        // or the HasExited fast-path below for a game that died before we finished wiring.
         var handled = 0;
         Task RunOnce() => Interlocked.Exchange(ref handled, 1) == 0
             ? OnGameExitedAsync(process, gameName, gameGuid, startTime)
             : Task.CompletedTask;
 
-        // Process.Exited raises on a thread-pool thread with no synchronization context;
-        // AsyncEventHandler.Wrap guarantees the async body can never escape as an unobserved
-        // exception and tear down the process (BUG-004). Subscribe before enabling events so the
-        // notification can't slip through unobserved.
         var exitHandler = AsyncEventHandler.Wrap((_, _) => RunOnce());
         process.Exited += exitHandler;
         process.EnableRaisingEvents = true;
 
-        // If the game exited in the window between Start and wiring, Exited may never fire; handle
-        // it here so the Process handle is still disposed and the launcher does not stay minimized.
         if (process.HasExited) exitHandler.Invoke(process, EventArgs.Empty);
     }
 
     private async Task OnGameExitedAsync(Process process, string gameName, Guid gameGuid, DateTime startTime)
     {
-        // Owning the Process here guarantees its handle is released once the session is
-        // accounted for, regardless of how the body completes (BUG-004 resource leak).
         using (process)
         {
             var minutes = (int)(DateTime.UtcNow - startTime).TotalMinutes;
@@ -217,11 +200,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>
-    /// Persists a finished play session. Deliberately free of <see cref="Process"/>, time and
-    /// UI concerns so it is unit-testable; it runs on the thread-pool thread of
-    /// <c>Process.Exited</c>, so it must not touch the dispatcher or UI-bound collections.
-    /// </summary>
     internal Task RecordPlaySessionAsync(Guid gameGuid, int minutes)
     {
         if (minutes <= 0 || gameGuid == Guid.Empty) return Task.CompletedTask;
@@ -230,9 +208,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private void ApplyPlaytimeAndRestoreWindow(string gameName, int minutes)
     {
-        // The user may have closed the launcher while the game was running; capture the
-        // application once and bail out if it is gone instead of dereferencing a null
-        // Application.Current from this thread-pool callback (BUG-004 NRE).
         var app = Application.Current;
         if (app is null) return;
 

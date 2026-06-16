@@ -35,14 +35,6 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         Converters = { new JsonStringEnumConverter() }
     };
 
-    // BUG-030: AddPlaytimeAsync runs from Process.Exited (thread-pool) and can overlap with
-    // Register/Remove invoked from the UI. Each registry file gets its own gate so concurrent
-    // read-modify-write cycles cannot interleave and lose updates, and writes land atomically
-    // (temp + rename) so readers never observe a half-written file. Reads acquire the same gate
-    // too: an open read handle (FileShare.Read, no Delete) would otherwise make a concurrent
-    // File.Move-with-overwrite fail with a sharing violation and silently drop the write.
-    // Static because the files are a process-wide resource regardless of how many
-    // ContentService instances exist.
     private static readonly SemaphoreSlim LocalGamesFileLock = new(1, 1);
     private static readonly SemaphoreSlim PlaytimeFileLock = new(1, 1);
 
@@ -327,11 +319,6 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         finally { PlaytimeFileLock.Release(); }
     }
 
-    /// <summary>
-    /// Writes <paramref name="content"/> to a sibling temp file and atomically renames it over
-    /// <paramref name="path"/>, so a concurrent reader sees either the whole previous file or the
-    /// whole new one — never a partially written registry (BUG-030).
-    /// </summary>
     private static async Task WriteAllTextAtomicAsync(string path, string content)
     {
         var tempPath = path + ".tmp";

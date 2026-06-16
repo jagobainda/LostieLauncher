@@ -142,88 +142,67 @@ public class GamesViewModelTests
         await _contentService.Received(1).GetLocalGamesAsync();
     }
 
-    // -------------------- Play-session accounting (BUG-004) --------------------
-
     [Fact]
     public async Task RecordPlaySessionAsync_WhenMinutesPositive_PersistsPlaytimeForTheGame()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         _contentService.ClearReceivedCalls();
         var id = Guid.NewGuid();
 
-        // Act — the extracted, dispatcher-free accounting path the Exited handler runs.
         await vm.RecordPlaySessionAsync(id, minutes: 25);
 
-        // Assert
         await _contentService.Received(1).AddPlaytimeAsync(id, 25);
     }
 
     [Fact]
     public async Task RecordPlaySessionAsync_WhenMinutesIsZero_DoesNotPersistAnything()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         _contentService.ClearReceivedCalls();
 
-        // Act
         await vm.RecordPlaySessionAsync(Guid.NewGuid(), minutes: 0);
 
-        // Assert
         await _contentService.DidNotReceive().AddPlaytimeAsync(Arg.Any<Guid>(), Arg.Any<int>());
     }
 
     [Fact]
     public async Task RecordPlaySessionAsync_WhenGameIdIsEmpty_DoesNotPersistAnything()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         _contentService.ClearReceivedCalls();
 
-        // Act
         await vm.RecordPlaySessionAsync(Guid.Empty, minutes: 30);
 
-        // Assert
         await _contentService.DidNotReceive().AddPlaytimeAsync(Arg.Any<Guid>(), Arg.Any<int>());
     }
-
-    // -------------------- Disposal / unsubscription (BUG-020) --------------------
 
     [Fact]
     public async Task Dispose_UnsubscribesFromLibraryGameInstalled()
     {
-        // Arrange
         var library = CreateLibrary();
         await library.LibraryLoadedTask;
         var sut = new GamesViewModel(_contentService, library, _telemetryService);
         await sut.RefreshAsync();
         GetGameInstalledSubscriberCount(library).ShouldBe(1);
 
-        // Act
         sut.Dispose();
 
-        // Assert
         GetGameInstalledSubscriberCount(library).ShouldBe(0);
     }
 
     [Fact]
     public async Task Dispose_WhenCalledTwice_DoesNotThrow()
     {
-        // Arrange
         var sut = await CreateSutAsync();
 
-        // Act
         sut.Dispose();
         var act = sut.Dispose;
 
-        // Assert
         Should.NotThrow(act);
     }
 
     private static int GetGameInstalledSubscriberCount(LibraryViewModel library)
     {
-        // GameInstalled is a field-like event; its compiler-generated backing field lets us
-        // assert the subscription was actually removed without pumping a dispatcher.
         var field = typeof(LibraryViewModel).GetField("GameInstalled", BindingFlags.Instance | BindingFlags.NonPublic);
         var subscribers = field?.GetValue(library) as Delegate;
         return subscribers?.GetInvocationList().Length ?? 0;
