@@ -3,6 +3,7 @@ using LostieLauncher.ViewModels;
 using LostieLauncher.Views;
 using LostieLauncher.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 using System.Windows;
 using Velopack;
 
@@ -201,6 +202,30 @@ public partial class App : Application
         {
             Logs.ErrorLogManager(ex);
         }
+    }
+
+    // Must run on the UI thread: the mutex was created (and is owned) by it, and ReleaseMutex
+    // has thread affinity. Idempotent — the remaining release in OnExit becomes a no-op once nulled.
+    internal void ReleaseSingleInstanceLock()
+    {
+        Debug.Assert(CheckAccess(), "ReleaseSingleInstanceLock must run on the UI thread (mutex affinity).");
+
+        if (_instanceMutex is null) return;
+
+        try { _instanceMutex.ReleaseMutex(); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        _instanceMutex.Dispose();
+        _instanceMutex = null;
+        Logs.DebugLogManager("Single-instance lock released for restart.");
+    }
+
+    // Re-establishes the single-instance lock when a restart aborts after the lock was released
+    // (e.g. Process.Start threw): the launcher stays up, so it must keep guarding against duplicates.
+    internal void ReacquireSingleInstanceLock()
+    {
+        Debug.Assert(CheckAccess(), "ReacquireSingleInstanceLock must run on the UI thread (mutex affinity).");
+
+        _instanceMutex ??= new Mutex(true, MutexName, out _);
+        Logs.DebugLogManager("Single-instance lock re-acquired after a failed restart.");
     }
 
     protected override void OnExit(ExitEventArgs e)
