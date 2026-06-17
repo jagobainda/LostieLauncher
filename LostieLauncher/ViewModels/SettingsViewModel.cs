@@ -186,7 +186,15 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     public bool HasSeenWelcome => _hasSeenWelcome;
-    public static string CurrentVersion => "v" + typeof(SettingsViewModel).Assembly.GetName().Version?.ToString() ?? "Unknown";
+    public static string CurrentVersion => FormatVersion(typeof(SettingsViewModel).Assembly.GetName().Version);
+
+    internal static string FormatVersion(Version? version)
+    {
+        if (version is null) return "Unknown";
+
+        var availableFields = version.Revision >= 0 ? 4 : version.Build >= 0 ? 3 : 2;
+        return "v" + version.ToString(Math.Min(3, availableFields));
+    }
 
     public void MarkWelcomeSeen()
     {
