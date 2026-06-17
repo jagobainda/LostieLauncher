@@ -328,4 +328,37 @@ public class LibraryViewModelTests
         await vm.StartUpdateCommand.ExecuteAsync(args);
         fetches.ShouldBe(2);
     }
+
+    [Fact]
+    public async Task ExecuteDownload_WhenSomethingThrowsMidFlight_StillReleasesTheGlobalGuard()
+    {
+        // Arrange — the download service throws between IsDownloading=true and its reset (the BUG-010
+        // vector: any throw in the body — binding setter, modal, cleanup — leaves the guard stuck true
+        // without a try/finally). DownloadAsync is the only injectable seam in that body, so it stands
+        // in for "anything in the body throws"; the realistic production sources (CustomMessageBox in
+        // HandleDownloadFailed, binding setters) are modal/dispatcher-bound and not unit-testable.
+        var attempts = 0;
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns<Task<DownloadResult>>(_ => { attempts++; throw new IOException("boom"); });
+        _settingsService.GetGamesRootDirectory().Returns(Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root"));
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+        var args = new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip");
+
+        // Act — the throw propagates (BUG-014 silences it in production); the guard must still clear.
+        await Should.ThrowAsync<IOException>(() => vm.StartUpdateCommand.ExecuteAsync(args));
+
+        // Assert — guard released despite the exception...
+        _globalViewModel.IsDownloading.ShouldBeFalse();
+
+        // ...and a second download is genuinely allowed through (the body ran again, not an early-out),
+        // proving the guard did not stay stuck true.
+        await Should.ThrowAsync<IOException>(() => vm.StartUpdateCommand.ExecuteAsync(args));
+        attempts.ShouldBe(2);
+    }
 }

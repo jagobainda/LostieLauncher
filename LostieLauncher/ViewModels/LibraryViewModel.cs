@@ -304,48 +304,51 @@ public partial class LibraryViewModel : ObservableObject
         game.DownloadStatus = GameDownloadStatus.Downloading;
         game.DownloadProgressValue = 0;
         _globalViewModel.IsDownloading = true;
-
-        Logs.DebugLogManager($"Executing download/install: {session.Args.GameId} v{session.Args.Version}.");
-        session.IsCancelling = false;
-        session.Cts?.Dispose();
-        session.Cts = new CancellationTokenSource();
         _activeSession = session;
 
-        var progress = new Progress<DownloadProgressInfo>(p =>
+        try
         {
-            game.DownloadProgressValue = p.Percent;
-            game.DownloadSpeedBytesPerSec = p.BytesPerSecond;
-            game.DownloadRemainingText = p.BytesPerSecond > 0 && p.TotalBytes > 0
-                ? $"· {FormatRemainingTime((p.TotalBytes - p.DownloadedBytes) / p.BytesPerSecond)}"
-                : string.Empty;
-        });
+            Logs.DebugLogManager($"Executing download/install: {session.Args.GameId} v{session.Args.Version}.");
+            session.IsCancelling = false;
+            session.Cts?.Dispose();
+            session.Cts = new CancellationTokenSource();
 
-        var isSpecial = session.SpecialConfig is not null;
-        Logs.InfoLogManager($"Downloading: {session.Args.GameId} v{session.Args.Version}{(isSpecial ? $" (special: {session.SpecialConfig!.Tipo})" : "")}.");
-        var result = await _downloadService.DownloadAsync(session.Url, session.ZipPath, progress, session.Cts.Token);
+            var progress = new Progress<DownloadProgressInfo>(p =>
+            {
+                game.DownloadProgressValue = p.Percent;
+                game.DownloadSpeedBytesPerSec = p.BytesPerSecond;
+                game.DownloadRemainingText = p.BytesPerSecond > 0 && p.TotalBytes > 0
+                    ? $"· {FormatRemainingTime((p.TotalBytes - p.DownloadedBytes) / p.BytesPerSecond)}"
+                    : string.Empty;
+            });
 
-        var wasActiveSession = ReferenceEquals(_activeSession, session);
+            var isSpecial = session.SpecialConfig is not null;
+            Logs.InfoLogManager($"Downloading: {session.Args.GameId} v{session.Args.Version}{(isSpecial ? $" (special: {session.SpecialConfig!.Tipo})" : "")}.");
+            var result = await _downloadService.DownloadAsync(session.Url, session.ZipPath, progress, session.Cts.Token);
 
-        switch (result.Outcome)
-        {
-            case DownloadOutcome.Success:
-                await HandleDownloadSuccessAsync(game, session);
-                break;
-            case DownloadOutcome.Cancelled:
-                HandleDownloadCancelled(game, session);
-                break;
-            case DownloadOutcome.Failed:
-                HandleDownloadFailed(game, session, result.ErrorMessage);
-                break;
+            switch (result.Outcome)
+            {
+                case DownloadOutcome.Success:
+                    await HandleDownloadSuccessAsync(game, session);
+                    break;
+                case DownloadOutcome.Cancelled:
+                    HandleDownloadCancelled(game, session);
+                    break;
+                case DownloadOutcome.Failed:
+                    HandleDownloadFailed(game, session, result.ErrorMessage);
+                    break;
+            }
         }
-
-        game.DownloadSpeedBytesPerSec = 0;
-        game.DownloadRemainingText = string.Empty;
-
-        if (wasActiveSession)
+        finally
         {
-            _activeSession = null;
-            _globalViewModel.IsDownloading = false;
+            if (_activeSession is null || ReferenceEquals(_activeSession, session))
+            {
+                _activeSession = null;
+                _globalViewModel.IsDownloading = false;
+            }
+
+            game.DownloadSpeedBytesPerSec = 0;
+            game.DownloadRemainingText = string.Empty;
         }
     }
 
