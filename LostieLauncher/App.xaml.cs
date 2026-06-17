@@ -22,6 +22,11 @@ public partial class App : Application
     private const string MutexName = "LostieLauncherSingleInstance";
     private const string EventName = "LostieLauncherShowWindow";
 
+    private const string FatalErrorTitle = "Lostie Launcher";
+    private const string FatalErrorMessage = "A fatal error occurred and the launcher must close.\n\nThe details have been written to the log.";
+
+    private bool _startupCompleted;
+
     private NotifyIcon? _notifyIcon;
     private ToolStripMenuItem? _trayOpenItem;
     private ToolStripMenuItem? _trayExitItem;
@@ -63,14 +68,15 @@ public partial class App : Application
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        DispatcherUnhandledException += (_, ex) =>
-        {
-            Logs.ErrorLogManager(ex.Exception);
-            ex.Handled = true;
-        };
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += (_, ex) =>
         {
             if (ex.ExceptionObject is Exception e) Logs.ErrorLogManager(e);
+        };
+        TaskScheduler.UnobservedTaskException += (_, ex) =>
+        {
+            Logs.ErrorLogManager(ex.Exception);
+            ex.SetObserved();
         };
 
         Services = DependencyInjection.Configure();
@@ -102,6 +108,28 @@ public partial class App : Application
         }
 
         base.OnStartup(e);
+
+        _startupCompleted = true;
+    }
+
+    private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        Logs.ErrorLogManager(e.Exception);
+
+        e.Handled = true;
+
+        if (UnhandledExceptionPolicy.Decide(_startupCompleted) == UnhandledExceptionAction.Fatal) HandleFatalException();
+    }
+
+    private void HandleFatalException()
+    {
+        try
+        {
+            System.Windows.MessageBox.Show(FatalErrorMessage, FatalErrorTitle, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+
+        Shutdown();
     }
 
     private void InitializeTrayIcon()
@@ -204,8 +232,6 @@ public partial class App : Application
         }
     }
 
-    // Must run on the UI thread: the mutex was created (and is owned) by it, and ReleaseMutex
-    // has thread affinity. Idempotent — the remaining release in OnExit becomes a no-op once nulled.
     internal void ReleaseSingleInstanceLock()
     {
         Debug.Assert(CheckAccess(), "ReleaseSingleInstanceLock must run on the UI thread (mutex affinity).");
@@ -218,8 +244,6 @@ public partial class App : Application
         Logs.DebugLogManager("Single-instance lock released for restart.");
     }
 
-    // Re-establishes the single-instance lock when a restart aborts after the lock was released
-    // (e.g. Process.Start threw): the launcher stays up, so it must keep guarding against duplicates.
     internal void ReacquireSingleInstanceLock()
     {
         Debug.Assert(CheckAccess(), "ReacquireSingleInstanceLock must run on the UI thread (mutex affinity).");
