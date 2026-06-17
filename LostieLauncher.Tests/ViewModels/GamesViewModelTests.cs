@@ -72,6 +72,27 @@ public class GamesViewModelTests
     }
 
     [Fact]
+    public async Task LoadInstalledGames_WhenOneGameHasInvalidName_StillLoadsTheOthers()
+    {
+        // Arrange — two installed games; GetGameDirectory throws for the malicious name (exactly as
+        // the real service does for a traversal attempt) but succeeds for the valid one. Before
+        // BUG-009 this single throw aborted the whole projection and left "My Games" empty.
+        _contentService.GetLocalGamesAsync().Returns([
+            TestData.LocalGame(name: "Good", version: "1.0.0", id: Guid.NewGuid()),
+            TestData.LocalGame(name: "..\\evil", version: "1.0.0", id: Guid.NewGuid()),
+        ]);
+        _contentService.GetGameDirectory("..\\evil")
+            .Returns(_ => throw new InvalidOperationException("escapes the games root"));
+
+        // Act
+        var vm = await CreateSutAsync();
+
+        // Assert — both games are present and the invalid one simply has no help folder.
+        vm.InstalledGames.Count.ShouldBe(2);
+        vm.InstalledGames.Single(g => g.Nombre == "..\\evil").HasHelpFolder.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task LoadInstalledGames_WhenRemoteVersionIsNewer_FlagsHasUpdate()
     {
         // Arrange

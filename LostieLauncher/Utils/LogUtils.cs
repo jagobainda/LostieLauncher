@@ -9,6 +9,8 @@ public static class Logs
     private static readonly Lock Sync = new();
     private static readonly string LogDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppDomain.CurrentDomain.FriendlyName, "logs");
 
+    private static volatile bool _directoryEnsured;
+
     public static void ErrorLogManager(Exception e) => AddLog(CreateLogString("ERROR", e.ToString()));
 
     public static void ErrorLogManager(string errorPersonalizado) => AddLog(CreateLogString("ERROR", errorPersonalizado));
@@ -27,17 +29,28 @@ public static class Logs
 
     private static void AddLog(string nuevoLog)
     {
-        var archivoLog = LoadCurrentMonthLog();
-
-        lock (Sync)
+        try
         {
-            File.AppendAllText(archivoLog, nuevoLog + Environment.NewLine, Encoding.UTF8);
+            var archivoLog = LoadCurrentMonthLog();
+
+            lock (Sync)
+            {
+                File.AppendAllText(archivoLog, nuevoLog + Environment.NewLine, Encoding.UTF8);
+            }
+        }
+        catch
+        {
+            // Ignored 
         }
     }
 
     private static string LoadCurrentMonthLog()
     {
-        Directory.CreateDirectory(LogDirectory);
+        if (!_directoryEnsured)
+        {
+            Directory.CreateDirectory(LogDirectory);
+            _directoryEnsured = true;
+        }
 
         var nombreArchivo = DateTimeOffset.Now.ToString("yyyy-MM", CultureInfo.InvariantCulture) + ".log";
         return Path.Combine(LogDirectory, nombreArchivo);

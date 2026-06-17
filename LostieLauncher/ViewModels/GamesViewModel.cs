@@ -92,7 +92,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
                     Logo = remote?.Logo ?? string.Empty,
                     Tipo = local.Tipo,
                     PlaytimeMinutes = playtimeMinutes,
-                    HasHelpFolder = HasHelpSubfolder(_contentService.GetGameDirectory(local.Nombre))
+                    HasHelpFolder = SafeHasHelpFolder(local.Nombre)
                 };
             })];
 
@@ -114,6 +114,19 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private Task UpdateAsync(string gameName) => UpdateCoreAsync(gameName, navigateToLibrary: true);
+
+    private bool SafeHasHelpFolder(string gameName)
+    {
+        try
+        {
+            return HasHelpSubfolder(_contentService.GetGameDirectory(gameName));
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+            return false;
+        }
+    }
 
     private static bool HasHelpSubfolder(string gameDir)
     {

@@ -185,6 +185,92 @@ public class ContentServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetLocalGamesAsync_WhenRegistryHasDuplicateIds_KeepsOnlyTheFirstOccurrence()
+    {
+        // Arrange — a hand-edited registry with the same id twice. Upstream this made
+        // ToDictionary(g => g.Id) throw and emptied the whole library (BUG-009).
+        var json = """
+        [
+          {"id":"11111111-1111-1111-1111-111111111111","nombre":"Demo","version":"1.0.0"},
+          {"id":"11111111-1111-1111-1111-111111111111","nombre":"Demo","version":"9.9.9"}
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_temp.Path, "local_games.json"), json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetLocalGamesAsync();
+
+        // Assert — the duplicate is dropped (first wins) and the list is safe to index by id.
+        games.ShouldHaveSingleItem();
+        games[0].Version.ShouldBe("1.0.0");
+    }
+
+    [Fact]
+    public async Task GetLocalGamesAsync_WhenRegistryHasDuplicateIdlessNames_KeepsOnlyTheFirstOccurrence()
+    {
+        // Arrange — legacy id-less entries indexed by name (case-insensitive) upstream.
+        var json = """
+        [
+          {"id":"00000000-0000-0000-0000-000000000000","nombre":"Legacy","version":"1.0.0"},
+          {"id":"00000000-0000-0000-0000-000000000000","nombre":"legacy","version":"2.0.0"}
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_temp.Path, "local_games.json"), json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetLocalGamesAsync();
+
+        // Assert
+        games.ShouldHaveSingleItem();
+        games[0].Version.ShouldBe("1.0.0");
+    }
+
+    [Fact]
+    public async Task GetLocalGamesAsync_WhenIdlessEntryHasNullName_DoesNotThrowAndKeepsValidEntries()
+    {
+        // Arrange — an id-less entry whose name is explicitly null. OrdinalIgnoreCase.GetHashCode(null)
+        // would throw during dedup and the outer catch would return [] (total loss of the registry).
+        var json = """
+        [
+          {"id":"11111111-1111-1111-1111-111111111111","nombre":"Good","version":"1.0.0"},
+          {"id":"00000000-0000-0000-0000-000000000000","nombre":null,"version":"2.0.0"}
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_temp.Path, "local_games.json"), json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetLocalGamesAsync();
+
+        // Assert — no throw, and the valid game is not lost alongside the corrupt one.
+        games.Count.ShouldBe(2);
+        games.ShouldContain(g => g.Nombre == "Good");
+    }
+
+    [Fact]
+    public async Task GetLocalGamesAsync_WhenEntriesAreDistinct_KeepsThemAll()
+    {
+        // Arrange — dedup must not be over-aggressive: distinct ids are all preserved.
+        var json = """
+        [
+          {"id":"11111111-1111-1111-1111-111111111111","nombre":"Alpha","version":"1.0.0"},
+          {"id":"22222222-2222-2222-2222-222222222222","nombre":"Bravo","version":"1.0.0"}
+        ]
+        """;
+        await File.WriteAllTextAsync(Path.Combine(_temp.Path, "local_games.json"), json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetLocalGamesAsync();
+
+        // Assert
+        games.Count.ShouldBe(2);
+        games.Select(g => g.Nombre).ShouldBe(["Alpha", "Bravo"]);
+    }
+
+    [Fact]
     public async Task RegisterGameAsync_WhenCalled_PersistsGameToRegistryFile()
     {
         // Arrange

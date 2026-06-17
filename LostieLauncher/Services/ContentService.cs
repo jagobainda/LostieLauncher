@@ -232,8 +232,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
             var games = JsonSerializer.Deserialize<List<LocalGameInfo>>(json, JsonOptions) ?? [];
-            Logs.DebugLogManager($"Local games registry loaded: {games.Count} games.");
-            return games;
+            var deduplicated = DeduplicateLocalGames(games);
+            Logs.DebugLogManager($"Local games registry loaded: {deduplicated.Count} games.");
+            return deduplicated;
         }
         catch (Exception ex)
         {
@@ -241,6 +242,37 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             return [];
         }
         finally { LocalGamesFileLock.Release(); }
+    }
+
+    /// <summary>
+    /// Drops duplicate entries from a hand-edited or concurrently-written <c>local_games.json</c> so a
+    /// single bad record cannot poison every consumer: a repeated id makes the <c>ToDictionary</c> calls
+    /// in the library/games view models throw (BUG-009) — which empties the whole list — and produces
+    /// duplicate cards. Entries with a non-empty id are keyed by id; legacy id-less entries are keyed by
+    /// name (case-insensitive), matching how consumers index the registry. The first occurrence wins.
+    /// </summary>
+    private static List<LocalGameInfo> DeduplicateLocalGames(List<LocalGameInfo> games)
+    {
+        var seenIds = new HashSet<Guid>();
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var deduplicated = new List<LocalGameInfo>(games.Count);
+
+        foreach (var game in games)
+        {
+            // Nombre is declared non-null but System.Text.Json can still bind an explicit `"nombre": null`
+            // from a hand-edited registry; OrdinalIgnoreCase.GetHashCode(null) would throw and the outer
+            // catch would wipe the whole registry — exactly the total-loss this dedup exists to prevent.
+            var isDuplicate = game.Id != Guid.Empty ? !seenIds.Add(game.Id) : !seenNames.Add(game.Nombre ?? string.Empty);
+            if (isDuplicate)
+            {
+                Logs.InfoLogManager($"Skipping duplicate local game entry: '{game.Nombre}' (id: {game.Id}).");
+                continue;
+            }
+
+            deduplicated.Add(game);
+        }
+
+        return deduplicated;
     }
 
     public string GetGameDirectory(string gameName)
