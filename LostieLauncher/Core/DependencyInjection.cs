@@ -3,6 +3,7 @@ using LostieLauncher.Services;
 using LostieLauncher.ViewModels;
 using LostieLauncher.Views;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
 namespace LostieLauncher.Core;
 
@@ -32,7 +33,8 @@ public static class DependencyInjection
         services.AddHttpClient("Telemetry", client => { client.Timeout = TimeSpan.FromSeconds(5); });
         services.AddHttpClient("Content", client => { client.Timeout = TimeSpan.FromSeconds(10); });
         services.AddHttpClient("SecurityFlag", client => { client.Timeout = TimeSpan.FromSeconds(3); });
-        services.AddHttpClient("Download", client => { client.Timeout = Timeout.InfiniteTimeSpan; });
+        services.AddHttpClient("Download", client => { client.Timeout = Timeout.InfiniteTimeSpan; })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(20) });
 
         // ViewModels
         services.AddSingleton<GlobalViewModel>();

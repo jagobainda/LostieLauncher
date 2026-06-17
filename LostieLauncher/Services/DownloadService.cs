@@ -17,13 +17,28 @@ public interface IDownloadService
     public Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
 }
 
-public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions) : IDownloadService
+public class DownloadService : IDownloadService
 {
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private readonly DownloadOptions _downloadOptions = downloadOptions;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly DownloadOptions _downloadOptions;
+    private readonly TimeSpan _inactivityTimeout;
 
     private const int BufferSize = 64 * 1024;
     private const int MaxRetries = 2;
+    private static readonly TimeSpan DefaultInactivityTimeout = TimeSpan.FromSeconds(60);
+
+    public DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions)
+        : this(httpClientFactory, downloadOptions, DefaultInactivityTimeout)
+    {
+    }
+
+    internal DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions, TimeSpan inactivityTimeout)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(inactivityTimeout, TimeSpan.Zero);
+        _httpClientFactory = httpClientFactory;
+        _downloadOptions = downloadOptions;
+        _inactivityTimeout = inactivityTimeout;
+    }
 
     public DownloadState State { get; private set; } = DownloadState.Idle;
 
@@ -118,6 +133,20 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
 
     private async Task DownloadCoreAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct)
     {
+        using var watchdog = CancellationTokenSource.CreateLinkedTokenSource(ct);
+
+        try
+        {
+            await DownloadCoreWatchedAsync(url, partPath, finalPath, progress, ct, watchdog).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            throw new IOException($"Download stalled: no data received within {_inactivityTimeout.TotalSeconds:0}s.", ex);
+        }
+    }
+
+    private async Task DownloadCoreWatchedAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct, CancellationTokenSource watchdog)
+    {
         var client = _httpClientFactory.CreateClient("Download");
         var metaPath = partPath + ".meta";
         long existingBytes = 0;
@@ -152,7 +181,8 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
             Logs.DebugLogManager("Starting fresh download.");
         }
 
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        watchdog.CancelAfter(_inactivityTimeout);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, watchdog.Token).ConfigureAwait(false);
 
         if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
         {
@@ -195,7 +225,7 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
         var contentLength = response.Content.Headers.ContentLength;
         var totalBytes = contentLength.HasValue ? contentLength.Value + existingBytes : -1;
 
-        await using var contentStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        await using var contentStream = await response.Content.ReadAsStreamAsync(watchdog.Token).ConfigureAwait(false);
         var fileMode = existingBytes > 0 ? FileMode.Append : FileMode.Create;
 
         await using (var fileStream = new FileStream(partPath, fileMode, FileAccess.Write, FileShare.None, BufferSize, useAsync: true))
@@ -207,8 +237,12 @@ public class DownloadService(IHttpClientFactory httpClientFactory, DownloadOptio
             var lastSpeedBytes = existingBytes;
             double currentSpeed = 0;
 
-            while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, BufferSize), ct).ConfigureAwait(false)) > 0)
+            while (true)
             {
+                watchdog.CancelAfter(_inactivityTimeout);
+                bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, BufferSize), watchdog.Token).ConfigureAwait(false);
+                if (bytesRead <= 0) break;
+
                 await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
                 totalRead += bytesRead;
 

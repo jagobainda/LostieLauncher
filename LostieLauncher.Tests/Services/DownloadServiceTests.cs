@@ -183,6 +183,56 @@ public class DownloadServiceTests : IDisposable
         sut.State.ShouldBe(DownloadState.Failed);
     }
 
+    // -------------------- DownloadAsync: inactivity watchdog (BUG-013) --------------------
+
+    [Fact]
+    public async Task DownloadAsync_WhenStreamStallsWithoutUserCancellation_TripsInactivityWatchdogAndFails()
+    {
+        // Arrange — the server accepts the request then never sends another byte (silent dead
+        // connection: no FIN, no exception). Without the watchdog this read would block forever.
+        var attempts = 0;
+        _httpFactory.HandlerFor("Download").Respond(_ =>
+        {
+            attempts++;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new BlockingStream()) };
+        });
+        var dest = Path.Combine(_temp.Path, "stalled.bin");
+        // Tiny inactivity window so the watchdog fires fast; no user cancellation is ever requested.
+        var sut = new DownloadService(_httpFactory, _options, TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — a stall must NOT be mistaken for a user pause; it is retried (like an IOException)
+        // and, once retries are exhausted, ends as Failed rather than hanging or pausing.
+        result.Outcome.ShouldBe(DownloadOutcome.Failed);
+        sut.State.ShouldBe(DownloadState.Failed);
+        attempts.ShouldBeGreaterThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenStreamIsSlowButAlive_RearmsWatchdogPerReadAndCompletes()
+    {
+        // Arrange — bytes trickle in, each gap a comfortable 10× under the inactivity window so GC or
+        // scheduler jitter cannot trip the watchdog in false, yet the total transfer time deliberately
+        // exceeds a single window to prove the watchdog is rearmed on every read rather than enforcing
+        // one global deadline.
+        var payload = Repeat('A', 600);
+        _httpFactory.HandlerFor("Download").Respond(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new TrickleStream(payload, chunkSize: 40, delay: TimeSpan.FromMilliseconds(50))),
+        });
+        var dest = Path.Combine(_temp.Path, "slow.bin");
+        var sut = new DownloadService(_httpFactory, _options, TimeSpan.FromMilliseconds(500));
+
+        // Act — 15 reads × 50ms gaps ≈ 750ms total > the 500ms window, yet no single gap approaches it.
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        File.ReadAllBytes(dest).ShouldBe(payload);
+    }
+
     // -------------------- DownloadAsync: resume identity validation (BUG-002) --------------------
 
     private const string DownloadUrl = "https://download.test/file";
@@ -403,6 +453,37 @@ public class DownloadServiceTests : IDisposable
             }
             await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
             return 0;
+        }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    /// <summary>
+    /// Stream that delivers <paramref name="data"/> in <paramref name="chunkSize"/> pieces, waiting
+    /// <paramref name="delay"/> before each chunk, then signals EOF. Models a slow-but-alive transfer.
+    /// </summary>
+    private sealed class TrickleStream(byte[] data, int chunkSize, TimeSpan delay) : Stream
+    {
+        private int _pos;
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => data.Length;
+        public override long Position { get => _pos; set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default)
+        {
+            if (_pos >= data.Length) return 0;
+            await Task.Delay(delay, ct).ConfigureAwait(false);
+            var n = Math.Min(chunkSize, Math.Min(data.Length - _pos, buffer.Length));
+            data.AsMemory(_pos, n).CopyTo(buffer);
+            _pos += n;
+            return n;
         }
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
