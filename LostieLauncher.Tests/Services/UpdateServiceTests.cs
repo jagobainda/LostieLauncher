@@ -20,16 +20,10 @@ public class UpdateServiceTests
     // -------------------- Constructor guards --------------------
 
     [Fact]
-    public void Constructor_NullGateway_Throws()
-    {
-        Should.Throw<ArgumentNullException>(() => new UpdateService(null!, _notifier));
-    }
+    public void Constructor_NullGateway_Throws() => Should.Throw<ArgumentNullException>(() => new UpdateService(null!, _notifier));
 
     [Fact]
-    public void Constructor_NullNotifier_Throws()
-    {
-        Should.Throw<ArgumentNullException>(() => new UpdateService(_gateway, null!));
-    }
+    public void Constructor_NullNotifier_Throws() => Should.Throw<ArgumentNullException>(() => new UpdateService(_gateway, null!));
 
     // -------------------- Up to date --------------------
 

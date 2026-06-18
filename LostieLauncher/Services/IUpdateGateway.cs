@@ -10,15 +10,15 @@ namespace LostieLauncher.Services;
 public interface IUpdateGateway
 {
     /// <summary>Returns the pending update, or <c>null</c> when already up to date.</summary>
-    Task<IUpdatePackage?> CheckForUpdatesAsync();
+    public Task<IUpdatePackage?> CheckForUpdatesAsync();
 }
 
 /// <summary>A pending update that can be downloaded and applied.</summary>
 public interface IUpdatePackage
 {
-    string Version { get; }
-    Task DownloadAsync();
-    void ApplyAndRestart();
+    public string Version { get; }
+    public Task DownloadAsync();
+    public void ApplyAndRestart();
 }
 
 public sealed class VelopackUpdateGateway : IUpdateGateway

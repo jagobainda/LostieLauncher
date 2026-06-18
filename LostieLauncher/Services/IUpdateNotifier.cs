@@ -11,12 +11,12 @@ namespace LostieLauncher.Services;
 /// </summary>
 public interface IUpdateNotifier
 {
-    void NotifyUpToDate();
-    void NotifyCheckFailed();
-    void NotifyDownloadInProgress();
+    public void NotifyUpToDate();
+    public void NotifyCheckFailed();
+    public void NotifyDownloadInProgress();
 
     /// <summary>Asks the user whether to apply the update now. Returns <c>true</c> to apply.</summary>
-    bool PromptApply(string version);
+    public bool PromptApply(string version);
 }
 
 public sealed class WpfUpdateNotifier : IUpdateNotifier
