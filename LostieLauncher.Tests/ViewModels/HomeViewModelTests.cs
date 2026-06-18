@@ -146,4 +146,83 @@ public class HomeViewModelTests
         recorder.WasRaised(nameof(HomeViewModel.IsListVisible)).ShouldBeTrue();
         recorder.WasRaised(nameof(HomeViewModel.IsNewsEmpty)).ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task Dispose_StopsTheBackgroundRefreshLoop()
+    {
+        // Arrange
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var settings = CreateSettings();
+        // Intervalo por defecto (2 min): el bucle queda esperando el primer tick, así que solo puede
+        // terminar por la cancelación de Dispose — nunca por agotar el intervalo. Es la regresión exacta
+        // de BUG-019 (antes el bucle era imparable y el `using` del timer nunca disponía).
+        var vm = new HomeViewModel(_contentService, settings);
+
+        // Act
+        vm.Dispose();
+
+        // Assert — el bucle termina limpiamente sin colgarse (WaitAsync acota el caso "imparable").
+        await vm.BackgroundRefreshTask.WaitAsync(TimeSpan.FromSeconds(5));
+        vm.BackgroundRefreshTask.IsCompletedSuccessfully.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task BackgroundLoop_PerformsForcedRefresh_AndStopsOnDispose()
+    {
+        // Arrange
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var ticked = new TaskCompletionSource();
+        // El bucle de fondo es el único que pide GetHomeContentAsync(true); la carga inicial usa forceRefresh=false.
+        _contentService.When(c => c.GetHomeContentAsync(true)).Do(_ => ticked.TrySetResult());
+        var settings = CreateSettings();
+        var vm = new HomeViewModel(_contentService, settings, TimeSpan.FromMilliseconds(20));
+
+        // Act & Assert — el bucle sigue refrescando periódicamente tras añadir la cancelación...
+        await ticked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // ...y se detiene de forma determinista al disponer.
+        vm.Dispose();
+        await vm.BackgroundRefreshTask.WaitAsync(TimeSpan.FromSeconds(5));
+        vm.BackgroundRefreshTask.IsCompletedSuccessfully.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Dispose_StopsRespondingToSettingsLanguageChanges()
+    {
+        // Arrange
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var settings = CreateSettings();
+        var vm = new HomeViewModel(_contentService, settings);
+        await vm.RefreshAsync();
+        vm.Dispose();
+        _contentService.ClearReceivedCalls();
+
+        // Act — tras Dispose, un cambio de idioma ya no debe disparar una recarga (suscripción desuscrita).
+        settings.Language = AppLanguage.Eng;
+        await vm.RefreshAsync(); // drena por el gate cualquier recarga que el cambio hubiese encolado.
+
+        // Assert — solo la carga de nuestro RefreshAsync explícito; el cambio de idioma no añadió ninguna.
+        var loads = _contentService.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IContentService.GetHomeContentAsync));
+        loads.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Dispose_WhenCalledTwice_DoesNotThrow()
+    {
+        // Arrange
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var settings = CreateSettings();
+        var vm = new HomeViewModel(_contentService, settings);
+        vm.Dispose();
+
+        // Act
+        var act = vm.Dispose;
+
+        // Assert
+        Should.NotThrow(act);
+    }
 }

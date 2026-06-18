@@ -6,12 +6,19 @@ using System.ComponentModel;
 
 namespace LostieLauncher.ViewModels;
 
-public partial class HomeViewModel : ObservableObject
+public partial class HomeViewModel : ObservableObject, IDisposable
 {
-    private static readonly TimeSpan BackgroundRefreshInterval = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan DefaultBackgroundRefreshInterval = TimeSpan.FromMinutes(2);
     private readonly IContentService _contentService;
     private readonly SettingsViewModel _settingsViewModel;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    private readonly TimeSpan _backgroundRefreshInterval;
+    private readonly CancellationTokenSource _backgroundRefreshCts = new();
+    private bool _disposed;
+
+    // Tarea del bucle de refresco en segundo plano; expuesta como internal solo para que las pruebas
+    // puedan esperar su terminación tras Dispose (el bucle dejó de ser imparable, cf. BUG-019).
+    internal Task BackgroundRefreshTask { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
@@ -41,12 +48,28 @@ public partial class HomeViewModel : ObservableObject
     public bool IsNotificationsEmpty => !IsLoading && Notifications.Count == 0;
 
     public HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel)
+        : this(contentService, settingsViewModel, DefaultBackgroundRefreshInterval)
+    {
+    }
+
+    internal HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel, TimeSpan backgroundRefreshInterval)
     {
         _contentService = contentService;
         _settingsViewModel = settingsViewModel;
+        _backgroundRefreshInterval = backgroundRefreshInterval;
         _settingsViewModel.PropertyChanged += OnSettingsPropertyChanged;
         _ = LoadHomeContentAsync();
-        _ = RefreshHomeContentPeriodicallyAsync();
+        BackgroundRefreshTask = RefreshHomeContentPeriodicallyAsync(_backgroundRefreshCts.Token);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _settingsViewModel.PropertyChanged -= OnSettingsPropertyChanged;
+        _backgroundRefreshCts.Cancel();
+        _backgroundRefreshCts.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -84,20 +107,26 @@ public partial class HomeViewModel : ObservableObject
         }
     }
 
-    private async Task RefreshHomeContentPeriodicallyAsync()
+    private async Task RefreshHomeContentPeriodicallyAsync(CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(BackgroundRefreshInterval);
-
-        while (await timer.WaitForNextTickAsync())
+        try
         {
-            try
+            using var timer = new PeriodicTimer(_backgroundRefreshInterval);
+
+            while (await timer.WaitForNextTickAsync(ct))
             {
+                // LoadHomeContentAsync nunca lanza (try/catch/finally propio), así que el bucle no necesita
+                // un catch por iteración; el único throw esperable aquí es la OCE de la cancelación al disponer.
                 await LoadHomeContentAsync(forceRefresh: true, showLoading: false);
             }
-            catch (Exception ex)
-            {
-                Logs.ErrorLogManager(ex);
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelación esperada al disponer el ViewModel: el bucle termina limpiamente.
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
         }
     }
 
