@@ -25,9 +25,9 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ContentOptions _contentOptions = contentOptions;
     private readonly ISettingsService _settingsService = settingsService;
+    private readonly SemaphoreSlim _homeContentGate = new(1, 1);
     private HomeContentDto? _homeContentCache;
-    private bool _serverActionBlockedCache;
-    private DateTime _serverActionBlockedCacheExpiresAtUtc;
+    private volatile ServerActionFlagCache? _serverActionBlockedCache;
     private static readonly TimeSpan ServerActionBlockedCacheDuration = TimeSpan.FromSeconds(30);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -37,6 +37,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     private static readonly SemaphoreSlim LocalGamesFileLock = new(1, 1);
     private static readonly SemaphoreSlim PlaytimeFileLock = new(1, 1);
+
+    private sealed record ServerActionFlagCache(bool Blocked, DateTime ExpiresAtUtc);
 
     public async Task<List<GameInfo>> GetGamesAsync()
     {
@@ -69,22 +71,33 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     {
         try
         {
-            if (forceRefresh) _homeContentCache = null;
-
-            if (_homeContentCache is null)
+            HomeContentDto cache;
+            await _homeContentGate.WaitAsync().ConfigureAwait(false);
+            try
             {
-                Logs.DebugLogManager("Fetching home content from remote.");
-                var client = _httpClientFactory.CreateClient("Content");
-                using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
+                if (forceRefresh) _homeContentCache = null;
 
-                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, JsonOptions) ?? new HomeContentDto([], []);
-                Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
+                if (_homeContentCache is null)
+                {
+                    Logs.DebugLogManager("Fetching home content from remote.");
+                    var client = _httpClientFactory.CreateClient("Content");
+                    using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+
+                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, JsonOptions) ?? new HomeContentDto([], []);
+                    Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
+                }
+                else
+                {
+                    Logs.DebugLogManager("Using cached home content.");
+                }
+
+                cache = _homeContentCache;
             }
-            else
+            finally
             {
-                Logs.DebugLogManager("Using cached home content.");
+                _homeContentGate.Release();
             }
 
             var settings = _settingsService.Load();
@@ -92,7 +105,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
             var now = DateTime.Now;
 
-            var news = _homeContentCache.News
+            var news = cache.News
                     .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
                     .Select(n => new NewsItem
                     {
@@ -103,7 +116,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                         Date = n.Date,
                         ExpiresAt = n.ExpiresAt
                     }).ToList();
-            var notifications = _homeContentCache.Notifications
+            var notifications = cache.Notifications
                     .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
                     .Select(n => new NotificationItem
                     {
@@ -131,28 +144,26 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     public async Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default)
     {
-        if (!forceRefresh && DateTime.UtcNow < _serverActionBlockedCacheExpiresAtUtc)
-            return _serverActionBlockedCache;
+        var cache = _serverActionBlockedCache;
+        if (!forceRefresh && cache is not null && DateTime.UtcNow < cache.ExpiresAtUtc)
+            return cache.Blocked;
 
         try
         {
             var blocked = await CheckServerActionFlagAsync(ct).ConfigureAwait(false);
-            _serverActionBlockedCache = blocked;
-            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            _serverActionBlockedCache = new ServerActionFlagCache(blocked, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
             return blocked;
         }
         catch (OperationCanceledException)
         {
             Logs.InfoLogManager("Maintenance flag check timed out or was cancelled; assuming not blocked.");
-            _serverActionBlockedCache = false;
-            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            _serverActionBlockedCache = new ServerActionFlagCache(false, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
             return false;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            _serverActionBlockedCache = false;
-            _serverActionBlockedCacheExpiresAtUtc = DateTime.UtcNow.Add(ServerActionBlockedCacheDuration);
+            _serverActionBlockedCache = new ServerActionFlagCache(false, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
             return false;
         }
     }
@@ -244,13 +255,6 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         finally { LocalGamesFileLock.Release(); }
     }
 
-    /// <summary>
-    /// Drops duplicate entries from a hand-edited or concurrently-written <c>local_games.json</c> so a
-    /// single bad record cannot poison every consumer: a repeated id makes the <c>ToDictionary</c> calls
-    /// in the library/games view models throw (BUG-009) — which empties the whole list — and produces
-    /// duplicate cards. Entries with a non-empty id are keyed by id; legacy id-less entries are keyed by
-    /// name (case-insensitive), matching how consumers index the registry. The first occurrence wins.
-    /// </summary>
     private static List<LocalGameInfo> DeduplicateLocalGames(List<LocalGameInfo> games)
     {
         var seenIds = new HashSet<Guid>();
@@ -259,9 +263,6 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
         foreach (var game in games)
         {
-            // Nombre is declared non-null but System.Text.Json can still bind an explicit `"nombre": null`
-            // from a hand-edited registry; OrdinalIgnoreCase.GetHashCode(null) would throw and the outer
-            // catch would wipe the whole registry — exactly the total-loss this dedup exists to prevent.
             var isDuplicate = game.Id != Guid.Empty ? !seenIds.Add(game.Id) : !seenNames.Add(game.Nombre ?? string.Empty);
             if (isDuplicate)
             {

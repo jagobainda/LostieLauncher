@@ -492,6 +492,54 @@ public class ContentServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task GetHomeContentAsync_WhenCalledTwiceWithoutForceRefresh_FetchesOnlyOnce()
+    {
+        // Arrange
+        var json = """{ "news": [], "notifications": [] }""";
+        var handler = _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        // Act
+        await sut.GetHomeContentAsync();
+        await sut.GetHomeContentAsync();
+
+        // Assert — the second call is served from the in-memory cache, no extra HTTP request.
+        handler.Requests.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenForceRefresh_BypassesCacheAndRefetches()
+    {
+        // Arrange
+        var json = """{ "news": [], "notifications": [] }""";
+        var handler = _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+        await sut.GetHomeContentAsync();
+
+        // Act
+        await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Assert — forceRefresh nulls the cache and re-fetches.
+        handler.Requests.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenManyConcurrentCallersOnColdCache_FetchesOnlyOnce()
+    {
+        // Arrange — without the gate, concurrent callers all see a null cache and duplicate the
+        // HTTP fetch (the BUG-018 race). The gate serialises check-fetch-assign so only one request fires.
+        var json = """{ "news": [], "notifications": [] }""";
+        var handler = _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        // Act — fan out many concurrent callers against a cold cache.
+        await Task.WhenAll(Enumerable.Range(0, 50).Select(_ => sut.GetHomeContentAsync()));
+
+        // Assert
+        handler.Requests.Count.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task GetHomeContentAsync_WhenRequestFails_ReturnsEmptyHomeContent()
     {
         // Arrange — no handler set up; default 404 response.
