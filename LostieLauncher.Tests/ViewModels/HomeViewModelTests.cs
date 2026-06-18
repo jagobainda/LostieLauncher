@@ -14,7 +14,7 @@ public class HomeViewModelTests
 
     public HomeViewModelTests(WpfApplicationFixture _) => _settingsService.Load().Returns(new AppSettings());
 
-    private SettingsViewModel CreateSettings() => new(_settingsService, _startupService);
+    private SettingsViewModel CreateSettings() => new(_settingsService, _startupService, new GlobalViewModel(), Substitute.For<IUpdateService>());
 
     private static HomeContent SampleContent() => new()
     {

@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
-using LostieLauncher.Utils;
 using LostieLauncher.Views.Dialogs;
 using Microsoft.Win32;
 using System.Windows;
@@ -42,14 +41,18 @@ public partial class SettingsViewModel : ObservableObject
 
     private readonly ISettingsService _settingsService;
     private readonly IWindowsStartupService _windowsStartupService;
+    private readonly GlobalViewModel _globalViewModel;
+    private readonly IUpdateService _updateService;
     private bool _hasSeenWelcome;
     private bool _isLoading;
 
-    public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService)
+    public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService, GlobalViewModel globalViewModel, IUpdateService updateService)
     {
         Instance = this;
         _settingsService = settingsService;
         _windowsStartupService = windowsStartupService;
+        _globalViewModel = globalViewModel;
+        _updateService = updateService;
 
         try
         {
@@ -220,19 +223,17 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CheckForUpdates()
+    private async Task CheckForUpdatesAsync()
     {
         Logs.InfoLogManager("Manual update check initiated.");
-        var result = CustomMessageBox.Show(Strings.CheckForUpdatesTitle, Strings.CheckForUpdatesMessage, CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
 
-        if (result == true)
+        if (_globalViewModel.IsDownloading)
         {
-            Logs.InfoLogManager("Manual update check: user chose to restart.");
-            ProcessUtils.RestartApplication();
+            Logs.InfoLogManager("Manual update check blocked: a download is in progress.");
+            _updateService.NotifyDownloadInProgress();
+            return;
         }
-        else
-        {
-            Logs.DebugLogManager("Manual update check: user declined restart.");
-        }
+
+        await _updateService.CheckForUpdatesAsync(notifyWhenUpToDate: true);
     }
 }

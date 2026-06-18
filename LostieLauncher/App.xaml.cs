@@ -1,4 +1,5 @@
 using LostieLauncher.Core;
+using LostieLauncher.Services;
 using LostieLauncher.ViewModels;
 using LostieLauncher.Views;
 using LostieLauncher.Views.Dialogs;
@@ -12,8 +13,6 @@ namespace LostieLauncher;
 public partial class App : Application
 {
     public static IServiceProvider Services { get; private set; } = null!;
-
-    private readonly string feedUrl = "https://ericlostie-launcher.jagoba.dev/public/installer/";
 
     private Mutex? _instanceMutex;
     private EventWaitHandle? _showWindowEvent;
@@ -67,7 +66,8 @@ public partial class App : Application
 
         Logs.InfoLogManager("Application started.");
 
-        _ = Task.Run(CheckForUpdatesAsync);
+        var updateService = Services.GetRequiredService<IUpdateService>();
+        _ = Task.Run(() => updateService.CheckForUpdatesAsync(notifyWhenUpToDate: false));
 
         var mainWindow = Services.GetRequiredService<MainWindow>();
 
@@ -171,49 +171,6 @@ public partial class App : Application
         mainWindow.Show();
         mainWindow.WindowState = WindowState.Normal;
         mainWindow.Activate();
-    }
-
-    private async Task CheckForUpdatesAsync()
-    {
-        try
-        {
-            Logs.InfoLogManager("Checking for updates...");
-
-            var mgr = new UpdateManager(feedUrl);
-
-            var updateInfo = await mgr.CheckForUpdatesAsync();
-
-            if (updateInfo == null)
-            {
-                Logs.InfoLogManager("No updates available.");
-                return;
-            }
-
-            Logs.InfoLogManager($"Update available: {updateInfo.TargetFullRelease.Version}. Downloading...");
-
-            await mgr.DownloadUpdatesAsync(updateInfo);
-
-            Dispatcher.Invoke(() =>
-            {
-                var strings = SettingsViewModel.Instance.Strings;
-
-                var result = CustomMessageBox.Show(strings.UpdateAvailableTitle, string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version), CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
-
-                if (result == true)
-                {
-                    Logs.InfoLogManager($"Applying update to {updateInfo.TargetFullRelease.Version} and restarting.");
-                    mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
-                }
-                else
-                {
-                    Logs.InfoLogManager($"Update to {updateInfo.TargetFullRelease.Version} declined by user.");
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            Logs.ErrorLogManager(ex);
-        }
     }
 
     private static void SignalRunningInstance()

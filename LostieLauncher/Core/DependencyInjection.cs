@@ -14,6 +14,7 @@ public static class DependencyInjection
     private const string NotificationsEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json";
     private const string FlagEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/flag.txt";
     private const string DownloadBaseUrl = "https://ericlostie-launcher.jagoba.dev/games";
+    private const string UpdateFeedUrl = "https://ericlostie-launcher.jagoba.dev/public/installer/";
 
     public static IServiceProvider Configure()
     {
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddSingleton(new TelemetryOptions(ApiKey: "4V7p0XSJ9C6FgCE7ae3c", Endpoint: TelemetryEndpoint));
         services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint, FlagEndpoint: FlagEndpoint));
         services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl));
+        services.AddSingleton(new UpdateOptions(FeedUrl: UpdateFeedUrl));
 
         // Services
         services.AddSingleton<ISettingsService, SettingsService>();
@@ -30,6 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();
+        services.AddSingleton<IUpdateService, UpdateService>();
         services.AddHttpClient("Telemetry", client => { client.Timeout = TimeSpan.FromSeconds(5); });
         services.AddHttpClient("Content", client => { client.Timeout = TimeSpan.FromSeconds(10); });
         services.AddHttpClient("SecurityFlag", client => { client.Timeout = TimeSpan.FromSeconds(3); });

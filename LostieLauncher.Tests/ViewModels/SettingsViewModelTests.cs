@@ -10,6 +10,8 @@ public class SettingsViewModelTests
 {
     private readonly ISettingsService _settingsService = Substitute.For<ISettingsService>();
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
+    private readonly GlobalViewModel _globalViewModel = new();
+    private readonly IUpdateService _updateService = Substitute.For<IUpdateService>();
 
     public SettingsViewModelTests(WpfApplicationFixture _) { /* fixture ensures Application.Current */ }
 
@@ -18,7 +20,7 @@ public class SettingsViewModelTests
         var settings = initial ?? new AppSettings();
         _settingsService.Load().Returns(settings);
         _startupService.IsEnabled().Returns(startupEnabled);
-        return new SettingsViewModel(_settingsService, _startupService);
+        return new SettingsViewModel(_settingsService, _startupService, _globalViewModel, _updateService);
     }
 
     // -------------------- LoadSettings (constructor) --------------------
@@ -245,6 +247,38 @@ public class SettingsViewModelTests
 
         // Assert
         seen.ShouldBeTrue();
+    }
+
+    // -------------------- CheckForUpdates (BUG-022) --------------------
+
+    [Fact]
+    public async Task CheckForUpdates_WhenDownloadInProgress_NotifiesUserAndDoesNotCheck()
+    {
+        // Arrange — a download is active; restarting/checking now could corrupt it (BUG-022).
+        var vm = CreateSut();
+        _globalViewModel.IsDownloading = true;
+
+        // Act
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        // Assert — the guard blocks the check entirely and tells the user why.
+        _updateService.Received(1).NotifyDownloadInProgress();
+        await _updateService.DidNotReceive().CheckForUpdatesAsync(Arg.Any<bool>());
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_WhenNotDownloading_DelegatesToUpdateServiceNotifyingWhenUpToDate()
+    {
+        // Arrange — no download in progress; the manual check should proceed.
+        var vm = CreateSut();
+        _globalViewModel.IsDownloading = false;
+
+        // Act
+        await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        // Assert — runs the real Velopack check and asks to be told when already up to date.
+        await _updateService.Received(1).CheckForUpdatesAsync(true);
+        _updateService.DidNotReceive().NotifyDownloadInProgress();
     }
 
     // -------------------- FormatVersion (BUG-016) --------------------

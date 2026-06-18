@@ -30,7 +30,7 @@ public class MainViewModelTests
     private async Task<MainViewModel> CreateSutAsync()
     {
         var global = new GlobalViewModel();
-        var settings = new SettingsViewModel(_settingsService, _startupService);
+        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>());
         var library = new LibraryViewModel(_telemetryService, _contentService, _settingsService, _downloadService, global, _downloadOptions);
         await library.LibraryLoadedTask;
         var home = new HomeViewModel(_contentService, settings);
@@ -134,7 +134,7 @@ public class MainViewModelTests
     {
         // Arrange
         var global = new GlobalViewModel();
-        var settings = new SettingsViewModel(_settingsService, _startupService);
+        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>());
         var library = new LibraryViewModel(_telemetryService, _contentService, _settingsService, _downloadService, global, _downloadOptions);
         await library.LibraryLoadedTask;
         var home = new HomeViewModel(_contentService, settings);
