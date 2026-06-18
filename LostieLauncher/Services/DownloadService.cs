@@ -93,6 +93,8 @@ public class DownloadService : IDownloadService
 
             State = DownloadState.Downloading;
 
+            Exception? lastError = null;
+
             for (var attempt = 0; attempt <= MaxRetries; attempt++)
             {
                 try
@@ -107,20 +109,22 @@ public class DownloadService : IDownloadService
                     Logs.InfoLogManager("Download paused by user.");
                     return DownloadResult.Cancelled();
                 }
-                catch (HttpRequestException ex) when (attempt < MaxRetries && !ct.IsCancellationRequested)
+                catch (Exception ex) when (ex is HttpRequestException or IOException && !ct.IsCancellationRequested)
                 {
-                    Logs.InfoLogManager($"Download attempt {attempt + 1}/{MaxRetries + 1} failed ({ex.Message}), retrying...");
-                    await Task.Delay(TimeSpan.FromSeconds(attempt + 1), CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (IOException ex) when (attempt < MaxRetries && !ct.IsCancellationRequested)
-                {
-                    Logs.InfoLogManager($"IO error on attempt {attempt + 1}/{MaxRetries + 1} ({ex.Message}), retrying...");
-                    await Task.Delay(TimeSpan.FromSeconds(attempt + 1), CancellationToken.None).ConfigureAwait(false);
+                    lastError = ex;
+
+                    // On the last attempt the retries are exhausted: don't delay, fall through to the
+                    // post-loop block so the specific "maximum retries" diagnostic is actually reachable.
+                    if (attempt < MaxRetries)
+                    {
+                        Logs.InfoLogManager($"Download attempt {attempt + 1}/{MaxRetries + 1} failed ({ex.Message}), retrying...");
+                        await Task.Delay(TimeSpan.FromSeconds(attempt + 1), CancellationToken.None).ConfigureAwait(false);
+                    }
                 }
             }
 
             State = DownloadState.Failed;
-            Logs.ErrorLogManager($"Download failed after {MaxRetries + 1} attempts, giving up.");
+            Logs.ErrorLogManager($"Download failed after {MaxRetries + 1} attempts, giving up. Last error: {lastError?.Message}");
             return DownloadResult.Failed("Download failed after maximum retries.");
         }
         catch (Exception ex)

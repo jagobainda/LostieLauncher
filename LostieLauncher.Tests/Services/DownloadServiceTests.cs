@@ -181,6 +181,7 @@ public class DownloadServiceTests : IDisposable
         result.Outcome.ShouldBe(DownloadOutcome.Failed);
         attempts.ShouldBeGreaterThanOrEqualTo(2);
         sut.State.ShouldBe(DownloadState.Failed);
+        result.ErrorMessage.ShouldBe("Download failed after maximum retries.");
     }
 
     // -------------------- DownloadAsync: inactivity watchdog (BUG-013) --------------------
