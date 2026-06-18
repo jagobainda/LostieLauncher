@@ -17,7 +17,7 @@ public partial class App : Application
 
     private Mutex? _instanceMutex;
     private EventWaitHandle? _showWindowEvent;
-    private CancellationTokenSource? _singleInstanceListenerCts;
+    private WaitHandleSignalListener? _showWindowListener;
 
     private const string MutexName = "LostieLauncherSingleInstance";
     private const string EventName = "LostieLauncherShowWindow";
@@ -41,30 +41,14 @@ public partial class App : Application
             Logs.InfoLogManager("Another instance is already running. Signaling it and shutting down.");
             _instanceMutex.Dispose();
             _instanceMutex = null;
-            if (EventWaitHandle.TryOpenExisting(EventName, out var showEvent))
-            {
-                showEvent.Set();
-                showEvent.Dispose();
-            }
-            else
-            {
-                Logs.DebugLogManager("Could not open existing show-window event.");
-            }
+            SignalRunningInstance();
             Shutdown();
             return;
         }
 
         _showWindowEvent = new EventWaitHandle(false, EventResetMode.AutoReset, EventName);
-        _singleInstanceListenerCts = new CancellationTokenSource();
+        _showWindowListener = WaitHandleSignalListener.Start(_showWindowEvent, () => Dispatcher.BeginInvoke(RestoreMainWindow));
         Logs.DebugLogManager("Single-instance listener started.");
-        _ = Task.Run(() =>
-        {
-            var token = _singleInstanceListenerCts.Token;
-            while (!token.IsCancellationRequested)
-            {
-                if (_showWindowEvent.WaitOne(1000)) Dispatcher.BeginInvoke(RestoreMainWindow);
-            }
-        });
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -232,6 +216,22 @@ public partial class App : Application
         }
     }
 
+    private static void SignalRunningInstance()
+    {
+        try
+        {
+            if (EventWaitHandle.TryOpenExisting(EventName, out var showEvent))
+            {
+                using (showEvent) showEvent.Set();
+            }
+            else
+            {
+                Logs.DebugLogManager("Could not open existing show-window event.");
+            }
+        }
+        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+    }
+
     internal void ReleaseSingleInstanceLock()
     {
         Debug.Assert(CheckAccess(), "ReleaseSingleInstanceLock must run on the UI thread (mutex affinity).");
@@ -255,8 +255,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Logs.InfoLogManager("Application exiting.");
-        _singleInstanceListenerCts?.Cancel();
-        _singleInstanceListenerCts?.Dispose();
+        _showWindowListener?.Dispose();
         _showWindowEvent?.Dispose();
         try { _instanceMutex?.ReleaseMutex(); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
         _instanceMutex?.Dispose();
