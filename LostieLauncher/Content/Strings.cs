@@ -44,6 +44,8 @@ public interface IStrings
     public string UpToDateMessage { get; }
     public string UpdateCheckBusyTitle { get; }
     public string UpdateCheckBusyMessage { get; }
+    public string UpdateCheckFailedTitle { get; }
+    public string UpdateCheckFailedMessage { get; }
     public string ChangeDownloadDirTitle { get; }
     public string ChangeDownloadDirMessage { get; }
     public string TrayOpen { get; }
@@ -142,6 +144,8 @@ public class Esp : IStrings
     public string UpToDateMessage => "Ya tienes la última versión del launcher.";
     public string UpdateCheckBusyTitle => "Descarga en curso";
     public string UpdateCheckBusyMessage => "No se pueden buscar actualizaciones mientras hay una descarga en curso. Espera a que termine e inténtalo de nuevo.";
+    public string UpdateCheckFailedTitle => "Error al buscar actualizaciones";
+    public string UpdateCheckFailedMessage => "No se ha podido comprobar si hay actualizaciones. Revisa tu conexión e inténtalo de nuevo más tarde.";
     public string ChangeDownloadDirTitle => "Cambiar directorio de descargas";
     public string ChangeDownloadDirMessage => "Si tienes juegos instalados, tendrás que moverlos manualmente a la nueva ruta o el launcher no los reconocerá. ¿Deseas continuar?";
     public string TrayOpen => "Abrir";
@@ -240,6 +244,8 @@ public class Eng : IStrings
     public string UpToDateMessage => "You already have the latest version of the launcher.";
     public string UpdateCheckBusyTitle => "Download in progress";
     public string UpdateCheckBusyMessage => "Updates can't be checked while a download is in progress. Wait for it to finish and try again.";
+    public string UpdateCheckFailedTitle => "Update check failed";
+    public string UpdateCheckFailedMessage => "Couldn't check for updates. Check your connection and try again later.";
     public string ChangeDownloadDirTitle => "Change download directory";
     public string ChangeDownloadDirMessage => "If you have installed games, you will need to move them manually to the new path or the launcher won't recognize them. Do you want to continue?";
     public string TrayOpen => "Open";
@@ -338,6 +344,8 @@ public class Cat : IStrings
     public string UpToDateMessage => "Ja tens l'última versió del launcher.";
     public string UpdateCheckBusyTitle => "Descàrrega en curs";
     public string UpdateCheckBusyMessage => "No es poden buscar actualitzacions mentre hi ha una descàrrega en curs. Espera que acabi i torna-ho a provar.";
+    public string UpdateCheckFailedTitle => "Error en cercar actualitzacions";
+    public string UpdateCheckFailedMessage => "No s'ha pogut comprovar si hi ha actualitzacions. Revisa la connexió i torna-ho a provar més tard.";
     public string ChangeDownloadDirTitle => "Canviar directori de descàrregues";
     public string ChangeDownloadDirMessage => "Si tens jocs instal·lats, hauràs de moure'ls manualment a la nova ruta o el launcher no els reconeixerà. Vols continuar?";
     public string TrayOpen => "Obrir";
@@ -436,6 +444,8 @@ public class Eus : IStrings
     public string UpToDateMessage => "Dagoeneko launcher-aren azken bertsioa duzu.";
     public string UpdateCheckBusyTitle => "Deskarga abian";
     public string UpdateCheckBusyMessage => "Ezin dira eguneraketak bilatu deskarga bat abian dagoen bitartean. Itxaron amaitu arte eta saiatu berriro.";
+    public string UpdateCheckFailedTitle => "Errorea eguneraketak bilatzean";
+    public string UpdateCheckFailedMessage => "Ezin izan da eguneraketarik dagoen egiaztatu. Egiaztatu konexioa eta saiatu berriro geroago.";
     public string ChangeDownloadDirTitle => "Deskarga direktorioa aldatu";
     public string ChangeDownloadDirMessage => "Jokoak instalatuta badituzu, eskuz mugitu beharko dituzu bide berrira, edo launcher-ak ez ditu ezagutuko. Jarraitu nahi duzu?";
     public string TrayOpen => "Ireki";
@@ -534,6 +544,8 @@ public class Gal : IStrings
     public string UpToDateMessage => "Xa tes a última versión do launcher.";
     public string UpdateCheckBusyTitle => "Descarga en curso";
     public string UpdateCheckBusyMessage => "Non se poden buscar actualizacións mentres hai unha descarga en curso. Agarda a que remate e téntao de novo.";
+    public string UpdateCheckFailedTitle => "Erro ao buscar actualizacións";
+    public string UpdateCheckFailedMessage => "Non se puido comprobar se hai actualizacións. Revisa a túa conexión e téntao de novo máis tarde.";
     public string ChangeDownloadDirTitle => "Cambiar directorio de descargas";
     public string ChangeDownloadDirMessage => "Se tes xogos instalados, terás que movelos manualmente á nova ruta ou o launcher non os recoñecerá. Desexas continuar?";
     public string TrayOpen => "Abrir";
@@ -632,6 +644,8 @@ public class Por : IStrings
     public string UpToDateMessage => "Você já tem a versão mais recente do launcher.";
     public string UpdateCheckBusyTitle => "Download em andamento";
     public string UpdateCheckBusyMessage => "Não é possível verificar atualizações enquanto há um download em andamento. Aguarde a conclusão e tente novamente.";
+    public string UpdateCheckFailedTitle => "Falha ao verificar atualizações";
+    public string UpdateCheckFailedMessage => "Não foi possível verificar atualizações. Verifique sua conexão e tente novamente mais tarde.";
     public string ChangeDownloadDirTitle => "Alterar diretório de downloads";
     public string ChangeDownloadDirMessage => "Se você tiver jogos instalados, precisará movê-los manualmente para o novo caminho ou o launcher não os reconhecerá. Deseja continuar?";
     public string TrayOpen => "Abrir";
@@ -730,6 +744,8 @@ public class Val : IStrings
     public string UpToDateMessage => "Ja tens l'última versió del launcher.";
     public string UpdateCheckBusyTitle => "Descàrrega en curs";
     public string UpdateCheckBusyMessage => "No es poden buscar actualitzacions mentre hi ha una descàrrega en curs. Espera que acabi i torna-ho a provar.";
+    public string UpdateCheckFailedTitle => "Error en cercar actualitzacions";
+    public string UpdateCheckFailedMessage => "No s'ha pogut comprovar si hi ha actualitzacions. Revisa la connexió i torna-ho a provar més tard.";
     public string ChangeDownloadDirTitle => "Canviar directori de descàrregues";
     public string ChangeDownloadDirMessage => "Si tens jocs instal·lats, hauràs de moure'ls manualment a la nova ruta o el launcher no els reconeixerà. Vols continuar?";
     public string TrayOpen => "Obrir";
@@ -828,6 +844,8 @@ public class Fra : IStrings
     public string UpToDateMessage => "Vous avez déjà la dernière version du lanceur.";
     public string UpdateCheckBusyTitle => "Téléchargement en cours";
     public string UpdateCheckBusyMessage => "Impossible de vérifier les mises à jour pendant un téléchargement. Attendez la fin et réessayez.";
+    public string UpdateCheckFailedTitle => "Échec de la vérification des mises à jour";
+    public string UpdateCheckFailedMessage => "Impossible de vérifier les mises à jour. Vérifiez votre connexion et réessayez plus tard.";
     public string ChangeDownloadDirTitle => "Modifier le répertoire de téléchargement";
     public string ChangeDownloadDirMessage => "Si vous avez des jeux installés, vous devrez les déplacer manuellement vers le nouveau chemin ou le lanceur ne les reconnaîtra pas. Voulez-vous continuer ?";
     public string TrayOpen => "Ouvrir";

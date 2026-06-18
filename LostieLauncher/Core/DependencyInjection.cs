@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
         services.AddSingleton<ITelemetryService, TelemetryService>();
+        services.AddSingleton<IUpdateGateway, VelopackUpdateGateway>();
+        services.AddSingleton<IUpdateNotifier, WpfUpdateNotifier>();
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddHttpClient("Telemetry", client => { client.Timeout = TimeSpan.FromSeconds(5); });
         services.AddHttpClient("Content", client => { client.Timeout = TimeSpan.FromSeconds(10); });

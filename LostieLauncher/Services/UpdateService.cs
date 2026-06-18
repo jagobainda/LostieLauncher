@@ -1,7 +1,3 @@
-using LostieLauncher.ViewModels;
-using LostieLauncher.Views.Dialogs;
-using Velopack;
-
 namespace LostieLauncher.Services;
 
 public interface IUpdateService
@@ -13,12 +9,15 @@ public interface IUpdateService
 
 public sealed class UpdateService : IUpdateService
 {
-    private readonly string _feedUrl;
+    private readonly IUpdateGateway _gateway;
+    private readonly IUpdateNotifier _notifier;
 
-    public UpdateService(Models.UpdateOptions options)
+    public UpdateService(IUpdateGateway gateway, IUpdateNotifier notifier)
     {
-        ArgumentNullException.ThrowIfNull(options);
-        _feedUrl = options.FeedUrl;
+        ArgumentNullException.ThrowIfNull(gateway);
+        ArgumentNullException.ThrowIfNull(notifier);
+        _gateway = gateway;
+        _notifier = notifier;
     }
 
     public async Task CheckForUpdatesAsync(bool notifyWhenUpToDate)
@@ -27,66 +26,40 @@ public sealed class UpdateService : IUpdateService
         {
             Logs.InfoLogManager("Checking for updates...");
 
-            var mgr = new UpdateManager(_feedUrl);
+            var update = await _gateway.CheckForUpdatesAsync().ConfigureAwait(false);
 
-            var updateInfo = await mgr.CheckForUpdatesAsync().ConfigureAwait(false);
-
-            if (updateInfo == null)
+            if (update is null)
             {
                 Logs.InfoLogManager("No updates available.");
-                if (notifyWhenUpToDate) ShowOnUi(ShowUpToDate);
+                if (notifyWhenUpToDate) _notifier.NotifyUpToDate();
                 return;
             }
 
-            Logs.InfoLogManager($"Update available: {updateInfo.TargetFullRelease.Version}. Downloading...");
+            Logs.InfoLogManager($"Update available: {update.Version}. Downloading...");
 
-            await mgr.DownloadUpdatesAsync(updateInfo).ConfigureAwait(false);
+            await update.DownloadAsync().ConfigureAwait(false);
 
-            ShowOnUi(() => PromptAndApply(mgr, updateInfo));
+            PromptAndApply(update);
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
+            if (notifyWhenUpToDate) _notifier.NotifyCheckFailed();
         }
     }
 
-    public void NotifyDownloadInProgress() => ShowOnUi(() =>
+    public void NotifyDownloadInProgress() => _notifier.NotifyDownloadInProgress();
+
+    private void PromptAndApply(IUpdatePackage update)
     {
-        var strings = SettingsViewModel.Instance.Strings;
-        CustomMessageBox.Show(strings.UpdateCheckBusyTitle, strings.UpdateCheckBusyMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
-    });
-
-    private static void ShowUpToDate()
-    {
-        var strings = SettingsViewModel.Instance.Strings;
-        CustomMessageBox.Show(strings.UpToDateTitle, strings.UpToDateMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Information);
-    }
-
-    private static void PromptAndApply(UpdateManager mgr, UpdateInfo updateInfo)
-    {
-        var strings = SettingsViewModel.Instance.Strings;
-
-        var result = CustomMessageBox.Show(strings.UpdateAvailableTitle, string.Format(strings.UpdateAvailableMessage, updateInfo.TargetFullRelease.Version), CustomMessageBoxButton.YesNo, CustomMessageBoxIcon.Update);
-
-        if (result == true)
+        if (_notifier.PromptApply(update.Version))
         {
-            Logs.InfoLogManager($"Applying update to {updateInfo.TargetFullRelease.Version} and restarting.");
-            mgr.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
+            Logs.InfoLogManager($"Applying update to {update.Version} and restarting.");
+            update.ApplyAndRestart();
         }
         else
         {
-            Logs.InfoLogManager($"Update to {updateInfo.TargetFullRelease.Version} declined by user.");
+            Logs.InfoLogManager($"Update to {update.Version} declined by user.");
         }
-    }
-
-    private static void ShowOnUi(Action action)
-    {
-        var app = Application.Current;
-        if (app is null)
-        {
-            action();
-            return;
-        }
-        app.Dispatcher.Invoke(action);
     }
 }
