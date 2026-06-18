@@ -1,5 +1,6 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
+using LostieLauncher.Tests.Helpers;
 using LostieLauncher.ViewModels;
 using System.Collections.ObjectModel;
 
@@ -360,5 +361,86 @@ public class LibraryViewModelTests
         // proving the guard did not stay stuck true.
         await Should.ThrowAsync<IOException>(() => vm.StartUpdateCommand.ExecuteAsync(args));
         attempts.ShouldBe(2);
+    }
+
+    [Fact]
+    public void AtomicSwapDirectories_FreshInstall_MovesSourceToTargetAndCleansUp()
+    {
+        // Arrange — no existing target directory (fresh install)
+        using var root = new TempDirectoryFixture("atomicswap-fresh");
+        var source = root.Combine("source");
+        var backup = root.Combine("backup");
+        var target = root.Combine("target");
+
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "game.exe"), "v1.0");
+
+        // Act
+        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
+
+        // Assert — source is gone, target exists with the file, backup does not exist
+        Directory.Exists(source).ShouldBeFalse();
+        Directory.Exists(target).ShouldBeTrue();
+        File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
+        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("v1.0");
+        Directory.Exists(backup).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void AtomicSwapDirectories_Update_SwapsTargetToBackupSourceToTargetAndDeletesBackup()
+    {
+        // Arrange — existing target directory (update scenario)
+        using var root = new TempDirectoryFixture("atomicswap-update");
+        var source = root.Combine("source");
+        var backup = root.Combine("backup");
+        var target = root.Combine("target");
+
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "game.exe"), "v2.0");
+        File.WriteAllText(Path.Combine(source, "new.dll"), "new");
+
+        Directory.CreateDirectory(target);
+        File.WriteAllText(Path.Combine(target, "game.exe"), "v1.0");
+        File.WriteAllText(Path.Combine(target, "old.dll"), "orphan");
+
+        // Act
+        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
+
+        // Assert — source gone, target has only v2.0 files (BUG-029: no orphan old.dll), backup gone
+        Directory.Exists(source).ShouldBeFalse();
+        Directory.Exists(target).ShouldBeTrue();
+        File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
+        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("v2.0");
+        File.Exists(Path.Combine(target, "new.dll")).ShouldBeTrue();
+        File.Exists(Path.Combine(target, "old.dll")).ShouldBeFalse();
+        Directory.Exists(backup).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void AtomicSwapDirectories_LeftoverBackup_IsCleanedBeforeSwap()
+    {
+        // Arrange — a leftover .old directory from a previous crashed swap
+        using var root = new TempDirectoryFixture("atomicswap-leftover");
+        var source = root.Combine("source");
+        var backup = root.Combine("backup");
+        var target = root.Combine("target");
+
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "game.exe"), "fresh");
+
+        Directory.CreateDirectory(target);
+        File.WriteAllText(Path.Combine(target, "game.exe"), "old");
+
+        Directory.CreateDirectory(backup);
+        File.WriteAllText(Path.Combine(backup, "stale.txt"), "leftover-from-crash");
+
+        // Act
+        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
+
+        // Assert — stale backup was cleaned, swap succeeded normally
+        Directory.Exists(source).ShouldBeFalse();
+        Directory.Exists(target).ShouldBeTrue();
+        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("fresh");
+        Directory.Exists(backup).ShouldBeFalse();
     }
 }

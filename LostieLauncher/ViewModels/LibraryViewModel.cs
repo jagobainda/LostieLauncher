@@ -425,34 +425,80 @@ public partial class LibraryViewModel : ObservableObject
     }
 
     private static async Task ExtractArchiveAsync(string zipPath, string extractDir) => await Task.Run(() =>
-                                                                                              {
-                                                                                                  Logs.DebugLogManager($"Extracting archive: {Path.GetFileName(zipPath)}.");
-                                                                                                  Directory.CreateDirectory(extractDir);
-                                                                                                  var readerOptions = new ReaderOptions
-                                                                                                  {
-                                                                                                      ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
-                                                                                                  };
+    {
+        var tempDir = extractDir + ".tmp";
+        var backupDir = extractDir + ".old";
 
-                                                                                                  var extractDirFull = Path.GetFullPath(extractDir) + Path.DirectorySeparatorChar;
-                                                                                                  var entryCount = 0;
-                                                                                                  using (var stream = File.OpenRead(zipPath))
-                                                                                                  using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
-                                                                                                  {
-                                                                                                      foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
-                                                                                                      {
-                                                                                                          var destPath = Path.GetFullPath(Path.Combine(extractDir, entry.Key!));
-                                                                                                          if (!destPath.StartsWith(extractDirFull, StringComparison.OrdinalIgnoreCase))
-                                                                                                              throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
-                                                                                                          Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                                                                                                          using var entryStream = entry.OpenEntryStream();
-                                                                                                          using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                                                                                                          entryStream.CopyTo(outStream);
-                                                                                                          entryCount++;
-                                                                                                      }
-                                                                                                  }
-                                                                                                  Logs.DebugLogManager($"Extraction complete: {entryCount} files extracted.");
-                                                                                                  File.Delete(zipPath);
-                                                                                              });
+        try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        try { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, true); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            Logs.DebugLogManager($"Extracting archive: {Path.GetFileName(zipPath)}.");
+            var readerOptions = new ReaderOptions
+            {
+                ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
+            };
+
+            var tempDirFull = Path.GetFullPath(tempDir) + Path.DirectorySeparatorChar;
+            var entryCount = 0;
+            using (var stream = File.OpenRead(zipPath))
+            using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
+            {
+                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
+                {
+                    var destPath = Path.GetFullPath(Path.Combine(tempDir, entry.Key!));
+                    if (!destPath.StartsWith(tempDirFull, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                    using var entryStream = entry.OpenEntryStream();
+                    using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    entryStream.CopyTo(outStream);
+                    entryCount++;
+                }
+            }
+            Logs.DebugLogManager($"Temp extraction complete: {entryCount} files.");
+
+            AtomicSwapDirectories(tempDir, backupDir, extractDir);
+
+            try { File.Delete(zipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+            Logs.DebugLogManager($"Extraction complete: {entryCount} files installed.");
+        }
+        catch
+        {
+            try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
+            throw;
+        }
+    });
+
+    internal static void AtomicSwapDirectories(string sourceDir, string backupDir, string targetDir)
+    {
+        var hadExisting = Directory.Exists(targetDir);
+        if (hadExisting)
+        {
+            try { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, true); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+            Directory.Move(targetDir, backupDir);
+        }
+
+        try
+        {
+            Directory.Move(sourceDir, targetDir);
+        }
+        catch
+        {
+            if (hadExisting)
+            {
+                try { Directory.Move(backupDir, targetDir); } catch { }
+            }
+            throw;
+        }
+
+        if (hadExisting)
+        {
+            try { Directory.Delete(backupDir, true); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        }
+    }
 
     private void HandleDownloadCancelled(GameInfo game, DownloadSession session)
     {
