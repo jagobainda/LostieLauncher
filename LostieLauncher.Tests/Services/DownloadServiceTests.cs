@@ -28,7 +28,7 @@ public class DownloadServiceTests : IDisposable
     // -------------------- FetchSpecialVersionConfigAsync --------------------
 
     [Fact]
-    public async Task FetchSpecialVersionConfigAsync_WhenServerReturnsValidContent_ReturnsParsedConfig()
+    public async Task FetchSpecialVersionConfigAsync_WhenServerReturnsValidContent_ReturnsSuccessWithParsedConfig()
     {
         // Arrange
         _httpFactory.HandlerFor("Content").Respond(req =>
@@ -43,30 +43,32 @@ public class DownloadServiceTests : IDisposable
         var sut = CreateSut();
 
         // Act
-        var config = await sut.FetchSpecialVersionConfigAsync("ABCD-EFGH-IJKL-MNOP-QRST");
+        var result = await sut.FetchSpecialVersionConfigAsync("ABCD-EFGH-IJKL-MNOP-QRST");
 
         // Assert
-        config.ShouldNotBeNull();
-        config!.Tipo.ShouldBe("beta");
-        config.Version.ShouldBe("1.2.3");
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.Success);
+        result.Config.ShouldNotBeNull();
+        result.Config!.Tipo.ShouldBe("beta");
+        result.Config.Version.ShouldBe("1.2.3");
     }
 
     [Fact]
-    public async Task FetchSpecialVersionConfigAsync_WhenServerReturns404_ReturnsNull()
+    public async Task FetchSpecialVersionConfigAsync_WhenServerReturns404_ReturnsNotFound()
     {
         // Arrange
         _httpFactory.HandlerFor("Content").RespondWithStatus("game.config", HttpStatusCode.NotFound);
         var sut = CreateSut();
 
         // Act
-        var config = await sut.FetchSpecialVersionConfigAsync("ABCD-EFGH-IJKL-MNOP-QRST");
+        var result = await sut.FetchSpecialVersionConfigAsync("ABCD-EFGH-IJKL-MNOP-QRST");
 
-        // Assert
-        config.ShouldBeNull();
+        // Assert — a genuinely unknown key, distinct from a network failure (BUG-026).
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.NotFound);
+        result.Config.ShouldBeNull();
     }
 
     [Fact]
-    public async Task FetchSpecialVersionConfigAsync_WhenContentIsUnparsable_ReturnsNull()
+    public async Task FetchSpecialVersionConfigAsync_WhenContentIsUnparsable_ReturnsInvalidResponse()
     {
         // Arrange
         _httpFactory.HandlerFor("Content").Respond(_ => new HttpResponseMessage(HttpStatusCode.OK)
@@ -76,28 +78,61 @@ public class DownloadServiceTests : IDisposable
         var sut = CreateSut();
 
         // Act
-        var config = await sut.FetchSpecialVersionConfigAsync("KEY1");
+        var result = await sut.FetchSpecialVersionConfigAsync("KEY1");
 
-        // Assert
-        config.ShouldBeNull();
+        // Assert — server answered but with garbage; not the user's key being wrong.
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.InvalidResponse);
+        result.Config.ShouldBeNull();
     }
 
     [Fact]
-    public async Task FetchSpecialVersionConfigAsync_WhenServerReturnsServerError_ReturnsNull()
+    public async Task FetchSpecialVersionConfigAsync_WhenServerReturnsServerError_ReturnsNetworkError()
     {
-        // Arrange
+        // Arrange — 500 makes EnsureSuccessStatusCode throw HttpRequestException.
         _httpFactory.HandlerFor("Content").RespondWithStatus("game.config", HttpStatusCode.InternalServerError);
         var sut = CreateSut();
 
         // Act
-        var config = await sut.FetchSpecialVersionConfigAsync("KEY1");
+        var result = await sut.FetchSpecialVersionConfigAsync("KEY1");
 
-        // Assert
-        config.ShouldBeNull();
+        // Assert — the regression of BUG-026: a server/network failure must NOT read as "key not found".
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.NetworkError);
+        result.Config.ShouldBeNull();
     }
 
     [Fact]
-    public async Task FetchSpecialVersionConfigAsync_WhenCancellationAlreadyRequested_ReturnsNull()
+    public async Task FetchSpecialVersionConfigAsync_WhenRequestThrowsNetworkException_ReturnsNetworkError()
+    {
+        // Arrange — the transport fails outright (no route to host, DNS, TLS, etc.).
+        _httpFactory.HandlerFor("Content").Respond(_ => throw new HttpRequestException("network down"));
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.FetchSpecialVersionConfigAsync("KEY1");
+
+        // Assert
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.NetworkError);
+        result.Config.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task FetchSpecialVersionConfigAsync_WhenTimeoutFiresWithoutUserCancellation_ReturnsNetworkError()
+    {
+        // Arrange — a TaskCanceledException with no cancellation requested models the "Content"
+        // client's own timeout; it is a network problem, not a deliberate cancel.
+        _httpFactory.HandlerFor("Content").Respond(_ => throw new TaskCanceledException("timed out"));
+        var sut = CreateSut();
+
+        // Act — note: no cancellation token is passed (default, never cancelled).
+        var result = await sut.FetchSpecialVersionConfigAsync("KEY1");
+
+        // Assert
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.NetworkError);
+        result.Config.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task FetchSpecialVersionConfigAsync_WhenCancellationAlreadyRequested_ReturnsCancelled()
     {
         // Arrange
         var sut = CreateSut();
@@ -105,10 +140,11 @@ public class DownloadServiceTests : IDisposable
         cts.Cancel();
 
         // Act
-        var config = await sut.FetchSpecialVersionConfigAsync("KEY1", cts.Token);
+        var result = await sut.FetchSpecialVersionConfigAsync("KEY1", cts.Token);
 
-        // Assert
-        config.ShouldBeNull();
+        // Assert — a deliberate cancellation, distinct from a timeout: the UI shows nothing.
+        result.Outcome.ShouldBe(SpecialVersionConfigOutcome.Cancelled);
+        result.Config.ShouldBeNull();
     }
 
     // -------------------- DownloadAsync --------------------

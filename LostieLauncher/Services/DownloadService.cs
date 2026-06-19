@@ -12,7 +12,7 @@ public interface IDownloadService
 {
     public DownloadState State { get; }
 
-    public Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
+    public Task<SpecialVersionConfigResult> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
 
     public Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
 }
@@ -42,7 +42,7 @@ public class DownloadService : IDownloadService
 
     public DownloadState State { get; private set; } = DownloadState.Idle;
 
-    public async Task<SpecialVersionConfig?> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default)
+    public async Task<SpecialVersionConfigResult> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default)
     {
         try
         {
@@ -53,7 +53,7 @@ public class DownloadService : IDownloadService
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 Logs.InfoLogManager($"Special version config not found for key: {key}");
-                return null;
+                return SpecialVersionConfigResult.NotFound();
             }
 
             response.EnsureSuccessStatusCode();
@@ -64,21 +64,29 @@ public class DownloadService : IDownloadService
             if (config is null)
             {
                 Logs.InfoLogManager($"Failed to parse special version config for key: {key}");
-                return null;
+                return SpecialVersionConfigResult.InvalidResponse();
             }
 
             Logs.InfoLogManager($"Special version config loaded: {config.Tipo} v{config.Version}");
-            return config;
+            return SpecialVersionConfigResult.Success(config);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
+            // The caller deliberately cancelled (not a timeout) — surface it as such so the UI shows nothing.
             Logs.InfoLogManager($"Special version config fetch cancelled for key: {key}");
-            return null;
+            return SpecialVersionConfigResult.Cancelled();
+        }
+        catch (OperationCanceledException ex)
+        {
+            // No cancellation was requested, so this is the "Content" client's timeout firing
+            // (TaskCanceledException) — a network problem, not a missing key.
+            Logs.ErrorLogManager(ex);
+            return SpecialVersionConfigResult.NetworkError();
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            return null;
+            return SpecialVersionConfigResult.NetworkError();
         }
     }
 

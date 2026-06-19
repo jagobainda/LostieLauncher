@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Views.Dialogs;
@@ -152,13 +153,16 @@ public partial class LibraryViewModel : ObservableObject
             }
 
             Logs.DebugLogManager($"Fetching special version config for key: {args.Key}.");
-            var config = await _downloadService.FetchSpecialVersionConfigAsync(args.Key!);
+            var result = await _downloadService.FetchSpecialVersionConfigAsync(args.Key!);
 
-            if (config is null)
+            if (result.Outcome != SpecialVersionConfigOutcome.Success)
             {
-                CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+                if (GetSpecialVersionConfigErrorMessage(result.Outcome, strings) is { } error)
+                    CustomMessageBox.Show(error.Title, error.Message, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
                 return;
             }
+
+            var config = result.Config!;
 
             if (!IsValidSpecialVersionConfig(config))
             {
@@ -241,13 +245,16 @@ public partial class LibraryViewModel : ObservableObject
             return;
         }
 
-        var config = await _downloadService.FetchSpecialVersionConfigAsync(key);
+        var result = await _downloadService.FetchSpecialVersionConfigAsync(key);
 
-        if (config is null)
+        if (result.Outcome != SpecialVersionConfigOutcome.Success)
         {
-            CustomMessageBox.Show(strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+            if (GetSpecialVersionConfigErrorMessage(result.Outcome, strings) is { } error)
+                CustomMessageBox.Show(error.Title, error.Message, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
             return;
         }
+
+        var config = result.Config!;
 
         if (!IsValidSpecialVersionConfig(config))
         {
@@ -556,6 +563,17 @@ public partial class LibraryViewModel : ObservableObject
     internal static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) => ArchivoFormatRegex.IsMatch(config.Archivo) &&
         IsWellFormedSha256(config.Sha256) &&
         !string.IsNullOrWhiteSpace(config.Version);
+
+    // Maps a failed key-validation outcome to the dialog to show, or null when no dialog is warranted
+    // (Success has no error; Cancelled is a deliberate user action). A genuine 404 means the key is wrong
+    // ("not found"); a timeout, network failure or malformed server response is a transient problem and
+    // must NOT be reported as a bad key (BUG-026) — it reuses the generic download-error message.
+    internal static (string Title, string Message)? GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome outcome, IStrings strings) => outcome switch
+    {
+        SpecialVersionConfigOutcome.NotFound => (strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage),
+        SpecialVersionConfigOutcome.NetworkError or SpecialVersionConfigOutcome.InvalidResponse => (strings.DownloadErrorTitle, strings.DownloadErrorMessage),
+        _ => null,
+    };
 
     [RelayCommand]
     private void PauseDownload(string? gameId)

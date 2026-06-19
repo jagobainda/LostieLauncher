@@ -1,3 +1,4 @@
+using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Tests.Helpers;
@@ -588,5 +589,73 @@ public class LibraryViewModelTests
 
         // Act & Assert
         LibraryViewModel.IsValidSpecialVersionConfig(config).ShouldBeFalse();
+    }
+
+    // -------------------- GetSpecialVersionConfigErrorMessage (BUG-026) --------------------
+
+    [Fact]
+    public void GetSpecialVersionConfigErrorMessage_WhenNotFound_ReturnsKeyNotFoundMessage()
+    {
+        // Arrange — a real 404: the key genuinely does not exist.
+        var strings = new Eng();
+
+        // Act
+        var error = LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.NotFound, strings);
+
+        // Assert
+        error.ShouldNotBeNull();
+        error!.Value.Title.ShouldBe(strings.DownloadKeyNotFoundTitle);
+        error.Value.Message.ShouldBe(strings.DownloadKeyNotFoundMessage);
+    }
+
+    [Fact]
+    public void GetSpecialVersionConfigErrorMessage_WhenNetworkError_ReturnsDownloadErrorNotKeyNotFound()
+    {
+        // Arrange — the exact regression of BUG-026: a network failure must not be reported as a bad key.
+        var strings = new Eng();
+
+        // Act
+        var error = LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.NetworkError, strings);
+
+        // Assert
+        error.ShouldNotBeNull();
+        error!.Value.Title.ShouldBe(strings.DownloadErrorTitle);
+        error.Value.Message.ShouldBe(strings.DownloadErrorMessage);
+        error.Value.Title.ShouldNotBe(strings.DownloadKeyNotFoundTitle);
+    }
+
+    [Fact]
+    public void GetSpecialVersionConfigErrorMessage_WhenInvalidResponse_ReturnsDownloadError()
+    {
+        // Arrange — server answered with garbage; transient/server problem, not a wrong key.
+        var strings = new Eng();
+
+        // Act
+        var error = LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.InvalidResponse, strings);
+
+        // Assert
+        error.ShouldNotBeNull();
+        error!.Value.Title.ShouldBe(strings.DownloadErrorTitle);
+        error.Value.Message.ShouldBe(strings.DownloadErrorMessage);
+    }
+
+    [Fact]
+    public void GetSpecialVersionConfigErrorMessage_WhenCancelled_ReturnsNull()
+    {
+        // Arrange — the user deliberately cancelled; no dialog should appear.
+        var strings = new Eng();
+
+        // Act & Assert
+        LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.Cancelled, strings).ShouldBeNull();
+    }
+
+    [Fact]
+    public void GetSpecialVersionConfigErrorMessage_WhenSuccess_ReturnsNull()
+    {
+        // Arrange — there is no error to show on success.
+        var strings = new Eng();
+
+        // Act & Assert
+        LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.Success, strings).ShouldBeNull();
     }
 }
