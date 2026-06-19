@@ -135,6 +135,70 @@ public class GamesViewModelTests
     }
 
     [Fact]
+    public async Task BuildInstalledGameInfo_PopulatesPlaytimeAndHelpFolder_ForAFreshlyInstalledCard()
+    {
+        // Arrange — a temp game dir WITH an "ayuda" subfolder. This is the exact path OnGameInstalled
+        // now takes after install; before BUG-033 the post-install card was hand-built omitting both
+        // PlaytimeMinutes (left at 0, wiping the value on updates) and HasHelpFolder (left false, so the
+        // help button only appeared after a manual refresh).
+        var id = Guid.NewGuid();
+        var gameDir = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-" + Guid.NewGuid());
+        Directory.CreateDirectory(Path.Combine(gameDir, "ayuda"));
+        try
+        {
+            _contentService.GetGameDirectory("Demo").Returns(gameDir);
+            var vm = await CreateSutAsync();
+            var local = TestData.LocalGame(name: "Demo", version: "1.0.0", id: id);
+            var playtimes = new Dictionary<Guid, int> { [id] = 42 };
+
+            // Act
+            var info = vm.BuildInstalledGameInfo(local, playtimes);
+
+            // Assert
+            info.PlaytimeMinutes.ShouldBe(42);
+            info.HasHelpFolder.ShouldBeTrue();
+            info.Nombre.ShouldBe("Demo");
+            info.InstalledVersion.ShouldBe("1.0.0");
+        }
+        finally
+        {
+            if (Directory.Exists(gameDir)) Directory.Delete(gameDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero()
+    {
+        // Arrange — empty playtime map and the fixture's non-existent game dir (no help folder).
+        var vm = await CreateSutAsync();
+        var local = TestData.LocalGame(name: "Demo", id: Guid.NewGuid());
+
+        // Act
+        var info = vm.BuildInstalledGameInfo(local, new Dictionary<Guid, int>());
+
+        // Assert
+        info.PlaytimeMinutes.ShouldBe(0);
+        info.HasHelpFolder.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task BuildInstalledGameInfo_DerivesUpdateFlagFromRemoteCatalog()
+    {
+        // Arrange — remote catalog advertises a newer version than the installed one.
+        var id = Guid.NewGuid();
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Demo", version: "2.0.0", id: id)]);
+        var vm = await CreateSutAsync();
+        var local = TestData.LocalGame(name: "Demo", version: "1.0.0", id: id);
+
+        // Act — these are the other fields the old hand-built post-install card never computed.
+        var info = vm.BuildInstalledGameInfo(local, new Dictionary<Guid, int>());
+
+        // Assert
+        info.HasUpdate.ShouldBeTrue();
+        info.UpdateVersion.ShouldBe("2.0.0");
+    }
+
+    [Fact]
     public async Task NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested()
     {
         // Arrange

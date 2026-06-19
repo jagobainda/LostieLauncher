@@ -51,17 +51,37 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void OnGameInstalled(string gameName, string version, string? tipo)
+    // Async void by necessity (GameInstalled is an Action<...> event), but the whole body is wrapped
+    // in try/catch so it can never escape and crash the process — the guarantee BUG-004 established
+    // for async event handlers. We read the persisted playtimes from disk and rebuild the card through
+    // the SAME BuildInstalledGameInfo used by LoadInstalledGamesAsync, so the freshly installed item
+    // gets HasHelpFolder, PlaytimeMinutes and HasUpdate exactly like a full refresh would (BUG-033).
+    private async void OnGameInstalled(string gameName, string version, string? tipo)
     {
-        var app = Application.Current;
-        app?.Dispatcher.Invoke(() =>
+        try
         {
-            var remote = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-            var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
-            if (existing != null) InstalledGames.Remove(existing);
-            InstalledGames.Add(new InstalledGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, InstalledVersion = version, Logo = remote?.Logo ?? string.Empty, Tipo = tipo });
-        });
-        Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
+            var playtimes = await _contentService.GetAllPlaytimesAsync().ConfigureAwait(false);
+
+            var app = Application.Current;
+            if (app is null) return;
+
+            app.Dispatcher.Invoke(() =>
+            {
+                var remote = _libraryViewModel.Games.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                var local = new LocalGameInfo { Id = remote?.Id ?? Guid.Empty, Nombre = gameName, Version = version, Tipo = tipo };
+                var info = BuildInstalledGameInfo(local, playtimes);
+
+                var existing = InstalledGames.FirstOrDefault(g => string.Equals(g.Nombre, gameName, StringComparison.OrdinalIgnoreCase));
+                if (existing != null) InstalledGames.Remove(existing);
+                InstalledGames.Add(info);
+            });
+
+            Logs.DebugLogManager($"Games list updated after install: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     private async Task LoadInstalledGamesAsync(bool waitForLibrary = true)
@@ -74,27 +94,8 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
             var localGames = await _contentService.GetLocalGamesAsync();
             var playtimes = await _contentService.GetAllPlaytimesAsync();
-            var remoteGames = _libraryViewModel.Games;
 
-            IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local =>
-            {
-                var remote = remoteGames.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
-                var hasUpdate = remote != null && Utils.VersionUtils.IsNewerVersion(remote.Version, local.Version);
-                var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
-
-                return new InstalledGameInfo
-                {
-                    Id = local.Id,
-                    Nombre = local.Nombre,
-                    InstalledVersion = local.Version,
-                    HasUpdate = hasUpdate,
-                    UpdateVersion = hasUpdate ? remote!.Version : string.Empty,
-                    Logo = remote?.Logo ?? string.Empty,
-                    Tipo = local.Tipo,
-                    PlaytimeMinutes = playtimeMinutes,
-                    HasHelpFolder = SafeHasHelpFolder(local.Nombre)
-                };
-            })];
+            IEnumerable<InstalledGameInfo> installed = [.. localGames.Select(local => BuildInstalledGameInfo(local, playtimes))];
 
             InstalledGames = new ObservableCollection<InstalledGameInfo>(installed);
             Logs.DebugLogManager($"Installed games loaded: {InstalledGames.Count} games.");
@@ -114,6 +115,30 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private Task UpdateAsync(string gameName) => UpdateCoreAsync(gameName, navigateToLibrary: true);
+
+    // Single source of truth for turning a local registry entry into a card shown in "My Games".
+    // Both the full refresh (LoadInstalledGamesAsync) and the post-install update (OnGameInstalled)
+    // go through here so a freshly installed/updated game gets HasHelpFolder, PlaytimeMinutes and
+    // HasUpdate computed identically — never the half-populated card that caused BUG-033.
+    internal InstalledGameInfo BuildInstalledGameInfo(LocalGameInfo local, IReadOnlyDictionary<Guid, int> playtimes)
+    {
+        var remote = _libraryViewModel.Games.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
+        var hasUpdate = remote != null && Utils.VersionUtils.IsNewerVersion(remote.Version, local.Version);
+        var playtimeMinutes = local.Id != Guid.Empty && playtimes.TryGetValue(local.Id, out var pt) ? pt : 0;
+
+        return new InstalledGameInfo
+        {
+            Id = local.Id,
+            Nombre = local.Nombre,
+            InstalledVersion = local.Version,
+            HasUpdate = hasUpdate,
+            UpdateVersion = hasUpdate && remote != null ? remote.Version : string.Empty,
+            Logo = remote?.Logo ?? string.Empty,
+            Tipo = local.Tipo,
+            PlaytimeMinutes = playtimeMinutes,
+            HasHelpFolder = SafeHasHelpFolder(local.Nombre)
+        };
+    }
 
     private bool SafeHasHelpFolder(string gameName)
     {
