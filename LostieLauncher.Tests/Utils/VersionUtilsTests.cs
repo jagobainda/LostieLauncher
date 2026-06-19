@@ -57,27 +57,14 @@ public class VersionUtilsTests
         result.ShouldBeFalse();
     }
 
-    [Fact]
-    public void IsNewerVersion_WhenBothInputsAreUnparsable_FallsBackToStringInequality()
+    [Theory]
+    [InlineData("alpha", "beta")]
+    [InlineData("beta", "alpha")]
+    [InlineData("alpha", "alpha")]
+    public void IsNewerVersion_WhenEitherInputIsUnparsable_FailsClosedAndReturnsFalse(string remote, string local)
     {
-        // Arrange
-        var remote = "alpha";
-        var local = "beta";
-
-        // Act
-        var result = VersionUtils.IsNewerVersion(remote, local);
-
-        // Assert
-        result.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsNewerVersion_WhenBothInputsAreUnparsableAndEqual_ReturnsFalse()
-    {
-        // Arrange
-        var remote = "alpha";
-        var local = "alpha";
-
+        // Arrange — Fail-closed: si una versión no es comparable numéricamente no se marca
+        // actualización, evitando falsos positivos y downgrades automáticos vía AutoUpdate.
         // Act
         var result = VersionUtils.IsNewerVersion(remote, local);
 
@@ -86,16 +73,55 @@ public class VersionUtilsTests
     }
 
     [Fact]
-    public void IsNewerVersion_WhenOnlyOneInputIsUnparsable_FallsBackToStringInequality()
+    public void IsNewerVersion_WhenBaseVersionsParseButCaseDiffersInSuffix_ComparesByBaseAndReturnsFalse()
     {
-        // Arrange
-        var remote = "1.0.0";
-        var local = "garbage";
+        // Arrange — El ejemplo del HOW_TO_EXPLOIT ("v1.0-beta" vs "v1.0-BETA") en realidad sí
+        // parsea: ParseBaseVersion recorta el sufijo y ambos quedan en base 1.0, por lo que la
+        // comparación numérica ya devuelve false sin tocar la rama fail-closed.
+        var remote = "v1.0-BETA";
+        var local = "v1.0-beta";
 
         // Act
         var result = VersionUtils.IsNewerVersion(remote, local);
 
         // Assert
-        result.ShouldBeTrue();
+        result.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("1.0.0", "garbage")]
+    [InlineData("garbage", "1.0.0")]
+    public void IsNewerVersion_WhenOnlyOneInputIsUnparsable_FailsClosedAndReturnsFalse(string remote, string local)
+    {
+        // Arrange & Act
+        var result = VersionUtils.IsNewerVersion(remote, local);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("1.0.0", "")]
+    [InlineData("", "1.0.0")]
+    public void IsNewerVersion_WhenEitherInputIsEmpty_FailsClosedAndReturnsFalse(string remote, string local)
+    {
+        // Arrange — Version por defecto es string.Empty; nunca debe marcarse update sobre datos vacíos.
+        // Act
+        var result = VersionUtils.IsNewerVersion(remote, local);
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsNewerVersion_WhenInputIsNull_FailsClosedAndReturnsFalse()
+    {
+        // Arrange — System.Text.Json puede bindear un "version": null explícito pese al tipo no-anulable.
+        // Act
+        var result = VersionUtils.IsNewerVersion(null!, "1.0.0");
+
+        // Assert
+        result.ShouldBeFalse();
     }
 }

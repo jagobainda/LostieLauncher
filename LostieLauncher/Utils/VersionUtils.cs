@@ -6,12 +6,19 @@ public static class VersionUtils
     {
         var remoteParsed = ParseBaseVersion(remoteVersion);
         var localParsed = ParseBaseVersion(localVersion);
-        if (remoteParsed is null || localParsed is null) return remoteVersion != localVersion;
+
+        if (remoteParsed is null || localParsed is null)
+        {
+            Logs.InfoLogManager($"IsNewerVersion: versión no comparable (remota='{remoteVersion}', local='{localVersion}'); no se marca actualización.");
+            return false;
+        }
+
         return remoteParsed > localParsed;
     }
 
-    private static Version? ParseBaseVersion(string version)
+    private static Version? ParseBaseVersion(string? version)
     {
+        if (string.IsNullOrWhiteSpace(version)) return null;
         var v = version.TrimStart('v', 'V');
         var dashIndex = v.IndexOf('-');
         if (dashIndex >= 0) v = v[..dashIndex];
