@@ -3,6 +3,7 @@ using LostieLauncher.Services;
 using LostieLauncher.Tests.Helpers;
 using LostieLauncher.ViewModels;
 using System.Collections.ObjectModel;
+using System.Security.Cryptography;
 
 namespace LostieLauncher.Tests.ViewModels;
 
@@ -442,5 +443,150 @@ public class LibraryViewModelTests
         Directory.Exists(target).ShouldBeTrue();
         File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("fresh");
         Directory.Exists(backup).ShouldBeFalse();
+    }
+
+    // ---- BUG-025: integrity verification is mandatory and fail-closed ----------------------
+
+    [Fact]
+    public async Task VerifyIntegrity_WhenFileMatchesExpectedHash_ReturnsTrue()
+    {
+        // Arrange
+        using var root = new TempDirectoryFixture("verify-match");
+        var zip = root.Combine("game.zip");
+        var bytes = new byte[] { 1, 2, 3, 4, 5 };
+        await File.WriteAllBytesAsync(zip, bytes);
+        var expected = Convert.ToHexString(SHA256.HashData(bytes));
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), zip, expected);
+
+        // Assert
+        ok.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task VerifyIntegrity_IsCaseInsensitive_AcceptsLowercaseHash()
+    {
+        // Arrange — catalog hashes may be lowercase; comparison must be case-insensitive.
+        using var root = new TempDirectoryFixture("verify-case");
+        var zip = root.Combine("game.zip");
+        var bytes = new byte[] { 9, 8, 7 };
+        await File.WriteAllBytesAsync(zip, bytes);
+        var expected = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), zip, expected);
+
+        // Assert
+        ok.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task VerifyIntegrity_WhenHashDiffers_ReturnsFalse()
+    {
+        // Arrange — well-formed hash that is not the file's actual digest (corruption / tampering).
+        using var root = new TempDirectoryFixture("verify-mismatch");
+        var zip = root.Combine("game.zip");
+        await File.WriteAllBytesAsync(zip, new byte[] { 1, 2, 3 });
+        var wrong = new string('a', 64);
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), zip, wrong);
+
+        // Assert
+        ok.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task VerifyIntegrity_WhenHashIsEmpty_FailsClosed_WithoutInstalling()
+    {
+        // Arrange — BUG-025: an absent hash must NOT skip verification; it fails closed instead of
+        // installing unchecked. The .zip does not even exist, proving the file is never opened when
+        // there is nothing to verify against.
+        using var root = new TempDirectoryFixture("verify-nohash");
+        var missingZip = root.Combine("does-not-exist.zip");
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), missingZip, string.Empty);
+
+        // Assert
+        ok.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task VerifyIntegrity_WhenHashIsNull_FailsClosed_WithoutInstalling()
+    {
+        // Arrange — System.Text.Json binds an explicit "sha256": null over the string.Empty default,
+        // so a null reaches the gate despite the non-nullable declaration. It must fail closed (and not
+        // throw), exactly like the empty-hash case, instead of degrading to a silent crash.
+        using var root = new TempDirectoryFixture("verify-nullhash");
+        var missingZip = root.Combine("does-not-exist.zip");
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), missingZip, null);
+
+        // Assert
+        ok.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task VerifyIntegrity_WhenHashIsMalformed_FailsClosed()
+    {
+        // Arrange — a non-empty but not-64-hex string is not a usable validator.
+        using var root = new TempDirectoryFixture("verify-malformed");
+        var zip = root.Combine("game.zip");
+        await File.WriteAllBytesAsync(zip, new byte[] { 1 });
+
+        // Act
+        var ok = await LibraryViewModel.VerifyIntegrityAsync(TestData.Game(), zip, "not-a-sha256");
+
+        // Assert
+        ok.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsValidSpecialVersionConfig_WithValidArchivoHashAndVersion_ReturnsTrue()
+    {
+        // Arrange
+        var config = new SpecialVersionConfig
+        {
+            Archivo = "game.zip",
+            Sha256 = new string('A', 64),
+            Version = "1.0.0",
+        };
+
+        // Act & Assert
+        LibraryViewModel.IsValidSpecialVersionConfig(config).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsValidSpecialVersionConfig_WithEmptySha256_ReturnsFalse()
+    {
+        // Arrange — BUG-025: special versions may no longer ship without a hash; an empty Sha256 is
+        // rejected before the (potentially multi-GB) download starts.
+        var config = new SpecialVersionConfig
+        {
+            Archivo = "game.zip",
+            Sha256 = string.Empty,
+            Version = "1.0.0",
+        };
+
+        // Act & Assert
+        LibraryViewModel.IsValidSpecialVersionConfig(config).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsValidSpecialVersionConfig_WithMalformedSha256_ReturnsFalse()
+    {
+        // Arrange — a present but not-64-hex hash is not a usable validator.
+        var config = new SpecialVersionConfig
+        {
+            Archivo = "game.zip",
+            Sha256 = "abc",
+            Version = "1.0.0",
+        };
+
+        // Act & Assert
+        LibraryViewModel.IsValidSpecialVersionConfig(config).ShouldBeFalse();
     }
 }

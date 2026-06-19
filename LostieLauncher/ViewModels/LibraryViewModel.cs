@@ -380,10 +380,12 @@ public partial class LibraryViewModel : ObservableObject
             Logs.InfoLogManager($"Download complete, extracting: {session.Args.GameId}.");
 
             var expectedHash = session.SpecialConfig?.Sha256 ?? game.Sha256;
-            if (!string.IsNullOrEmpty(expectedHash) && !await VerifyIntegrityAsync(game, session.ZipPath, expectedHash))
+            if (!await VerifyIntegrityAsync(game, session.ZipPath, expectedHash))
             {
                 try { File.Delete(session.ZipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
-                Logs.ErrorLogManager($"Hash mismatch for {session.Args.GameId}. Expected: {expectedHash}");
+                Logs.ErrorLogManager(IsWellFormedSha256(expectedHash)
+                    ? $"Hash mismatch for {session.Args.GameId}. Expected: {expectedHash}"
+                    : $"Integrity verification refused for {session.Args.GameId}: no valid SHA-256 available in catalog/config.");
                 ResetDownloadState(game, session);
                 var strings = SettingsViewModel.Instance.Strings;
                 CustomMessageBox.Show(strings.HashMismatchTitle, strings.HashMismatchMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
@@ -412,8 +414,12 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private static async Task<bool> VerifyIntegrityAsync(GameInfo game, string zipPath, string expectedHash)
+    private static bool IsWellFormedSha256(string? hash) => !string.IsNullOrEmpty(hash) && Sha256FormatRegex.IsMatch(hash);
+
+    internal static async Task<bool> VerifyIntegrityAsync(GameInfo game, string zipPath, string? expectedHash)
     {
+        if (!IsWellFormedSha256(expectedHash)) return false;
+
         game.DownloadStatus = GameDownloadStatus.VerifyingIntegrity;
         return await Task.Run(() =>
         {
@@ -547,8 +553,8 @@ public partial class LibraryViewModel : ObservableObject
         return $"{ts.Seconds}s";
     }
 
-    private static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) => ArchivoFormatRegex.IsMatch(config.Archivo) &&
-        (string.IsNullOrEmpty(config.Sha256) || Sha256FormatRegex.IsMatch(config.Sha256)) &&
+    internal static bool IsValidSpecialVersionConfig(SpecialVersionConfig config) => ArchivoFormatRegex.IsMatch(config.Archivo) &&
+        IsWellFormedSha256(config.Sha256) &&
         !string.IsNullOrWhiteSpace(config.Version);
 
     [RelayCommand]
