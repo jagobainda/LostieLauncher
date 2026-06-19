@@ -168,11 +168,10 @@ public class DownloadServiceTests : IDisposable
         result.Outcome.ShouldBe(DownloadOutcome.Success);
         File.Exists(dest).ShouldBeTrue();
         File.ReadAllText(dest).ShouldBe(payload);
-        sut.State.ShouldBe(DownloadState.Completed);
     }
 
     [Fact]
-    public async Task DownloadAsync_WhenCancelled_ReturnsCancelledOutcomeAndPausesState()
+    public async Task DownloadAsync_WhenCancelled_ReturnsCancelledOutcome()
     {
         // Arrange — return a stalled stream so cancellation can fire mid-read.
         _httpFactory.HandlerFor("Download").Respond(_ =>
@@ -193,7 +192,6 @@ public class DownloadServiceTests : IDisposable
 
         // Assert
         result.Outcome.ShouldBe(DownloadOutcome.Cancelled);
-        sut.State.ShouldBe(DownloadState.Paused);
     }
 
     [Fact]
@@ -216,7 +214,6 @@ public class DownloadServiceTests : IDisposable
         // Assert
         result.Outcome.ShouldBe(DownloadOutcome.Failed);
         attempts.ShouldBeGreaterThanOrEqualTo(2);
-        sut.State.ShouldBe(DownloadState.Failed);
         result.ErrorMessage.ShouldBe("Download failed after maximum retries.");
     }
 
@@ -243,7 +240,6 @@ public class DownloadServiceTests : IDisposable
         // Assert — a stall must NOT be mistaken for a user pause; it is retried (like an IOException)
         // and, once retries are exhausted, ends as Failed rather than hanging or pausing.
         result.Outcome.ShouldBe(DownloadOutcome.Failed);
-        sut.State.ShouldBe(DownloadState.Failed);
         attempts.ShouldBeGreaterThanOrEqualTo(2);
     }
 

@@ -10,8 +10,6 @@ namespace LostieLauncher.Services;
 
 public interface IDownloadService
 {
-    public DownloadState State { get; }
-
     public Task<SpecialVersionConfigResult> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default);
 
     public Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default);
@@ -39,8 +37,6 @@ public class DownloadService : IDownloadService
         _downloadOptions = downloadOptions;
         _inactivityTimeout = inactivityTimeout;
     }
-
-    public DownloadState State { get; private set; } = DownloadState.Idle;
 
     public async Task<SpecialVersionConfigResult> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default)
     {
@@ -99,8 +95,6 @@ public class DownloadService : IDownloadService
             var dir = Path.GetDirectoryName(destinationPath);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-            State = DownloadState.Downloading;
-
             Exception? lastError = null;
 
             for (var attempt = 0; attempt <= MaxRetries; attempt++)
@@ -108,12 +102,10 @@ public class DownloadService : IDownloadService
                 try
                 {
                     await DownloadCoreAsync(url, partPath, destinationPath, progress, ct).ConfigureAwait(false);
-                    State = DownloadState.Completed;
                     return DownloadResult.Succeeded();
                 }
                 catch (OperationCanceledException)
                 {
-                    State = DownloadState.Paused;
                     Logs.InfoLogManager("Download paused by user.");
                     return DownloadResult.Cancelled();
                 }
@@ -121,8 +113,6 @@ public class DownloadService : IDownloadService
                 {
                     lastError = ex;
 
-                    // On the last attempt the retries are exhausted: don't delay, fall through to the
-                    // post-loop block so the specific "maximum retries" diagnostic is actually reachable.
                     if (attempt < MaxRetries)
                     {
                         Logs.InfoLogManager($"Download attempt {attempt + 1}/{MaxRetries + 1} failed ({ex.Message}), retrying...");
@@ -131,13 +121,11 @@ public class DownloadService : IDownloadService
                 }
             }
 
-            State = DownloadState.Failed;
             Logs.ErrorLogManager($"Download failed after {MaxRetries + 1} attempts, giving up. Last error: {lastError?.Message}");
             return DownloadResult.Failed("Download failed after maximum retries.");
         }
         catch (Exception ex)
         {
-            State = DownloadState.Failed;
             Logs.ErrorLogManager(ex);
             return DownloadResult.Failed(ex.Message);
         }
