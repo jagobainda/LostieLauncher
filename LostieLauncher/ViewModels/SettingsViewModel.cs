@@ -168,23 +168,34 @@ public partial class SettingsViewModel : ObservableObject
 
     private void ApplyTheme(AppTheme theme)
     {
+        if (TryApplyTheme(theme)) return;
+
+        if (theme != AppTheme.Volcarona && TryApplyTheme(AppTheme.Volcarona))
+            Logs.ErrorLogManager($"Theme '{theme}' could not be applied; reverted to default '{AppTheme.Volcarona}'.");
+    }
+
+    private bool TryApplyTheme(AppTheme theme)
+    {
         try
         {
             var dicts = Application.Current.Resources.MergedDictionaries;
 
-            if (_activeThemeDict != null) dicts.Remove(_activeThemeDict);
-
-            _activeThemeDict = new ResourceDictionary
+            var newThemeDict = new ResourceDictionary
             {
                 Source = new Uri($"pack://application:,,,/Themes/{theme}.xaml")
             };
 
-            dicts.Add(_activeThemeDict);
+            if (_activeThemeDict != null) dicts.Remove(_activeThemeDict);
+
+            dicts.Add(newThemeDict);
+            _activeThemeDict = newThemeDict;
             Logs.DebugLogManager($"Theme applied: {theme}.");
+            return true;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
+            return false;
         }
     }
 

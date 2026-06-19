@@ -33,7 +33,7 @@ public class SettingsService : ISettingsService
         try
         {
             var json = File.ReadAllText(SettingsPath);
-            var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            var settings = SanitizeSettings(JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings());
             Logs.DebugLogManager($"Settings loaded successfully (language={settings.Language}, theme={settings.Theme}).");
             return settings;
         }
@@ -42,6 +42,23 @@ public class SettingsService : ISettingsService
             Logs.ErrorLogManager(ex);
             return new AppSettings();
         }
+    }
+
+    internal static AppSettings SanitizeSettings(AppSettings settings)
+    {
+        if (!Enum.IsDefined(settings.Language))
+        {
+            Logs.ErrorLogManager($"Invalid Language value '{(int)settings.Language}' in settings; falling back to default '{AppLanguage.Esp}'.");
+            settings.Language = AppLanguage.Esp;
+        }
+
+        if (!Enum.IsDefined(settings.Theme))
+        {
+            Logs.ErrorLogManager($"Invalid Theme value '{(int)settings.Theme}' in settings; falling back to default '{AppTheme.Volcarona}'.");
+            settings.Theme = AppTheme.Volcarona;
+        }
+
+        return settings;
     }
 
     public void Save(AppSettings settings)
