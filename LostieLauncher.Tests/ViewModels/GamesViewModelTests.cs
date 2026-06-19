@@ -212,6 +212,65 @@ public class GamesViewModelTests
     }
 
     [Fact]
+    public async Task OpenHelpFolder_WhenGameDirectoryDoesNotExist_DoesNotThrow()
+    {
+        // Arrange — GetGameDirectory already returns a non-existent path (fixture setup)
+        var vm = await CreateSutAsync();
+        _contentService.ClearReceivedCalls();
+
+        // Act
+        var act = () => vm.OpenHelpFolderCommand.Execute("MissingGame");
+
+        // Assert — before the fix, Directory.EnumerateDirectories on a non-existent path threw
+        // DirectoryNotFoundException; with the guard it returns without throwing.
+        Should.NotThrow(act);
+        _contentService.Received(1).GetGameDirectory("MissingGame");
+    }
+
+    [Fact]
+    public async Task OpenHelpFolder_WhenGameDirectoryDoesNotExist_DoesNotEnumerateDirectories()
+    {
+        // Arrange — simulate a deleted directory by pointing GetGameDirectory to a
+        // well-known temp path that definitely does not exist.
+        var tempRoot = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-DeletedGame-" + Guid.NewGuid());
+        _contentService.GetGameDirectory("DeletedGame").Returns(tempRoot);
+        var vm = await CreateSutAsync();
+
+        // Sanity: the directory must NOT exist for the test to be meaningful.
+        Directory.Exists(tempRoot).ShouldBeFalse();
+
+        // Act
+        vm.OpenHelpFolderCommand.Execute("DeletedGame");
+
+        // Assert — GetGameDirectory was consulted (proves the command ran its path).
+        _contentService.Received(1).GetGameDirectory("DeletedGame");
+    }
+
+    [Fact]
+    public async Task OpenHelpFolder_WithValidDirectoryButNoHelpSubfolder_DoesNotThrow()
+    {
+        // Arrange — create a temp directory with NO "ayuda" subfolder.
+        var tempRoot = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempRoot);
+        try
+        {
+            _contentService.GetGameDirectory("NoHelp").Returns(tempRoot);
+            var vm = await CreateSutAsync();
+
+            // Act
+            var act = () => vm.OpenHelpFolderCommand.Execute("NoHelp");
+
+            // Assert — no "ayuda" subfolder → logs and returns, never reaches Process.Start.
+            Should.NotThrow(act);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Dispose_WhenCalledTwice_DoesNotThrow()
     {
         var sut = await CreateSutAsync();

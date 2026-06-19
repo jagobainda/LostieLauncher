@@ -306,6 +306,13 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     {
         Logs.DebugLogManager($"Opening help folder for: {gameName}.");
         var gameDir = _contentService.GetGameDirectory(gameName);
+
+        if (!Directory.Exists(gameDir))
+        {
+            Logs.DebugLogManager($"Game folder not found for: {gameName}.");
+            return;
+        }
+
         var helpDir = Directory.EnumerateDirectories(gameDir)
             .FirstOrDefault(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
 
