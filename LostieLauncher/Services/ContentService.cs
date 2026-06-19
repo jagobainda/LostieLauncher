@@ -35,8 +35,27 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         Converters = { new JsonStringEnumConverter() }
     };
 
+    private static readonly TimeZoneInfo CetZone = GetCetZone();
+
     private static readonly SemaphoreSlim LocalGamesFileLock = new(1, 1);
     private static readonly SemaphoreSlim PlaytimeFileLock = new(1, 1);
+
+    private static TimeZoneInfo GetCetZone()
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"); }
+        catch (TimeZoneNotFoundException)
+        {
+            Logs.ErrorLogManager("CET timezone not found on this system. Falling back to UTC for expiration comparisons.");
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    internal static DateTime NormalizeToCet(DateTime dt) => dt.Kind switch
+    {
+        DateTimeKind.Utc => TimeZoneInfo.ConvertTimeFromUtc(dt, CetZone),
+        DateTimeKind.Local => TimeZoneInfo.ConvertTime(dt, CetZone),
+        _ => dt
+    };
 
     private sealed record ServerActionFlagCache(bool Blocked, DateTime ExpiresAtUtc);
 
@@ -103,10 +122,10 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var settings = _settingsService.Load();
             var langCode = GetLanguageCode(settings.Language);
 
-            var now = DateTime.Now;
+            var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, CetZone);
 
             var news = cache.News
-                    .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
+                    .Where(n => n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet)
                     .Select(n => new NewsItem
                     {
                         Id = n.Id,
@@ -117,7 +136,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                         ExpiresAt = n.ExpiresAt
                     }).ToList();
             var notifications = cache.Notifications
-                    .Where(n => n.ExpiresAt is null || n.ExpiresAt > now)
+                    .Where(n => n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet)
                     .Select(n => new NotificationItem
                     {
                         Id = n.Id,

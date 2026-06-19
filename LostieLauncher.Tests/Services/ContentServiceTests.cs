@@ -468,6 +468,88 @@ public class ContentServiceTests : IDisposable
         content.News[0].Title.ShouldBe("Actual");
     }
 
+    // -------------------- NormalizeToCet (helper, internal static) --------------------
+
+    [Fact]
+    public void NormalizeToCet_WhenUtc_ConvertsToCet()
+    {
+        var utc = new DateTime(2026, 6, 19, 12, 0, 0, DateTimeKind.Utc);
+
+        var result = ContentService.NormalizeToCet(utc);
+
+        var expected = TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"));
+        result.Ticks.ShouldBe(expected.Ticks);
+    }
+
+    [Fact]
+    public void NormalizeToCet_WhenLocal_ConvertsToCet()
+    {
+        var local = new DateTime(2026, 1, 15, 12, 0, 0, DateTimeKind.Local);
+
+        var result = ContentService.NormalizeToCet(local);
+
+        var utcEquiv = TimeZoneInfo.ConvertTimeToUtc(local);
+        var expected = TimeZoneInfo.ConvertTimeFromUtc(utcEquiv, TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"));
+        result.Ticks.ShouldBe(expected.Ticks);
+    }
+
+    [Fact]
+    public void NormalizeToCet_WhenUnspecified_ReturnsAsIs()
+    {
+        var unspecified = new DateTime(2026, 6, 19, 12, 0, 0, DateTimeKind.Unspecified);
+
+        var result = ContentService.NormalizeToCet(unspecified);
+
+        result.Ticks.ShouldBe(unspecified.Ticks);
+    }
+
+    // -------------------- GetHomeContentAsync — timezone-aware expiration --------------------
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenExpiresAtIsUtcInPast_FiltersItOut()
+    {
+        var pastUtc = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var json = $$"""
+        {
+          "news": [
+            { "id": "11111111-1111-1111-1111-111111111111",
+              "title": {"es":"Expired"}, "description": {"es":"."},
+              "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": "{{pastUtc}}" }
+          ],
+          "notifications": []
+        }
+        """;
+        _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        content.News.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenExpiresAtIsUtcInFuture_KeepsIt()
+    {
+        var futureUtc = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var json = $$"""
+        {
+          "news": [
+            { "id": "11111111-1111-1111-1111-111111111111",
+              "title": {"es":"Vigente"}, "description": {"es":"."},
+              "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": "{{futureUtc}}" }
+          ],
+          "notifications": []
+        }
+        """;
+        _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        content.News.ShouldHaveSingleItem();
+        content.News[0].Title.ShouldBe("Vigente");
+    }
+
     [Fact]
     public async Task GetHomeContentAsync_WhenLanguageMissing_FallsBackToSpanish()
     {
