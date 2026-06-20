@@ -134,6 +134,38 @@ public class TelemetryServiceTests
         await WaitForRequestAsync(handler, expected: 1);
     }
 
+    // -------------------- NormalizeVersion --------------------
+
+    [Theory]
+    [InlineData("1.2.3", "1.2.3")]   // canonical three-part version is preserved
+    [InlineData("1.2", "1.2.0")]     // missing patch defaults to 0
+    [InlineData("1.2.3.4", "1.2.3")] // revision is dropped
+    [InlineData("v1.2.3", "1.2.3")]  // leading 'v' is stripped (consistent with VersionUtils)
+    [InlineData("1.2.3-beta", "1.2.3")] // pre-release suffix is trimmed, base kept
+    public void NormalizeVersion_WhenVersionIsNumeric_ReturnsCanonicalThreePartVersion(string input, string expected)
+    {
+        // Act
+        var result = TelemetryService.NormalizeVersion(input);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("alpha.beta.gamma")] // the BUG-043 case: non-numeric parts
+    [InlineData("not-a-version")]
+    [InlineData("1")]                // single component is not a parseable Version
+    [InlineData("")]
+    [InlineData("   ")]
+    public void NormalizeVersion_WhenVersionIsNotParseable_ReturnsZeroVersion(string input)
+    {
+        // Act
+        var result = TelemetryService.NormalizeVersion(input);
+
+        // Assert
+        result.ShouldBe("0.0.0");
+    }
+
     private static async Task WaitForRequestAsync(FakeHttpMessageHandler handler, int expected, int timeoutMs = 2000)
     {
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);

@@ -16,7 +16,7 @@ public static class VersionUtils
         return remoteParsed > localParsed;
     }
 
-    private static Version? ParseBaseVersion(string? version)
+    internal static Version? ParseBaseVersion(string? version)
     {
         if (string.IsNullOrWhiteSpace(version)) return null;
         var v = version.TrimStart('v', 'V');

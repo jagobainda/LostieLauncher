@@ -180,18 +180,13 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
 
     private static string Truncate(string value, int maxLength) => value.Length <= maxLength ? value : value[..maxLength];
 
-    private static string NormalizeVersion(string version)
+    internal static string NormalizeVersion(string version)
     {
-        if (string.IsNullOrWhiteSpace(version)) return "0.0.0";
+        var parsed = VersionUtils.ParseBaseVersion(version);
 
-        var parts = version.Split('.', 4);
-
-        return parts.Length switch
-        {
-            >= 3 => $"{parts[0]}.{parts[1]}.{parts[2]}",
-            2 => $"{parts[0]}.{parts[1]}.0",
-            _ => $"{parts[0]}.0.0"
-        };
+        return parsed is null
+            ? "0.0.0"
+            : $"{parsed.Major}.{parsed.Minor}.{Math.Max(parsed.Build, 0)}";
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
