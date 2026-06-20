@@ -228,9 +228,17 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         _ => "es"
     };
 
-    private static string Resolve(Dictionary<string, string> localized, string languageCode) => localized.TryGetValue(languageCode, out var value) ? value :
-        localized.TryGetValue("es", out var fallback) ? fallback :
-        localized.Values.FirstOrDefault() ?? string.Empty;
+    internal static string Resolve(Dictionary<string, string> localized, string languageCode)
+    {
+        if (localized.TryGetValue(languageCode, out var value)) return value;
+        if (localized.TryGetValue("es", out var spanish)) return spanish;
+        if (localized.TryGetValue("en", out var english)) return english;
+
+        return localized
+            .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .Select(entry => entry.Value)
+            .FirstOrDefault() ?? string.Empty;
+    }
 
     private record HomeContentDto(List<NewsItemDto> News, List<NotificationItemDto> Notifications);
 

@@ -468,6 +468,86 @@ public class ContentServiceTests : IDisposable
         content.News[0].Title.ShouldBe("Actual");
     }
 
+    // -------------------- Resolve (helper, internal static) — language fallback --------------------
+
+    [Fact]
+    public void Resolve_WhenRequestedLanguagePresent_ReturnsIt()
+    {
+        var localized = new Dictionary<string, string> { ["es"] = "Hola", ["en"] = "Hi", ["fr"] = "Salut" };
+
+        var result = ContentService.Resolve(localized, "fr");
+
+        result.ShouldBe("Salut");
+    }
+
+    [Fact]
+    public void Resolve_WhenRequestedMissingButSpanishPresent_FallsBackToSpanish()
+    {
+        var localized = new Dictionary<string, string> { ["en"] = "Hi", ["es"] = "Hola" };
+
+        var result = ContentService.Resolve(localized, "ja");
+
+        result.ShouldBe("Hola");
+    }
+
+    [Fact]
+    public void Resolve_WhenRequestedAndSpanishMissingButEnglishPresent_FallsBackToEnglish()
+    {
+        var localized = new Dictionary<string, string> { ["fr"] = "Salut", ["en"] = "Hi" };
+
+        var result = ContentService.Resolve(localized, "ja");
+
+        result.ShouldBe("Hi");
+    }
+
+    [Fact]
+    public void Resolve_WhenNoPreferredLanguage_PicksFirstOrdinalKeyDeterministically()
+    {
+        // Two dictionaries with the SAME keys but DIFFERENT insertion order must resolve identically.
+        // Upstream this returned Values.FirstOrDefault() (insertion order) => arbitrary language.
+        var insertionOrderA = new Dictionary<string, string> { ["pt"] = "Olá", ["fr"] = "Salut", ["ca"] = "Hola-ca" };
+        var insertionOrderB = new Dictionary<string, string> { ["fr"] = "Salut", ["ca"] = "Hola-ca", ["pt"] = "Olá" };
+
+        var resultA = ContentService.Resolve(insertionOrderA, "ja");
+        var resultB = ContentService.Resolve(insertionOrderB, "ja");
+
+        // "ca" sorts first ordinally among {ca, fr, pt}, so both must agree on it.
+        resultA.ShouldBe("Hola-ca");
+        resultB.ShouldBe("Hola-ca");
+    }
+
+    [Fact]
+    public void Resolve_WhenDictionaryEmpty_ReturnsEmptyString()
+    {
+        var localized = new Dictionary<string, string>();
+
+        var result = ContentService.Resolve(localized, "es");
+
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenOnlyEnglishAvailable_FallsBackToEnglish()
+    {
+        // Settings request Spanish, but the item only ships English — the deterministic chain
+        // must surface English rather than an arbitrary dictionary entry.
+        _settings.Load().Returns(TestData.AppSettings(language: AppLanguage.Esp, downloadDirectory: _temp.Path));
+        var json = """
+        {
+          "news": [{ "id":"11111111-1111-1111-1111-111111111111",
+                     "title": {"fr":"Salut","en":"Hello"}, "description": {"en":"."},
+                     "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": null }],
+          "notifications": []
+        }
+        """;
+        _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        content.News[0].Title.ShouldBe("Hello");
+    }
+
     // -------------------- NormalizeToCet (helper, internal static) --------------------
 
     [Fact]
