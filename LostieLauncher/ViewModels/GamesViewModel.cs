@@ -319,11 +319,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
             return;
         }
 
-        try
-        {
-            Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
-        }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        FolderLauncher.OpenFolder(path);
     }
 
     [RelayCommand]
@@ -347,11 +343,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
             return;
         }
 
-        try
-        {
-            Process.Start(new ProcessStartInfo("explorer.exe", helpDir) { UseShellExecute = true });
-        }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        FolderLauncher.OpenFolder(helpDir);
     }
 
     [RelayCommand]

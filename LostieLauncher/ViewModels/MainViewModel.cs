@@ -119,8 +119,7 @@ public partial class MainViewModel : ObservableObject
 
         if (Directory.Exists(path))
         {
-            try { System.Diagnostics.Process.Start("explorer.exe", path); }
-            catch (Exception ex) { Logs.ErrorLogManager(ex); }
+            FolderLauncher.OpenFolder(path);
         }
         else
         {
