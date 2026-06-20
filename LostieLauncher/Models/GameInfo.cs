@@ -40,7 +40,7 @@ public partial class GameInfo : ObservableObject
     public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"{Endpoints.CdnBaseUrl}{Logo}";
 
     [JsonIgnore]
-    public string GameId => SlugRegex().Replace(Nombre.ToLowerInvariant(), "-");
+    public string GameId => SlugRegex().Replace(Nombre.ToLowerInvariant(), "-").Trim('-');
 
     [JsonIgnore]
     public string PesoFormateado => PesoGB >= 1 ? $"{PesoGB.ToString("0.#", CultureInfo.InvariantCulture)} GB" : $"{(PesoGB * 1024).ToString("0", CultureInfo.InvariantCulture)} MB";
@@ -76,8 +76,8 @@ public partial class GameInfo : ObservableObject
     [JsonIgnore]
     public string DownloadSpeedText => DownloadSpeedBytesPerSec switch
     {
-        > 1_048_576 => $"{DownloadSpeedBytesPerSec / 1_048_576.0:0.0} MB/s",
-        > 1024 => $"{DownloadSpeedBytesPerSec / 1024.0:0.0} KB/s",
+        >= 1_048_576 => $"{DownloadSpeedBytesPerSec / 1_048_576.0:0.0} MB/s",
+        > 0 => $"{DownloadSpeedBytesPerSec / 1024.0:0.0} KB/s",
         _ => "0 KB/s"
     };
 

@@ -60,14 +60,31 @@ public class GameInfoTests
     [Fact]
     public void GameId_WhenNameContainsAccentsAndSymbols_StripsToAlphaNumWithDashes()
     {
-        // Arrange
+        // Arrange — leading '¡' and trailing '+' become separator runs that must NOT
+        // survive as dangling dashes (BUG-048): the slug has to be trimmed at both ends.
         var game = TestData.Game(name: "¡Hola! Mundo+");
 
         // Act
         var id = game.GameId;
 
         // Assert
-        id.ShouldBe("-hola-mundo-");
+        id.ShouldBe("hola-mundo");
+    }
+
+    [Theory]
+    [InlineData("+++", "")]
+    [InlineData("-Trailing-", "trailing")]
+    [InlineData("Inner  Spaces", "inner-spaces")]
+    public void GameId_TrimsDanglingDashesAndCollapsesSeparators(string name, string expected)
+    {
+        // Arrange
+        var game = TestData.Game(name: name);
+
+        // Act
+        var id = game.GameId;
+
+        // Assert
+        id.ShouldBe(expected);
     }
 
     [Fact]
@@ -137,6 +154,64 @@ public class GameInfoTests
 
         // Assert
         text.ShouldBe($"5{sep}0 MB/s");
+    }
+
+    [Fact]
+    public void DownloadSpeedText_WhenSpeedIsExactlyOneMb_ReturnsMbPerSecond()
+    {
+        // Arrange — boundary regression (BUG-048): exactly 1 MB/s must render as MB/s,
+        // not "1024.0 KB/s" (the old exclusive '> 1_048_576' fell through to the KB branch).
+        var sep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        var game = new GameInfo { DownloadSpeedBytesPerSec = 1_048_576 };
+
+        // Act
+        var text = game.DownloadSpeedText;
+
+        // Assert
+        text.ShouldBe($"1{sep}0 MB/s");
+    }
+
+    [Fact]
+    public void DownloadSpeedText_WhenSpeedIsExactlyOneKb_ReturnsKbPerSecond()
+    {
+        // Arrange — boundary regression (BUG-048): exactly 1024 B/s must render as "1.0 KB/s",
+        // not "0 KB/s" (the old exclusive '> 1024' fell through to the default branch).
+        var sep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        var game = new GameInfo { DownloadSpeedBytesPerSec = 1024 };
+
+        // Act
+        var text = game.DownloadSpeedText;
+
+        // Assert
+        text.ShouldBe($"1{sep}0 KB/s");
+    }
+
+    [Fact]
+    public void DownloadSpeedText_WhenSpeedIsBelowOneKb_ReturnsFractionalKbPerSecond()
+    {
+        // Arrange — sub-kilobyte speeds (BUG-048): 512 B/s must render as "0.5 KB/s",
+        // not the misleading flat "0 KB/s".
+        var sep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        var game = new GameInfo { DownloadSpeedBytesPerSec = 512 };
+
+        // Act
+        var text = game.DownloadSpeedText;
+
+        // Assert
+        text.ShouldBe($"0{sep}5 KB/s");
+    }
+
+    [Fact]
+    public void DownloadSpeedText_WhenSpeedIsNegative_ReturnsZeroKbPerSecond()
+    {
+        // Arrange — defensive: a spurious negative speed must not produce a negative string.
+        var game = new GameInfo { DownloadSpeedBytesPerSec = -1 };
+
+        // Act
+        var text = game.DownloadSpeedText;
+
+        // Assert
+        text.ShouldBe("0 KB/s");
     }
 
     [Fact]
