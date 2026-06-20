@@ -64,6 +64,7 @@ public partial class App : Application
 
         Services = DependencyInjection.Configure();
 
+        Logs.PurgeOldLogs();
         Logs.InfoLogManager("Application started.");
 
         var updateService = Services.GetRequiredService<IUpdateService>();
