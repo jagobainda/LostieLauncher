@@ -10,7 +10,6 @@ public interface IStrings
     public string BtnYes { get; }
     public string BtnNo { get; }
     public string BtnDownload { get; }
-    public string BtnDownloading { get; }
     public string BtnDownloaded { get; }
     public string BtnPause { get; }
     public string BtnResume { get; }
@@ -55,7 +54,6 @@ public interface IStrings
     public string GamesGoToLibrary { get; }
     public string HomeNews { get; }
     public string HomeNotifications { get; }
-    public string HomeLoading { get; }
     public string HomeNoContent { get; }
     public string DownloadDialogTitle { get; }
     public string DownloadDialogPath { get; }
@@ -66,8 +64,6 @@ public interface IStrings
     public string DownloadDialogKey { get; }
     public string DownloadKeyInvalidTitle { get; }
     public string DownloadKeyInvalidMessage { get; }
-    public string DownloadKeyConsumedTitle { get; }
-    public string DownloadKeyConsumedMessage { get; }
     public string DownloadErrorTitle { get; }
     public string DownloadErrorMessage { get; }
     public string BtnCancel { get; }
@@ -110,7 +106,6 @@ public class Esp : IStrings
     public string BtnYes => "Sí";
     public string BtnNo => "No";
     public string BtnDownload => "Descargar";
-    public string BtnDownloading => "Descargando...";
     public string BtnDownloaded => "Descargado";
     public string BtnPause => "Pausar";
     public string BtnResume => "Reanudar";
@@ -155,7 +150,6 @@ public class Esp : IStrings
     public string GamesGoToLibrary => "Ir a la biblioteca";
     public string HomeNews => "Novedades";
     public string HomeNotifications => "Notificaciones";
-    public string HomeLoading => "Cargando...";
     public string HomeNoContent => "Sin contenido";
     public string DownloadDialogTitle => "Confirmar descarga";
     public string DownloadDialogPath => "Ruta de descarga";
@@ -166,8 +160,6 @@ public class Esp : IStrings
     public string DownloadDialogKey => "Clave para versiones especiales (opcional)";
     public string DownloadKeyInvalidTitle => "Clave no válida";
     public string DownloadKeyInvalidMessage => "El formato de la clave no es válido. Debe seguir el formato XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Clave consumida";
-    public string DownloadKeyConsumedMessage => "Esta clave ya no es válida o ha sido utilizada. Solicita una nueva clave.";
     public string DownloadErrorTitle => "Error en la descarga";
     public string DownloadErrorMessage => "No se pudo completar la descarga. Por favor, intenta más tarde. Si el problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
@@ -210,7 +202,6 @@ public class Eng : IStrings
     public string BtnYes => "Yes";
     public string BtnNo => "No";
     public string BtnDownload => "Download";
-    public string BtnDownloading => "Downloading...";
     public string BtnDownloaded => "Downloaded";
     public string BtnPause => "Pause";
     public string BtnResume => "Resume";
@@ -255,7 +246,6 @@ public class Eng : IStrings
     public string GamesGoToLibrary => "Go to Library";
     public string HomeNews => "News";
     public string HomeNotifications => "Notifications";
-    public string HomeLoading => "Loading...";
     public string HomeNoContent => "No content";
     public string DownloadDialogTitle => "Confirm download";
     public string DownloadDialogPath => "Download path";
@@ -266,8 +256,6 @@ public class Eng : IStrings
     public string DownloadDialogKey => "Access key for special versions (optional)";
     public string DownloadKeyInvalidTitle => "Invalid key";
     public string DownloadKeyInvalidMessage => "The key format is invalid. It must follow the format XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Key consumed";
-    public string DownloadKeyConsumedMessage => "This key is invalid or has already been used. Please request a new key.";
     public string DownloadErrorTitle => "Download failed";
     public string DownloadErrorMessage => "The download could not be completed. Please try again later. If the problem persists, write in #bugs-launcher on Discord.";
     public string BtnCancel => "Cancel";
@@ -310,7 +298,6 @@ public class Cat : IStrings
     public string BtnYes => "Sí";
     public string BtnNo => "No";
     public string BtnDownload => "Descarregar";
-    public string BtnDownloading => "Descarregant...";
     public string BtnDownloaded => "Descarregat";
     public string BtnPause => "Pausar";
     public string BtnResume => "Reprendre";
@@ -355,7 +342,6 @@ public class Cat : IStrings
     public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
-    public string HomeLoading => "Carregant...";
     public string HomeNoContent => "Sense contingut";
     public string DownloadDialogTitle => "Confirmar descàrrega";
     public string DownloadDialogPath => "Ruta de descàrrega";
@@ -366,8 +352,6 @@ public class Cat : IStrings
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
     public string DownloadKeyInvalidTitle => "Clau no vàlida";
     public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Ha de tenir el format XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Clau consumida";
-    public string DownloadKeyConsumedMessage => "Aquesta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
     public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
@@ -410,7 +394,6 @@ public class Eus : IStrings
     public string BtnYes => "Bai";
     public string BtnNo => "Ez";
     public string BtnDownload => "Deskargatu";
-    public string BtnDownloading => "Deskargatzen...";
     public string BtnDownloaded => "Deskargatuta";
     public string BtnPause => "Pausatu";
     public string BtnResume => "Berrekin";
@@ -455,7 +438,6 @@ public class Eus : IStrings
     public string GamesGoToLibrary => "Liburutegira joan";
     public string HomeNews => "Berriak";
     public string HomeNotifications => "Jakinarazpenak";
-    public string HomeLoading => "Kargatzen...";
     public string HomeNoContent => "Eduki gabe";
     public string DownloadDialogTitle => "Deskarga berretsi";
     public string DownloadDialogPath => "Deskarga bidea";
@@ -466,8 +448,6 @@ public class Eus : IStrings
     public string DownloadDialogKey => "Bertsio berezietarako gakoa (aukerakoa)";
     public string DownloadKeyInvalidTitle => "Gako baliogabea";
     public string DownloadKeyInvalidMessage => "Gakoaren formatua ez da baliozkoa. Formatua XXXX-XXXX-XXXX-XXXX-XXXX izan behar da.";
-    public string DownloadKeyConsumedTitle => "Gakoa kontsumituta";
-    public string DownloadKeyConsumedMessage => "Gako hau baliogabea da edo dagoeneko erabili da. Eskatu gako berri bat.";
     public string DownloadErrorTitle => "Deskargetak huts egin du";
     public string DownloadErrorMessage => "Deskargetak ezin izan du osatu. Mesedez, geroago saiatu. Arazoa jarraitzen badu, idatzi #bugs-launcher kanalean Discord-en.";
     public string BtnCancel => "Utzi";
@@ -510,7 +490,6 @@ public class Gal : IStrings
     public string BtnYes => "Si";
     public string BtnNo => "Non";
     public string BtnDownload => "Descargar";
-    public string BtnDownloading => "Descargando...";
     public string BtnDownloaded => "Descargado";
     public string BtnPause => "Pausar";
     public string BtnResume => "Retomar";
@@ -555,7 +534,6 @@ public class Gal : IStrings
     public string GamesGoToLibrary => "Ir á biblioteca";
     public string HomeNews => "Novidades";
     public string HomeNotifications => "Notificacións";
-    public string HomeLoading => "Cargando...";
     public string HomeNoContent => "Sen contido";
     public string DownloadDialogTitle => "Confirmar descarga";
     public string DownloadDialogPath => "Ruta de descarga";
@@ -566,8 +544,6 @@ public class Gal : IStrings
     public string DownloadDialogKey => "Clave para versións especiais (opcional)";
     public string DownloadKeyInvalidTitle => "Clave non válida";
     public string DownloadKeyInvalidMessage => "O formato da clave non é válido. Debe ter o formato XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Clave consumida";
-    public string DownloadKeyConsumedMessage => "Esta clave xa non é válida ou xa foi utilizada. Solicita unha nova clave.";
     public string DownloadErrorTitle => "Erro na descarga";
     public string DownloadErrorMessage => "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, escribe en #bugs-launcher en Discord.";
     public string BtnCancel => "Cancelar";
@@ -610,7 +586,6 @@ public class Por : IStrings
     public string BtnYes => "Sim";
     public string BtnNo => "Não";
     public string BtnDownload => "Baixar";
-    public string BtnDownloading => "Baixando...";
     public string BtnDownloaded => "Baixado";
     public string BtnPause => "Pausar";
     public string BtnResume => "Retomar";
@@ -655,7 +630,6 @@ public class Por : IStrings
     public string GamesGoToLibrary => "Ir à biblioteca";
     public string HomeNews => "Novidades";
     public string HomeNotifications => "Notificações";
-    public string HomeLoading => "Carregando...";
     public string HomeNoContent => "Sem conteúdo";
     public string DownloadDialogTitle => "Confirmar download";
     public string DownloadDialogPath => "Caminho de download";
@@ -666,8 +640,6 @@ public class Por : IStrings
     public string DownloadDialogKey => "Chave para versões especiais (opcional)";
     public string DownloadKeyInvalidTitle => "Chave inválida";
     public string DownloadKeyInvalidMessage => "O formato da chave é inválido. Deve seguir o formato XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Chave consumida";
-    public string DownloadKeyConsumedMessage => "Esta chave é inválida ou já foi utilizada. Solicite uma nova chave.";
     public string DownloadErrorTitle => "Falha no download";
     public string DownloadErrorMessage => "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, escreva em #bugs-launcher no Discord.";
     public string BtnCancel => "Cancelar";
@@ -710,7 +682,6 @@ public class Val : IStrings
     public string BtnYes => "Sí";
     public string BtnNo => "No";
     public string BtnDownload => "Descarregar";
-    public string BtnDownloading => "Descarregant...";
     public string BtnDownloaded => "Descarregat";
     public string BtnPause => "Pausar";
     public string BtnResume => "Reprendre";
@@ -755,7 +726,6 @@ public class Val : IStrings
     public string GamesGoToLibrary => "Anar a la biblioteca";
     public string HomeNews => "Novetats";
     public string HomeNotifications => "Notificacions";
-    public string HomeLoading => "Carregant...";
     public string HomeNoContent => "Sense contingut";
     public string DownloadDialogTitle => "Confirmar descàrrega";
     public string DownloadDialogPath => "Ruta de descàrrega";
@@ -766,8 +736,6 @@ public class Val : IStrings
     public string DownloadDialogKey => "Clau per a versions especials (opcional)";
     public string DownloadKeyInvalidTitle => "Clau no vàlida";
     public string DownloadKeyInvalidMessage => "El format de la clau no és vàlid. Ha de tindre el format XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Clau consumida";
-    public string DownloadKeyConsumedMessage => "Esta clau ja no és vàlida o ja s'ha utilitzat. Sol·licita una nova clau.";
     public string DownloadErrorTitle => "Ha fallat la descàrrega";
     public string DownloadErrorMessage => "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persiste, escriu a #bugs-launcher en Discord.";
     public string BtnCancel => "Cancel·lar";
@@ -810,7 +778,6 @@ public class Fra : IStrings
     public string BtnYes => "Oui";
     public string BtnNo => "Non";
     public string BtnDownload => "Télécharger";
-    public string BtnDownloading => "Téléchargement...";
     public string BtnDownloaded => "Téléchargé";
     public string BtnPause => "Pause";
     public string BtnResume => "Reprendre";
@@ -855,7 +822,6 @@ public class Fra : IStrings
     public string GamesGoToLibrary => "Aller à la bibliothèque";
     public string HomeNews => "Actualités";
     public string HomeNotifications => "Notifications";
-    public string HomeLoading => "Chargement...";
     public string HomeNoContent => "Aucun contenu";
     public string DownloadDialogTitle => "Confirmer le téléchargement";
     public string DownloadDialogPath => "Chemin de téléchargement";
@@ -866,8 +832,6 @@ public class Fra : IStrings
     public string DownloadDialogKey => "Clé pour les versions spéciales (optionnel)";
     public string DownloadKeyInvalidTitle => "Clé invalide";
     public string DownloadKeyInvalidMessage => "Le format de la clé est invalide. Il doit suivre le format XXXX-XXXX-XXXX-XXXX-XXXX.";
-    public string DownloadKeyConsumedTitle => "Clé consommée";
-    public string DownloadKeyConsumedMessage => "Cette clé est invalide ou a déjà été utilisée. Veuillez demander une nouvelle clé.";
     public string DownloadErrorTitle => "Échec du téléchargement";
     public string DownloadErrorMessage => "Le téléchargement n'a pas pu être complété. Veuillez réessayer plus tard. Si le problème persiste, écrivez dans #bugs-launcher sur Discord.";
     public string BtnCancel => "Annuler";

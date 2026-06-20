@@ -19,7 +19,6 @@
         <converters:EnumToVisibilityConverter x:Key="ExtractingVisibility" TargetValue="Extracting" />
         <converters:EnumToVisibilityConverter x:Key="VerifyingIntegrityVisibility" TargetValue="VerifyingIntegrity" />
         <converters:GameDownloadArgsConverter x:Key="GameDownloadArgsConverter" />
-        <converters:PercentToWidthConverter x:Key="PercentToWidthConverter" />
 
         <Style x:Key="CardAccentButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource PrimaryFgBrush}" />

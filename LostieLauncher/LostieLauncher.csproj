@@ -7,7 +7,6 @@
 	<ImplicitUsings>enable</ImplicitUsings>
 	<UseWPF>true</UseWPF>
 	<UseWindowsForms>true</UseWindowsForms>
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 	<Version>0.8.11.0</Version>
 	<FileVersion>0.8.11.0</FileVersion>
