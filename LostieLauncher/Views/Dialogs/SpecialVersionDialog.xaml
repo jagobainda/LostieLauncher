@@ -12,25 +12,6 @@
         BorderThickness="1"
         Icon="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png">
 
-    <Window.Resources>
-        <Style x:Key="KeyBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource TertiaryBgBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource SecondaryFgBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="10,8" SnapsToDevicePixels="True">
-                            <ScrollViewer x:Name="PART_ContentHost" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />

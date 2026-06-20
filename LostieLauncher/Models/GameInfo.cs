@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using LostieLauncher.Core;
+using LostieLauncher.Utils;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -35,7 +37,7 @@ public partial class GameInfo : ObservableObject
     public string Sha256 { get; init; } = string.Empty;
 
     [JsonIgnore]
-    public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"https://ericlostie-launcher.jagoba.dev{Logo}";
+    public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"{Endpoints.CdnBaseUrl}{Logo}";
 
     [JsonIgnore]
     public string GameId => SlugRegex().Replace(Nombre.ToLowerInvariant(), "-");
@@ -69,16 +71,7 @@ public partial class GameInfo : ObservableObject
     public partial int PlaytimeMinutes { get; set; }
 
     [JsonIgnore]
-    public string PlaytimeText => FormatPlaytime(PlaytimeMinutes);
-
-    private static string FormatPlaytime(int minutes)
-    {
-        if (minutes <= 0) return string.Empty;
-        if (minutes < 60) return $"{minutes} min";
-        var h = minutes / 60;
-        var m = minutes % 60;
-        return m > 0 ? $"{h} h {m} min" : $"{h} h";
-    }
+    public string PlaytimeText => PlaytimeFormatter.Format(PlaytimeMinutes);
 
     [JsonIgnore]
     public string DownloadSpeedText => DownloadSpeedBytesPerSec switch

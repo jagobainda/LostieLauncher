@@ -18,7 +18,6 @@
         <converters:EnumToVisibilityConverter x:Key="UpdateAvailableVisibility" TargetValue="UpdateAvailable" />
         <converters:EnumToVisibilityConverter x:Key="ExtractingVisibility" TargetValue="Extracting" />
         <converters:EnumToVisibilityConverter x:Key="VerifyingIntegrityVisibility" TargetValue="VerifyingIntegrity" />
-        <converters:GameDownloadArgsConverter x:Key="GameDownloadArgsConverter" />
 
         <Style x:Key="CardAccentButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource PrimaryFgBrush}" />
@@ -359,15 +358,9 @@
                     </StackPanel.Style>
 
                     <Button Command="{Binding DownloadCommand, ElementName=Root}"
+                            CommandParameter="{Binding DownloadArgs, ElementName=Root}"
                             Style="{StaticResource CardAccentButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource AvailableVisibility}}">
-                        <Button.CommandParameter>
-                            <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
-                                <Binding Path="GameId" ElementName="Root" />
-                                <Binding Path="LatestVersion" ElementName="Root" />
-                                <Binding Path="RutaRelativa" ElementName="Root" />
-                            </MultiBinding>
-                        </Button.CommandParameter>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Download" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -398,15 +391,9 @@
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource PausedVisibility}}">
                         <Button Command="{Binding DownloadCommand, ElementName=Root}"
+                                CommandParameter="{Binding DownloadArgs, ElementName=Root}"
                                 Style="{StaticResource CardAccentButtonStyle}"
                                 Margin="0,0,6,0">
-                            <Button.CommandParameter>
-                                <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
-                                    <Binding Path="GameId" ElementName="Root" />
-                                    <Binding Path="LatestVersion" ElementName="Root" />
-                                    <Binding Path="RutaRelativa" ElementName="Root" />
-                                </MultiBinding>
-                            </Button.CommandParameter>
                             <StackPanel Orientation="Horizontal">
                                 <iconPacks:PackIconMaterial Kind="Play" Width="13" Height="13"
                                                             VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -432,15 +419,9 @@
                     </Button>
 
                     <Button Command="{Binding LibraryUpdateCommand, ElementName=Root}"
+                            CommandParameter="{Binding DownloadArgs, ElementName=Root}"
                             Style="{StaticResource CardSuccessButtonStyle}"
                             Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource UpdateAvailableVisibility}}">
-                        <Button.CommandParameter>
-                            <MultiBinding Converter="{StaticResource GameDownloadArgsConverter}">
-                                <Binding Path="GameId" ElementName="Root" />
-                                <Binding Path="LatestVersion" ElementName="Root" />
-                                <Binding Path="RutaRelativa" ElementName="Root" />
-                            </MultiBinding>
-                        </Button.CommandParameter>
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Update" Width="13" Height="13"
                                                        VerticalAlignment="Center" Margin="0,0,6,0" />

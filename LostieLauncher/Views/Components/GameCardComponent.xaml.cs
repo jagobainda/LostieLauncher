@@ -8,7 +8,11 @@ namespace LostieLauncher.Views.Components;
 
 public partial class GameCardComponent : UserControl
 {
-    public GameCardComponent() => InitializeComponent();
+    public GameCardComponent()
+    {
+        InitializeComponent();
+        UpdateDownloadArgs();
+    }
 
     public static readonly DependencyProperty GameLogoProperty = DependencyProperty.Register(nameof(GameLogo), typeof(ImageSource), typeof(GameCardComponent));
 
@@ -34,7 +38,7 @@ public partial class GameCardComponent : UserControl
         set => SetValue(CardModeProperty, value);
     }
 
-    public static readonly DependencyProperty GameIdProperty = DependencyProperty.Register(nameof(GameId), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+    public static readonly DependencyProperty GameIdProperty = DependencyProperty.Register(nameof(GameId), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty, OnDownloadArgsSourceChanged));
 
     public string GameId
     {
@@ -58,7 +62,7 @@ public partial class GameCardComponent : UserControl
         set => SetValue(TotalDownloadsProperty, value);
     }
 
-    public static readonly DependencyProperty LatestVersionProperty = DependencyProperty.Register(nameof(LatestVersion), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+    public static readonly DependencyProperty LatestVersionProperty = DependencyProperty.Register(nameof(LatestVersion), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty, OnDownloadArgsSourceChanged));
 
     public string LatestVersion
     {
@@ -66,13 +70,30 @@ public partial class GameCardComponent : UserControl
         set => SetValue(LatestVersionProperty, value);
     }
 
-    public static readonly DependencyProperty RutaRelativaProperty = DependencyProperty.Register(nameof(RutaRelativa), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty));
+    public static readonly DependencyProperty RutaRelativaProperty = DependencyProperty.Register(nameof(RutaRelativa), typeof(string), typeof(GameCardComponent), new PropertyMetadata(string.Empty, OnDownloadArgsSourceChanged));
 
     public string RutaRelativa
     {
         get => (string)GetValue(RutaRelativaProperty);
         set => SetValue(RutaRelativaProperty, value);
     }
+
+    // Argumentos de descarga (GameId + versión + ruta) expuestos como una sola DP de solo lectura,
+    // recalculada al cambiar cualquiera de las tres fuentes. Evita repetir el MultiBinding en cada
+    // botón de la tarjeta (descargar / reanudar / actualizar).
+    private static readonly DependencyPropertyKey DownloadArgsPropertyKey = DependencyProperty.RegisterReadOnly(nameof(DownloadArgs), typeof(GameDownloadArgs), typeof(GameCardComponent), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty DownloadArgsProperty = DownloadArgsPropertyKey.DependencyProperty;
+
+    public GameDownloadArgs? DownloadArgs
+    {
+        get => (GameDownloadArgs?)GetValue(DownloadArgsProperty);
+        private set => SetValue(DownloadArgsPropertyKey, value);
+    }
+
+    private static void OnDownloadArgsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((GameCardComponent)d).UpdateDownloadArgs();
+
+    private void UpdateDownloadArgs() => DownloadArgs = new GameDownloadArgs(GameId, LatestVersion, RutaRelativa);
 
     public static readonly DependencyProperty DownloadStatusProperty = DependencyProperty.Register(nameof(DownloadStatus), typeof(GameDownloadStatus), typeof(GameCardComponent), new PropertyMetadata(GameDownloadStatus.Available));
 

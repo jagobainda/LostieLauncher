@@ -9,12 +9,12 @@ namespace LostieLauncher.Core;
 
 public static class DependencyInjection
 {
-    private const string TelemetryEndpoint = "https://ericlostie-launcher.jagoba.dev/";
-    private const string ContentEndpoint = "https://ericlostie-launcher.jagoba.dev/games/listado.json";
+    private const string TelemetryEndpoint = $"{Endpoints.CdnBaseUrl}/";
+    private const string ContentEndpoint = $"{Endpoints.CdnBaseUrl}/games/listado.json";
     private const string NotificationsEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json";
     private const string FlagEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/flag.txt";
-    private const string DownloadBaseUrl = "https://ericlostie-launcher.jagoba.dev/games";
-    private const string UpdateFeedUrl = "https://ericlostie-launcher.jagoba.dev/public/installer/";
+    private const string DownloadBaseUrl = $"{Endpoints.CdnBaseUrl}/games";
+    private const string UpdateFeedUrl = $"{Endpoints.CdnBaseUrl}/public/installer/";
 
     public static IServiceProvider Configure()
     {

@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using LostieLauncher.Core;
+using LostieLauncher.Utils;
 
 namespace LostieLauncher.Models;
 
@@ -10,7 +12,7 @@ public partial class InstalledGameInfo : ObservableObject
     public bool HasUpdate { get; init; }
     public string UpdateVersion { get; init; } = string.Empty;
     public string Logo { get; init; } = string.Empty;
-    public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"https://ericlostie-launcher.jagoba.dev{Logo}";
+    public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"{Endpoints.CdnBaseUrl}{Logo}";
     public string? Tipo { get; init; }
     public bool IsSpecialVersion => !string.IsNullOrEmpty(Tipo);
 
@@ -28,15 +30,5 @@ public partial class InstalledGameInfo : ObservableObject
 
     partial void OnPlaytimeMinutesChanged(int value) => OnPropertyChanged(nameof(PlaytimeText));
 
-    public string PlaytimeText
-    {
-        get
-        {
-            if (PlaytimeMinutes <= 0) return string.Empty;
-            if (PlaytimeMinutes < 60) return $"{PlaytimeMinutes} min";
-            var h = PlaytimeMinutes / 60;
-            var m = PlaytimeMinutes % 60;
-            return m > 0 ? $"{h} h {m} min" : $"{h} h";
-        }
-    }
+    public string PlaytimeText => PlaytimeFormatter.Format(PlaytimeMinutes);
 }

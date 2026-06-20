@@ -42,7 +42,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True" CornerRadius="4">
+                    <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True" CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                 </ControlTemplate>
@@ -82,6 +83,23 @@
                 <Setter Property="Background" Value="{DynamicResource OverlayMutedBrush}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="KeyBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource TertiaryBgBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryFgBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource SecondaryFgBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="10,8" SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="LinkButtonStyle" TargetType="Button">
