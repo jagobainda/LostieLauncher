@@ -33,19 +33,5 @@ public partial class WelcomeDialog : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { if (e.ClickCount == 1) DragMove(); }
 
-    private void RepositoryButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = SettingsViewModel.Instance.Strings.RepositoryUrl,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            Logs.ErrorLogManager($"Failed to open repository URL: {SettingsViewModel.Instance.Strings.RepositoryUrl}. Exception: {ex}");
-        }
-    }
+    private void RepositoryButton_Click(object sender, RoutedEventArgs e) => UrlLauncher.OpenHttps(SettingsViewModel.Instance.Strings.RepositoryUrl);
 }

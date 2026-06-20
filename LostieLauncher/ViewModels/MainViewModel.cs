@@ -129,32 +129,16 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private static void OpenGitHub()
-    {
-        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/jagobainda/LostieLauncher") { UseShellExecute = true }); }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
-    }
+    private static void OpenGitHub() => UrlLauncher.OpenHttps("https://github.com/jagobainda/LostieLauncher");
 
     [RelayCommand]
-    private static void OpenTwitch()
-    {
-        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.twitch.tv/ericlostie") { UseShellExecute = true }); }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
-    }
+    private static void OpenTwitch() => UrlLauncher.OpenHttps("https://www.twitch.tv/ericlostie");
 
     [RelayCommand]
-    private static void OpenYouTube()
-    {
-        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://www.youtube.com/@EricLostie") { UseShellExecute = true }); }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
-    }
+    private static void OpenYouTube() => UrlLauncher.OpenHttps("https://www.youtube.com/@EricLostie");
 
     [RelayCommand]
-    private static void OpenTwitter()
-    {
-        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://x.com/Eric_Lostie") { UseShellExecute = true }); }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
-    }
+    private static void OpenTwitter() => UrlLauncher.OpenHttps("https://x.com/Eric_Lostie");
 
     [RelayCommand(CanExecute = nameof(CanRefreshData))]
     private async Task RefreshDataAsync()

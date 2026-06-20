@@ -1,7 +1,6 @@
 using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Utils;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -128,12 +127,6 @@ public partial class DownloadConfirmDialog : Window
     {
         if (string.IsNullOrWhiteSpace(_gameUrl)) return;
 
-        if (!Uri.TryCreate(_gameUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps) return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
-        }
-        catch (Exception ex) { Logs.ErrorLogManager(ex); }
+        UrlLauncher.OpenHttps(_gameUrl);
     }
 }
