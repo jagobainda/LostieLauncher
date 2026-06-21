@@ -1,0 +1,24 @@
+version: 2
+updates:
+    # Dependencias NuGet del proyecto (CommunityToolkit.Mvvm, MahApps, SharpCompress, etc.)
+    - package-ecosystem: nuget
+      directory: /
+      schedule:
+          interval: weekly
+      open-pull-requests-limit: 10
+      groups:
+          # Agrupa las actualizaciones menores/patch en un solo PR para reducir ruido.
+          minor-and-patch:
+              update-types:
+                  - minor
+                  - patch
+      ignore:
+          # Velopack es la dependencia crítica de auto-actualización: no queremos
+          # NINGÚN PR automático (ni de versión ni de seguridad). Se gestiona a mano.
+          - dependency-name: Velopack
+
+    # Las propias actions usadas en los workflows (checkout, setup-dotnet...).
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: weekly
