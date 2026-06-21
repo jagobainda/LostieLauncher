@@ -74,12 +74,13 @@ public partial class App : Application
 
         InitializeTrayIcon();
 
-        mainWindow.Show();
-
-        if (SettingsViewModel.Instance.StartMinimized)
+        if (StartupWindowPolicy.ShouldShowOnStartup(SettingsViewModel.Instance.StartMinimized, SettingsViewModel.Instance.HasSeenWelcome))
         {
-            Logs.DebugLogManager("Window hidden on startup (StartMinimized).");
-            mainWindow.Hide();
+            mainWindow.Show();
+        }
+        else
+        {
+            Logs.DebugLogManager("Window kept hidden on startup (StartMinimized).");
         }
 
         if (!SettingsViewModel.Instance.HasSeenWelcome)
