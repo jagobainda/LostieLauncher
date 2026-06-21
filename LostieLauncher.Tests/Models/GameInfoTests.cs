@@ -88,6 +88,21 @@ public class GameInfoTests
     }
 
     [Fact]
+    public void GameId_WhenNombreIsNull_ReturnsEmptyStringWithoutThrowing()
+    {
+        // Arrange — System.Text.Json can assign null to the non-nullable Nombre (BUG-053),
+        // and GameId is consumed in bindings/VMs outside any try/catch. The computed slug must
+        // degrade to an empty string instead of NRE'ing on Nombre.ToLowerInvariant().
+        var game = new GameInfo { Nombre = null! };
+
+        // Act
+        var id = game.GameId;
+
+        // Assert
+        id.ShouldBe(string.Empty);
+    }
+
+    [Fact]
     public void LogoUrl_WhenLogoIsEmpty_ReturnsNull()
     {
         // Arrange

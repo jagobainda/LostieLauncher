@@ -40,7 +40,7 @@ public partial class GameInfo : ObservableObject
     public string? LogoUrl => string.IsNullOrEmpty(Logo) ? null : $"{Endpoints.CdnBaseUrl}{Logo}";
 
     [JsonIgnore]
-    public string GameId => SlugRegex().Replace(Nombre.ToLowerInvariant(), "-").Trim('-');
+    public string GameId => SlugRegex().Replace((Nombre ?? string.Empty).ToLowerInvariant(), "-").Trim('-');
 
     [JsonIgnore]
     public string PesoFormateado => PesoGB >= 1 ? $"{PesoGB.ToString("0.#", CultureInfo.InvariantCulture)} GB" : $"{(PesoGB * 1024).ToString("0", CultureInfo.InvariantCulture)} MB";

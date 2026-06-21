@@ -35,6 +35,13 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         Converters = { new JsonStringEnumConverter() }
     };
 
+    private static readonly JsonSerializerOptions RemoteJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() },
+        RespectNullableAnnotations = true
+    };
+
     private static readonly TimeZoneInfo CetZone = GetCetZone();
 
     private static readonly SemaphoreSlim LocalGamesFileLock = new(1, 1);
@@ -75,7 +82,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var games = JsonSerializer.Deserialize<List<GameInfo>>(json, JsonOptions) ?? [];
+            var games = JsonSerializer.Deserialize<List<GameInfo>>(json, RemoteJsonOptions) ?? [];
+            games = [.. games.Where(g => g is not null)];
             Logs.InfoLogManager($"Fetched {games.Count} games from remote.");
             return games;
         }
@@ -104,7 +112,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                     response.EnsureSuccessStatusCode();
 
                     var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, JsonOptions) ?? new HomeContentDto([], []);
+                    _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, RemoteJsonOptions) ?? new HomeContentDto([], []);
                     Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
                 }
                 else
@@ -125,7 +133,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, CetZone);
 
             var news = cache.News
-                    .Where(n => n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet)
+                    .Where(n => n is not null && (n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet))
                     .Select(n => new NewsItem
                     {
                         Id = n.Id,
@@ -136,7 +144,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
                         ExpiresAt = n.ExpiresAt
                     }).ToList();
             var notifications = cache.Notifications
-                    .Where(n => n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet)
+                    .Where(n => n is not null && (n.ExpiresAt is null || NormalizeToCet(n.ExpiresAt.Value) > nowCet))
                     .Select(n => new NotificationItem
                     {
                         Id = n.Id,
@@ -228,16 +236,17 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         _ => "es"
     };
 
-    internal static string Resolve(Dictionary<string, string> localized, string languageCode)
+    internal static string Resolve(Dictionary<string, string>? localized, string languageCode)
     {
-        if (localized.TryGetValue(languageCode, out var value)) return value;
-        if (localized.TryGetValue("es", out var spanish)) return spanish;
-        if (localized.TryGetValue("en", out var english)) return english;
+        if (localized is null) return string.Empty;
+        if (localized.TryGetValue(languageCode, out var value) && value is not null) return value;
+        if (localized.TryGetValue("es", out var spanish) && spanish is not null) return spanish;
+        if (localized.TryGetValue("en", out var english) && english is not null) return english;
 
         return localized
             .OrderBy(entry => entry.Key, StringComparer.Ordinal)
             .Select(entry => entry.Value)
-            .FirstOrDefault() ?? string.Empty;
+            .FirstOrDefault(v => v is not null) ?? string.Empty;
     }
 
     private record HomeContentDto(List<NewsItemDto> News, List<NotificationItemDto> Notifications);
@@ -290,6 +299,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
         foreach (var game in games)
         {
+            if (game is null) continue;
+
             var isDuplicate = game.Id != Guid.Empty ? !seenIds.Add(game.Id) : !seenNames.Add(game.Nombre ?? string.Empty);
             if (isDuplicate)
             {

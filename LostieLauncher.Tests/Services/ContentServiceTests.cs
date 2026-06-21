@@ -76,6 +76,65 @@ public class ContentServiceTests : IDisposable
         games.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task GetGamesAsync_WhenAnEntryHasNullNombre_RejectsPayloadInsteadOfReturningACrashingEntry()
+    {
+        // Arrange — a remote catalog with an explicit "nombre": null (BUG-053). Before the fix,
+        // System.Text.Json assigned null to the non-nullable Nombre and the resulting GameInfo
+        // NRE'd later in the UI on GameId. With RespectNullableAnnotations the strict remote
+        // profile throws JsonException, which the service catches and logs → empty (fail-safe),
+        // never a crashing entry.
+        _httpFactory.HandlerFor("SecurityFlag").RespondWithStatus("flag.txt", System.Net.HttpStatusCode.NotFound);
+        var json = "[{\"id\":\"11111111-1111-1111-1111-111111111111\",\"nombre\":null,\"version\":\"1.0.0\"}]";
+        _httpFactory.HandlerFor("Content").RespondWithJson("list.json", json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetGamesAsync();
+
+        // Assert
+        games.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetGamesAsync_WhenAnEntryOmitsNombre_KeepsItWithEmptyName()
+    {
+        // Arrange — a *missing* property is distinct from an explicit null: strict nullability
+        // only rejects explicit nulls, so an omitted "nombre" keeps the model default
+        // (string.Empty) and the catalog still loads.
+        _httpFactory.HandlerFor("SecurityFlag").RespondWithStatus("flag.txt", System.Net.HttpStatusCode.NotFound);
+        var json = "[{\"id\":\"11111111-1111-1111-1111-111111111111\",\"version\":\"1.0.0\"}]";
+        _httpFactory.HandlerFor("Content").RespondWithJson("list.json", json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetGamesAsync();
+
+        // Assert
+        games.ShouldHaveSingleItem();
+        games[0].Nombre.ShouldBe(string.Empty);
+        games[0].GameId.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task GetGamesAsync_WhenCatalogHasNullArrayElement_SkipsItAndKeepsValidGames()
+    {
+        // Arrange — strict nullability doesn't reach collection elements, so a stray null entry
+        // in the array survives deserialization; the explicit null-element filter drops it before
+        // it can NRE in the UI.
+        _httpFactory.HandlerFor("SecurityFlag").RespondWithStatus("flag.txt", System.Net.HttpStatusCode.NotFound);
+        var json = "[null,{\"id\":\"11111111-1111-1111-1111-111111111111\",\"nombre\":\"Demo\",\"version\":\"1.0.0\"}]";
+        _httpFactory.HandlerFor("Content").RespondWithJson("list.json", json);
+        var sut = CreateSut();
+
+        // Act
+        var games = await sut.GetGamesAsync();
+
+        // Assert
+        games.ShouldHaveSingleItem();
+        games[0].Nombre.ShouldBe("Demo");
+    }
+
     // -------------------- IsServerActionBlockedAsync --------------------
 
     [Fact]
@@ -527,6 +586,37 @@ public class ContentServiceTests : IDisposable
     }
 
     [Fact]
+    public void Resolve_WhenDictionaryIsNull_ReturnsEmptyString()
+    {
+        // A null localized map (e.g. a DTO field that slipped through) must not NRE on TryGetValue.
+        var result = ContentService.Resolve(null, "es");
+
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public void Resolve_WhenRequestedValueIsNull_SkipsItAndFallsBack()
+    {
+        // Strict nullability doesn't enforce dictionary *values*, so {"es": null} survives.
+        // Resolve must treat a null value as absent and fall through the chain.
+        var localized = new Dictionary<string, string> { ["es"] = null!, ["en"] = "Hi" };
+
+        var result = ContentService.Resolve(localized, "es");
+
+        result.ShouldBe("Hi");
+    }
+
+    [Fact]
+    public void Resolve_WhenAllValuesNull_ReturnsEmptyString()
+    {
+        var localized = new Dictionary<string, string> { ["es"] = null!, ["fr"] = null! };
+
+        var result = ContentService.Resolve(localized, "es");
+
+        result.ShouldBe(string.Empty);
+    }
+
+    [Fact]
     public async Task GetHomeContentAsync_WhenOnlyEnglishAvailable_FallsBackToEnglish()
     {
         // Settings request Spanish, but the item only ships English — the deterministic chain
@@ -699,6 +789,60 @@ public class ContentServiceTests : IDisposable
 
         // Assert
         handler.Requests.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenLocalizedValueIsNull_ResolvesToEmptyStringWithoutCrashing()
+    {
+        // Arrange — the title dictionary is present but its value is null ({"es": null}).
+        // Strict nullability doesn't reach dictionary values, so this reaches Resolve, which must
+        // degrade to an empty string instead of NRE'ing (the whole home content is rebuilt inside
+        // the service try, so an NRE here would silently blank the entire home).
+        var json = """
+        {
+          "news": [{ "id":"11111111-1111-1111-1111-111111111111",
+                     "title": {"es": null}, "description": {"es":"."},
+                     "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": null }],
+          "notifications": []
+        }
+        """;
+        _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        // Act
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Assert
+        content.News.ShouldHaveSingleItem();
+        content.News[0].Title.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenNewsHasNullArrayElement_SkipsIt()
+    {
+        // Arrange — strict nullability doesn't reach collection elements, so a null entry in the
+        // news array survives deserialization; the explicit filter drops it without blanking the
+        // rest of the home content.
+        var json = """
+        {
+          "news": [
+            null,
+            { "id":"22222222-2222-2222-2222-222222222222",
+              "title": {"es":"Vigente"}, "description": {"es":"."},
+              "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": null }
+          ],
+          "notifications": []
+        }
+        """;
+        _httpFactory.HandlerFor("Content").RespondWithJson("notifications.json", json);
+        var sut = CreateSut();
+
+        // Act
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Assert
+        content.News.ShouldHaveSingleItem();
+        content.News[0].Title.ShouldBe("Vigente");
     }
 
     [Fact]
