@@ -165,6 +165,86 @@ public class TelemetryServiceTests
         result.ShouldBe("0.0.0");
     }
 
+    // -------------------- FormatGpuNames --------------------
+
+    [Fact]
+    public void FormatGpuNames_WhenMultipleAdapters_JoinsAllNamesInOrder()
+    {
+        // Arrange — the BUG-065 scenario: an iGPU at "0000" and a dGPU at "0001".
+        string?[] descriptions = ["Intel(R) UHD Graphics", "NVIDIA GeForce RTX 4060"];
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert — both GPUs are reported, not just the first adapter.
+        result.ShouldBe("Intel(R) UHD Graphics + NVIDIA GeForce RTX 4060");
+    }
+
+    [Fact]
+    public void FormatGpuNames_WhenSingleAdapter_ReturnsNameWithoutSeparator()
+    {
+        // Arrange
+        string?[] descriptions = ["NVIDIA GeForce RTX 4060"];
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert
+        result.ShouldBe("NVIDIA GeForce RTX 4060");
+    }
+
+    [Fact]
+    public void FormatGpuNames_WhenNamesAreDuplicatedCaseInsensitively_Deduplicates()
+    {
+        // Arrange — mirrored / repeated adapter entries are common in the registry.
+        string?[] descriptions = ["NVIDIA GeForce RTX 4060", "nvidia geforce rtx 4060", "Intel(R) UHD Graphics"];
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert — first occurrence is kept; the case-insensitive duplicate is dropped.
+        result.ShouldBe("NVIDIA GeForce RTX 4060 + Intel(R) UHD Graphics");
+    }
+
+    [Fact]
+    public void FormatGpuNames_WhenSomeEntriesAreNullOrBlank_FiltersThemOut()
+    {
+        // Arrange — adapter subkeys without a DriverDesc read back as null.
+        string?[] descriptions = [null, "  ", "  NVIDIA GeForce RTX 4060  ", ""];
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert — null/blank entries are dropped and the surviving name is trimmed.
+        result.ShouldBe("NVIDIA GeForce RTX 4060");
+    }
+
+    [Fact]
+    public void FormatGpuNames_WhenNoUsableNames_ReturnsEmptyString()
+    {
+        // Arrange
+        string?[] descriptions = [null, "", "   "];
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert — empty signals "Unknown" to the caller.
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void FormatGpuNames_WhenJoinedNamesExceedLimit_TruncatesToBoundedLength()
+    {
+        // Arrange — many phantom adapters must not produce an unbounded payload field.
+        var descriptions = Enumerable.Range(0, 20).Select(i => $"Adapter Model Number {i:D2}").Cast<string?>().ToArray();
+
+        // Act
+        var result = TelemetryService.FormatGpuNames(descriptions);
+
+        // Assert
+        result.Length.ShouldBe(128);
+    }
+
     private static async Task WaitForRequestAsync(FakeHttpMessageHandler handler, int expected, int timeoutMs = 2000)
     {
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);

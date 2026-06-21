@@ -143,10 +143,35 @@ public class TelemetryService(IHttpClientFactory httpClientFactory, TelemetryOpt
     {
         try
         {
-            const string keyPath = @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000";
-            return ((string?)Registry.GetValue(keyPath, "DriverDesc", null))?.Trim() ?? "Unknown";
+            const string classKeyPath = @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
+            using var classKey = Registry.LocalMachine.OpenSubKey(classKeyPath);
+            if (classKey is null) return "Unknown";
+
+            var driverDescriptions = new List<string?>();
+            foreach (var subKeyName in classKey.GetSubKeyNames())
+            {
+                // Adapter instances are 4-digit numeric subkeys ("0000", "0001", …); skip "Properties" and the like.
+                if (subKeyName.Length != 4 || !subKeyName.All(char.IsAsciiDigit)) continue;
+
+                using var adapterKey = classKey.OpenSubKey(subKeyName);
+                driverDescriptions.Add(adapterKey?.GetValue("DriverDesc") as string);
+            }
+
+            var gpuName = FormatGpuNames(driverDescriptions);
+            return gpuName.Length == 0 ? "Unknown" : gpuName;
         }
         catch (Exception ex) { Logs.ErrorLogManager(ex); return "Unknown"; }
+    }
+
+    internal static string FormatGpuNames(IEnumerable<string?> driverDescriptions)
+    {
+        var names = driverDescriptions
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return names.Count == 0 ? string.Empty : Truncate(string.Join(" + ", names), 128);
     }
 
     private static string GetOsVersion()
