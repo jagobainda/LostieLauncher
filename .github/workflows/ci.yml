@@ -64,9 +64,28 @@ jobs:
             - name: Check for vulnerable NuGet packages
               shell: pwsh
               run: |
-                  $output = dotnet list LostieLauncher.slnx package --vulnerable --include-transitive 2>&1 | Out-String
-                  Write-Host $output
-                  if ($output -match 'has the following vulnerable packages') {
-                      Write-Error 'Vulnerable NuGet packages detected.'
+                  $report = dotnet list LostieLauncher.slnx package --vulnerable --include-transitive --format json --output-version 1 | Out-String
+                  if ($LASTEXITCODE -ne 0) {
+                      Write-Host $report
+                      Write-Error "dotnet list package failed (exit code $LASTEXITCODE)."
                       exit 1
                   }
+                  Write-Host $report
+
+                  $json = $report | ConvertFrom-Json
+                  $vulnerable = @(foreach ($project in $json.projects) {
+                      foreach ($framework in $project.frameworks) {
+                          foreach ($package in @($framework.topLevelPackages) + @($framework.transitivePackages)) {
+                              if (@($package.vulnerabilities | Where-Object { $null -ne $_ }).Count -gt 0) {
+                                  '{0}@{1} ({2})' -f $package.id, $package.resolvedVersion, $framework.framework
+                              }
+                          }
+                      }
+                  })
+
+                  if ($vulnerable.Count -gt 0) {
+                      Write-Error "Vulnerable NuGet packages detected:`n$($vulnerable -join "`n")"
+                      exit 1
+                  }
+
+                  Write-Host 'No vulnerable NuGet packages detected.'
