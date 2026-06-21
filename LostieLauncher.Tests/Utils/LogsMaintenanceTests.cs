@@ -1,6 +1,4 @@
-using LostieLauncher.Tests.Helpers;
 using LostieLauncher.Utils;
-using System.IO;
 using System.Text;
 
 namespace LostieLauncher.Tests.Utils;

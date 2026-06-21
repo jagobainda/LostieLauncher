@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using LostieLauncher.Core;
-using LostieLauncher.Utils;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;

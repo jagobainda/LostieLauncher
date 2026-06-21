@@ -1,6 +1,5 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 

@@ -1,7 +1,6 @@
 using MahApps.Metro.IconPacks;
 using System.Windows;
 using System.Windows.Input;
-using Velopack.Windows;
 
 namespace LostieLauncher.Views.Dialogs;
 

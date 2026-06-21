@@ -16,6 +16,7 @@ insert_final_newline     = true
 # --- Usings ---
 dotnet_sort_system_directives_first          = false
 dotnet_separate_import_directive_groups      = false
+dotnet_diagnostic.IDE0005.severity           = error
 
 # --- var ---
 csharp_style_var_for_built_in_types          = true:warning

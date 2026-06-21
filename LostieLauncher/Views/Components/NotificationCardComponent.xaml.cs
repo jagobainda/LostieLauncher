@@ -1,6 +1,5 @@
 using LostieLauncher.Models;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace LostieLauncher.Views.Components;
 

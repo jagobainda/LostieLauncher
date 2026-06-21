@@ -1,6 +1,5 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
-using LostieLauncher.Tests.Helpers;
 using System.Text.Json;
 
 namespace LostieLauncher.Tests.Services;

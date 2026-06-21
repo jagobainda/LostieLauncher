@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using LostieLauncher.Core;
-using LostieLauncher.Utils;
 
 namespace LostieLauncher.Models;
 

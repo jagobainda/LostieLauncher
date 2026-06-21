@@ -1,6 +1,5 @@
 using LostieLauncher.ViewModels;
 using LostieLauncher.Views.Dialogs;
-using System.Windows;
 
 namespace LostieLauncher.Services;
 

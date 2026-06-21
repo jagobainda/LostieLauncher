@@ -1,4 +1,3 @@
-using LostieLauncher.Tests.Helpers;
 using LostieLauncher.Utils;
 
 namespace LostieLauncher.Tests.Utils;

@@ -1,6 +1,5 @@
 using LostieLauncher.Content;
 using LostieLauncher.Models;
-using LostieLauncher.Utils;
 using System.Globalization;
 using System.IO;
 using System.Windows;

@@ -1,6 +1,5 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
-using LostieLauncher.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LostieLauncher.Tests.Helpers;

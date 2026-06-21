@@ -1,9 +1,7 @@
 using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
-using LostieLauncher.Tests.Helpers;
 using LostieLauncher.ViewModels;
-using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 
 namespace LostieLauncher.Tests.ViewModels;
