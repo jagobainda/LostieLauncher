@@ -11,7 +11,15 @@ namespace LostieLauncher.ViewModels;
 
 public partial class SettingsViewModel : ObservableObject
 {
-    public static SettingsViewModel Instance { get; private set; } = null!;
+    private static SettingsViewModel? _instance;
+
+    public static SettingsViewModel Instance => ResolveInstance(_instance);
+
+    internal static SettingsViewModel ResolveInstance(SettingsViewModel? instance) => instance
+        ?? throw new InvalidOperationException(
+            $"{nameof(SettingsViewModel)}.{nameof(Instance)} was accessed before the DI container "
+            + "constructed the singleton. Resolve SettingsViewModel (e.g. via MainViewModel) before "
+            + "any static access, including XAML {x:Static} bindings.");
 
     [ObservableProperty]
     public partial AppLanguage Language { get; set; } = AppLanguage.Esp;
@@ -48,7 +56,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService, GlobalViewModel globalViewModel, IUpdateService updateService)
     {
-        Instance = this;
+        _instance = this;
         _settingsService = settingsService;
         _windowsStartupService = windowsStartupService;
         _globalViewModel = globalViewModel;

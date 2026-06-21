@@ -82,6 +82,28 @@ public class SettingsViewModelTests
         SettingsViewModel.Instance.ShouldBeSameAs(vm);
     }
 
+    // -------------------- Instance fail-fast (BUG-066) --------------------
+
+    [Fact]
+    public void ResolveInstance_BeforeConstruction_ThrowsDiagnosticInsteadOfReturningNull()
+    {
+        // Arrange — the singleton has not been built yet (null backing field). The old `null!`
+        // auto-property silently returned null here, deferring the failure to an obscure NRE far
+        // from the cause. Act & Assert — now it fails fast with an actionable message (BUG-066).
+        var ex = Should.Throw<InvalidOperationException>(() => SettingsViewModel.ResolveInstance(null));
+        ex.Message.ShouldContain(nameof(SettingsViewModel.Instance));
+    }
+
+    [Fact]
+    public void ResolveInstance_AfterConstruction_ReturnsTheSameInstance()
+    {
+        // Arrange
+        var vm = CreateSut();
+
+        // Act & Assert — once the DI container builds the singleton, resolution returns it as-is.
+        SettingsViewModel.ResolveInstance(vm).ShouldBeSameAs(vm);
+    }
+
     // -------------------- Language --------------------
 
     [Theory]
