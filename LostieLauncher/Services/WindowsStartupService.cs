@@ -5,8 +5,8 @@ namespace LostieLauncher.Services;
 public interface IWindowsStartupService
 {
     public bool IsEnabled();
-    public void Enable();
-    public void Disable();
+    public bool Enable();
+    public bool Disable();
 }
 
 public class WindowsStartupService : IWindowsStartupService
@@ -30,41 +30,65 @@ public class WindowsStartupService : IWindowsStartupService
         }
     }
 
-    public void Enable()
+    public bool Enable()
     {
         try
         {
+            if (!TryBuildStartupCommand(Environment.ProcessPath, out var command))
+            {
+                Logs.ErrorLogManager("Cannot enable Windows startup: the executable path is unavailable.");
+                return false;
+            }
+
             using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
             if (key is null)
             {
                 Logs.ErrorLogManager("Could not open registry run key for writing.");
-                return;
+                return false;
             }
-            key.SetValue(AppName, $"\"{Environment.ProcessPath}\"");
+
+            key.SetValue(AppName, command);
             Logs.InfoLogManager("Windows startup entry enabled.");
+            return true;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
+            return false;
         }
     }
 
-    public void Disable()
+    public bool Disable()
     {
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
             if (key is null)
             {
-                Logs.DebugLogManager("Windows startup entry not found to disable.");
-                return;
+                Logs.DebugLogManager("Run registry key unavailable; nothing to disable.");
+                return true;
             }
+
             key.DeleteValue(AppName, false);
             Logs.InfoLogManager("Windows startup entry disabled.");
+            return true;
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
+            return false;
         }
+    }
+
+    internal static bool TryBuildStartupCommand(string? processPath, out string command)
+    {
+        if (string.IsNullOrWhiteSpace(processPath))
+        {
+            command = string.Empty;
+            return false;
+        }
+
+        command = $"\"{processPath}\"";
+        return true;
     }
 }

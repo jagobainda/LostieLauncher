@@ -20,6 +20,8 @@ public class SettingsViewModelTests
         var settings = initial ?? new AppSettings();
         _settingsService.Load().Returns(settings);
         _startupService.IsEnabled().Returns(startupEnabled);
+        _startupService.Enable().Returns(true);
+        _startupService.Disable().Returns(true);
         return new SettingsViewModel(_settingsService, _startupService, _globalViewModel, _updateService);
     }
 
@@ -158,6 +160,54 @@ public class SettingsViewModelTests
 
         // Assert
         _startupService.Received(1).Disable();
+    }
+
+    [Fact]
+    public void StartWithWindows_WhenEnableFails_RevertsToggleToRealState()
+    {
+        // Arrange — the registry write fails (ProcessPath unavailable / run key not writable).
+        var vm = CreateSut(startupEnabled: false);
+        _startupService.Enable().Returns(false);
+        _startupService.IsEnabled().Returns(false);
+
+        // Act
+        vm.StartWithWindows = true;
+
+        // Assert — the toggle must not lie: it reverts to the real (off) state (BUG-052).
+        _startupService.Received(1).Enable();
+        vm.StartWithWindows.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void StartWithWindows_WhenDisableFails_RevertsToggleToRealState()
+    {
+        // Arrange — startup is on; the user turns it off but the registry delete fails.
+        var vm = CreateSut(startupEnabled: true);
+        _startupService.Disable().Returns(false);
+        _startupService.IsEnabled().Returns(true);
+
+        // Act
+        vm.StartWithWindows = false;
+
+        // Assert — reverts back to the real (on) state instead of showing a false "off".
+        _startupService.Received(1).Disable();
+        vm.StartWithWindows.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void StartWithWindows_WhenEnableSucceeds_KeepsToggleOnAndPersists()
+    {
+        // Arrange
+        var vm = CreateSut(startupEnabled: false);
+        _startupService.Enable().Returns(true);
+        _settingsService.ClearReceivedCalls();
+
+        // Act
+        vm.StartWithWindows = true;
+
+        // Assert — successful write keeps the toggle on and persists settings (no revert).
+        vm.StartWithWindows.ShouldBeTrue();
+        _settingsService.Received(1).Save(Arg.Any<AppSettings>());
     }
 
     [Fact]

@@ -143,8 +143,23 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (!_isLoading)
         {
-            if (value) _windowsStartupService.Enable();
-            else _windowsStartupService.Disable();
+            var succeeded = value ? _windowsStartupService.Enable() : _windowsStartupService.Disable();
+            if (!succeeded)
+            {
+                // The registry write failed (e.g. ProcessPath unavailable or the run key is not
+                // writable): revert the toggle to the real state so the UI never shows "on" for a
+                // startup entry that was never written (BUG-052).
+                _isLoading = true;
+                try
+                {
+                    StartWithWindows = _windowsStartupService.IsEnabled();
+                }
+                finally
+                {
+                    _isLoading = false;
+                }
+                return;
+            }
         }
         Logs.InfoLogManager($"Start with Windows: {(value ? "enabled" : "disabled")}.");
         SaveSettings();
