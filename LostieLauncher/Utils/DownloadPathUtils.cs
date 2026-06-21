@@ -6,7 +6,14 @@ namespace LostieLauncher.Utils;
 
 public static class DownloadPathUtils
 {
+    private const string PartExtension = ".part";
+    private const string MetaExtension = ".meta";
+
     public static string GetZipFileName(GameDownloadArgs args) => $"{args.GameId}.{ComputeToken(args.Version, args.Key)}.zip";
+
+    public static string GetPartFilePath(string finalPath) => finalPath + PartExtension;
+
+    public static string GetMetaFilePath(string partPath) => partPath + MetaExtension;
 
     public static string ComputeToken(string version, string? key)
     {

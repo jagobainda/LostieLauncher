@@ -25,6 +25,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ContentOptions _contentOptions = contentOptions;
     private readonly ISettingsService _settingsService = settingsService;
+    private const string LocalGamesFileName = "local_games.json";
+    private const string PlaytimeFileName = "playtime.json";
     private readonly SemaphoreSlim _homeContentGate = new(1, 1);
     private HomeContentDto? _homeContentCache;
     private volatile ServerActionFlagCache? _serverActionBlockedCache;
@@ -274,7 +276,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         {
             Logs.DebugLogManager("Reading local games registry.");
             var gamesRoot = _settingsService.GetGamesRootDirectory();
-            var path = Path.Combine(gamesRoot, "local_games.json");
+            var path = Path.Combine(gamesRoot, LocalGamesFileName);
             if (!File.Exists(path)) return [];
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
@@ -334,7 +336,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             Logs.DebugLogManager($"Registering game in local registry: {gameName} v{version}{(tipo is not null ? $" ({tipo})" : "")}.");
             var gamesRoot = _settingsService.GetGamesRootDirectory();
             Directory.CreateDirectory(gamesRoot);
-            var path = Path.Combine(gamesRoot, "local_games.json");
+            var path = Path.Combine(gamesRoot, LocalGamesFileName);
 
             List<LocalGameInfo> games = [];
             if (File.Exists(path))
@@ -359,7 +361,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         try
         {
             var gamesRoot = _settingsService.GetGamesRootDirectory();
-            var path = Path.Combine(gamesRoot, "local_games.json");
+            var path = Path.Combine(gamesRoot, LocalGamesFileName);
             if (!File.Exists(path)) return;
 
             Logs.DebugLogManager($"Removing game from registry: {gameName}.");
@@ -381,7 +383,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         try
         {
             var gamesRoot = _settingsService.GetGamesRootDirectory();
-            var path = Path.Combine(gamesRoot, "playtime.json");
+            var path = Path.Combine(gamesRoot, PlaytimeFileName);
 
             Logs.DebugLogManager($"Adding {minutes} playtime minutes for game id: {gameId}.");
             List<PlaytimeRecord> records = [];
@@ -420,7 +422,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         try
         {
             var gamesRoot = _settingsService.GetGamesRootDirectory();
-            var path = Path.Combine(gamesRoot, "playtime.json");
+            var path = Path.Combine(gamesRoot, PlaytimeFileName);
             if (!File.Exists(path)) return [];
 
             var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);

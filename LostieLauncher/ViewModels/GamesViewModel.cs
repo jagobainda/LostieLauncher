@@ -15,6 +15,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     private readonly IContentService _contentService;
     private readonly LibraryViewModel _libraryViewModel;
     private readonly ITelemetryService _telemetryService;
+    private const string HelpFolderName = "ayuda";
     private bool _disposed;
 
     public event Action? NavigateToLibraryRequested;
@@ -51,11 +52,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    // Async void by necessity (GameInstalled is an Action<...> event), but the whole body is wrapped
-    // in try/catch so it can never escape and crash the process — the guarantee BUG-004 established
-    // for async event handlers. We read the persisted playtimes from disk and rebuild the card through
-    // the SAME BuildInstalledGameInfo used by LoadInstalledGamesAsync, so the freshly installed item
-    // gets HasHelpFolder, PlaytimeMinutes and HasUpdate exactly like a full refresh would (BUG-033).
     private async void OnGameInstalled(string gameName, string version, string? tipo)
     {
         try
@@ -116,10 +112,6 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task UpdateAsync(string gameName) => UpdateCoreAsync(gameName, navigateToLibrary: true);
 
-    // Single source of truth for turning a local registry entry into a card shown in "My Games".
-    // Both the full refresh (LoadInstalledGamesAsync) and the post-install update (OnGameInstalled)
-    // go through here so a freshly installed/updated game gets HasHelpFolder, PlaytimeMinutes and
-    // HasUpdate computed identically — never the half-populated card that caused BUG-033.
     internal InstalledGameInfo BuildInstalledGameInfo(LocalGameInfo local, IReadOnlyDictionary<Guid, int> playtimes)
     {
         var remote = _libraryViewModel.Games.FirstOrDefault(r => (local.Id != Guid.Empty && r.Id == local.Id) || string.Equals(r.Nombre, local.Nombre, StringComparison.OrdinalIgnoreCase));
@@ -157,7 +149,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     {
         if (!Directory.Exists(gameDir)) return false;
         return Directory.EnumerateDirectories(gameDir)
-            .Any(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
+            .Any(d => string.Equals(Path.GetFileName(d), HelpFolderName, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task UpdateCoreAsync(string gameName, bool navigateToLibrary)
@@ -335,7 +327,7 @@ public partial class GamesViewModel : ObservableObject, IDisposable
         }
 
         var helpDir = Directory.EnumerateDirectories(gameDir)
-            .FirstOrDefault(d => string.Equals(Path.GetFileName(d), "ayuda", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(d => string.Equals(Path.GetFileName(d), HelpFolderName, StringComparison.OrdinalIgnoreCase));
 
         if (helpDir is null)
         {

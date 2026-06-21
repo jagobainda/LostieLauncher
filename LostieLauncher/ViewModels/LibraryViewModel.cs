@@ -564,10 +564,6 @@ public partial class LibraryViewModel : ObservableObject
         IsWellFormedSha256(config.Sha256) &&
         !string.IsNullOrWhiteSpace(config.Version);
 
-    // Maps a failed key-validation outcome to the dialog to show, or null when no dialog is warranted
-    // (Success has no error; Cancelled is a deliberate user action). A genuine 404 means the key is wrong
-    // ("not found"); a timeout, network failure or malformed server response is a transient problem and
-    // must NOT be reported as a bad key (BUG-026) — it reuses the generic download-error message.
     internal static (string Title, string Message)? GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome outcome, IStrings strings) => outcome switch
     {
         SpecialVersionConfigOutcome.NotFound => (strings.DownloadKeyNotFoundTitle, strings.DownloadKeyNotFoundMessage),
@@ -631,8 +627,8 @@ public partial class LibraryViewModel : ObservableObject
     private static void CleanupDownloadFiles(DownloadSession session)
     {
         var zipPath = session.ZipPath;
-        var partPath = zipPath + ".part";
-        var metaPath = partPath + ".meta";
+        var partPath = Utils.DownloadPathUtils.GetPartFilePath(zipPath);
+        var metaPath = Utils.DownloadPathUtils.GetMetaFilePath(partPath);
 
         try { if (File.Exists(partPath)) File.Delete(partPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
         try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }

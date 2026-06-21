@@ -82,4 +82,42 @@ public class DownloadPathUtilsTests
         // Assert — different file names => different .part/.part.meta => no byte mixing.
         standardName.ShouldNotBe(specialName);
     }
+
+    // -------------------- GetPartFilePath / GetMetaFilePath --------------------
+
+    [Fact]
+    public void GetPartFilePath_AppendsPartExtension()
+    {
+        // Arrange & Act
+        var partPath = DownloadPathUtils.GetPartFilePath(@"C:\games\.downloads\cool-game.abcd1234.zip");
+
+        // Assert
+        partPath.ShouldBe(@"C:\games\.downloads\cool-game.abcd1234.zip.part");
+    }
+
+    [Fact]
+    public void GetMetaFilePath_AppendsMetaExtensionToPartPath()
+    {
+        // Arrange & Act
+        var metaPath = DownloadPathUtils.GetMetaFilePath(@"C:\games\.downloads\cool-game.abcd1234.zip.part");
+
+        // Assert
+        metaPath.ShouldBe(@"C:\games\.downloads\cool-game.abcd1234.zip.part.meta");
+    }
+
+    [Fact]
+    public void PartAndMetaDerivation_MatchesAcrossWriterAndCleaner()
+    {
+        // Arrange — the writer (DownloadService) and the cleaner (LibraryViewModel) must derive the
+        // SAME .part/.meta paths from the final zip, or cleanup misses the sidecar (BUG-002/BUG-035).
+        var finalPath = @"C:\games\.downloads\cool-game.abcd1234.zip";
+
+        // Act — both sides now go through the shared helpers.
+        var partPath = DownloadPathUtils.GetPartFilePath(finalPath);
+        var metaPath = DownloadPathUtils.GetMetaFilePath(partPath);
+
+        // Assert — the meta is the part plus ".meta", and the part is the final plus ".part".
+        partPath.ShouldBe(finalPath + ".part");
+        metaPath.ShouldBe(finalPath + ".part.meta");
+    }
 }

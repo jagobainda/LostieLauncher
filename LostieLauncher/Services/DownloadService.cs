@@ -68,14 +68,11 @@ public class DownloadService : IDownloadService
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // The caller deliberately cancelled (not a timeout) — surface it as such so the UI shows nothing.
             Logs.InfoLogManager($"Special version config fetch cancelled for key: {key}");
             return SpecialVersionConfigResult.Cancelled();
         }
         catch (OperationCanceledException ex)
         {
-            // No cancellation was requested, so this is the "Content" client's timeout firing
-            // (TaskCanceledException) — a network problem, not a missing key.
             Logs.ErrorLogManager(ex);
             return SpecialVersionConfigResult.NetworkError();
         }
@@ -88,7 +85,7 @@ public class DownloadService : IDownloadService
 
     public async Task<DownloadResult> DownloadAsync(string url, string destinationPath, IProgress<DownloadProgressInfo>? progress = null, CancellationToken ct = default)
     {
-        var partPath = destinationPath + ".part";
+        var partPath = Utils.DownloadPathUtils.GetPartFilePath(destinationPath);
 
         try
         {
@@ -148,7 +145,7 @@ public class DownloadService : IDownloadService
     private async Task DownloadCoreWatchedAsync(string url, string partPath, string finalPath, IProgress<DownloadProgressInfo>? progress, CancellationToken ct, CancellationTokenSource watchdog)
     {
         var client = _httpClientFactory.CreateClient("Download");
-        var metaPath = partPath + ".meta";
+        var metaPath = Utils.DownloadPathUtils.GetMetaFilePath(partPath);
         long existingBytes = 0;
         DownloadResumeMetadata? meta = null;
 
