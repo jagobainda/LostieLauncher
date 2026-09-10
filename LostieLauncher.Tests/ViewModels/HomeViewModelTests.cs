@@ -209,6 +209,71 @@ public class HomeViewModelTests
         loads.ShouldBe(1);
     }
 
+    // ---- Distinguishing "no content" from "could not refresh" (wave 2) ----------------------
+
+    [Fact]
+    public async Task LoadHomeContent_WhenTheServiceReportsStaleContent_RaisesTheOutOfDateWarning()
+    {
+        // Arrange — the refresh failed and the service handed back the last known payload.
+        var stale = SampleContent();
+        stale.IsStale = true;
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var settings = CreateSettings();
+
+        // Act
+        var vm = new HomeViewModel(_contentService, settings);
+        await vm.RefreshAsync();
+
+        // Assert — the content stays on screen, with a warning that it may be out of date.
+        vm.News.Count.ShouldBe(1);
+        vm.IsContentStale.ShouldBeTrue();
+        vm.IsOutOfDateWarningVisible.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task LoadHomeContent_WhenTheServerIsUnderMaintenance_ShowsOnlyTheOfflineBanner()
+    {
+        // Arrange — nothing refreshes during maintenance, so the offline banner already explains it;
+        // stacking a second warning on top of it would just be noise.
+        var stale = SampleContent();
+        stale.IsStale = true;
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
+        var settings = CreateSettings();
+
+        // Act
+        var vm = new HomeViewModel(_contentService, settings);
+        await vm.RefreshAsync();
+
+        // Assert
+        vm.IsOfflineMode.ShouldBeTrue();
+        vm.IsContentStale.ShouldBeTrue();
+        vm.IsOutOfDateWarningVisible.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task LoadHomeContent_WhenAFailedRefreshIsFollowedByAGoodOne_ClearsTheWarning()
+    {
+        // Arrange — the warning must not outlive the failure that caused it.
+        var stale = SampleContent();
+        stale.IsStale = true;
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        var settings = CreateSettings();
+        var vm = new HomeViewModel(_contentService, settings);
+        await vm.RefreshAsync();
+        vm.IsContentStale.ShouldBeTrue();
+
+        // Act
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
+        await vm.RefreshAsync();
+
+        // Assert
+        vm.IsContentStale.ShouldBeFalse();
+        vm.IsOutOfDateWarningVisible.ShouldBeFalse();
+    }
+
     [Fact]
     public void Dispose_WhenCalledTwice_DoesNotThrow()
     {

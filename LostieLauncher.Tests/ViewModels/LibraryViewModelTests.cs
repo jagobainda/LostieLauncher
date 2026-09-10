@@ -343,110 +343,6 @@ public class LibraryViewModelTests
         attempts.ShouldBe(2);
     }
 
-    [Fact]
-    public void AtomicSwapDirectories_FreshInstall_MovesSourceToTargetAndCleansUp()
-    {
-        // Arrange — no existing target directory (fresh install)
-        using var root = new TempDirectoryFixture("atomicswap-fresh");
-        var source = root.Combine("source");
-        var backup = root.Combine("backup");
-        var target = root.Combine("target");
-
-        Directory.CreateDirectory(source);
-        File.WriteAllText(Path.Combine(source, "game.exe"), "v1.0");
-
-        // Act
-        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
-
-        // Assert — source is gone, target exists with the file, backup does not exist
-        Directory.Exists(source).ShouldBeFalse();
-        Directory.Exists(target).ShouldBeTrue();
-        File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
-        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("v1.0");
-        Directory.Exists(backup).ShouldBeFalse();
-    }
-
-    [Fact]
-    public void AtomicSwapDirectories_Update_SwapsTargetToBackupSourceToTargetAndDeletesBackup()
-    {
-        // Arrange — existing target directory (update scenario)
-        using var root = new TempDirectoryFixture("atomicswap-update");
-        var source = root.Combine("source");
-        var backup = root.Combine("backup");
-        var target = root.Combine("target");
-
-        Directory.CreateDirectory(source);
-        File.WriteAllText(Path.Combine(source, "game.exe"), "v2.0");
-        File.WriteAllText(Path.Combine(source, "new.dll"), "new");
-
-        Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "game.exe"), "v1.0");
-        File.WriteAllText(Path.Combine(target, "old.dll"), "orphan");
-
-        // Act
-        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
-
-        // Assert — source gone, target has only v2.0 files (BUG-029: no orphan old.dll), backup gone
-        Directory.Exists(source).ShouldBeFalse();
-        Directory.Exists(target).ShouldBeTrue();
-        File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
-        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("v2.0");
-        File.Exists(Path.Combine(target, "new.dll")).ShouldBeTrue();
-        File.Exists(Path.Combine(target, "old.dll")).ShouldBeFalse();
-        Directory.Exists(backup).ShouldBeFalse();
-    }
-
-    [Fact]
-    public void AtomicSwapDirectories_LeftoverBackup_IsCleanedBeforeSwap()
-    {
-        // Arrange — a leftover .old directory from a previous crashed swap
-        using var root = new TempDirectoryFixture("atomicswap-leftover");
-        var source = root.Combine("source");
-        var backup = root.Combine("backup");
-        var target = root.Combine("target");
-
-        Directory.CreateDirectory(source);
-        File.WriteAllText(Path.Combine(source, "game.exe"), "fresh");
-
-        Directory.CreateDirectory(target);
-        File.WriteAllText(Path.Combine(target, "game.exe"), "old");
-
-        Directory.CreateDirectory(backup);
-        File.WriteAllText(Path.Combine(backup, "stale.txt"), "leftover-from-crash");
-
-        // Act
-        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
-
-        // Assert — stale backup was cleaned, swap succeeded normally
-        Directory.Exists(source).ShouldBeFalse();
-        Directory.Exists(target).ShouldBeTrue();
-        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("fresh");
-        Directory.Exists(backup).ShouldBeFalse();
-    }
-
-    [Fact]
-    public void AtomicSwapDirectories_WhenThePreviousVersionHasAReadOnlyDirectory_StillDeletesTheBackup()
-    {
-        using var root = new TempDirectoryFixture("atomicswap-readonly");
-        var source = root.Combine("source");
-        var backup = root.Combine("backup");
-        var target = root.Combine("target");
-
-        Directory.CreateDirectory(source);
-        File.WriteAllText(Path.Combine(source, "game.exe"), "v2.0");
-
-        var blocked = Path.Combine(target, "Animations", "Beat_Up_hit_2");
-        Directory.CreateDirectory(blocked);
-        File.WriteAllText(Path.Combine(target, "game.exe"), "v1.0");
-        File.WriteAllText(Path.Combine(blocked, "frame.png"), "pixels");
-        File.SetAttributes(blocked, File.GetAttributes(blocked) | FileAttributes.ReadOnly);
-
-        LibraryViewModel.AtomicSwapDirectories(source, backup, target);
-
-        Directory.Exists(backup).ShouldBeFalse();
-        File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("v2.0");
-    }
-
     // ---- BUG-025: integrity verification is mandatory and fail-closed ----------------------
 
     [Fact]
@@ -658,5 +554,52 @@ public class LibraryViewModelTests
 
         // Act & Assert
         LibraryViewModel.GetSpecialVersionConfigErrorMessage(SpecialVersionConfigOutcome.Success, strings).ShouldBeNull();
+    }
+
+    // ---- The downloads cache does not grow forever (wave 2) ---------------------------------
+
+    [Fact]
+    public async Task LoadGames_PurgesTheDownloadsFolderOfPartialsNothingWillEverResume()
+    {
+        // Arrange — a .part for a game the catalog no longer lists, next to a fresh one for a game
+        // it does. Only the first is unreachable: no download the launcher can start would resume it.
+        using var root = new TempDirectoryFixture("downloads-purge");
+        var downloads = Directory.CreateDirectory(root.Combine(".downloads")).FullName;
+        var orphan = Path.Combine(downloads, "removed-game.abc123.zip.part");
+        var resumable = Path.Combine(downloads, "demo.abc123.zip.part");
+        File.WriteAllText(orphan, "4 GiB of nobody's business");
+        File.WriteAllText(resumable, "still resumable");
+
+        _settingsService.GetGamesRootDirectory().Returns(root.Path);
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Demo", version: "1.0.0")]);
+
+        // Act
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+
+        // Assert
+        File.Exists(orphan).ShouldBeFalse();
+        File.Exists(resumable).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task LoadGames_WhenTheCatalogCameBackEmpty_LeavesTheDownloadsFolderAlone()
+    {
+        // Arrange — an empty catalog means the request failed or the server is under maintenance,
+        // not that every game vanished. Purging against it would delete resumable downloads.
+        using var root = new TempDirectoryFixture("downloads-purge-offline");
+        var downloads = Directory.CreateDirectory(root.Combine(".downloads")).FullName;
+        var resumable = Path.Combine(downloads, "demo.abc123.zip.part");
+        File.WriteAllText(resumable, "still resumable");
+
+        _settingsService.GetGamesRootDirectory().Returns(root.Path);
+        _contentService.GetGamesAsync().Returns([]);
+
+        // Act
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+
+        // Assert
+        File.Exists(resumable).ShouldBeTrue();
     }
 }

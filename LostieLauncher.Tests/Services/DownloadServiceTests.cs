@@ -223,9 +223,14 @@ public class DownloadServiceTests : IDisposable
         // error (reproduced here by making the destination path an existing directory, which makes
         // the File.Move in the stack trace fail with UnauthorizedAccessException). This is the
         // scenario users hit when the chosen download path isn't writable by the launcher.
-        _httpFactory.HandlerFor("Download").Respond(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        var requests = 0;
+        _httpFactory.HandlerFor("Download").Respond(_ =>
         {
-            Content = new StringContent("payload", Encoding.UTF8, "application/octet-stream")
+            requests++;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("payload", Encoding.UTF8, "application/octet-stream")
+            };
         });
         var dest = Path.Combine(_temp.Path, "occupied");
         Directory.CreateDirectory(dest);
@@ -238,6 +243,37 @@ public class DownloadServiceTests : IDisposable
         // to pick a different download path in Settings instead of a "try again later" message.
         result.Outcome.ShouldBe(DownloadOutcome.PermissionDenied);
         result.ErrorMessage.ShouldBeNull();
+        // ...and it fails fast: a directory blocks every future attempt too, so the user is not made
+        // to sit through a retry backoff that cannot possibly help.
+        requests.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task DownloadAsync_WhenTheDestinationIsBrieflyHeldOpenByAnotherProcess_StillFinalizesTheDownload()
+    {
+        // Arrange — the transfer completes and an antivirus, sync client or Explorer preview has the
+        // destination open for a moment. A fully transferred file used to be discarded on the first
+        // File.Move failure, because UnauthorizedAccessException never derives from IOException and
+        // so slipped past the retry filter entirely.
+        _httpFactory.HandlerFor("Download").Respond(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("payload", Encoding.UTF8, "application/octet-stream")
+        });
+        var dest = Path.Combine(_temp.Path, "held-open.bin");
+        File.WriteAllText(dest, "previous");
+        var holder = new FileStream(dest, FileMode.Open, FileAccess.Read, FileShare.None);
+        // Release the lock shortly after the first finalization attempt fails, well inside the
+        // retry budget; the test never waits on the full production backoff.
+        using var release = new Timer(_ => holder.Dispose(), null, TimeSpan.FromMilliseconds(20), Timeout.InfiniteTimeSpan);
+        var sut = new DownloadService(_httpFactory, _options, TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await sut.DownloadAsync(DownloadUrl, dest);
+
+        // Assert — the retry saved the transfer instead of throwing away everything it downloaded.
+        result.Outcome.ShouldBe(DownloadOutcome.Success);
+        File.ReadAllText(dest).ShouldBe("payload");
+        File.Exists(dest + ".part").ShouldBeFalse();
     }
 
     // -------------------- DownloadAsync: inactivity watchdog (BUG-013) --------------------

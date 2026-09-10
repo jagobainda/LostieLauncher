@@ -4,9 +4,6 @@ using LostieLauncher.Content;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Views.Dialogs;
-using SharpCompress.Archives;
-using SharpCompress.Common;
-using SharpCompress.Readers;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Security.Cryptography;
@@ -26,6 +23,8 @@ public partial class LibraryViewModel : ObservableObject
     private readonly Dictionary<string, DownloadSession> _sessions = [];
     private DownloadSession? _activeSession;
     private bool _serverActionsBlockedMessageShown;
+
+    private const string DownloadsFolderName = ".downloads";
 
     private static readonly Regex KeyFormatRegex = new(@"^[A-Za-z0-9]{4}(-[A-Za-z0-9]{4}){4}$", RegexOptions.Compiled);
     private static readonly Regex ArchivoFormatRegex = new(@"^[A-Za-z0-9._-]+\.zip$", RegexOptions.Compiled);
@@ -95,6 +94,8 @@ public partial class LibraryViewModel : ObservableObject
 
             Games = new ObservableCollection<GameInfo>(result);
             Logs.DebugLogManager($"Games library loaded: {result.Count} games.");
+
+            PurgeStaleDownloads(result);
         }
         catch (Exception ex)
         {
@@ -294,10 +295,47 @@ public partial class LibraryViewModel : ObservableObject
         return session;
     }
 
-    private string BuildZipPath(GameDownloadArgs args)
+    private string BuildZipPath(GameDownloadArgs args) => Path.Combine(GetDownloadsDirectory(), Utils.DownloadPathUtils.GetZipFileName(args));
+
+    private string GetDownloadsDirectory() => Path.Combine(_settingsService.GetGamesRootDirectory(), DownloadsFolderName);
+
+    private void PurgeStaleDownloads(IReadOnlyCollection<GameInfo> catalog)
     {
-        var gamesRoot = _settingsService.GetGamesRootDirectory();
-        return Path.Combine(gamesRoot, ".downloads", Utils.DownloadPathUtils.GetZipFileName(args));
+        if (catalog.Count == 0) return;
+
+        try
+        {
+            var downloadsDirectory = GetDownloadsDirectory();
+            if (!Directory.Exists(downloadsDirectory)) return;
+
+            var entries = new DirectoryInfo(downloadsDirectory)
+                .EnumerateFiles()
+                .Select(file => new DownloadCacheEntry(file.Name, file.LastWriteTimeUtc));
+            var knownGameIds = catalog.Select(game => game.GameId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var stale = DownloadCachePolicy.SelectStaleFiles(entries, knownGameIds, DateTime.UtcNow, DownloadCachePolicy.DefaultMaxAge);
+            if (stale.Count == 0) return;
+
+            var purged = 0;
+            foreach (var fileName in stale)
+            {
+                try
+                {
+                    File.Delete(Path.Combine(downloadsDirectory, fileName));
+                    purged++;
+                }
+                catch (Exception ex)
+                {
+                    Logs.ErrorLogManager(ex);
+                }
+            }
+
+            Logs.InfoLogManager($"Purged {purged} stale file(s) from the downloads cache.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     private async Task ExecuteDownloadAndInstallAsync(GameInfo game, DownloadSession session)
@@ -400,7 +438,7 @@ public partial class LibraryViewModel : ObservableObject
             game.DownloadProgressValue = 100;
             game.DownloadRemainingText = string.Empty;
 
-            await ExtractArchiveAsync(session.ZipPath, session.ExtractDir);
+            await GameArchiveInstaller.ExtractAsync(session.ZipPath, session.ExtractDir);
 
             var tipo = session.SpecialConfig?.Tipo;
             await _contentService.RegisterGameAsync(game.Id, game.Nombre, session.Args.Version, tipo);
@@ -415,6 +453,20 @@ public partial class LibraryViewModel : ObservableObject
         {
             Logs.ErrorLogManager(ex);
             ResetDownloadState(game, session);
+            ShowInstallationFailedDialog();
+        }
+    }
+
+    private static void ShowInstallationFailedDialog()
+    {
+        try
+        {
+            var strings = SettingsViewModel.Instance.Strings;
+            CustomMessageBox.Show(strings.DownloadErrorTitle, strings.DownloadErrorMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
         }
     }
 
@@ -432,94 +484,6 @@ public partial class LibraryViewModel : ObservableObject
             var actualHash = Convert.ToHexString(sha.ComputeHash(fs));
             return actualHash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase);
         });
-    }
-
-    private static async Task ExtractArchiveAsync(string zipPath, string extractDir) => await Task.Run(() =>
-    {
-        var tempDir = extractDir + ".tmp";
-        var backupDir = extractDir + ".old";
-
-        DeleteLeftoverDirectory(tempDir);
-        DeleteLeftoverDirectory(backupDir);
-
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            Logs.DebugLogManager($"Extracting archive: {Path.GetFileName(zipPath)}.");
-            var readerOptions = new ReaderOptions
-            {
-                ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 }
-            };
-
-            var tempDirFull = Path.GetFullPath(tempDir) + Path.DirectorySeparatorChar;
-            var entryCount = 0;
-            using (var stream = File.OpenRead(zipPath))
-            using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
-            {
-                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
-                {
-                    var destPath = Path.GetFullPath(Path.Combine(tempDir, entry.Key!));
-                    if (!destPath.StartsWith(tempDirFull, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidOperationException($"Zip Slip attempt detected in entry: {entry.Key}");
-                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
-                    using var entryStream = entry.OpenEntryStream();
-                    using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    entryStream.CopyTo(outStream);
-                    entryCount++;
-                }
-            }
-            Logs.DebugLogManager($"Temp extraction complete: {entryCount} files.");
-
-            AtomicSwapDirectories(tempDir, backupDir, extractDir);
-
-            try { File.Delete(zipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
-            Logs.DebugLogManager($"Extraction complete: {entryCount} files installed.");
-        }
-        catch
-        {
-            DeleteLeftoverDirectory(tempDir);
-            throw;
-        }
-    });
-
-    private static void DeleteLeftoverDirectory(string path)
-    {
-        try
-        {
-            if (!Directory.Exists(path)) return;
-
-            var result = DirectoryRemover.Delete(path);
-            if (!result.Deleted) Logs.ErrorLogManager($"Could not remove leftover directory '{path}' after {result.Attempts} attempt(s). Blocked at: {result.BlockingPath}.");
-        }
-        catch (Exception ex)
-        {
-            Logs.ErrorLogManager(ex);
-        }
-    }
-
-    internal static void AtomicSwapDirectories(string sourceDir, string backupDir, string targetDir)
-    {
-        var hadExisting = Directory.Exists(targetDir);
-        if (hadExisting)
-        {
-            DeleteLeftoverDirectory(backupDir);
-            Directory.Move(targetDir, backupDir);
-        }
-
-        try
-        {
-            Directory.Move(sourceDir, targetDir);
-        }
-        catch
-        {
-            if (hadExisting)
-            {
-                try { Directory.Move(backupDir, targetDir); } catch { }
-            }
-            throw;
-        }
-
-        if (hadExisting) DeleteLeftoverDirectory(backupDir);
     }
 
     private void HandleDownloadCancelled(GameInfo game, DownloadSession session)
@@ -549,6 +513,7 @@ public partial class LibraryViewModel : ObservableObject
     {
         var strings = SettingsViewModel.Instance.Strings;
         Logs.ErrorLogManager($"Download failed due to insufficient permissions on the download path: {session.Args.GameId}.");
+        CleanupDownloadFiles(session);
         ResetDownloadState(game, session);
         CustomMessageBox.Show(strings.DownloadPermissionDeniedTitle, strings.DownloadPermissionDeniedMessage, CustomMessageBoxButton.OK, CustomMessageBoxIcon.Error);
     }
@@ -641,16 +606,7 @@ public partial class LibraryViewModel : ObservableObject
         return _sessions.TryGetValue(gameId, out var session) ? session : null;
     }
 
-    private static void CleanupDownloadFiles(DownloadSession session)
-    {
-        var zipPath = session.ZipPath;
-        var partPath = Utils.DownloadPathUtils.GetPartFilePath(zipPath);
-        var metaPath = Utils.DownloadPathUtils.GetMetaFilePath(partPath);
-
-        try { if (File.Exists(partPath)) File.Delete(partPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
-        try { if (File.Exists(zipPath)) File.Delete(zipPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
-        try { if (File.Exists(metaPath)) File.Delete(metaPath); } catch (Exception ex) { Logs.ErrorLogManager(ex); }
-    }
+    private static void CleanupDownloadFiles(DownloadSession session) => DownloadArtifacts.Delete(session.ZipPath);
 
     private sealed class DownloadSession
     {

@@ -20,10 +20,13 @@ public class DownloadService : IDownloadService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly DownloadOptions _downloadOptions;
     private readonly TimeSpan _inactivityTimeout;
+    private readonly TimeSpan _finalizeRetryDelay;
 
     private const int BufferSize = 64 * 1024;
     private const int MaxRetries = 2;
+    private const int FinalizeMaxAttempts = 3;
     private static readonly TimeSpan DefaultInactivityTimeout = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan DefaultFinalizeRetryDelay = TimeSpan.FromMilliseconds(500);
 
     public DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions)
         : this(httpClientFactory, downloadOptions, DefaultInactivityTimeout)
@@ -31,11 +34,18 @@ public class DownloadService : IDownloadService
     }
 
     internal DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions, TimeSpan inactivityTimeout)
+        : this(httpClientFactory, downloadOptions, inactivityTimeout, DefaultFinalizeRetryDelay)
+    {
+    }
+
+    internal DownloadService(IHttpClientFactory httpClientFactory, DownloadOptions downloadOptions, TimeSpan inactivityTimeout, TimeSpan finalizeRetryDelay)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(inactivityTimeout, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfLessThan(finalizeRetryDelay, TimeSpan.Zero);
         _httpClientFactory = httpClientFactory;
         _downloadOptions = downloadOptions;
         _inactivityTimeout = inactivityTimeout;
+        _finalizeRetryDelay = finalizeRetryDelay;
     }
 
     public async Task<SpecialVersionConfigResult> FetchSpecialVersionConfigAsync(string key, CancellationToken ct = default)
@@ -191,7 +201,7 @@ public class DownloadService : IDownloadService
             if (meta?.TotalBytes is long expectedTotal && existingBytes == expectedTotal)
             {
                 Logs.InfoLogManager("Server returned 416 — partial file matches expected size, treating as complete.");
-                FinalizeDownload(partPath, finalPath);
+                await FinalizeDownloadAsync(partPath, finalPath).ConfigureAwait(false);
                 DeleteResumeMetadata(metaPath);
                 progress?.Report(new DownloadProgressInfo(100, 0));
                 return;
@@ -267,24 +277,14 @@ public class DownloadService : IDownloadService
 
             Logs.DebugLogManager($"Download data received: {totalRead} bytes total.");
         }
-        FinalizeDownload(partPath, finalPath);
+        await FinalizeDownloadAsync(partPath, finalPath).ConfigureAwait(false);
         DeleteResumeMetadata(metaPath);
         progress?.Report(new DownloadProgressInfo(100, 0));
         Logs.InfoLogManager("Download completed and file finalized.");
     }
 
-    private static void FinalizeDownload(string partPath, string finalPath)
-    {
-        try
-        {
-            File.Move(partPath, finalPath, overwrite: true);
-        }
-        catch (Exception ex)
-        {
-            Logs.ErrorLogManager($"Download finalization failed: {Utils.FileMoveDiagnostics.Describe(partPath, finalPath, ex)}");
-            throw;
-        }
-    }
+    private Task FinalizeDownloadAsync(string partPath, string finalPath) =>
+        Utils.FileFinalizer.MoveAsync(partPath, finalPath, FinalizeMaxAttempts, _finalizeRetryDelay, Task.Delay);
 
     private sealed record DownloadResumeMetadata(string? ETag, DateTimeOffset? LastModified, long? TotalBytes);
 
