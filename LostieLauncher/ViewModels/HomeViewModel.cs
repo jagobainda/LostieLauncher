@@ -16,8 +16,6 @@ public partial class HomeViewModel : ObservableObject, IDisposable
     private readonly CancellationTokenSource _backgroundRefreshCts = new();
     private bool _disposed;
 
-    // Tarea del bucle de refresco en segundo plano; expuesta como internal solo para que las pruebas
-    // puedan esperar su terminación tras Dispose (el bucle dejó de ser imparable, cf. BUG-019).
     internal Task BackgroundRefreshTask { get; }
 
     [ObservableProperty]
@@ -40,7 +38,14 @@ public partial class HomeViewModel : ObservableObject, IDisposable
     public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOutOfDateWarningVisible))]
     public partial bool IsOfflineMode { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOutOfDateWarningVisible))]
+    public partial bool IsContentStale { get; set; }
+
+    public bool IsOutOfDateWarningVisible => IsContentStale && !IsOfflineMode;
 
     public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
     public bool IsListVisible => !IsLoading && (News.Count > 0 || Notifications.Count > 0);
@@ -93,8 +98,9 @@ public partial class HomeViewModel : ObservableObject, IDisposable
             News = new ObservableCollection<NewsItem>(content.News);
             Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
             IsOfflineMode = offlineMode;
+            IsContentStale = content.IsStale;
 
-            Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}.");
+            Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}. Stale: {content.IsStale}.");
         }
         catch (Exception ex)
         {
@@ -115,14 +121,11 @@ public partial class HomeViewModel : ObservableObject, IDisposable
 
             while (await timer.WaitForNextTickAsync(ct))
             {
-                // LoadHomeContentAsync nunca lanza (try/catch/finally propio), así que el bucle no necesita
-                // un catch por iteración; el único throw esperable aquí es la OCE de la cancelación al disponer.
                 await LoadHomeContentAsync(forceRefresh: true, showLoading: false);
             }
         }
         catch (OperationCanceledException)
         {
-            // Cancelación esperada al disponer el ViewModel: el bucle termina limpiamente.
         }
         catch (Exception ex)
         {

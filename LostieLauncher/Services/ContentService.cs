@@ -29,6 +29,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private const string PlaytimeFileName = "playtime.json";
     private readonly SemaphoreSlim _homeContentGate = new(1, 1);
     private HomeContentDto? _homeContentCache;
+    private bool _homeContentIsStale;
     private volatile ServerActionFlagCache? _serverActionBlockedCache;
     private static readonly TimeSpan ServerActionBlockedCacheDuration = TimeSpan.FromSeconds(30);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -98,37 +99,11 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
 
     public async Task<HomeContent> GetHomeContentAsync(bool forceRefresh = false)
     {
+        var (cache, isStale) = await ResolveHomeContentCacheAsync(forceRefresh).ConfigureAwait(false);
+        if (cache is null) return new HomeContent { IsStale = isStale };
+
         try
         {
-            HomeContentDto cache;
-            await _homeContentGate.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                if (forceRefresh) _homeContentCache = null;
-
-                if (_homeContentCache is null)
-                {
-                    Logs.DebugLogManager("Fetching home content from remote.");
-                    var client = _httpClientFactory.CreateClient("Content");
-                    using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
-
-                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, RemoteJsonOptions) ?? new HomeContentDto([], []);
-                    Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
-                }
-                else
-                {
-                    Logs.DebugLogManager("Using cached home content.");
-                }
-
-                cache = _homeContentCache;
-            }
-            finally
-            {
-                _homeContentGate.Release();
-            }
-
             var settings = _settingsService.Load();
             var langCode = GetLanguageCode(settings.Language);
 
@@ -161,14 +136,57 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
             return new HomeContent
             {
                 News = news,
-                Notifications = notifications
+                Notifications = notifications,
+                IsStale = isStale
             };
         }
         catch (Exception ex)
         {
             Logs.ErrorLogManager(ex);
-            return new HomeContent();
+            return new HomeContent { IsStale = true };
         }
+    }
+
+    private async Task<(HomeContentDto? Cache, bool IsStale)> ResolveHomeContentCacheAsync(bool forceRefresh)
+    {
+        await _homeContentGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!forceRefresh && _homeContentCache is not null)
+            {
+                Logs.DebugLogManager("Using cached home content.");
+                return (_homeContentCache, _homeContentIsStale);
+            }
+
+            Logs.DebugLogManager("Fetching home content from remote.");
+            var client = _httpClientFactory.CreateClient("Content");
+            using var response = await client.GetAsync(_contentOptions.NotificationsEndpoint).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            _homeContentCache = JsonSerializer.Deserialize<HomeContentDto>(json, RemoteJsonOptions) ?? new HomeContentDto([], []);
+            Logs.DebugLogManager($"Home content fetched: {_homeContentCache.News.Count} raw news, {_homeContentCache.Notifications.Count} raw notifications.");
+            _homeContentIsStale = false;
+            return (_homeContentCache, false);
+        }
+        catch (Exception ex)
+        {
+            LogHomeContentRefreshFailure(ex);
+            _homeContentIsStale = true;
+            return (_homeContentCache, true);
+        }
+        finally
+        {
+            _homeContentGate.Release();
+        }
+    }
+
+    private static void LogHomeContentRefreshFailure(Exception ex)
+    {
+        if (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+            Logs.InfoLogManager($"Home content refresh failed ({ex.GetType().Name}: {ex.Message}); keeping the last known content.");
+        else
+            Logs.ErrorLogManager(ex);
     }
 
     public async Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default)

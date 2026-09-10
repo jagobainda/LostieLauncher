@@ -844,7 +844,7 @@ public class ContentServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetHomeContentAsync_WhenRequestFails_ReturnsEmptyHomeContent()
+    public async Task GetHomeContentAsync_WhenTheFirstRequestFailsWithNothingCached_DegradesToAnEmptyStateMarkedStale()
     {
         // Arrange — no handler set up; default 404 response.
         var sut = CreateSut();
@@ -852,8 +852,102 @@ public class ContentServiceTests : IDisposable
         // Act
         var content = await sut.GetHomeContentAsync(forceRefresh: true);
 
-        // Assert
+        // Assert — nothing to fall back on, but the UI can still say "could not load" rather than
+        // "there is nothing here".
         content.News.ShouldBeEmpty();
         content.Notifications.ShouldBeEmpty();
+        content.IsStale.ShouldBeTrue();
     }
+
+    // -------------------- GetHomeContentAsync — refresh failures keep the last known content ------
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenARefreshFails_KeepsThePreviouslyLoadedContent()
+    {
+        // Arrange — content loads, then the machine briefly loses DNS. Blanking the Home screen for a
+        // whole polling cycle over a transient failure is exactly what this must not do.
+        var failing = false;
+        RespondWithSingleNewsItem(() => failing, () => "Vigente");
+        var sut = CreateSut();
+        await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Act
+        failing = true;
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Assert — same content as before, flagged so the UI can warn that it may be out of date.
+        content.News.ShouldHaveSingleItem();
+        content.News[0].Title.ShouldBe("Vigente");
+        content.IsStale.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenAnUnforcedReloadFollowsAFailedRefresh_KeepsTheStaleFlag()
+    {
+        // Arrange — a language change reloads with forceRefresh:false, which serves the cache. That
+        // path used to report fresh content, silently clearing the warning about the failed refresh.
+        var failing = false;
+        RespondWithSingleNewsItem(() => failing, () => "Vigente");
+        var sut = CreateSut();
+        await sut.GetHomeContentAsync(forceRefresh: true);
+        failing = true;
+        await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Act
+        var content = await sut.GetHomeContentAsync();
+
+        // Assert — the content is exactly as stale as it was a moment ago, so the flag stands.
+        content.News.ShouldHaveSingleItem();
+        content.IsStale.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetHomeContentAsync_WhenARefreshFailsAndThenSucceeds_ReturnsTheFreshContentUnflagged()
+    {
+        // Arrange — the failure must not poison the cache: the next good response has to win.
+        var failing = false;
+        var title = "Vigente";
+        RespondWithSingleNewsItem(() => failing, () => title);
+        var sut = CreateSut();
+        await sut.GetHomeContentAsync(forceRefresh: true);
+
+        failing = true;
+        await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Act
+        failing = false;
+        title = "Actualizada";
+        var content = await sut.GetHomeContentAsync(forceRefresh: true);
+
+        // Assert
+        content.News.ShouldHaveSingleItem();
+        content.News[0].Title.ShouldBe("Actualizada");
+        content.IsStale.ShouldBeFalse();
+    }
+
+    /// <summary>
+    /// Serves one news item, or throws the transport failure a machine without DNS produces, so a
+    /// test can flip between the two mid-run without rewiring the handler.
+    /// </summary>
+    private void RespondWithSingleNewsItem(Func<bool> isFailing, Func<string> title) =>
+        _httpFactory.HandlerFor("Content").Respond(req =>
+        {
+            if (!req.RequestUri!.ToString().Contains("notifications.json", StringComparison.OrdinalIgnoreCase)) return null;
+            if (isFailing()) throw new HttpRequestException("Unknown host.");
+
+            var json = $$"""
+            {
+              "news": [
+                { "id": "11111111-1111-1111-1111-111111111111",
+                  "title": {"es":"{{title()}}"}, "description": {"es":"."},
+                  "tag":"x", "date":"2024-01-01T00:00:00", "expires_at": null }
+              ],
+              "notifications": []
+            }
+            """;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+            };
+        });
 }

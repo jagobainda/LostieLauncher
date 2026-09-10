@@ -108,6 +108,9 @@ public interface IStrings
     public string OfflineModeLabel { get; }
     public string ServerMaintenanceNotificationTitle { get; }
     public string ServerMaintenanceNotificationMessage { get; }
+    public string HomeContentUnavailable { get; }
+    public string ContentOutOfDateLabel { get; }
+    public string ContentOutOfDateMessage { get; }
 }
 
 public class Esp : IStrings
@@ -218,6 +221,9 @@ public class Esp : IStrings
     public string OfflineModeLabel => "Modo offline";
     public string ServerMaintenanceNotificationTitle => "Servidor en mantenimiento";
     public string ServerMaintenanceNotificationMessage => "El launcher está en modo offline. Puedes seguir viendo tus juegos instalados; las descargas y actualizaciones se reactivarán automáticamente cuando el servicio vuelva.";
+    public string HomeContentUnavailable => "No se ha podido cargar el contenido";
+    public string ContentOutOfDateLabel => "Contenido desactualizado";
+    public string ContentOutOfDateMessage => "No se ha podido conectar con el servidor. Se muestra el último contenido conocido, que puede estar desactualizado.";
 }
 
 public class Eng : IStrings
@@ -328,6 +334,9 @@ public class Eng : IStrings
     public string OfflineModeLabel => "Offline mode";
     public string ServerMaintenanceNotificationTitle => "Server maintenance";
     public string ServerMaintenanceNotificationMessage => "The launcher is in offline mode. You can keep viewing your installed games; downloads and updates will reactivate automatically when the service returns.";
+    public string HomeContentUnavailable => "Content could not be loaded";
+    public string ContentOutOfDateLabel => "Content may be out of date";
+    public string ContentOutOfDateMessage => "The server could not be reached. Showing the last known content, which may be out of date.";
 }
 
 public class Cat : IStrings
@@ -438,6 +447,9 @@ public class Cat : IStrings
     public string OfflineModeLabel => "Mode offline";
     public string ServerMaintenanceNotificationTitle => "Servidor en manteniment";
     public string ServerMaintenanceNotificationMessage => "El launcher està en mode offline. Pots continuar veient els jocs instal·lats; les descàrregues i actualitzacions es reactivaran automàticament quan torne el servei.";
+    public string HomeContentUnavailable => "No s'ha pogut carregar el contingut";
+    public string ContentOutOfDateLabel => "Contingut desactualitzat";
+    public string ContentOutOfDateMessage => "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat.";
 }
 
 public class Eus : IStrings
@@ -548,6 +560,9 @@ public class Eus : IStrings
     public string OfflineModeLabel => "Offline modua";
     public string ServerMaintenanceNotificationTitle => "Zerbitzaria mantentze-lanetan";
     public string ServerMaintenanceNotificationMessage => "Launcher-a offline moduan dago. Instalatutako jokoak ikusten jarrai dezakezu; deskargak eta eguneraketak automatikoki berraktibatuko dira zerbitzua itzultzen denean.";
+    public string HomeContentUnavailable => "Ezin izan da edukia kargatu";
+    public string ContentOutOfDateLabel => "Eduki zaharkitua";
+    public string ContentOutOfDateMessage => "Ezin izan da zerbitzariarekin konektatu. Ezagutzen den azken edukia erakusten da, eta zaharkituta egon daiteke.";
 }
 
 public class Gal : IStrings
@@ -658,6 +673,9 @@ public class Gal : IStrings
     public string OfflineModeLabel => "Modo offline";
     public string ServerMaintenanceNotificationTitle => "Servidor en mantemento";
     public string ServerMaintenanceNotificationMessage => "O launcher está en modo offline. Podes seguir vendo os teus xogos instalados; as descargas e actualizacións reactivaranse automaticamente cando volva o servizo.";
+    public string HomeContentUnavailable => "Non se puido cargar o contido";
+    public string ContentOutOfDateLabel => "Contido desactualizado";
+    public string ContentOutOfDateMessage => "Non se puido conectar co servidor. Amósase o último contido coñecido, que pode estar desactualizado.";
 }
 
 public class Por : IStrings
@@ -768,6 +786,9 @@ public class Por : IStrings
     public string OfflineModeLabel => "Modo offline";
     public string ServerMaintenanceNotificationTitle => "Servidor em manutenção";
     public string ServerMaintenanceNotificationMessage => "O launcher está em modo offline. Você pode continuar vendo seus jogos instalados; downloads e atualizações serão reativados automaticamente quando o serviço voltar.";
+    public string HomeContentUnavailable => "Não foi possível carregar o conteúdo";
+    public string ContentOutOfDateLabel => "Conteúdo desatualizado";
+    public string ContentOutOfDateMessage => "Não foi possível ligar ao servidor. A mostrar o último conteúdo conhecido, que pode estar desatualizado.";
 }
 
 public class Val : IStrings
@@ -878,6 +899,9 @@ public class Val : IStrings
     public string OfflineModeLabel => "Mode offline";
     public string ServerMaintenanceNotificationTitle => "Servidor en manteniment";
     public string ServerMaintenanceNotificationMessage => "El launcher està en mode offline. Pots continuar veient els jocs instal·lats; les descàrregues i actualitzacions es reactivaran automàticament quan torne el servei.";
+    public string HomeContentUnavailable => "No s'ha pogut carregar el contingut";
+    public string ContentOutOfDateLabel => "Contingut desactualitzat";
+    public string ContentOutOfDateMessage => "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat.";
 }
 
 public class Fra : IStrings
@@ -988,4 +1012,7 @@ public class Fra : IStrings
     public string OfflineModeLabel => "Mode hors ligne";
     public string ServerMaintenanceNotificationTitle => "Serveur en maintenance";
     public string ServerMaintenanceNotificationMessage => "Le launcher est en mode hors ligne. Vous pouvez continuer à voir vos jeux installés ; les téléchargements et mises à jour se réactiveront automatiquement au retour du service.";
+    public string HomeContentUnavailable => "Le contenu n'a pas pu être chargé";
+    public string ContentOutOfDateLabel => "Contenu peut-être obsolète";
+    public string ContentOutOfDateMessage => "Le serveur est injoignable. Le dernier contenu connu est affiché ; il peut être obsolète.";
 }

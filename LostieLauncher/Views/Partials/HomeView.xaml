@@ -10,7 +10,6 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
              mc:Ignorable="d">
     <Grid>
-        <!-- Skeleton loading state: two-column layout matching the real content area -->
         <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
               Margin="20">
             <Grid.ColumnDefinitions>
@@ -55,7 +54,12 @@
                                            Foreground="{DynamicResource SecondaryFgDimBrush}" />
                 <TextBlock Text="{Binding Strings.HomeNoContent, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                            Foreground="{DynamicResource SecondaryFgDimBrush}"
-                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0" />
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0"
+                           Visibility="{Binding IsContentStale, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                <TextBlock Text="{Binding Strings.HomeContentUnavailable, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                           FontSize="14" HorizontalAlignment="Center" Margin="0,16,0,0"
+                           Visibility="{Binding IsContentStale, Converter={StaticResource BooleanToVisibilityConverter}}" />
             </StackPanel>
         </Grid>
 
@@ -95,6 +99,38 @@
                                    FontSize="14"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="{Binding Strings.ServerMaintenanceNotificationMessage, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                   Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="0" Grid.ColumnSpan="3"
+                    CornerRadius="6"
+                    BorderThickness="1"
+                    BorderBrush="#FFFFC107"
+                    Background="{DynamicResource OverlaySubtleBrush}"
+                    Padding="14"
+                    Margin="0,0,0,16"
+                    Visibility="{Binding IsOutOfDateWarningVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <iconPacks:PackIconMaterial Kind="CloudAlertOutline"
+                                               Width="22" Height="22"
+                                               Foreground="#FFFFC107"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Strings.ContentOutOfDateLabel, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                                   Foreground="{DynamicResource SecondaryFgBrush}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Strings.ContentOutOfDateMessage, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                                    Foreground="{DynamicResource SecondaryFgDimBrush}"
                                    FontSize="12"
                                    TextWrapping="Wrap"
