@@ -16,7 +16,7 @@ public class SettingsService : ISettingsService, IDisposable
 {
     private const string AppSubfolder = "LostieLauncher";
     private const string SettingsFileName = "launcher_settings.json";
-    private static readonly string DefaultDownloadDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    private static readonly string DefaultDownloadDirectory = DownloadDefaults.DownloadDirectory;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private static readonly TimeSpan DefaultSaveDelay = TimeSpan.FromMilliseconds(500);
 
