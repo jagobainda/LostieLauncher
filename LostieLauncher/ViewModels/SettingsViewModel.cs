@@ -40,7 +40,15 @@ public partial class SettingsViewModel : ObservableObject
     public partial bool AutoUpdate { get; set; } = false;
 
     [ObservableProperty]
-    public partial string DownloadDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    public partial string DownloadDirectory { get; set; } = DownloadDefaults.DownloadDirectory;
+
+    /// <summary>The folder the games actually land in, shown so the user never has to guess.</summary>
+    [ObservableProperty]
+    public partial string GamesRootDirectory { get; set; } = string.Empty;
+
+    /// <summary>Drives the Settings warning banner for a library that already sits under OneDrive.</summary>
+    [ObservableProperty]
+    public partial bool IsDownloadDirectoryOneDriveSynced { get; set; }
 
     public static AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
     public static AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
@@ -51,16 +59,21 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IWindowsStartupService _windowsStartupService;
     private readonly GlobalViewModel _globalViewModel;
     private readonly IUpdateService _updateService;
+    private readonly IDownloadLocationService _downloadLocationService;
+    private readonly IDownloadLocationNotifier _downloadLocationNotifier;
     private bool _hasSeenWelcome;
     private bool _isLoading;
 
-    public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService, GlobalViewModel globalViewModel, IUpdateService updateService)
+    public SettingsViewModel(ISettingsService settingsService, IWindowsStartupService windowsStartupService, GlobalViewModel globalViewModel,
+        IUpdateService updateService, IDownloadLocationService downloadLocationService, IDownloadLocationNotifier downloadLocationNotifier)
     {
         _instance = this;
         _settingsService = settingsService;
         _windowsStartupService = windowsStartupService;
         _globalViewModel = globalViewModel;
         _updateService = updateService;
+        _downloadLocationService = downloadLocationService;
+        _downloadLocationNotifier = downloadLocationNotifier;
 
         try
         {
@@ -94,6 +107,7 @@ public partial class SettingsViewModel : ObservableObject
             _hasSeenWelcome = settings.HasSeenWelcome;
 
             _settingsService.EnsureGamesRootDirectoryExists();
+            RefreshGamesRootState();
             Logs.DebugLogManager("Settings loaded.");
         }
         catch (Exception ex)
@@ -187,6 +201,29 @@ public partial class SettingsViewModel : ObservableObject
         Logs.InfoLogManager($"Download directory changed to: {value}.");
         SaveSettings();
         _settingsService.EnsureGamesRootDirectoryExists();
+        RefreshGamesRootState();
+    }
+
+    /// <summary>
+    /// Recomputes what the Settings screen says about the library location. The OneDrive
+    /// check runs on every load too, so a user who installed while the default was still
+    /// Documents is told their library sits in a synced folder instead of silently keeping
+    /// it there.
+    /// </summary>
+    private void RefreshGamesRootState()
+    {
+        try
+        {
+            GamesRootDirectory = _settingsService.GetGamesRootDirectory();
+            IsDownloadDirectoryOneDriveSynced = _downloadLocationService.IsOneDriveSynced(GamesRootDirectory);
+
+            if (IsDownloadDirectoryOneDriveSynced)
+                Logs.InfoLogManager($"The games root sits under a OneDrive-synced folder: {GamesRootDirectory}.");
+        }
+        catch (Exception ex)
+        {
+            Logs.ErrorLogManager(ex);
+        }
     }
 
     private void ApplyTheme(AppTheme theme)
@@ -249,11 +286,36 @@ public partial class SettingsViewModel : ObservableObject
 
         if (!string.IsNullOrEmpty(DownloadDirectory)) dialog.InitialDirectory = DownloadDirectory;
 
-        if (dialog.ShowDialog() == true)
+        if (dialog.ShowDialog() != true) return;
+
+        if (!AcceptDownloadDirectory(dialog.FolderName)) return;
+
+        Logs.InfoLogManager($"Download directory changed to: {dialog.FolderName}.");
+        DownloadDirectory = dialog.FolderName;
+    }
+
+    /// <summary>
+    /// Gates a freshly picked folder: a folder that grants write but not delete would accept
+    /// gigabytes and then fail the rename that finalizes every download, and a OneDrive-synced
+    /// folder is a bad host the user should at least be warned about.
+    /// </summary>
+    private bool AcceptDownloadDirectory(string directory)
+    {
+        var probe = _downloadLocationService.Probe(directory);
+        if (!probe.IsUsable)
         {
-            Logs.InfoLogManager($"Download directory changed to: {dialog.FolderName}.");
-            DownloadDirectory = dialog.FolderName;
+            Logs.ErrorLogManager($"Rejected download directory '{directory}': probe failed at {probe.Outcome} ({probe.Error}).");
+            _downloadLocationNotifier.NotifyDirectoryNotUsable(probe);
+            return false;
         }
+
+        if (!_downloadLocationService.IsOneDriveSynced(directory)) return true;
+
+        Logs.InfoLogManager($"Picked download directory '{directory}' is OneDrive-synced; asking the user to confirm.");
+        if (_downloadLocationNotifier.ConfirmOneDriveDirectory(directory)) return true;
+
+        Logs.InfoLogManager("The user declined the OneDrive-synced download directory.");
+        return false;
     }
 
     [RelayCommand]

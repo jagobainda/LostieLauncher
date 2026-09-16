@@ -16,7 +16,8 @@ public class FaqsViewModelTests
 
     private FaqsViewModel CreateSut(out SettingsViewModel settings)
     {
-        settings = new SettingsViewModel(_settingsService, _startupService, new GlobalViewModel(), Substitute.For<IUpdateService>());
+        settings = new SettingsViewModel(_settingsService, _startupService, new GlobalViewModel(), Substitute.For<IUpdateService>(),
+            Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         return new FaqsViewModel(settings);
     }
 

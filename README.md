@@ -159,6 +159,8 @@ Artifacts are generated in `releases/`:
 
 Configuration is automatically saved to `launcher_settings.json` in `%APPDATA%\LostieLauncher\` (settings from older versions stored next to the executable are migrated automatically).
 
+Games are installed into `<DownloadDirectory>\LostieLauncher\`, which defaults to `%USERPROFILE%\LostieLauncher\`. The launcher deliberately stays out of Documents (usually OneDrive-synced), out of `%LOCALAPPDATA%` (its own install directory) and out of Downloads (Storage Sense can delete its contents). Before a folder is accepted it must pass a write **and rename** check, because a folder can grant write while refusing the rename that finalizes every download.
+
 | Option              | Type          | Default      | Description                                  |
 | ------------------- | ------------- | ------------ | -------------------------------------------- |
 | `Language`          | `AppLanguage` | `Esp`        | Interface language                           |
@@ -166,7 +168,7 @@ Configuration is automatically saved to `launcher_settings.json` in `%APPDATA%\L
 | `StartWithWindows`  | `bool`        | `false`      | Launch on Windows startup                    |
 | `StartMinimized`    | `bool`        | `false`      | Start in the system tray                     |
 | `AutoUpdate`        | `bool`        | `false`      | Check for updates on startup                 |
-| `DownloadDirectory` | `string`      | My Documents | Game installation folder                     |
+| `DownloadDirectory` | `string`      | `%USERPROFILE%` | Game library root; games are installed into its `LostieLauncher\` subfolder |
 | `HasSeenWelcome`    | `bool`        | `false`      | Controls whether the welcome dialog is shown |
 
 ---

@@ -14,6 +14,8 @@ public class LibraryViewModelTests
     private readonly IDownloadService _downloadService = Substitute.For<IDownloadService>();
     private readonly DownloadOptions _downloadOptions = new(BaseUrl: "https://download.test");
     private readonly GlobalViewModel _globalViewModel = new();
+    private readonly IDownloadLocationService _downloadLocation = Substitute.For<IDownloadLocationService>();
+    private readonly IDownloadLocationNotifier _downloadLocationNotifier = Substitute.For<IDownloadLocationNotifier>();
 
     public LibraryViewModelTests(WpfApplicationFixture _)
     {
@@ -21,11 +23,17 @@ public class LibraryViewModelTests
         _contentService.GetGamesAsync().Returns([]);
         _contentService.GetLocalGamesAsync().Returns([]);
         _contentService.GetAllPlaytimesAsync().Returns(new Dictionary<Guid, int>());
+
+        // The download directory passes its pre-flight unless a test says otherwise, so the
+        // guard added for the write+rename probe never silently short-circuits another test.
+        _downloadLocation.Probe(Arg.Any<string>())
+            .Returns(ci => DirectoryProbeResult.Usable(ci.Arg<string>()));
     }
 
     private LibraryViewModel CreateSut() => new(
         _contentService, _settingsService,
-        _downloadService, _globalViewModel, _downloadOptions);
+        _downloadService, _globalViewModel, _downloadOptions,
+        _downloadLocation, _downloadLocationNotifier);
 
     [Fact]
     public async Task Constructor_TriggersInitialLoad_ResolvingLibraryLoadedTask()
@@ -308,6 +316,99 @@ public class LibraryViewModelTests
         _globalViewModel.IsDownloading.ShouldBeFalse();
         await vm.StartUpdateCommand.ExecuteAsync(args);
         fetches.ShouldBe(2);
+    }
+
+    // -------------------- Download directory pre-flight --------------------
+
+    [Fact]
+    public async Task StartUpdate_WhenTheDownloadDirectoryCannotFinalizeFiles_NeverStartsTheTransfer()
+    {
+        // Arrange — the folder accepts writes but refuses the rename that finalizes a download.
+        // Without the pre-flight the user transfers the whole archive and only then fails, once
+        // per game (the reported session burned 4.25 GiB that way).
+        var root = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root");
+        _settingsService.GetGamesRootDirectory().Returns(root);
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()!));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+        _downloadLocation.Probe(Arg.Any<string>())
+            .Returns(ci => new DirectoryProbeResult(DirectoryProbeOutcome.CannotRename, ci.Arg<string>(), "UnauthorizedAccessException: Access to the path is denied."));
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+        var game = vm.Games.Single();
+        var statusBefore = game.DownloadStatus;
+
+        // Act
+        await vm.StartUpdateCommand.ExecuteAsync(new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip"));
+
+        // Assert — nothing was fetched, the user was told why, and the card is left as it was.
+        await _downloadService.DidNotReceive().DownloadAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>());
+        _downloadLocationNotifier.Received(1).NotifyDirectoryNotUsable(
+            Arg.Is<DirectoryProbeResult>(r => r.Outcome == DirectoryProbeOutcome.CannotRename));
+        game.DownloadStatus.ShouldBe(statusBefore);
+        game.DownloadProgressValue.ShouldBe(0);
+        _globalViewModel.IsDownloading.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task StartUpdate_ProbesTheFolderTheArchiveIsFinalizedIn()
+    {
+        // Arrange — the rename that fails in production happens in the .downloads cache, so that
+        // is the folder the pre-flight has to test, not the games root above it.
+        var root = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root");
+        _settingsService.GetGamesRootDirectory().Returns(root);
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()!));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(DownloadResult.Cancelled()));
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+
+        // Act
+        await vm.StartUpdateCommand.ExecuteAsync(new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip"));
+
+        // Assert
+        _downloadLocation.Received(1).Probe(Path.Combine(root, ".downloads"));
+    }
+
+    [Fact]
+    public async Task ResumingPausedGame_RunsThePreFlightAgain()
+    {
+        // Arrange — permissions can change between pausing and resuming, and a resume finalizes
+        // the same way a fresh download does.
+        var root = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-root");
+        _settingsService.GetGamesRootDirectory().Returns(root);
+        _contentService.GetGameDirectory(Arg.Any<string>())
+            .Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-extract", ci.Arg<string>()!));
+        _contentService.GetGamesAsync().Returns([TestData.Game(name: "Alpha", version: "1.0.0")]);
+        _downloadService
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(DownloadResult.Cancelled()));
+
+        var vm = CreateSut();
+        await vm.LibraryLoadedTask;
+        var args = new GameDownloadArgs("alpha", "1.0.0", "/a/alpha.zip");
+        await vm.StartUpdateCommand.ExecuteAsync(args);
+        vm.Games.Single().DownloadStatus.ShouldBe(GameDownloadStatus.Paused);
+
+        _downloadLocation.ClearReceivedCalls();
+        _downloadService.ClearReceivedCalls();
+        _downloadLocation.Probe(Arg.Any<string>())
+            .Returns(ci => new DirectoryProbeResult(DirectoryProbeOutcome.CannotRename, ci.Arg<string>(), "denied"));
+
+        // Act — resume the paused game.
+        await vm.StartDownloadCommand.ExecuteAsync(args);
+
+        // Assert — the resume was blocked and the game stays resumable rather than being reset.
+        _downloadLocation.Received(1).Probe(Arg.Any<string>());
+        await _downloadService.DidNotReceive().DownloadAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IProgress<DownloadProgressInfo>>(), Arg.Any<CancellationToken>());
+        vm.Games.Single().DownloadStatus.ShouldBe(GameDownloadStatus.Paused);
     }
 
     [Fact]

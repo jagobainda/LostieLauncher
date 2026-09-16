@@ -12,6 +12,8 @@ public class SettingsViewModelTests
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
     private readonly GlobalViewModel _globalViewModel = new();
     private readonly IUpdateService _updateService = Substitute.For<IUpdateService>();
+    private readonly IDownloadLocationService _downloadLocation = Substitute.For<IDownloadLocationService>();
+    private readonly IDownloadLocationNotifier _downloadLocationNotifier = Substitute.For<IDownloadLocationNotifier>();
 
     public SettingsViewModelTests(WpfApplicationFixture _) { /* fixture ensures Application.Current */ }
 
@@ -22,7 +24,8 @@ public class SettingsViewModelTests
         _startupService.IsEnabled().Returns(startupEnabled);
         _startupService.Enable().Returns(true);
         _startupService.Disable().Returns(true);
-        return new SettingsViewModel(_settingsService, _startupService, _globalViewModel, _updateService);
+        return new SettingsViewModel(_settingsService, _startupService, _globalViewModel, _updateService,
+            _downloadLocation, _downloadLocationNotifier);
     }
 
     // -------------------- LoadSettings (constructor) --------------------
@@ -289,6 +292,69 @@ public class SettingsViewModelTests
         // Assert
         _settingsService.Received(1).Save(Arg.Is<AppSettings>(s => s!.DownloadDirectory == @"D:\NewFolder"));
         _settingsService.Received(1).EnsureGamesRootDirectoryExists();
+    }
+
+    [Fact]
+    public void Constructor_PublishesTheGamesRootDirectory()
+    {
+        // Arrange — the Settings screen must state where games actually land, which is the
+        // LostieLauncher subfolder of the chosen directory, not the directory itself.
+        _settingsService.GetGamesRootDirectory().Returns(@"D:\Games\LostieLauncher");
+
+        // Act
+        var vm = CreateSut(new AppSettings { DownloadDirectory = @"D:\Games" });
+
+        // Assert
+        vm.GamesRootDirectory.ShouldBe(@"D:\Games\LostieLauncher");
+    }
+
+    [Fact]
+    public void DownloadDirectory_WhenChanged_RepublishesTheGamesRoot()
+    {
+        // Arrange
+        _settingsService.GetGamesRootDirectory().Returns(@"C:\Old\LostieLauncher");
+        var vm = CreateSut();
+        _settingsService.GetGamesRootDirectory().Returns(@"D:\New\LostieLauncher");
+
+        // Act
+        vm.DownloadDirectory = @"D:\New";
+
+        // Assert
+        vm.GamesRootDirectory.ShouldBe(@"D:\New\LostieLauncher");
+    }
+
+    // -------------------- OneDrive detection --------------------
+
+    [Fact]
+    public void Constructor_WhenTheStoredLibrarySitsUnderOneDrive_RaisesTheWarningFlag()
+    {
+        // Arrange — an existing user who installed while the default was still Documents.
+        // Their library stays where it is, but the Settings screen has to say so.
+        var root = @"C:\Users\someone\OneDrive\Documentos\LostieLauncher";
+        _settingsService.GetGamesRootDirectory().Returns(root);
+        _downloadLocation.IsOneDriveSynced(root).Returns(true);
+
+        // Act
+        var vm = CreateSut(new AppSettings { DownloadDirectory = @"C:\Users\someone\OneDrive\Documentos" });
+
+        // Assert — flagged, and the library was not silently relocated.
+        vm.IsDownloadDirectoryOneDriveSynced.ShouldBeTrue();
+        vm.DownloadDirectory.ShouldBe(@"C:\Users\someone\OneDrive\Documentos");
+        _settingsService.DidNotReceive().Save(Arg.Any<AppSettings>());
+    }
+
+    [Fact]
+    public void Constructor_WhenTheStoredLibraryIsNotSynced_LeavesTheWarningFlagDown()
+    {
+        // Arrange
+        _settingsService.GetGamesRootDirectory().Returns(@"C:\Users\someone\AppData\Local\LostieLauncher");
+        _downloadLocation.IsOneDriveSynced(Arg.Any<string>()).Returns(false);
+
+        // Act
+        var vm = CreateSut();
+
+        // Assert
+        vm.IsDownloadDirectoryOneDriveSynced.ShouldBeFalse();
     }
 
     // -------------------- MarkWelcomeSeen --------------------
