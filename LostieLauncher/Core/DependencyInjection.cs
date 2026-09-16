@@ -40,6 +40,8 @@ public static class DependencyInjection
         services.AddSingleton<IWindowsStartupService, WindowsStartupService>();
         services.AddSingleton<IContentService, ContentService>();
         services.AddSingleton<IDownloadService, DownloadService>();
+        services.AddSingleton<IDownloadLocationService, DownloadLocationService>();
+        services.AddSingleton<IDownloadLocationNotifier, WpfDownloadLocationNotifier>();
         services.AddSingleton<IUpdateGateway, VelopackUpdateGateway>();
         services.AddSingleton<IUpdateNotifier, WpfUpdateNotifier>();
         services.AddSingleton<IUpdateService, UpdateService>();
