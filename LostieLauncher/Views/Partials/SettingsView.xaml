@@ -180,6 +180,37 @@
                                     Style="{StaticResource SettingsButtonStyle}"
                                     Margin="8,0,0,0" />
                         </Grid>
+
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding Strings.SettingsGamesStoredIn}"
+                                       Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                       FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding GamesRootDirectory}"
+                                       Foreground="{DynamicResource SecondaryFgBrush}"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding GamesRootDirectory}" />
+                        </Grid>
+
+                        <Border Background="{DynamicResource OverlayLightBrush}" CornerRadius="4"
+                                Padding="10,8" Margin="0,10,0,0" SnapsToDevicePixels="True"
+                                Visibility="{Binding IsDownloadDirectoryOneDriveSynced, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="Alert"
+                                                           Foreground="{DynamicResource SecondaryFgDimBrush}"
+                                                           Width="14" Height="14"
+                                                           VerticalAlignment="Top" Margin="0,2,8,0" />
+                                <TextBlock Text="{Binding Strings.SettingsOneDriveWarning}"
+                                           Foreground="{DynamicResource SecondaryFgBrush}"
+                                           FontSize="12" TextWrapping="Wrap" MaxWidth="520" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
 
                 </StackPanel>

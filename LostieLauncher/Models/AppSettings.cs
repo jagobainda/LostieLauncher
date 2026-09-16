@@ -7,6 +7,6 @@ public class AppSettings
     public bool StartWithWindows { get; set; }
     public bool StartMinimized { get; set; }
     public bool AutoUpdate { get; set; } = false;
-    public string DownloadDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    public string DownloadDirectory { get; set; } = DownloadDefaults.DownloadDirectory;
     public bool HasSeenWelcome { get; set; } = false;
 }

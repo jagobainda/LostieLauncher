@@ -18,6 +18,8 @@ public partial class LibraryViewModel : ObservableObject
     private readonly IDownloadService _downloadService;
     private readonly GlobalViewModel _globalViewModel;
     private readonly DownloadOptions _downloadOptions;
+    private readonly IDownloadLocationService _downloadLocationService;
+    private readonly IDownloadLocationNotifier _downloadLocationNotifier;
     private readonly TaskCompletionSource _libraryLoadedTcs = new();
 
     private readonly Dictionary<string, DownloadSession> _sessions = [];
@@ -50,13 +52,16 @@ public partial class LibraryViewModel : ObservableObject
     public Task LibraryLoadedTask => _libraryLoadedTcs.Task;
 
     public LibraryViewModel(IContentService contentService, ISettingsService settingsService,
-        IDownloadService downloadService, GlobalViewModel globalViewModel, DownloadOptions downloadOptions)
+        IDownloadService downloadService, GlobalViewModel globalViewModel, DownloadOptions downloadOptions,
+        IDownloadLocationService downloadLocationService, IDownloadLocationNotifier downloadLocationNotifier)
     {
         _contentService = contentService;
         _settingsService = settingsService;
         _downloadService = downloadService;
         _globalViewModel = globalViewModel;
         _downloadOptions = downloadOptions;
+        _downloadLocationService = downloadLocationService;
+        _downloadLocationNotifier = downloadLocationNotifier;
         _ = LoadGamesAsync();
     }
 
@@ -340,6 +345,8 @@ public partial class LibraryViewModel : ObservableObject
 
     private async Task ExecuteDownloadAndInstallAsync(GameInfo game, DownloadSession session)
     {
+        if (!EnsureDownloadDirectoryUsable(session)) return;
+
         game.DownloadStatus = GameDownloadStatus.Downloading;
         game.DownloadProgressValue = 0;
         _globalViewModel.IsDownloading = true;
@@ -392,6 +399,26 @@ public partial class LibraryViewModel : ObservableObject
             game.DownloadSpeedBytesPerSec = 0;
             game.DownloadRemainingText = string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Pre-flight on the folder the download will be finalized in. A folder that grants write
+    /// but not delete accepts the whole transfer and only fails at the closing rename, so
+    /// without this check the user pays a full download per game to learn it cannot work.
+    /// Nothing about the session or the game state is touched when it blocks: the download
+    /// simply never starts.
+    /// </summary>
+    private bool EnsureDownloadDirectoryUsable(DownloadSession session)
+    {
+        var directory = Path.GetDirectoryName(session.ZipPath);
+        if (string.IsNullOrEmpty(directory)) return true;
+
+        var probe = _downloadLocationService.Probe(directory);
+        if (probe.IsUsable) return true;
+
+        Logs.ErrorLogManager($"Download blocked for {session.Args.GameId}: '{probe.Directory}' failed the pre-flight at {probe.Outcome} ({probe.Error}).");
+        _downloadLocationNotifier.NotifyDirectoryNotUsable(probe);
+        return false;
     }
 
     private async Task<bool> EnsureServerActionsAvailableAsync()

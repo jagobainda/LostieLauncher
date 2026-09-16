@@ -111,6 +111,15 @@ public interface IStrings
     public string HomeContentUnavailable { get; }
     public string ContentOutOfDateLabel { get; }
     public string ContentOutOfDateMessage { get; }
+    public string SettingsGamesStoredIn { get; }
+    public string SettingsOneDriveWarning { get; }
+    public string OneDriveWarningTitle { get; }
+    public string OneDriveWarningMessage { get; }
+    public string DownloadDirNotUsableTitle { get; }
+    public string DownloadDirNotUsableMessage { get; }
+    public string DownloadDirStepCreate { get; }
+    public string DownloadDirStepWrite { get; }
+    public string DownloadDirStepRename { get; }
 }
 
 public class Esp : IStrings
@@ -224,6 +233,15 @@ public class Esp : IStrings
     public string HomeContentUnavailable => "No se ha podido cargar el contenido";
     public string ContentOutOfDateLabel => "Contenido desactualizado";
     public string ContentOutOfDateMessage => "No se ha podido conectar con el servidor. Se muestra el último contenido conocido, que puede estar desactualizado.";
+    public string SettingsGamesStoredIn => "Los juegos se guardan en:";
+    public string SettingsOneDriveWarning => "Esta carpeta la sincroniza OneDrive: los juegos ocuparán tu almacenamiento en la nube y pueden fallar al abrirse sin conexión. Es mejor elegir otra ubicación.";
+    public string OneDriveWarningTitle => "Carpeta sincronizada con OneDrive";
+    public string OneDriveWarningMessage => "Esta carpeta la sincroniza OneDrive:\n\n{0}\n\nCada juego ocupa varios gigas, así que se subirían a tu almacenamiento en la nube, la sincronización competiría con las instalaciones y los archivos podrían quedarse solo en línea y no abrirse sin conexión.\n\n¿Quieres usarla de todas formas?";
+    public string DownloadDirNotUsableTitle => "Carpeta de descargas no válida";
+    public string DownloadDirNotUsableMessage => "El launcher no puede usar esta carpeta:\n\n{0}\n\nLa comprobación falló al {1}.\n\nElige otra carpeta en Ajustes.";
+    public string DownloadDirStepCreate => "crear la carpeta";
+    public string DownloadDirStepWrite => "escribir un archivo de prueba";
+    public string DownloadDirStepRename => "renombrar un archivo de prueba (la carpeta permite escribir, pero no renombrar ni borrar)";
 }
 
 public class Eng : IStrings
@@ -337,6 +355,15 @@ public class Eng : IStrings
     public string HomeContentUnavailable => "Content could not be loaded";
     public string ContentOutOfDateLabel => "Content may be out of date";
     public string ContentOutOfDateMessage => "The server could not be reached. Showing the last known content, which may be out of date.";
+    public string SettingsGamesStoredIn => "Games are stored in:";
+    public string SettingsOneDriveWarning => "This folder is synced by OneDrive: games will use your cloud storage and may fail to start offline. Choosing another location is safer.";
+    public string OneDriveWarningTitle => "OneDrive-synced folder";
+    public string OneDriveWarningMessage => "This folder is synced by OneDrive:\n\n{0}\n\nGames are several gigabytes each, so they would be uploaded to your cloud storage, the sync engine would compete with installs, and files can be left online-only and fail to start offline.\n\nDo you want to use it anyway?";
+    public string DownloadDirNotUsableTitle => "Download folder not usable";
+    public string DownloadDirNotUsableMessage => "The launcher cannot use this folder:\n\n{0}\n\nThe check failed while {1}.\n\nChoose another folder in Settings.";
+    public string DownloadDirStepCreate => "creating the folder";
+    public string DownloadDirStepWrite => "writing a test file";
+    public string DownloadDirStepRename => "renaming a test file (the folder allows writing, but not renaming or deleting)";
 }
 
 public class Cat : IStrings
@@ -450,6 +477,15 @@ public class Cat : IStrings
     public string HomeContentUnavailable => "No s'ha pogut carregar el contingut";
     public string ContentOutOfDateLabel => "Contingut desactualitzat";
     public string ContentOutOfDateMessage => "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat.";
+    public string SettingsGamesStoredIn => "Els jocs es desen a:";
+    public string SettingsOneDriveWarning => "Aquesta carpeta la sincronitza OneDrive: els jocs ocuparan el teu emmagatzematge al núvol i poden fallar en obrir-se sense connexió. És millor triar una altra ubicació.";
+    public string OneDriveWarningTitle => "Carpeta sincronitzada amb OneDrive";
+    public string OneDriveWarningMessage => "Aquesta carpeta la sincronitza OneDrive:\n\n{0}\n\nCada joc ocupa diversos gigues, així que es pujarien al teu emmagatzematge al núvol, la sincronització competiria amb les instal·lacions i els fitxers es podrien quedar només en línia i no obrir-se sense connexió.\n\nVols fer-la servir igualment?";
+    public string DownloadDirNotUsableTitle => "Carpeta de descàrregues no vàlida";
+    public string DownloadDirNotUsableMessage => "El launcher no pot fer servir aquesta carpeta:\n\n{0}\n\nLa comprovació ha fallat en {1}.\n\nTria una altra carpeta a Configuració.";
+    public string DownloadDirStepCreate => "crear la carpeta";
+    public string DownloadDirStepWrite => "escriure un fitxer de prova";
+    public string DownloadDirStepRename => "reanomenar un fitxer de prova (la carpeta permet escriure, però no reanomenar ni esborrar)";
 }
 
 public class Eus : IStrings
@@ -563,6 +599,15 @@ public class Eus : IStrings
     public string HomeContentUnavailable => "Ezin izan da edukia kargatu";
     public string ContentOutOfDateLabel => "Eduki zaharkitua";
     public string ContentOutOfDateMessage => "Ezin izan da zerbitzariarekin konektatu. Ezagutzen den azken edukia erakusten da, eta zaharkituta egon daiteke.";
+    public string SettingsGamesStoredIn => "Jokoak hemen gordetzen dira:";
+    public string SettingsOneDriveWarning => "Karpeta hau OneDrivek sinkronizatzen du: jokoek zure hodeiko biltegia beteko dute eta baliteke konexiorik gabe ez irekitzea. Hobe da beste kokapen bat aukeratzea.";
+    public string OneDriveWarningTitle => "OneDriverekin sinkronizatutako karpeta";
+    public string OneDriveWarningMessage => "Karpeta hau OneDrivek sinkronizatzen du:\n\n{0}\n\nJoko bakoitzak hainbat giga hartzen ditu, beraz zure hodeiko biltegira igoko lirateke, sinkronizazioak instalazioekin lehiatuko luke eta fitxategiak sarean bakarrik gera litezke, konexiorik gabe ireki ezinik.\n\nHala ere erabili nahi duzu?";
+    public string DownloadDirNotUsableTitle => "Deskarga-karpeta baliogabea";
+    public string DownloadDirNotUsableMessage => "Launcher-ak ezin du karpeta hau erabili:\n\n{0}\n\nEgiaztapenak huts egin du {1}.\n\nAukeratu beste karpeta bat Ezarpenetan.";
+    public string DownloadDirStepCreate => "karpeta sortzean";
+    public string DownloadDirStepWrite => "proba-fitxategi bat idaztean";
+    public string DownloadDirStepRename => "proba-fitxategi bat berrizendatzean (karpetak idaztea onartzen du, baina ez berrizendatzea edo ezabatzea)";
 }
 
 public class Gal : IStrings
@@ -676,6 +721,15 @@ public class Gal : IStrings
     public string HomeContentUnavailable => "Non se puido cargar o contido";
     public string ContentOutOfDateLabel => "Contido desactualizado";
     public string ContentOutOfDateMessage => "Non se puido conectar co servidor. Amósase o último contido coñecido, que pode estar desactualizado.";
+    public string SettingsGamesStoredIn => "Os xogos gárdanse en:";
+    public string SettingsOneDriveWarning => "Esta carpeta sincronízaa OneDrive: os xogos ocuparán o teu almacenamento na nube e poden fallar ao abrirse sen conexión. É mellor escoller outra localización.";
+    public string OneDriveWarningTitle => "Carpeta sincronizada con OneDrive";
+    public string OneDriveWarningMessage => "Esta carpeta sincronízaa OneDrive:\n\n{0}\n\nCada xogo ocupa varios xigas, así que se subirían ao teu almacenamento na nube, a sincronización competiría coas instalacións e os ficheiros poderían quedar só en liña e non abrirse sen conexión.\n\nQueres usala de todos os xeitos?";
+    public string DownloadDirNotUsableTitle => "Carpeta de descargas non válida";
+    public string DownloadDirNotUsableMessage => "O launcher non pode usar esta carpeta:\n\n{0}\n\nA comprobación fallou ao {1}.\n\nEscolle outra carpeta en Axustes.";
+    public string DownloadDirStepCreate => "crear a carpeta";
+    public string DownloadDirStepWrite => "escribir un ficheiro de proba";
+    public string DownloadDirStepRename => "renomear un ficheiro de proba (a carpeta permite escribir, pero non renomear nin borrar)";
 }
 
 public class Por : IStrings
@@ -789,6 +843,15 @@ public class Por : IStrings
     public string HomeContentUnavailable => "Não foi possível carregar o conteúdo";
     public string ContentOutOfDateLabel => "Conteúdo desatualizado";
     public string ContentOutOfDateMessage => "Não foi possível ligar ao servidor. A mostrar o último conteúdo conhecido, que pode estar desatualizado.";
+    public string SettingsGamesStoredIn => "Os jogos são guardados em:";
+    public string SettingsOneDriveWarning => "Esta pasta é sincronizada pelo OneDrive: os jogos vão ocupar o teu armazenamento na nuvem e podem falhar ao abrir sem ligação. É melhor escolher outra localização.";
+    public string OneDriveWarningTitle => "Pasta sincronizada com o OneDrive";
+    public string OneDriveWarningMessage => "Esta pasta é sincronizada pelo OneDrive:\n\n{0}\n\nCada jogo ocupa vários gigabytes, por isso seriam enviados para o teu armazenamento na nuvem, a sincronização competiria com as instalações e os ficheiros podem ficar apenas online e não abrir sem ligação.\n\nQueres usá-la mesmo assim?";
+    public string DownloadDirNotUsableTitle => "Pasta de downloads inválida";
+    public string DownloadDirNotUsableMessage => "O launcher não pode usar esta pasta:\n\n{0}\n\nA verificação falhou ao {1}.\n\nEscolhe outra pasta em Configurações.";
+    public string DownloadDirStepCreate => "criar a pasta";
+    public string DownloadDirStepWrite => "escrever um ficheiro de teste";
+    public string DownloadDirStepRename => "mudar o nome de um ficheiro de teste (a pasta permite escrever, mas não mudar o nome nem apagar)";
 }
 
 public class Val : IStrings
@@ -902,6 +965,15 @@ public class Val : IStrings
     public string HomeContentUnavailable => "No s'ha pogut carregar el contingut";
     public string ContentOutOfDateLabel => "Contingut desactualitzat";
     public string ContentOutOfDateMessage => "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat.";
+    public string SettingsGamesStoredIn => "Els jocs es guarden en:";
+    public string SettingsOneDriveWarning => "Esta carpeta la sincronitza OneDrive: els jocs ocuparan el teu emmagatzematge en el núvol i poden fallar en obrir-se sense connexió. És millor triar una altra ubicació.";
+    public string OneDriveWarningTitle => "Carpeta sincronitzada amb OneDrive";
+    public string OneDriveWarningMessage => "Esta carpeta la sincronitza OneDrive:\n\n{0}\n\nCada joc ocupa diversos gigues, així que es pujarien al teu emmagatzematge en el núvol, la sincronització competiria amb les instal·lacions i els fitxers es podrien quedar només en línia i no obrir-se sense connexió.\n\nVols utilitzar-la igualment?";
+    public string DownloadDirNotUsableTitle => "Carpeta de descàrregues no vàlida";
+    public string DownloadDirNotUsableMessage => "El launcher no pot utilitzar esta carpeta:\n\n{0}\n\nLa comprovació ha fallat en {1}.\n\nTria una altra carpeta en Ajustos.";
+    public string DownloadDirStepCreate => "crear la carpeta";
+    public string DownloadDirStepWrite => "escriure un fitxer de prova";
+    public string DownloadDirStepRename => "reanomenar un fitxer de prova (la carpeta permet escriure, però no reanomenar ni esborrar)";
 }
 
 public class Fra : IStrings
@@ -1015,4 +1087,13 @@ public class Fra : IStrings
     public string HomeContentUnavailable => "Le contenu n'a pas pu être chargé";
     public string ContentOutOfDateLabel => "Contenu peut-être obsolète";
     public string ContentOutOfDateMessage => "Le serveur est injoignable. Le dernier contenu connu est affiché ; il peut être obsolète.";
+    public string SettingsGamesStoredIn => "Les jeux sont stockés dans :";
+    public string SettingsOneDriveWarning => "Ce dossier est synchronisé par OneDrive : les jeux occuperont votre stockage cloud et peuvent ne pas démarrer hors ligne. Il vaut mieux choisir un autre emplacement.";
+    public string OneDriveWarningTitle => "Dossier synchronisé par OneDrive";
+    public string OneDriveWarningMessage => "Ce dossier est synchronisé par OneDrive :\n\n{0}\n\nChaque jeu pèse plusieurs gigaoctets ; ils seraient donc envoyés vers votre stockage cloud, la synchronisation entrerait en concurrence avec les installations et les fichiers pourraient rester en ligne uniquement et ne pas démarrer hors ligne.\n\nVoulez-vous l'utiliser quand même ?";
+    public string DownloadDirNotUsableTitle => "Dossier de téléchargement invalide";
+    public string DownloadDirNotUsableMessage => "Le launcher ne peut pas utiliser ce dossier :\n\n{0}\n\nLa vérification a échoué lors de {1}.\n\nChoisissez un autre dossier dans les Paramètres.";
+    public string DownloadDirStepCreate => "la création du dossier";
+    public string DownloadDirStepWrite => "l'écriture d'un fichier de test";
+    public string DownloadDirStepRename => "le renommage d'un fichier de test (le dossier autorise l'écriture, mais pas le renommage ni la suppression)";
 }

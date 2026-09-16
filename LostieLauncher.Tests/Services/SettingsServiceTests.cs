@@ -1,5 +1,6 @@
 using LostieLauncher.Models;
 using LostieLauncher.Services;
+using LostieLauncher.Utils;
 using System.Text.Json;
 
 namespace LostieLauncher.Tests.Services;
@@ -15,7 +16,9 @@ public class SettingsServiceTests
 
     private static string SettingsPath(TempDirectoryFixture temp) => temp.Combine("launcher_settings.json");
 
-    private static readonly string MyDocuments = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    // The default games location moved out of Documents (usually OneDrive-redirected) to the
+    // user profile, which is neither synced nor the launcher's own install directory.
+    private static readonly string UserProfile = DownloadDefaults.DownloadDirectory;
 
     /// <summary>Counts how many times the settings actually hit disk, to prove debounce coalescing.</summary>
     private sealed class CountingSettingsService(string directory, string legacy, TimeSpan delay)
@@ -119,14 +122,14 @@ public class SettingsServiceTests
     [InlineData("relative")]
     [InlineData(@"relative\path")]
     [InlineData("relative/path")]
-    public void NormalizeDownloadDirectory_EmptyOrRelative_FallsBackToMyDocuments(string? input)
+    public void NormalizeDownloadDirectory_EmptyOrRelative_FallsBackToTheUserProfile(string? input)
     {
         // Arrange & Act — a hand-edited "" or any non-rooted path would make Path.Combine resolve
         // against the current working directory; it must be rejected.
         var normalized = SettingsService.NormalizeDownloadDirectory(input);
 
         // Assert
-        normalized.ShouldBe(MyDocuments);
+        normalized.ShouldBe(UserProfile);
     }
 
     [Fact]
@@ -140,7 +143,7 @@ public class SettingsServiceTests
     }
 
     [Fact]
-    public void SanitizeSettings_EmptyDownloadDirectory_IsNormalizedToMyDocuments()
+    public void SanitizeSettings_EmptyDownloadDirectory_IsNormalizedToTheUserProfile()
     {
         // Arrange — the corrupt-JSON vector: "DownloadDirectory": "".
         var settings = new AppSettings { DownloadDirectory = "" };
@@ -149,7 +152,7 @@ public class SettingsServiceTests
         var sanitized = SettingsService.SanitizeSettings(settings);
 
         // Assert
-        sanitized.DownloadDirectory.ShouldBe(MyDocuments);
+        sanitized.DownloadDirectory.ShouldBe(UserProfile);
     }
 
     // -------------------- In-memory cache (BUG-037) --------------------
@@ -174,7 +177,7 @@ public class SettingsServiceTests
     }
 
     [Fact]
-    public void Load_EmptyDownloadDirectoryOnDisk_FallsBackToMyDocuments()
+    public void Load_EmptyDownloadDirectoryOnDisk_FallsBackToTheUserProfile()
     {
         // Arrange — corrupt JSON with an empty download directory.
         using var temp = new TempDirectoryFixture("settings");
@@ -185,7 +188,7 @@ public class SettingsServiceTests
         var settings = service.Load();
 
         // Assert
-        settings.DownloadDirectory.ShouldBe(MyDocuments);
+        settings.DownloadDirectory.ShouldBe(UserProfile);
     }
 
     [Fact]
@@ -202,7 +205,60 @@ public class SettingsServiceTests
 
         // Assert — always rooted, never relative to the CWD.
         Path.IsPathFullyQualified(root).ShouldBeTrue();
-        root.ShouldBe(Path.Combine(MyDocuments, "LostieLauncher"));
+        root.ShouldBe(Path.Combine(UserProfile, "LostieLauncher"));
+    }
+
+    [Fact]
+    public void Load_WithNoSettingsFile_DefaultsToADirectoryThatIsNotOneDriveSynced()
+    {
+        // Arrange — a fresh install: nothing on disk, so the AppSettings defaults apply.
+        using var temp = new TempDirectoryFixture("settings");
+        using var service = CreateService(temp);
+
+        // Act
+        var root = service.GetGamesRootDirectory();
+
+        // Assert — the profile folder itself is never redirected into OneDrive (only Desktop,
+        // Documents and Pictures are), so a new user's library no longer lands in cloud storage.
+        root.ShouldStartWith(UserProfile);
+        OneDrivePathPolicy.IsSynced(root, OneDrivePathPolicy.GetEnvironmentSyncRoots()).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Load_WithNoSettingsFile_DefaultsOutsideTheLauncherOwnInstallDirectory()
+    {
+        // Arrange — Velopack installs the launcher into %LOCALAPPDATA%\<packId>, and the pack id
+        // is "LostieLauncher", the same name the games subfolder uses. A default of %LOCALAPPDATA%
+        // would therefore put the library inside the install directory, and uninstalling the
+        // launcher (which removes that directory) would wipe every installed game.
+        using var temp = new TempDirectoryFixture("settings");
+        using var service = CreateService(temp);
+        var installDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LostieLauncher");
+
+        // Act
+        var root = service.GetGamesRootDirectory();
+
+        // Assert
+        root.ShouldNotBe(installDirectory);
+        root.StartsWith(installDirectory, StringComparison.OrdinalIgnoreCase).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Load_WithAStoredDownloadDirectory_KeepsIt()
+    {
+        // Arrange — an existing user whose library already sits under OneDrive. Moving it
+        // silently would strand their installed games.
+        using var temp = new TempDirectoryFixture("settings");
+        var stored = temp.Combine("OneDrive", "Documentos");
+        File.WriteAllText(SettingsPath(temp), JsonSerializer.Serialize(new AppSettings { DownloadDirectory = stored }));
+        using var service = CreateService(temp);
+
+        // Act
+        var settings = service.Load();
+
+        // Assert — the new default never overrides a value that is already on disk.
+        settings.DownloadDirectory.ShouldBe(stored);
     }
 
     // -------------------- Debounced save (BUG-039) --------------------

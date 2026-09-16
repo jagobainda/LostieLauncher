@@ -28,8 +28,10 @@ public class MainViewModelTests
     private async Task<MainViewModel> CreateSutAsync()
     {
         var global = new GlobalViewModel();
-        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>());
-        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions);
+        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>(),
+            Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
+        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions,
+            Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         await library.LibraryLoadedTask;
         var home = new HomeViewModel(_contentService, settings);
         await home.RefreshAsync();
@@ -133,8 +135,10 @@ public class MainViewModelTests
     {
         // Arrange
         var global = new GlobalViewModel();
-        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>());
-        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions);
+        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>(),
+            Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
+        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions,
+            Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         await library.LibraryLoadedTask;
         var home = new HomeViewModel(_contentService, settings);
         await home.RefreshAsync();
