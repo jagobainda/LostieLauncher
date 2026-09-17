@@ -1,108 +1,116 @@
-# Agent guidelines
+# Agent guidelines — monorepo
 
 Instructions for AI coding agents (Claude Code, Codex, Copilot, Cursor, …)
-working in this repository. This file is the index: it holds the rules that
-apply to **every** change, and routes you to a topic file for the rest.
+working in this repository. This file is the **global** index: it holds the
+rules that apply to every change, on either side of the monorepo, and routes you
+to the side you are actually working on.
 
-Read the topic file **before** you write the corresponding code. The links are
-plain Markdown on purpose — the detail is loaded on demand, not injected into
-every session — so following them is your job, not the tool's.
+This repository holds **two applications that share a product, not a stack**: a
+Windows desktop launcher and an Android app. They have separate builds, separate
+toolchains, separate conventions and separate guidelines. Read the ones for your
+side **before** you write code. The links are plain Markdown on purpose — the
+detail is loaded on demand, not injected into every session — so following them
+is your job, not the tool's.
 
-| Read this before…                                     | File                                                                     |
-| ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| adding a service, ViewModel, DI registration or seam  | [.agents/architecture.md](.agents/architecture.md)                       |
-| writing or editing any `.cs` file                     | [.agents/code-style.md](.agents/code-style.md)                           |
-| writing or editing any test                           | [.agents/testing.md](.agents/testing.md)                                 |
-| adding user-visible text, a theme or a theme key      | [.agents/localization-and-themes.md](.agents/localization-and-themes.md) |
-| branching, committing or opening a PR                 | [.agents/workflow.md](.agents/workflow.md)                               |
+## Pick your side
+
+| Working on…                                     | Read                                       |
+| ----------------------------------------------- | ------------------------------------------ |
+| the desktop launcher (WPF, .NET 10, C#)         | [desktop/AGENTS.md](desktop/AGENTS.md)     |
+| the Android app (Kotlin, Compose)               | [android/AGENTS.md](android/AGENTS.md)     |
+| branching, committing or opening a PR           | [.agents/workflow.md](.agents/workflow.md) |
+
+Each side's `AGENTS.md` is authoritative for that side: its layer rules, its code
+style, its test constraints and the exact commands its CI jobs run. Nothing in
+this file overrides them; it only states what is true regardless of which side
+you are on.
 
 The human-facing docs are [CONTRIBUTING.md](CONTRIBUTING.md) (workflow and
-acceptance criteria) and [README.md](README.md) (features, architecture,
-configuration, endpoints). Nothing here may contradict them; if it does, they
-win and the drift is a bug worth fixing.
+acceptance criteria) and [README.md](README.md) (the monorepo and the product).
+Nothing here may contradict them; if it does, they win and the drift is a bug
+worth fixing.
 
-## Non-negotiables
+## Repository layout
 
-These apply to every change, with no topic file to look up:
+```
+├── .agents/            # global agent rules (workflow, boundaries)
+│   └── workflow.md     #   git, PR and boundary rules for both sides
+├── .github/            # CI, Dependabot and CODEOWNERS for both sides
+├── .editorconfig       # monorepo baseline only (charset, CRLF, indentation)
+├── .gitignore          # covers both sides (patterns match at any depth)
+├── AGENTS.md           # this file
+├── CLAUDE.md           # pointer: @AGENTS.md
+├── CONTRIBUTING.md     # human contribution guide
+├── LICENSE.txt
+├── README.md           # monorepo overview and product landing page
+├── desktop/            # Windows launcher — WPF, .NET 10, C#
+│   ├── .agents/        #   desktop-only agent rules (4 topic files)
+│   ├── .editorconfig   #   C#, XAML and MSBuild rules
+│   ├── AGENTS.md       #   desktop index
+│   ├── CLAUDE.md       #   pointer: @AGENTS.md
+│   ├── README.md       #   desktop architecture, build and configuration
+│   ├── global.json     #   test runner opt-in — see "Where to run commands"
+│   ├── LostieLauncher.slnx
+│   ├── LostieLauncher/         # the app
+│   ├── LostieLauncher.Tests/   # unit tests
+│   └── scripts/        #   release packaging (maintainer only)
+└── android/            # Android app — Kotlin, Compose (not implemented yet)
+    ├── AGENTS.md       #   what the Android guidelines must cover
+    ├── CLAUDE.md       #   pointer: @AGENTS.md
+    └── README.md       #   status and scope of the Android side
+```
 
-1. Run the three CI gates locally before proposing a change. See [Commands](#commands).
-2. Warnings are failures. Never leave an unused `using` (`IDE0005` is an error).
-3. Tests must never load XAML, instantiate a `Window`, or use a real `Dispatcher`.
-4. Never widen visibility to make code testable — `internal` is already visible to the tests.
-5. A new user-visible string means **all 8 languages**. A new theme key means **all 10 themes**.
-6. Branch off `development`; PRs target `development`, never `main`.
-7. Everything you write is in **English**: code, comments, XML docs, commits, branch names, PR text.
-8. Stay inside the scope of what was asked. You assist; the developer opening
+## Where to run commands
+
+**Each side's commands run from that side's folder, never from the repository
+root.** This is not a style preference: the configuration that makes them work
+lives inside the folder. On the desktop side, `desktop/global.json` is what opts
+the repo into the Microsoft.Testing.Platform runner, and it is discovered by
+walking up from the **current working directory**. Run `dotnet test` from the
+repository root and it will not be found:
+
+```
+error : Testing with VSTest target is no longer supported by
+Microsoft.Testing.Platform on .NET 10 SDK and later.
+```
+
+That error means you are in the wrong directory, not that anything is broken.
+`cd desktop` first. The CI jobs do the same thing with
+`working-directory: desktop`.
+
+## Global non-negotiables
+
+These apply to every change, on both sides, with no topic file to look up:
+
+1. **Everything you write is in English**: code, comments, docs, commits, branch
+   names, PR text.
+2. **Branch off `development`**; PRs target `development`, never `main`. See
+   [.agents/workflow.md](.agents/workflow.md).
+3. **One side per change.** A PR that touches `desktop/` and `android/` together
+   needs a reason. Do not "fix something while you're in there" on the other
+   side — you will be reviewed by someone who only opened the PR for one of them.
+4. **Run that side's full CI gates locally before proposing a change**, from that
+   side's folder. A PR that fails any of them will not be merged.
+5. **Warnings are failures** on both sides.
+6. **Never bump the version** (`<Version>` / `<FileVersion>` / `<AssemblyVersion>`,
+   the Gradle `versionName` / `versionCode`, or the README badges) as part of a
+   feature or fix. Releases are the maintainer's path.
+7. **Stay inside the scope of what was asked.** You assist; the developer opening
    the PR is responsible for the result. See
    [Boundaries](.agents/workflow.md#boundaries).
 
-## Project shape
+## Shared infrastructure
 
-WPF (.NET 10, `net10.0-windows`) desktop launcher for Windows, **MVVM** with a
-single centralized DI container. Two projects: `LostieLauncher/` (app) and
-`LostieLauncher.Tests/` (unit tests, mirroring the app's folders).
+`.github/` serves both sides, so treat it as shared ground:
 
-```
-LostieLauncher/
-├── Core/         # DI container + shared endpoint consts (composition root)
-├── Models/       # data models, option records, enums
-├── Services/     # service layer + the interfaces that isolate the untestable
-├── ViewModels/   # CommunityToolkit.Mvvm ViewModels
-├── Views/        # Windows, Partials/, Components/, Dialogs/
-├── Converters/   # XAML value converters
-├── Content/      # IStrings / IFaqs — localized text, 8 languages
-├── Utils/        # pure helpers and *Policy decision functions, logging
-├── Styles/ Themes/ Assets/   # resources only (10 themes)
-```
-
-Details and the dependency rules between these layers:
-[.agents/architecture.md](.agents/architecture.md).
-
-## Commands
-
-Run from the repository root. These are exactly the three jobs in
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml), and a PR that fails any
-of them will not be merged.
-
-```powershell
-# 1. Formatting — CI runs `--verify-no-changes`, so leave nothing pending
-dotnet format LostieLauncher.slnx
-
-# 2. Build and test in Release
-dotnet restore LostieLauncher.slnx
-dotnet build LostieLauncher.slnx --no-restore --configuration Release
-dotnet test  LostieLauncher.slnx --no-build --configuration Release
-
-# 3. Vulnerable dependencies — must report none
-dotnet list LostieLauncher.slnx package --vulnerable --include-transitive
-```
-
-Useful while iterating:
-
-```powershell
-dotnet test LostieLauncher.slnx --configuration Release --filter "FullyQualifiedName~UpdateServiceTests"
-```
-
-Notes:
-
-- `global.json` opts the repo into the **Microsoft.Testing.Platform** runner
-  (xUnit v3 on .NET 10 has no VSTest bridge). `dotnet test` only discovers the
-  tests because of it — do not remove it.
-- The test project sets `TreatWarningsAsErrors`; the app project escalates
-  `IDE0005` to an error via `.editorconfig`. Treat every warning as a build break.
-- `scripts/build-release.ps1` and `releases/` are the maintainer's release path.
-  **Never** bump `<Version>` / `<FileVersion>` / `<AssemblyVersion>` in
-  `LostieLauncher.csproj`, nor the README version badge, as part of a feature or
-  fix PR.
-
-## Before you open a PR
-
-- [ ] `dotnet format LostieLauncher.slnx` leaves nothing pending.
-- [ ] Release build is clean — no warnings, no unused `using`s.
-- [ ] All tests pass in Release, and new behavior is covered.
-- [ ] No vulnerable packages reported.
-- [ ] New strings exist in all 8 languages; new theme keys in all 10 themes.
-- [ ] New services and ViewModels are registered in `Core/DependencyInjection.cs`.
-- [ ] No hardcoded URLs, paths or user-visible literals.
-- [ ] No version bump, and no unrelated file touched.
-- [ ] Everything written in English.
+- **`workflows/ci.yml`** — the desktop jobs set `working-directory: desktop`. An
+  Android job must scope itself the same way rather than changing the defaults
+  for everyone.
+- **`dependabot.yml`** — the `nuget` ecosystem points at `/desktop`. A new
+  ecosystem gets its own entry; do not repoint an existing one.
+- **`CODEOWNERS`** — patterns without a leading slash match at any depth, which
+  is why `*.csproj` still works after the move to `desktop/`.
+- **`.editorconfig`** — the root file is the baseline for *every* file in the
+  repository and carries `root = true`. Language rules belong in the side's own
+  `.editorconfig`, which deliberately omits `root` so it inherits. Do not move
+  language rules up to the root file.

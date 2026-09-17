@@ -6,9 +6,17 @@ on:
     pull_request:
         branches: [main, development]
 
+# Every job here belongs to the desktop (WPF/.NET) side, which lives in
+# desktop/. That is why each one sets `working-directory: desktop` and the
+# commands stay identical to the ones documented in desktop/AGENTS.md.
+# The Android side adds its own jobs, with its own working directory.
 jobs:
     format-check:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout
@@ -27,6 +35,10 @@ jobs:
 
     build-and-test:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout
@@ -48,6 +60,10 @@ jobs:
 
     vulnerable-dependencies:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout

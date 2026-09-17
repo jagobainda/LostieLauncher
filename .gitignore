@@ -1,5 +1,9 @@
 # ============================================================
-#  Visual Studio / .NET / WPF MVVM — .gitignore
+#  Monorepo .gitignore — Visual Studio / .NET / WPF MVVM (desktop/)
+#
+#  Patterns without a leading slash match at any depth, so the build
+#  output rules below already cover desktop/. The Android side adds its
+#  own section (Gradle, local.properties, build/) when it lands.
 # ============================================================
 
 # ----- Build output -----

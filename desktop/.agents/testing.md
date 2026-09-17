@@ -82,13 +82,20 @@ those `using`s, they would break the build as `IDE0005`.
 
 ## Running them
 
+From `desktop/`, never from the repository root:
+
 ```powershell
+cd desktop
 dotnet test LostieLauncher.slnx --no-build --configuration Release
 dotnet test LostieLauncher.slnx --configuration Release --filter "FullyQualifiedName~UpdateServiceTests"
 ```
 
-`global.json` opts the repo into the **Microsoft.Testing.Platform** runner
-(xUnit v3 on .NET 10 has no VSTest bridge); `dotnet test` only discovers the
-tests because of it. The test project also sets `TreatWarningsAsErrors`, with
-only `xUnit1031` and `xUnit1051` suppressed — do not add suppressions to make a
-test compile.
+`desktop/global.json` opts the repo into the **Microsoft.Testing.Platform**
+runner (xUnit v3 on .NET 10 has no VSTest bridge); `dotnet test` only
+discovers the tests because of it, and it is found by walking up from the
+**current working directory**. Run it from the repository root and you get
+*"Testing with VSTest target is no longer supported"* — that is the wrong
+directory, not a broken test project.
+
+The test project also sets `TreatWarningsAsErrors`, with only `xUnit1031` and
+`xUnit1051` suppressed — do not add suppressions to make a test compile.

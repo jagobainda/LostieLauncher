@@ -11,9 +11,9 @@
   </a>
 </p>
 
-**Modern game launcher for Windows**
+**Modern game launcher**
 
-[![Version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](releases/) [![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=brightgreen&style=flat-square)](https://lostielauncher.jagoba.dev/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[![Version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](desktop/README.md#-build-and-publish) [![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=brightgreen&style=flat-square)](https://lostielauncher.jagoba.dev/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
 
 Discover, download, install, and manage your games from a clean interface with multi-language support.
 
@@ -23,6 +23,83 @@ Discover, download, install, and manage your games from a clean interface with m
 
 > [!TIP]
 > **Thinking about contributing?** Read the [contribution guide](CONTRIBUTING.md) first.
+
+---
+
+## 📦 Monorepo
+
+This repository holds **two applications that share a product, not a stack**.
+They have separate builds, separate toolchains and separate conventions, and
+they live side by side:
+
+| Side                        | Stack                        | Status                                   |
+| --------------------------- | ---------------------------- | ---------------------------------------- |
+| [`desktop/`](desktop/)      | WPF · .NET 10 · C# · MVVM    | **Shipping** — the Windows launcher      |
+| [`android/`](android/)      | Kotlin · Compose · MVVM      | **Not implemented yet** — reserved space |
+
+```
+├── .agents/            # Global agent rules (workflow, boundaries)
+├── .github/            # CI, Dependabot and CODEOWNERS for both sides
+├── .editorconfig       # Monorepo baseline only (charset, CRLF, indentation)
+├── .gitignore          # Covers both sides
+├── AGENTS.md           # Global agent guidelines → routes to each side
+├── CLAUDE.md           # Pointer: @AGENTS.md
+├── CONTRIBUTING.md     # Contribution guide
+├── LICENSE.txt
+├── README.md           # This file
+├── desktop/            # Windows launcher
+│   ├── .agents/        #   Desktop-only agent rules
+│   ├── .editorconfig   #   C#, XAML and MSBuild rules
+│   ├── AGENTS.md       #   Desktop agent index
+│   ├── CLAUDE.md       #   Pointer: @AGENTS.md
+│   ├── README.md       #   Architecture, build, configuration, endpoints
+│   ├── global.json     #   Test runner opt-in
+│   ├── LostieLauncher.slnx
+│   ├── LostieLauncher/         # The app
+│   ├── LostieLauncher.Tests/   # Unit tests
+│   └── scripts/        #   Release packaging (maintainer only)
+└── android/            # Android app — not implemented yet
+    ├── AGENTS.md       #   What the Android guidelines must cover
+    ├── CLAUDE.md       #   Pointer: @AGENTS.md
+    └── README.md       #   Status and scope of the Android side
+```
+
+The Android app is a port of the desktop launcher's **behavior**, not of its
+code. The desktop side is the authority on what the product does; how Android
+does it is an Android decision.
+
+### Working on each side
+
+> [!IMPORTANT]
+> **Run each side's commands from that side's folder, never from the repository
+> root.** The configuration that makes them work lives inside the folder:
+> `desktop/global.json` is what opts the repo into the test runner, and it is
+> found by walking up from the current working directory. From the root,
+> `dotnet test` fails with _"Testing with VSTest target is no longer supported"_
+> — that means you are in the wrong directory, not that anything is broken. The
+> CI jobs do the same thing with `working-directory: desktop`.
+
+```powershell
+# Desktop — build and run the three CI gates
+cd desktop
+dotnet format LostieLauncher.slnx
+dotnet restore LostieLauncher.slnx
+dotnet build LostieLauncher.slnx --no-restore --configuration Release
+dotnet test  LostieLauncher.slnx --no-build --configuration Release
+dotnet list  LostieLauncher.slnx package --vulnerable --include-transitive
+```
+
+Full detail for the desktop side — architecture, services, ViewModels,
+technologies, release packaging, configuration and API endpoints — is in
+[desktop/README.md](desktop/README.md). The Android side will document itself
+the same way in [android/README.md](android/README.md).
+
+| You are…                              | Read                                       |
+| ------------------------------------- | ------------------------------------------ |
+| contributing to the desktop launcher  | [desktop/README.md](desktop/README.md)     |
+| contributing to the Android app       | [android/README.md](android/README.md)     |
+| opening a pull request                | [CONTRIBUTING.md](CONTRIBUTING.md)         |
+| a coding assistant                    | [AGENTS.md](AGENTS.md)                     |
 
 ---
 
@@ -44,6 +121,9 @@ Discover, download, install, and manage your games from a clean interface with m
 | 🖥️ **System tray**            | Minimize to tray with a context menu (Open / Exit)                                      |
 | 🚀 **Start with Windows**     | Option to launch the launcher on login, in normal or minimized mode                     |
 
+The feature set above describes the shipping Windows launcher. It is also the
+target the Android port works towards.
+
 ---
 
 ## 🌍 Supported languages
@@ -51,137 +131,6 @@ Discover, download, install, and manage your games from a clean interface with m
 Español · English · Català · Euskera · Galego · Português · Valencià · Français
 
 The language is selected in the settings and applied dynamically throughout the application.
-
----
-
-> [!NOTE]
-> The following sections are intended for developers.
-
-## 🏗️ Architecture
-
-The project follows the **MVVM** pattern with centralized **Dependency Injection**.
-
-```
-LostieLauncher/
-├── Core/               # DI container configuration
-├── Models/             # Data models
-├── Services/           # Service layer
-├── ViewModels/         # ViewModels with CommunityToolkit.Mvvm
-├── Views/              # Windows, dialogs and WPF components
-│   ├── Components/     # GameCard, NewsCard, NotificationCard, FaqCard (+ skeletons)
-│   ├── Dialogs/        # DownloadConfirmDialog, WelcomeDialog, CustomMessageBox, SpecialVersionDialog
-│   └── Partials/       # GamesView, HomeView, LibraryView, FaqsView, SettingsView
-├── Converters/         # XAML value converters
-├── Styles/             # Global styles
-├── Themes/             # Theme resources
-├── Content/            # Localized strings
-├── Utils/              # Logging and process utilities
-└── Assets/             # Icons and graphic resources
-```
-
-### Main services
-
-| Service                  | Responsibility                                                |
-| ------------------------ | ------------------------------------------------------------- |
-| `IContentService`        | Fetches the game catalog, news, and registers installed games |
-| `IDownloadService`       | Manages downloads, file extraction, and the key system        |
-| `ISettingsService`       | Loads and persists configuration in `launcher_settings.json`  |
-| `IWindowsStartupService` | Integration with the Windows registry for automatic startup   |
-| `IUpdateGateway`         | Seam over the Velopack update manager; checks for app updates  |
-| `IUpdateNotifier`        | Prompts the user to apply/restart via WPF dialogs             |
-| `IUpdateService`         | Orchestrates the update check flow (gateway + notifier)        |
-
-### ViewModels
-
-| ViewModel           | View                                           |
-| ------------------- | ---------------------------------------------- |
-| `MainViewModel`     | Main navigation hub                            |
-| `HomeViewModel`     | Home screen with news and notifications        |
-| `LibraryViewModel`  | Available game catalog and download management |
-| `GamesViewModel`    | Installed games                                |
-| `FaqsViewModel`     | Searchable FAQ list                            |
-| `SettingsViewModel` | Settings panel                                 |
-| `GlobalViewModel`   | Shared global state                            |
-
----
-
-## 🛠️ Technologies
-
-| Package                                                                                                             | Version  | Usage                                             |
-| ------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------- |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM with `ObservableProperty` and `RelayCommand` |
-| [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Vector icons in the UI                            |
-| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.10  | IoC container                                     |
-| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.10  | `IHttpClientFactory` with named clients           |
-| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.50.0   | ZIP/7z extraction of downloaded files             |
-| [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Automatic delta update system                     |
-
----
-
-## 🚀 Build and publish
-
-### Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Windows 10/11
-- PowerShell 7+ (for the release script)
-- `vpk` Velopack CLI installed globally
-
-### Development build
-
-```powershell
-cd LostieLauncher
-dotnet build
-```
-
-### Release build (local)
-
-```powershell
-.\scripts\build-release.ps1
-```
-
-Artifacts are generated in `releases/`:
-
-- `LostieLauncher-0.9.1-full.nupkg` — initial installation package
-- Delta packages (on successive builds)
-- `releases.win.json` — update manifest
-- `RELEASES` — Velopack metadata
-
-### Release build with server upload
-
-```powershell
-.\scripts\build-release.ps1 -Upload -SshHost "user@my-server.com" -SshPath "/var/www/installer/"
-```
-
----
-
-## ⚙️ Configuration
-
-Configuration is automatically saved to `launcher_settings.json` in `%APPDATA%\LostieLauncher\` (settings from older versions stored next to the executable are migrated automatically).
-
-Games are installed into `<DownloadDirectory>\LostieLauncher\`, which defaults to `%USERPROFILE%\LostieLauncher\`. The launcher deliberately stays out of Documents (usually OneDrive-synced), out of `%LOCALAPPDATA%` (its own install directory) and out of Downloads (Storage Sense can delete its contents). Before a folder is accepted it must pass a write **and rename** check, because a folder can grant write while refusing the rename that finalizes every download.
-
-| Option              | Type          | Default      | Description                                  |
-| ------------------- | ------------- | ------------ | -------------------------------------------- |
-| `Language`          | `AppLanguage` | `Esp`        | Interface language                           |
-| `Theme`             | `AppTheme`    | `Volcarona`  | Visual theme                                 |
-| `StartWithWindows`  | `bool`        | `false`      | Launch on Windows startup                    |
-| `StartMinimized`    | `bool`        | `false`      | Start in the system tray                     |
-| `AutoUpdate`        | `bool`        | `false`      | Check for updates on startup                 |
-| `DownloadDirectory` | `string`      | `%USERPROFILE%` | Game library root; games are installed into its `LostieLauncher\` subfolder |
-| `HasSeenWelcome`    | `bool`        | `false`      | Controls whether the welcome dialog is shown |
-
----
-
-## 📡 API Endpoints
-
-| Endpoint                                                                 | Description                        |
-| ------------------------------------------------------------------------ | ---------------------------------- |
-| `https://ericlostie-launcher.jagoba.dev/games/listado.json`              | Available game catalog             |
-| `https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json` | Home screen news and notifications |
-| `https://cdn.jagoba.dev/ericlostie-launcher/flag.txt`                     | Maintenance flag (gates server actions) |
-| `https://ericlostie-launcher.jagoba.dev/games`                           | Base URL for downloads             |
-| `https://ericlostie-launcher.jagoba.dev/public/installer/`               | Velopack update feed               |
 
 ---
 

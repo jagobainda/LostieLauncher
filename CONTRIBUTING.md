@@ -4,9 +4,29 @@ Thanks for your interest in contributing to **LostieLauncher**! This document
 summarizes the workflow, conventions, and requirements that any contribution
 must meet to be merged into the project.
 
-LostieLauncher is a **WPF (.NET 10)** application for Windows that follows the
-**MVVM** pattern with centralized dependency injection. Before you start, review
-the architecture section of the [README](README.md).
+LostieLauncher is a **monorepo** holding two applications that share a product
+but not a stack:
+
+| Side                   | Stack                     | Status                  |
+| ---------------------- | ------------------------- | ----------------------- |
+| [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | Shipping                |
+| [`android/`](android/) | Kotlin · Compose · MVVM   | Not implemented yet     |
+
+Before you start, review the [monorepo overview](README.md) and then the README
+of the side you are contributing to — [desktop](desktop/README.md) or
+[android](android/README.md).
+
+> [!IMPORTANT]
+> **Run each side's commands from that side's folder, never from the repository
+> root.** The configuration that makes them work lives inside the folder:
+> `desktop/global.json` is what opts the repo into the test runner, and it is
+> found by walking up from the current working directory. From the root,
+> `dotnet test` fails with _"Testing with VSTest target is no longer supported"_
+> — that means you are in the wrong directory, not that anything is broken.
+
+Keep a pull request to **one side**. A change that touches both `desktop/` and
+`android/` needs a reason; do not fix something on the other side while you are
+in there.
 
 ---
 
@@ -34,14 +54,16 @@ where changes come together before a new version.
 
 ## ✅ Before opening a Pull Request
 
-Your PR must pass the three CI jobs (`.github/workflows/ci.yml`). Run them
-locally to avoid surprises:
+Your PR must pass the CI jobs in `.github/workflows/ci.yml`. Run them locally to
+avoid surprises. The commands below are the **desktop** gates, and CI runs them
+with `working-directory: desktop` — so run them from `desktop/` too.
 
 ### 1. Formatting (mandatory)
 
 CI rejects the PR if the code is not formatted. Apply formatting with:
 
 ```powershell
+cd desktop
 dotnet format LostieLauncher.slnx
 ```
 
@@ -51,6 +73,7 @@ remain pending.
 ### 2. Build and tests
 
 ```powershell
+cd desktop
 dotnet restore LostieLauncher.slnx
 dotnet build LostieLauncher.slnx --no-restore --configuration Release
 dotnet test  LostieLauncher.slnx --no-build --configuration Release
@@ -65,6 +88,7 @@ CI fails if there are NuGet packages with known vulnerabilities. You can check
 with:
 
 ```powershell
+cd desktop
 dotnet list LostieLauncher.slnx package --vulnerable --include-transitive
 ```
 
@@ -72,9 +96,9 @@ dotnet list LostieLauncher.slnx package --vulnerable --include-transitive
 
 ## 🧪 Tests
 
-Tests live in `LostieLauncher.Tests/`, whose folder structure mirrors the
-production project (`Services/`, `ViewModels/`, `Utils/`, `Models/`, `Helpers/`)
-so you can easily locate the matching test.
+Desktop tests live in `desktop/LostieLauncher.Tests/`, whose folder structure
+mirrors the production project (`Services/`, `ViewModels/`, `Utils/`, `Models/`,
+`Helpers/`) so you can easily locate the matching test.
 
 Test stack:
 
@@ -95,7 +119,8 @@ Guidelines:
 ## 📦 Dependencies
 
 Dependency updates (NuGet and GitHub Actions) are handled automatically by
-**Dependabot** through PRs. Thanks to `.github/CODEOWNERS`, the maintainer is
+**Dependabot** through PRs — the `nuget` ecosystem is pointed at `/desktop`,
+where the .NET projects live. Thanks to `.github/CODEOWNERS`, the maintainer is
 automatically assigned as reviewer on those PRs. You don't need to update
 dependencies manually unless your change requires it.
 
@@ -129,11 +154,14 @@ Using AI tools as an **assistant** during development is allowed. That said:
   security.
 
 If you work with a coding assistant, point it at [AGENTS.md](AGENTS.md): it is
-the machine-readable version of this guide (architecture rules, code
-conventions, testing constraints, and the exact commands CI runs). Most agentic
-tools read it automatically; Claude Code picks it up through the `CLAUDE.md`
-pointer at the repository root. Keeping the assistant inside those rules saves
-you review cycles — but it does not transfer responsibility for the result.
+the machine-readable version of this guide. It holds the rules that apply across
+the monorepo and routes to the side you are working on —
+[desktop/AGENTS.md](desktop/AGENTS.md) or [android/AGENTS.md](android/AGENTS.md)
+— where the architecture rules, code conventions, testing constraints and the
+exact commands CI runs live. Most agentic tools read it automatically; Claude
+Code picks it up through the `CLAUDE.md` pointer at the repository root.
+Keeping the assistant inside those rules saves you review cycles — but it
+does not transfer responsibility for the result.
 
 ---
 

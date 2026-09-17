@@ -2,6 +2,7 @@
 # ficheros. Sustituye a la opción `reviewers` de dependabot.yml (deprecada).
 
 # Dependencias NuGet (PRs de Dependabot del ecosistema nuget)
+# No leading slash, so the pattern keeps matching after the move to desktop/.
 *.csproj @jagobainda
 
 # Workflows y actions (PRs de Dependabot del ecosistema github-actions)

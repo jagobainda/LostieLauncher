@@ -1,8 +1,10 @@
 version: 2
 updates:
     # Dependencias NuGet del proyecto (CommunityToolkit.Mvvm, MahApps, SharpCompress, etc.)
+    # Monorepo: the .NET projects live under desktop/, so that is the directory
+    # Dependabot must scan. github-actions below stays at the repository root.
     - package-ecosystem: nuget
-      directory: /
+      directory: /desktop
       schedule:
           interval: weekly
       open-pull-requests-limit: 10

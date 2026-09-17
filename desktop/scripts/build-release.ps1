@@ -26,9 +26,11 @@
     Required when -Upload is set.
 
 .EXAMPLE
-    .\scripts\build-release.ps1
-    .\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
-    .\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
+    Paths are relative to the repository root of the monorepo.
+
+    .\desktop\scripts\build-release.ps1
+    .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
+    .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
 #>
 
 param(
@@ -47,11 +49,14 @@ $TimestampUrl   = "http://time.certum.pl"
 $SigntoolExe    = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-$RepoRoot    = Split-Path $PSScriptRoot -Parent
-$ProjectFile = Join-Path $RepoRoot "LostieLauncher\LostieLauncher.csproj"
-$PublishDir  = Join-Path $RepoRoot "publish"
-$ReleasesDir = Join-Path $RepoRoot "releases"
-$IconFile    = Join-Path $RepoRoot "LostieLauncher\Assets\app.ico"
+# This is a monorepo: the script sits in desktop/scripts/, so its parent is the
+# desktop side and not the repository root. Every path below — the publish and
+# releases output included — is therefore scoped to desktop/.
+$DesktopRoot = Split-Path $PSScriptRoot -Parent
+$ProjectFile = Join-Path $DesktopRoot "LostieLauncher\LostieLauncher.csproj"
+$PublishDir  = Join-Path $DesktopRoot "publish"
+$ReleasesDir = Join-Path $DesktopRoot "releases"
+$IconFile    = Join-Path $DesktopRoot "LostieLauncher\Assets\app.ico"
 
 # ── Read version from .csproj ─────────────────────────────────────────────────
 [xml]$csproj = Get-Content $ProjectFile
