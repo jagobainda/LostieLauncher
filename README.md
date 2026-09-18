@@ -47,6 +47,7 @@ they live side by side:
 ├── CONTRIBUTING.md     # Contribution guide
 ├── LICENSE.txt
 ├── README.md           # This file
+├── spec/               # Product specification — the port contract, shared by both sides
 ├── desktop/            # Windows launcher
 │   ├── .agents/        #   Desktop-only agent rules
 │   ├── .editorconfig   #   C#, XAML and MSBuild rules
@@ -67,6 +68,12 @@ they live side by side:
 The Android app is a port of the desktop launcher's **behavior**, not of its
 code. The desktop side is the authority on what the product does; how Android
 does it is an Android decision.
+
+[`spec/`](spec/) is that behavior written down: screens, service contracts, the
+data model, the full text catalog, the design tokens, the component and dialog
+anatomy, and a section listing what is intrinsically Windows and therefore has
+no direct Android translation. It belongs to neither side — both read it — and
+the desktop code remains the authority wherever the two disagree.
 
 ### Working on each side
 
@@ -98,6 +105,7 @@ the same way in [android/README.md](android/README.md).
 | ------------------------------------- | ------------------------------------------ |
 | contributing to the desktop launcher  | [desktop/README.md](desktop/README.md)     |
 | contributing to the Android app       | [android/README.md](android/README.md)     |
+| porting behavior between the sides    | [spec/README.md](spec/README.md)           |
 | opening a pull request                | [CONTRIBUTING.md](CONTRIBUTING.md)         |
 | a coding assistant                    | [AGENTS.md](AGENTS.md)                     |
 

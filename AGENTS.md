@@ -18,6 +18,7 @@ is your job, not the tool's.
 | ----------------------------------------------- | ------------------------------------------ |
 | the desktop launcher (WPF, .NET 10, C#)         | [desktop/AGENTS.md](desktop/AGENTS.md)     |
 | the Android app (Kotlin, Compose)               | [android/AGENTS.md](android/AGENTS.md)     |
+| porting a behavior between the two sides        | [spec/README.md](spec/README.md)           |
 | branching, committing or opening a PR           | [.agents/workflow.md](.agents/workflow.md) |
 
 Each side's `AGENTS.md` is authoritative for that side: its layer rules, its code
@@ -43,6 +44,11 @@ worth fixing.
 ├── CONTRIBUTING.md     # human contribution guide
 ├── LICENSE.txt
 ├── README.md           # monorepo overview and product landing page
+├── spec/               # product specification — the port contract, read by both sides
+│   ├── README.md       #   index and precedence rules
+│   ├── 01-…10-….md     #   overview, screens, services, data, text, tokens,
+│   │                   #   components, dialogs, utilities, Windows-only
+│   └── samples/        #   captured CDN payloads
 ├── desktop/            # Windows launcher — WPF, .NET 10, C#
 │   ├── .agents/        #   desktop-only agent rules (4 topic files)
 │   ├── .editorconfig   #   C#, XAML and MSBuild rules
@@ -100,6 +106,13 @@ These apply to every change, on both sides, with no topic file to look up:
    [Boundaries](.agents/workflow.md#boundaries).
 
 ## Shared infrastructure
+
+`spec/` is the product specification: what the launcher does and what it looks
+like, extracted from the desktop application so the Android side does not have
+to re-read the WPF project on every change. It is documentation only, it belongs
+to neither side, and **the desktop code is the authority wherever the two
+disagree** — a mismatch is a bug in `spec/`, not a licence to change behavior.
+Read [spec/README.md](spec/README.md) before porting anything.
 
 `.github/` serves both sides, so treat it as shared ground:
 
