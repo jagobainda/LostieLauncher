@@ -21,10 +21,12 @@ authority on what the app must do is the desktop side, under
 | Gradle project and app skeleton       | done — builds, runs, tested in CI                       |
 | Architecture guidelines               | done — [AGENTS.md](AGENTS.md) and [.agents/](.agents/)  |
 | CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
-| Dependency injection graph            | started — `core/di/`, two modules                       |
-| Theme system                          | one palette of ten (Volcarona), no other tokens yet     |
+| Dependency injection graph            | started — `core/di/`, three modules                     |
+| Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
+| Text catalogue                        | done — 114 keys and 6 FAQs, in eight languages          |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
-| Persistence, downloads, screens       | not started                                             |
+| Settings storage                      | started — theme and language only                       |
+| Downloads and screens                 | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
 ## The stack, and why
@@ -58,6 +60,7 @@ Everything runs **from this folder**, not from the repository root.
 ./gradlew lintDebug                     # Android Lint, warnings are errors
 ./gradlew spotlessApply                 # format
 ./gradlew installDebug                  # install on a connected device
+./gradlew assembleRelease               # the R8 path, which CI does not gate
 ```
 
 Requirements: an Android SDK (the build accepts its licences and downloads what
@@ -114,14 +117,39 @@ URLs in `NetworkModule` again.
 
 Both are runtime-switchable and persisted, as on the desktop — so neither uses
 Android resource qualifiers, which follow the system rather than an in-app
-setting. Colours come from `LocalLauncherColors.current`; user-visible text will
-come from the `content/` catalogue. `res/values/` holds only what the platform
-reads before any Kotlin runs.
+setting. `res/values/` holds only what the platform reads before any Kotlin
+runs.
 
-Only one of the ten palettes exists so far: **Volcarona**, the desktop's default
-and fallback, with its exact values, guarded by a test that compares them
-against the desktop's own. See
-[.agents/localization-and-themes.md](.agents/localization-and-themes.md).
+**Ten palettes**, in `ui/theme/Palettes.kt`, with the desktop's exact values;
+read one with `LocalLauncherColors.current` and never inline a colour.
+Everything that is not a colour — the type scale, the spacing scale, radii,
+border widths, elevation and the four animation durations — is in
+`ui/theme/Tokens.kt` as plain objects, because none of it varies by theme. The
+desktop tokenizes colour and nothing else, so those values are the desktop's
+but the names are this port's.
+
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 114
+string keys and six FAQ entries each. Read text with `LocalStrings.current`, and
+substitute a placeholder with `withArgs` — never `format`, which resolves to the
+standard library's and quietly does nothing.
+A key missing from a language is a compile error, which is the guarantee the
+desktop gets from having one class per language and the one property that makes
+this worth 900 lines of `override val`.
+
+Both settings live in `AppearanceStore` and reach the UI through
+`AppearanceViewModel`, so changing either recomposes and never recreates the
+activity. They are persisted in a Preferences DataStore under the enum member
+name.
+
+A debug-only **token catalogue** shows every colour, type size, spacing and
+radius on one page with live theme and language pickers. It is the whole UI in a
+debug build today, and it lives in `src/debug/`, so it is not compiled into a
+release APK at all.
+
+See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
+which also carries the contrast review list — colours that fail WCAG on the
+desktop values and are deliberately **not** being changed until the end of the
+port.
 
 ## Contributing
 

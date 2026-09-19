@@ -11,8 +11,12 @@ import androidx.compose.ui.graphics.Color
  * colour; Compose has no separate brush concept for a flat fill, so the brushes
  * have no counterpart here.
  *
- * Extracted from `spec/06-design-tokens.md`, which in turn comes from
- * `desktop/LostieLauncher/Themes/`.
+ * The ten palettes that fill it live in `Palettes.kt`; adding a role here is a
+ * compile error until every one of them supplies it, which is the whole reason
+ * this is a `data class` and not a map.
+ *
+ * Extracted from `desktop/LostieLauncher/Themes/`, described in
+ * `spec/06-design-tokens.md`.
  */
 @Immutable
 data class LauncherColors(
@@ -44,31 +48,4 @@ data class LauncherColors(
     val overlayMedium: Color,
     /** The scrollbar thumb, secondary button hover. */
     val overlayStrong: Color,
-)
-
-/**
- * Volcarona — the desktop's default theme, and the one it falls back to when a
- * selected theme fails to load.
- *
- * It is the only palette the port has so far, on purpose: port plan step 05
- * brings the other nine and the rest of the visual token set. The values are
- * the desktop's exactly; `LauncherColorsTest` is what keeps them that way.
- * Overlay colours carry real alpha and are meant to composite over whatever is
- * beneath them.
- */
-val VolcaronaColors: LauncherColors = LauncherColors(
-    primaryBg = Color(0xFF4D4949),
-    secondaryBg = Color(0xFF3A3737),
-    tertiaryBg = Color(0xFF2E2C2C),
-    primaryFg = Color(0xFFF08058),
-    primaryFgHover = Color(0xFFD06038),
-    primaryFgPressed = Color(0xFFB04020),
-    secondaryFg = Color(0xFFF3F7FA),
-    secondaryFgDim = Color(0x88F3F7FA),
-    success = Color(0xFF2E7D32),
-    overlaySubtle = Color(0x1AFFFFFF),
-    overlayLight = Color(0x22FFFFFF),
-    overlayMuted = Color(0x33FFFFFF),
-    overlayMedium = Color(0x55FFFFFF),
-    overlayStrong = Color(0x88FFFFFF),
 )

@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The launcher's user-visible text is not localized through this file. The
-    desktop side keeps its eight languages in code (Content/Strings.cs) and
-    switches them at runtime without restarting; port plan step 05 ports that
-    catalogue and the mechanism. Only the values Android itself reads before any
-    Kotlin runs — the launcher label — belong here.
+    The launcher's user-visible text is not localized through this file, and
+    there are no values-xx/ variants on purpose. The catalogue lives in Kotlin,
+    in content/, with one implementation per language and a runtime switch that
+    does not restart the app — the desktop's mechanism (Content/Strings.cs), and
+    one a resource qualifier cannot reproduce, because qualifiers follow the
+    system locale rather than an in-app setting.
+
+    Only the values Android itself reads before any Kotlin runs — the launcher
+    label — belong here.
 -->
 <resources>
     <string name="app_name">Lostie Launcher</string>

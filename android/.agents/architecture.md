@@ -40,6 +40,19 @@ Two notes on where this diverges from the desktop, both on purpose:
 Only packages with something in them exist. Do not create an empty package with
 a placeholder file to "reserve" it — create it with its first real type.
 
+### Build-type source sets
+
+`app/src/debug/` and `app/src/release/` exist and each holds its own
+`ui/StartSurface.kt`. That is how something is made **debug-only**: not a
+`BuildConfig.DEBUG` branch, which still ships the code, but a symbol `main`
+calls that has a different implementation per build type. The debug one shows
+the token catalogue; the release one shows `EmptyScreen`.
+
+Two consequences. A file added to one build type's source set must be added to
+the other or the release build stops compiling — and CI only builds debug, so
+nobody finds out until someone runs `assembleRelease`. And a step that adds
+something R8 can break has to run `assembleRelease` itself for the same reason.
+
 ## Dependency injection
 
 - Hilt, with every binding a **singleton in `SingletonComponent`** and resolved
@@ -50,7 +63,9 @@ a placeholder file to "reserve" it — create it with its first real type.
   Later areas get their own module beside it — one per area, not one growing
   module. **Never construct a service at a call site.**
 - ViewModels are `@HiltViewModel` with `@Inject constructor`, obtained from a
-  composable with `hiltViewModel()`. A ViewModel never takes a `Context`; if it
+  composable with `hiltViewModel()` — from
+  `androidx.hilt.lifecycle.viewmodel.compose`, not the deprecated copy in
+  `androidx.hilt.navigation.compose`. A ViewModel never takes a `Context`; if it
   needs something the platform owns, that goes behind an interface in
   `service/`.
 - **No URL, path or magic number inside the type that does the work.**
@@ -71,6 +86,9 @@ a placeholder file to "reserve" it — create it with its first real type.
 - A `@Provides` function that returns or takes an `internal` type is itself
   `internal`. Kotlin rejects the alternative, and widening the type instead
   would be widening visibility to satisfy the container.
+- A module cannot hold `@Binds` and `@Provides` together — the first needs an
+  abstract class, the second an object. When an area needs both, it gets two
+  modules side by side, as `SettingsModule` and `SettingsBindingsModule` do.
 
 ## Seams: how untestable things become testable
 
@@ -91,6 +109,12 @@ Already in place:
 - [`MaintenanceFlagApi`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/MaintenanceFlagApi.kt)
   — the transport for the one endpoint whose answer is a status code, so the
   decisions that follow from the code stay testable without a socket.
+- [`AppearanceStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/AppearanceStore.kt)
+  — the storage seam for the theme and the language. Its DataStore adapter is
+  the untestable half and stays thin; the decisions around it are pure
+  (`AppTheme.fromNameOrDefault`, `AppLanguage.fromNameOrDefault`) and are tested
+  directly. Port plan step 07 extends this DataStore rather than adding a second
+  settings mechanism beside it.
 
 Prefer extracting a branchy decision into a pure function and testing it
 directly over testing it through a ViewModel. The desktop's `*Policy` types are

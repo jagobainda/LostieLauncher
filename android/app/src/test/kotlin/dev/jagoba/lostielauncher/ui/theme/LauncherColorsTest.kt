@@ -1,88 +1,59 @@
 package dev.jagoba.lostielauncher.ui.theme
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import io.kotest.matchers.shouldBe
 import java.lang.reflect.Modifier
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 
-@DisplayName("Volcarona palette")
+@DisplayName("LauncherColors")
 class LauncherColorsTest {
-    // ---- parity with the desktop theme ----
-
-    @ParameterizedTest(name = "{0} is #{1}")
-    @CsvSource(
-        // Every value here is the desktop's, from spec/06-design-tokens.md
-        // (Themes/Volcarona.xaml). A failure means the palette drifted, which
-        // is a bug in the port and never a licence to change the colour.
-        "primaryBg,        FF4D4949",
-        "secondaryBg,      FF3A3737",
-        "tertiaryBg,       FF2E2C2C",
-        "primaryFg,        FFF08058",
-        "primaryFgHover,   FFD06038",
-        "primaryFgPressed, FFB04020",
-        "secondaryFg,      FFF3F7FA",
-        "secondaryFgDim,   88F3F7FA",
-        "success,          FF2E7D32",
-        "overlaySubtle,    1AFFFFFF",
-        "overlayLight,     22FFFFFF",
-        "overlayMuted,     33FFFFFF",
-        "overlayMedium,    55FFFFFF",
-        "overlayStrong,    88FFFFFF",
-    )
-    fun `matches the desktop theme exactly`(role: String, expectedArgb: String) {
-        // Arrange — look the role up by name, so renaming a property fails
-        // loudly instead of silently dropping a case from the table.
-        val colour = rolesByName.getValue(role)
-
-        // Act
-        val argb = "%08X".format(colour.toArgb())
-
-        // Assert
-        argb shouldBe expectedArgb
-    }
-
     @Test
-    @DisplayName("covers every colour key the desktop themes define")
-    fun `has fourteen roles, and the table above covers all of them`() {
-        // Arrange — read the roles off the class itself rather than trusting
-        // the table. Counting the table's own entries would be circular: a
-        // fifteenth property nobody added a row for would leave it green, and
-        // that is precisely the drift this test exists to catch. (A property
-        // *removed* from LauncherColors cannot slip through either — the table
-        // would stop compiling.)
+    @DisplayName("declares exactly the fourteen colour keys the desktop themes define")
+    fun `has fourteen roles, and they are the desktop's`() {
+        // Arrange — read the roles off the class itself rather than listing
+        // them twice. A fifteenth property nobody noticed would otherwise slip
+        // past every palette test, because those check the values of the roles
+        // they know about, not that the set of roles is right.
         val declared = LauncherColors::class.java.declaredFields
             .filterNot { it.isSynthetic || Modifier.isStatic(it.modifiers) }
             .map { it.name }
-            .toSet()
 
-        // Act / Assert — each desktop theme defines 14 colours, and every one
-        // of them is checked by the table above.
-        declared shouldBe rolesByName.keys
-        declared.size shouldBe 14
+        // Act / Assert — the names are the desktop's colour keys with `Color`
+        // dropped, in the order `Themes/Volcarona.xaml` declares them.
+        declared shouldBe listOf(
+            "primaryBg",
+            "secondaryBg",
+            "tertiaryBg",
+            "primaryFg",
+            "primaryFgHover",
+            "primaryFgPressed",
+            "secondaryFg",
+            "secondaryFgDim",
+            "success",
+            "overlaySubtle",
+            "overlayLight",
+            "overlayMuted",
+            "overlayMedium",
+            "overlayStrong",
+        )
     }
 
-    private companion object {
-        val rolesByName: Map<String, Color> = with(VolcaronaColors) {
-            mapOf(
-                "primaryBg" to primaryBg,
-                "secondaryBg" to secondaryBg,
-                "tertiaryBg" to tertiaryBg,
-                "primaryFg" to primaryFg,
-                "primaryFgHover" to primaryFgHover,
-                "primaryFgPressed" to primaryFgPressed,
-                "secondaryFg" to secondaryFg,
-                "secondaryFgDim" to secondaryFgDim,
-                "success" to success,
-                "overlaySubtle" to overlaySubtle,
-                "overlayLight" to overlayLight,
-                "overlayMuted" to overlayMuted,
-                "overlayMedium" to overlayMedium,
-                "overlayStrong" to overlayStrong,
-            )
-        }
+    @Test
+    @DisplayName("is a data class, so a new role is a compile error in all ten palettes")
+    fun `is a data class`() {
+        // Arrange / Act — `copy` and `componentN` are generated only for a
+        // data class. The property this guards is not cosmetic: the desktop can
+        // lose a colour key from one theme and only find out when a user
+        // selects it, and the whole reason this is a constructor-per-role
+        // record is that the same mistake cannot compile here.
+        //
+        // `startsWith` rather than an exact name because `Color` is an inline
+        // value class, so Kotlin mangles every generated signature that
+        // mentions one — `copy-0d7_KjU`, not `copy`.
+        val names = LauncherColors::class.java.declaredMethods.map { it.name }
+        val hasCopy = names.any { it.startsWith("copy") } && names.any { it.startsWith("component1") }
+
+        // Assert
+        hasCopy shouldBe true
     }
 }

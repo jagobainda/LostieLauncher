@@ -60,10 +60,25 @@ default formatting is accepted as-is), `max_line_length = 120`, and
 - Hoist state to the lowest common owner. `remember` is for what is genuinely
   local and disposable.
 - **Never inline a colour, a dimension or a font size.** Colours come from
-  `LocalLauncherColors.current`; the rest of the token set arrives with port
-  plan step 05. A literal hex in a composable does not follow the active theme,
-  which is the same bug the desktop's XAML rule prevents.
-- No user-visible literal in a composable. The text catalogue is step 05's.
+  `LocalLauncherColors.current`; everything else comes from `ui/theme/Tokens.kt`
+  — `LauncherSpacing`, `LauncherRadii`, `LauncherType`, `LauncherBorders`,
+  `LauncherSizes`, `LauncherMotion`. A literal hex in a composable does not
+  follow the active theme, which is the same bug the desktop's XAML rule
+  prevents, and a literal `12.dp` is a value nobody can trace back to the
+  desktop.
+- **No user-visible literal in a composable.** Text comes from
+  `LocalStrings.current`, and a string with an argument goes through
+  `String.withArgs` from `content/` — **not** `format`, which is a name
+  `kotlin.text` already owns and would silently win. A label written inline is
+  invisible to seven of the eight languages.
+
+  There is exactly one exemption, and it is not a precedent:
+  `src/debug/…/TokenCatalogScreen.kt` writes its section headings and its token
+  names in English. They name types and properties a developer reads in the
+  source — `LauncherSpacing.Card`, `primaryFgHover` — so translating them would
+  make the screen useless at the one job it has, and the file is not compiled
+  into a release build at all. Any *other* debug surface that shows the user
+  copy uses the catalogue like everything else.
 
 ## Comments and docs
 

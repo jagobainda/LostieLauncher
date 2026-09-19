@@ -73,14 +73,16 @@ android/
     ├── build.gradle.kts
     └── src/
         ├── main/kotlin/dev/jagoba/lostielauncher/
-        │   ├── core/      # composition root: Hilt modules, dispatchers
-        │   ├── model/     # immutable domain models, enums, options
-        │   ├── service/   # service layer + the interfaces isolating the platform
-        │   ├── content/   # localized text catalogue (step 05)
-        │   ├── util/      # pure decision functions, formatting, logging
-        │   └── ui/        # MainActivity, screen/, component/, dialog/, theme/
-        ├── main/res/      # only what the platform reads before Kotlin runs
-        └── test/kotlin/   # JVM unit tests, mirroring the packages above
+        │   ├── core/        # composition root: Hilt modules, dispatchers
+        │   ├── model/       # immutable domain models, enums, options
+        │   ├── service/     # service layer + the interfaces isolating the platform
+        │   ├── content/     # localized text catalogue, eight languages
+        │   ├── util/        # pure decision functions, formatting, logging
+        │   └── ui/          # MainActivity, screen/ component/ dialog/ theme/ viewmodel/
+        ├── main/res/        # only what the platform reads before Kotlin runs
+        ├── debug/kotlin/    # debug-only surfaces — the token catalogue
+        ├── release/kotlin/  #   and their release counterparts, so neither ships the other
+        └── test/kotlin/     # JVM unit tests, mirroring the packages above
 ```
 
 Which layer may depend on which, and why `Converters/` has no counterpart:
