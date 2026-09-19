@@ -21,7 +21,14 @@ A test ported from the desktop should be recognisable beside its original.
   cannot run, and it is a sign the seam is missing — add the interface instead.
 - **Nothing real on the other side of a seam.** No real network, no filesystem
   outside a JUnit `@TempDir`, no wall-clock dependency, no machine locale
-  dependency, no `Thread.sleep`.
+  dependency, no `Thread.sleep`. A loopback `MockWebServer` is not "real
+  network" and is the right tool when what is under test is the HTTP stack
+  itself — `CdnPayloadTest` uses one to parse the captured CDN payloads through
+  the real OkHttp, Retrofit and `Json`, which is the only way to prove the
+  payload parses rather than prove that a fixture does.
+- **Pin the clock.** Anything that reads "now" takes the injected
+  `java.time.Clock`, and a test hands it `Clock.fixed`. A test asserting against
+  a payload that expires on a date is otherwise a test with a fuse in it.
 - Coroutines are tested with `runTest` and an injected test dispatcher, never by
   waiting. `DispatcherProvider` exists precisely so a test can hand a
   `StandardTestDispatcher` to the thing under test.

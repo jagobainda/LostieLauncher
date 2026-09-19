@@ -21,9 +21,10 @@ authority on what the app must do is the desktop side, under
 | Gradle project and app skeleton       | done — builds, runs, tested in CI                       |
 | Architecture guidelines               | done — [AGENTS.md](AGENTS.md) and [.agents/](.agents/)  |
 | CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
-| Dependency injection graph            | started — `core/di/CoreModule.kt`                       |
+| Dependency injection graph            | started — `core/di/`, two modules                       |
 | Theme system                          | one palette of ten (Volcarona), no other tokens yet     |
-| Models, network, persistence, screens | not started                                             |
+| Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
+| Persistence, downloads, screens       | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
 ## The stack, and why
@@ -85,9 +86,29 @@ ui/       MainActivity, screen/ component/ dialog/ theme/     (desktop: Views/, 
 
 Anything touching the network, the filesystem or a platform service sits behind
 a narrow interface with a thin adapter, and the decision logic moves into a pure
-function in `util/`. The two seams that exist so far are `DispatcherProvider`
-(threading) and `Logger`. The rules, including what each layer may depend on:
-[.agents/architecture.md](.agents/architecture.md).
+function in `util/`. The seams that exist so far are `DispatcherProvider`
+(threading), `Logger`, `java.time.Clock` (so content expiry can be pinned in a
+test) and `MaintenanceFlagApi`. The rules, including what each layer may depend
+on: [.agents/architecture.md](.agents/architecture.md).
+
+### Reading the CDN
+
+Three endpoints, three HTTP clients, three different timeouts, and the
+differences are the behaviour rather than an accident —
+[spec/03-services.md](../spec/03-services.md) explains each one. Retrofit covers
+the two JSON endpoints; the maintenance flag goes through raw OkHttp, because
+its answer is a status code and Retrofit will not let a `@HEAD` return anything
+else. Every URL and every timeout is written in `core/di/NetworkModule.kt` and
+nowhere else.
+
+The layer never throws. A CDN that is down produces an empty catalogue or the
+last known home content flagged stale, and the maintenance flag fails *open* so
+an unreachable server cannot lock a user out of their own launcher.
+
+`app/src/test/resources/cdn/` holds byte-for-byte captures of the two live
+payloads, and `CdnPayloadTest` parses them through the real OkHttp, Retrofit and
+`Json` against a loopback `MockWebServer`. Re-capture them by fetching the two
+URLs in `NetworkModule` again.
 
 ## Themes and text
 

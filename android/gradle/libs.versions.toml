@@ -40,11 +40,11 @@ hiltNavigationCompose = "1.4.0"       # step 11
 
 # ── Asynchrony and serialization ────────────────────────────────────────────
 coroutines = "1.11.0"
-kotlinxSerialization = "1.11.0"    # step 04
+kotlinxSerialization = "1.11.0"
 
 # ── Network and images ──────────────────────────────────────────────────────
-okhttp = "5.5.0"                      # steps 04 and 08
-retrofit = "3.0.0"                    # step 04
+okhttp = "5.5.0"
+retrofit = "3.0.0"
 coil = "3.6.3"                        # step 12
 
 # ── Test ────────────────────────────────────────────────────────────────────
@@ -81,15 +81,17 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
-okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3-junit5", version.ref = "okhttp" }
-retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
-retrofit-converter-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization", version.ref = "retrofit" }
 
 # ── Dependency injection ────────────────────────────────────────────────────
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# ── Network ─────────────────────────────────────────────────────────────────
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3-junit5", version.ref = "okhttp" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-converter-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization", version.ref = "retrofit" }
 
 # ── Asynchrony and serialization ────────────────────────────────────────────
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

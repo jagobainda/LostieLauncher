@@ -2,8 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     // No `org.jetbrains.kotlin.android`: AGP 9 compiles Kotlin itself.
     alias(libs.plugins.kotlin.compose)
-    // kotlin.serialization is pinned in the catalogue but not applied here:
-    // nothing is @Serializable yet. Step 04 applies it with the DTOs.
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.android.junit)
@@ -53,6 +52,10 @@ android {
 
     buildFeatures {
         compose = true
+        // The HTTP clients send `User-Agent: LostieLauncher/<version>`, as the
+        // desktop does. BuildConfig.VERSION_NAME is where that version comes
+        // from, and AGP leaves BuildConfig off unless it is asked for.
+        buildConfig = true
     }
 
     lint {
@@ -95,6 +98,11 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.okhttp)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -106,5 +114,6 @@ dependencies {
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

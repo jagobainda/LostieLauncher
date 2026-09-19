@@ -59,7 +59,18 @@ a placeholder file to "reserve" it — create it with its first real type.
   `ContentOptions` / `DownloadOptions` / `UpdateOptions`.
 - HTTP clients are provided by the graph, one per purpose with its own timeout,
   never constructed ad hoc. `spec/03-services.md` documents why the three
-  differ.
+  differ. They are told apart by the qualifiers in
+  [`service/cdn/HttpClients.kt`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/HttpClients.kt),
+  which live beside their consumers so the service layer never has to reach into
+  the composition root.
+- **Retrofit where there is a payload, raw OkHttp where there is not.** The two
+  JSON endpoints go through a Retrofit interface taking an absolute `@Url`,
+  because the endpoints do not share a host. The maintenance flag does not:
+  its answer is a status code, and Retrofit will not let a `@HEAD` return
+  anything but `Unit`.
+- A `@Provides` function that returns or takes an `internal` type is itself
+  `internal`. Kotlin rejects the alternative, and widening the type instead
+  would be widening visibility to satisfy the container.
 
 ## Seams: how untestable things become testable
 
@@ -73,6 +84,13 @@ Already in place:
   — the threading seam. Nothing else in the codebase names `Dispatchers`.
 - [`Logger`](../app/src/main/kotlin/dev/jagoba/lostielauncher/util/log/Logger.kt)
   — so the "log it and degrade" rule can be asserted in a test.
+- `java.time.Clock`, bound in `CoreModule` — the wall-clock seam. Content expiry
+  is the only thing that reads "now", and a test that cannot pin it is a test
+  that starts failing on a date nobody chose. Nothing calls `Instant.now()`,
+  `LocalDateTime.now()` or `System.currentTimeMillis()`.
+- [`MaintenanceFlagApi`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/MaintenanceFlagApi.kt)
+  — the transport for the one endpoint whose answer is a status code, so the
+  decisions that follow from the code stay testable without a socket.
 
 Prefer extracting a branchy decision into a pure function and testing it
 directly over testing it through a ViewModel. The desktop's `*Policy` types are

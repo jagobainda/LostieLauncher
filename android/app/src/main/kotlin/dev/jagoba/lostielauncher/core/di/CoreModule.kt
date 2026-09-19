@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.core.coroutines.DefaultDispatcherProvider
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.util.log.AndroidLogger
 import dev.jagoba.lostielauncher.util.log.Logger
+import java.time.Clock
 import javax.inject.Singleton
 
 /**
@@ -32,4 +33,17 @@ object CoreModule {
     @Provides
     @Singleton
     fun provideLogger(): Logger = AndroidLogger()
+
+    /**
+     * The clock seam.
+     *
+     * Home content expires against a wall clock, and a test that cannot pin
+     * "now" is a test that starts failing on a date nobody chose. UTC rather
+     * than the default zone on purpose: every comparison that follows states
+     * its own zone, so a device zone leaking in here would be a bug that only
+     * showed up abroad.
+     */
+    @Provides
+    @Singleton
+    fun provideClock(): Clock = Clock.systemUTC()
 }
