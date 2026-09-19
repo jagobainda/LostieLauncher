@@ -38,6 +38,7 @@ worth fixing.
 │   └── workflow.md     #   git, PR and boundary rules for both sides
 ├── .github/            # CI, Dependabot and CODEOWNERS for both sides
 ├── .editorconfig       # monorepo baseline only (charset, CRLF, indentation)
+├── .gitattributes      # line endings Git must enforce (gradlew stays LF)
 ├── .gitignore          # covers both sides (patterns match at any depth)
 ├── AGENTS.md           # this file
 ├── CLAUDE.md           # pointer: @AGENTS.md
@@ -60,10 +61,16 @@ worth fixing.
 │   ├── LostieLauncher/         # the app
 │   ├── LostieLauncher.Tests/   # unit tests
 │   └── scripts/        #   release packaging (maintainer only)
-└── android/            # Android app — Kotlin, Compose (not implemented yet)
-    ├── AGENTS.md       #   what the Android guidelines must cover
+└── android/            # Android app — Kotlin, Compose, MVVM
+    ├── .agents/        #   Android-only agent rules (4 topic files)
+    ├── .editorconfig   #   Kotlin and Gradle rules
+    ├── AGENTS.md       #   Android index
     ├── CLAUDE.md       #   pointer: @AGENTS.md
-    └── README.md       #   status and scope of the Android side
+    ├── README.md       #   Android architecture, stack, build
+    ├── build.gradle.kts, settings.gradle.kts, gradle.properties
+    ├── gradle/         #   libs.versions.toml + the pinned wrapper
+    ├── gradlew(.bat)   #   the wrapper — see "Where to run commands"
+    └── app/            #   the app and its unit tests
 ```
 
 ## Where to run commands
@@ -81,8 +88,14 @@ Microsoft.Testing.Platform on .NET 10 SDK and later.
 ```
 
 That error means you are in the wrong directory, not that anything is broken.
-`cd desktop` first. The CI jobs do the same thing with
-`working-directory: desktop`.
+`cd desktop` first.
+
+The Android side works the same way: the Gradle build, the version catalogue and
+the wrapper all live in `android/`, and `./gradlew` only exists there. `cd
+android` first.
+
+The CI jobs do the same thing, with `working-directory: desktop` on the desktop
+jobs and `working-directory: android` on the Android ones.
 
 ## Global non-negotiables
 
@@ -116,14 +129,24 @@ Read [spec/README.md](spec/README.md) before porting anything.
 
 `.github/` serves both sides, so treat it as shared ground:
 
-- **`workflows/ci.yml`** — the desktop jobs set `working-directory: desktop`. An
-  Android job must scope itself the same way rather than changing the defaults
-  for everyone.
-- **`dependabot.yml`** — the `nuget` ecosystem points at `/desktop`. A new
-  ecosystem gets its own entry; do not repoint an existing one.
+- **`workflows/ci.yml`** — five jobs. `format-check`, `build-and-test` and
+  `vulnerable-dependencies` are the desktop's, on `windows-latest` with
+  `working-directory: desktop`; the two `android-*` ones are on `ubuntu-latest`
+  with `working-directory: android`. A new job scopes itself the same way rather
+  than changing the defaults for everyone, and carries the name of its side —
+  the three desktop ones keep their original unprefixed names so existing branch
+  protection rules still match.
+- **`dependabot.yml`** — `nuget` points at `/desktop`, `gradle` at `/android`,
+  `github-actions` at `/`. A new ecosystem gets its own entry; do not repoint an
+  existing one.
 - **`CODEOWNERS`** — patterns without a leading slash match at any depth, which
-  is why `*.csproj` still works after the move to `desktop/`.
+  is why `*.csproj` still works after the move to `desktop/`, and why
+  `*.gradle.kts` and `libs.versions.toml` are written the same way.
 - **`.editorconfig`** — the root file is the baseline for *every* file in the
   repository and carries `root = true`. Language rules belong in the side's own
   `.editorconfig`, which deliberately omits `root` so it inherits. Do not move
   language rules up to the root file.
+- **`.gitattributes`** — at the repository root, and it exists for one reason:
+  the baseline is CRLF, but `android/gradlew` is a shell script the Linux CI
+  runner executes, so it is forced to LF here regardless of anyone's
+  `core.autocrlf`. Leave that rule alone.

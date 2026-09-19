@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The theme palettes live in Kotlin (ui/theme/), not here: the desktop lets
+    the user switch theme at runtime, so a colour baked into an XML resource
+    could not follow the selection. The one value below exists only because the
+    platform paints the window and the launcher icon before any Compose content
+    exists, and it is Volcarona's — the desktop's default and fallback theme.
+-->
+<resources>
+    <color name="volcarona_primary_bg">#FF4D4949</color>
+</resources>

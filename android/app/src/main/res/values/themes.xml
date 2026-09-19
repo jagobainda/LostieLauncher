@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Platform theme, not the application's theme. Its only job is to paint the
+    window the right colour before Compose takes over, so the app does not flash
+    white on launch. Everything the user actually sees is themed in Kotlin by
+    LostieLauncherTheme.
+-->
+<resources>
+    <style name="Theme.LostieLauncher" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/volcarona_primary_bg</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>

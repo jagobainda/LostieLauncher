@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Placeholder launcher glyph: the letter "L" in Volcarona's accent, drawn as a
+    vector so it scales to every density without shipping bitmaps. The desktop
+    ships an .ico (desktop/LostieLauncher/Assets/app.ico) that has no adaptive
+    equivalent; producing a real Android icon from the product artwork is a
+    deliberate later call, not something to guess at here.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F08058"
+        android:pathData="M42,32h8v36h22v8h-30z" />
+</vector>

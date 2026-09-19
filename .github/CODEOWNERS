@@ -5,5 +5,11 @@
 # No leading slash, so the pattern keeps matching after the move to desktop/.
 *.csproj @jagobainda
 
+# Gradle dependencies (Dependabot PRs from the gradle ecosystem). The version
+# catalogue is where almost all of them land; the build scripts, the ones that
+# touch a plugin. No leading slash, same as the rule above.
+libs.versions.toml @jagobainda
+*.gradle.kts @jagobainda
+
 # Workflows y actions (PRs de Dependabot del ecosistema github-actions)
 /.github/workflows/ @jagobainda

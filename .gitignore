@@ -1,9 +1,9 @@
 # ============================================================
-#  Monorepo .gitignore — Visual Studio / .NET / WPF MVVM (desktop/)
+#  Monorepo .gitignore — both sides.
 #
 #  Patterns without a leading slash match at any depth, so the build
-#  output rules below already cover desktop/. The Android side adds its
-#  own section (Gradle, local.properties, build/) when it lands.
+#  output rules below cover desktop/ and android/ alike. The .NET rules
+#  come first, the Gradle/Android ones at the end.
 # ============================================================
 
 # ----- Build output -----
@@ -50,9 +50,29 @@ coverage*/
 publish/
 **/Properties/PublishProfiles/
 
-# ----- Rider -----
+# ----- Gradle / Android (android/) -----
+# `build/` has no leading slash on purpose — it matches android/build/ and
+# android/app/build/ alike, and the desktop side builds into bin/ and obj/, so
+# nothing of its is caught by it.
+.gradle/
+build/
+.kotlin/
+.cxx/
+captures/
+local.properties
+*.apk
+*.aab
+*.aar
+*.keystore
+*.jks
+# The wrapper JAR is the one binary that belongs in the repository: without it
+# `./gradlew` cannot bootstrap, which is the whole point of a wrapper.
+!gradle/wrapper/gradle-wrapper.jar
+
+# ----- Rider / IntelliJ / Android Studio -----
 .idea/
 *.sln.iml
+*.iml
 
 # ----- OS generated -----
 .DS_Store

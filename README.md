@@ -32,10 +32,10 @@ This repository holds **two applications that share a product, not a stack**.
 They have separate builds, separate toolchains and separate conventions, and
 they live side by side:
 
-| Side                        | Stack                        | Status                                   |
-| --------------------------- | ---------------------------- | ---------------------------------------- |
-| [`desktop/`](desktop/)      | WPF · .NET 10 · C# · MVVM    | **Shipping** — the Windows launcher      |
-| [`android/`](android/)      | Kotlin · Compose · MVVM      | **Not implemented yet** — reserved space |
+| Side                   | Stack                     | Status                                                           |
+| ---------------------- | ------------------------- | ---------------------------------------------------------------- |
+| [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | **Shipping** — the Windows launcher                              |
+| [`android/`](android/) | Kotlin · Compose · MVVM   | **Early** — builds, runs and is tested; no launcher features yet |
 
 ```
 ├── .agents/            # Global agent rules (workflow, boundaries)
@@ -59,10 +59,16 @@ they live side by side:
 │   ├── LostieLauncher/         # The app
 │   ├── LostieLauncher.Tests/   # Unit tests
 │   └── scripts/        #   Release packaging (maintainer only)
-└── android/            # Android app — not implemented yet
-    ├── AGENTS.md       #   What the Android guidelines must cover
+└── android/            # Android app — Kotlin, Compose, MVVM
+    ├── .agents/        #   Android-only agent rules (4 topic files)
+    ├── .editorconfig   #   Kotlin and Gradle rules
+    ├── AGENTS.md       #   Android index
     ├── CLAUDE.md       #   Pointer: @AGENTS.md
-    └── README.md       #   Status and scope of the Android side
+    ├── README.md       #   Android architecture, stack and build
+    ├── build.gradle.kts, settings.gradle.kts, gradle.properties
+    ├── gradle/         #   Version catalog + the pinned wrapper
+    ├── gradlew, gradlew.bat
+    └── app/            #   The app and its unit tests
 ```
 
 The Android app is a port of the desktop launcher's **behavior**, not of its
@@ -84,7 +90,9 @@ the desktop code remains the authority wherever the two disagree.
 > found by walking up from the current working directory. From the root,
 > `dotnet test` fails with _"Testing with VSTest target is no longer supported"_
 > — that means you are in the wrong directory, not that anything is broken. The
-> CI jobs do the same thing with `working-directory: desktop`.
+> same holds on the Android side, where the Gradle build and its wrapper live in
+> `android/`. The CI jobs do the same thing with `working-directory: desktop`
+> and `working-directory: android`.
 
 ```powershell
 # Desktop — build and run the three CI gates
@@ -96,10 +104,16 @@ dotnet test  LostieLauncher.slnx --no-build --configuration Release
 dotnet list  LostieLauncher.slnx package --vulnerable --include-transitive
 ```
 
-Full detail for the desktop side — architecture, services, ViewModels,
-technologies, release packaging, configuration and API endpoints — is in
-[desktop/README.md](desktop/README.md). The Android side will document itself
-the same way in [android/README.md](android/README.md).
+```bash
+# Android — format, then build, test and lint
+cd android
+./gradlew spotlessApply
+./gradlew assembleDebug testDebugUnitTest lintDebug
+```
+
+Full detail for each side — architecture, technologies, build and configuration
+— is in [desktop/README.md](desktop/README.md) and
+[android/README.md](android/README.md).
 
 | You are…                              | Read                                       |
 | ------------------------------------- | ------------------------------------------ |

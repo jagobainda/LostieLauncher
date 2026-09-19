@@ -6,10 +6,18 @@ on:
     pull_request:
         branches: [main, development]
 
-# Every job here belongs to the desktop (WPF/.NET) side, which lives in
-# desktop/. That is why each one sets `working-directory: desktop` and the
-# commands stay identical to the ones documented in desktop/AGENTS.md.
-# The Android side adds its own jobs, with its own working directory.
+# Two sides, two toolchains, two sets of jobs. Each job sets the
+# `working-directory` of the side it belongs to and runs exactly the commands
+# that side's AGENTS.md documents, so a green pipeline and a green local run
+# mean the same thing.
+#
+#   format-check, build-and-test, vulnerable-dependencies
+#              WPF / .NET, windows-latest, working-directory: desktop
+#   android-*  Gradle / Kotlin, ubuntu-latest, working-directory: android
+#
+# The three desktop jobs keep their original, unprefixed names so any branch
+# protection rule that references them is unaffected. New jobs carry the name of
+# the side they belong to.
 jobs:
     format-check:
         runs-on: windows-latest
@@ -105,3 +113,63 @@ jobs:
                   }
 
                   Write-Host 'No vulnerable NuGet packages detected.'
+
+    android-format-check:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            - name: Check formatting
+              run: ./gradlew spotlessCheck
+
+    android-build-and-test:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            # assembleDebug proves it builds, testDebugUnitTest runs the suite,
+            # and lintDebug is the warnings-are-failures gate (the module sets
+            # warningsAsErrors). These are the three commands android/AGENTS.md
+            # tells a contributor to run before opening a PR.
+            - name: Build, test and lint
+              run: ./gradlew assembleDebug testDebugUnitTest lintDebug
+
+            - name: Upload reports on failure
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: android-reports
+                  path: |
+                      android/app/build/reports/
+                      android/app/build/test-results/
+                  retention-days: 7
