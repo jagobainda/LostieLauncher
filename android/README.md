@@ -26,6 +26,7 @@ authority on what the app must do is the desktop side, under
 | Text catalogue                        | done — 114 keys and 6 FAQs, in eight languages          |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | started — theme and language only                       |
+| Pure decision utilities               | done — ported with their desktop test cases             |
 | Downloads and screens                 | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
@@ -93,6 +94,21 @@ function in `util/`. The seams that exist so far are `DispatcherProvider`
 (threading), `Logger`, `java.time.Clock` (so content expiry can be pinned in a
 test) and `MaintenanceFlagApi`. The rules, including what each layer may depend
 on: [.agents/architecture.md](.agents/architecture.md).
+
+`util/` is where that pays off. It holds the desktop's decision functions and
+nothing else — version comparison, playtime formatting, accent-insensitive
+search, link detection in CDN text, the HTTPS-only guard every outbound link
+passes, download cache naming and expiry, and the small exit and crash
+policies. Every one takes values and returns a value, so all of it is tested
+directly and none of it needs a device.
+
+Matching .NET exactly is harder than it sounds where the framework was doing
+the work. Searching is the clearest case: the desktop leans on the invariant
+collation, so `instal·lació` and `installació` are the same word, and the FAQ
+filter in Catalan and Valencian is useless without it. The rules were measured
+against .NET rather than inferred, and a differential over the whole shipped
+corpus keeps them honest. Which desktop test cases came across, which did not
+and why: [Desktop test parity](.agents/testing.md#desktop-test-parity-utils).
 
 ### Reading the CDN
 

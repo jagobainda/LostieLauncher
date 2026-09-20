@@ -120,6 +120,13 @@ Prefer extracting a branchy decision into a pure function and testing it
 directly over testing it through a ViewModel. The desktop's `*Policy` types are
 the model; `spec/09-utilities.md` lists them.
 
+Those are ported and live in `util/`, one sub-package per concern —
+`version/`, `format/`, `text/`, `net/`, `download/`, `file/`, `policy/`, and the
+pre-existing `log/`. Nothing in there touches the filesystem, the network or a
+platform type; the halves that do stayed on the desktop or wait for the step
+that owns them. Which desktop test cases came across and which did not:
+[testing.md](testing.md#desktop-test-parity-utils).
+
 ## Coroutines and state
 
 - A ViewModel exposes state as a `StateFlow` and nothing else. Collect it in a
