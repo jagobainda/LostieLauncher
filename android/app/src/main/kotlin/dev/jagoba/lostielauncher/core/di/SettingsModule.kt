@@ -14,62 +14,49 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.model.SettingsOptions
 import dev.jagoba.lostielauncher.service.settings.AppearanceStore
-import dev.jagoba.lostielauncher.service.settings.DataStoreAppearanceStore
+import dev.jagoba.lostielauncher.service.settings.DataStoreSettingsStore
+import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
-/**
- * Where the launcher's settings are stored.
- *
- * The desktop keeps one JSON file under `%APPDATA%`; this keeps a Preferences
- * DataStore in the application's own data directory, which is the same idea
- * with the platform's answer for where. The file name is here rather than in
- * the store for the usual reason: no path inside the type that does the work.
- *
- * **Port plan step 07 owns settings** and will add the rest of them. It should
- * extend this DataStore rather than introduce a second mechanism beside it.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 internal object SettingsModule {
     private const val SETTINGS_FILE = "settings"
+    private const val SAVE_DEBOUNCE_MILLISECONDS = 500L
+    private const val STARTUP_LOAD_TIMEOUT_MILLISECONDS = 2_000L
 
-    /**
-     * The scope DataStore does its file work on.
-     *
-     * `SupervisorJob` so one failed write cannot cancel the scope and take
-     * every later write with it, and the dispatcher comes from the injected
-     * [DispatcherProvider] because that is the only place in the application
-     * allowed to name one.
-     */
     @Provides
     @Singleton
     fun provideSettingsDataStore(
         @ApplicationContext context: Context,
         dispatchers: DispatcherProvider,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
-        // A file that cannot be parsed is replaced with an empty one, so the
-        // user gets the default theme and language instead of a launcher that
-        // will not start. Same choice as the content layer's: degrade, do not
-        // propagate.
         corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
         scope = CoroutineScope(dispatchers.io + SupervisorJob()),
         produceFile = { context.preferencesDataStoreFile(SETTINGS_FILE) },
     )
+
+    @Provides
+    @Singleton
+    internal fun provideSettingsOptions(): SettingsOptions = SettingsOptions(
+        saveDebounce = SAVE_DEBOUNCE_MILLISECONDS.milliseconds,
+        startupLoadTimeout = STARTUP_LOAD_TIMEOUT_MILLISECONDS.milliseconds,
+    )
 }
 
-/**
- * Interface-to-implementation bindings for the settings area.
- *
- * Separate from [SettingsModule] because Hilt will not take `@Binds` and
- * `@Provides` in the same object — the first needs an abstract class.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class SettingsBindingsModule {
     @Binds
     @Singleton
-    abstract fun bindAppearanceStore(impl: DataStoreAppearanceStore): AppearanceStore
+    internal abstract fun bindSettingsStore(impl: DataStoreSettingsStore): SettingsStore
+
+    @Binds
+    @Singleton
+    internal abstract fun bindAppearanceStore(impl: DataStoreSettingsStore): AppearanceStore
 }

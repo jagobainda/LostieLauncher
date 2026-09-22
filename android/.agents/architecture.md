@@ -101,7 +101,8 @@ Already in place:
 - [`DispatcherProvider`](../app/src/main/kotlin/dev/jagoba/lostielauncher/core/coroutines/DispatcherProvider.kt)
   — the threading seam. Nothing else in the codebase names `Dispatchers`.
 - [`Logger`](../app/src/main/kotlin/dev/jagoba/lostielauncher/util/log/Logger.kt)
-  — so the "log it and degrade" rule can be asserted in a test.
+  — so the "log it and degrade" rule can be asserted in a test. Production
+  writes to both Logcat and rotating files in the injected private log directory.
 - `java.time.Clock`, bound in `CoreModule` — the wall-clock seam. Content expiry
   is the only thing that reads "now", and a test that cannot pin it is a test
   that starts failing on a date nobody chose. Nothing calls `Instant.now()`,
@@ -109,12 +110,17 @@ Already in place:
 - [`MaintenanceFlagApi`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/MaintenanceFlagApi.kt)
   — the transport for the one endpoint whose answer is a status code, so the
   decisions that follow from the code stay testable without a socket.
-- [`AppearanceStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/AppearanceStore.kt)
-  — the storage seam for the theme and the language. Its DataStore adapter is
-  the untestable half and stays thin; the decisions around it are pure
-  (`AppTheme.fromNameOrDefault`, `AppLanguage.fromNameOrDefault`) and are tested
-  directly. Port plan step 07 extends this DataStore rather than adding a second
-  settings mechanism beside it.
+- [`SettingsStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/SettingsStore.kt)
+  — the DataStore seam for theme, language and welcome state. `AppearanceStore`
+  is its narrow UI-facing parent. Updates are visible immediately and a 500 ms
+  debounce coalesces persistence writes. Activity and process stop events flush
+  any pending snapshot from an application-owned I/O scope.
+- [`LocalLibraryStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/library/LocalLibraryStore.kt)
+  — the Room-backed registry and playtime seam. Its two concerns have separate
+  concurrency gates and playtime increments are transactional.
+- [`StorageLocations`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/storage/StorageLocations.kt)
+  — the injected roots for game files and logs. Game files use app-specific
+  external storage with an internal fallback; logs use `noBackupFilesDir`.
 
 Prefer extracting a branchy decision into a pure function and testing it
 directly over testing it through a ViewModel. The desktop's `*Policy` types are

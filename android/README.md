@@ -21,11 +21,13 @@ authority on what the app must do is the desktop side, under
 | Gradle project and app skeleton       | done — builds, runs, tested in CI                       |
 | Architecture guidelines               | done — [AGENTS.md](AGENTS.md) and [.agents/](.agents/)  |
 | CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
-| Dependency injection graph            | started — `core/di/`, three modules                     |
+| Dependency injection graph            | started — `core/di/`, persistence and network modules   |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
 | Text catalogue                        | done — 114 keys and 6 FAQs, in eight languages          |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
-| Settings storage                      | started — theme and language only                       |
+| Settings storage                      | done — DataStore, live state and debounced writes        |
+| Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
+| File logs                             | done — monthly files, 10 MB roll and six-month retention |
 | Pure decision utilities               | done — ported with their desktop test cases             |
 | Downloads and screens                 | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
@@ -152,10 +154,13 @@ A key missing from a language is a compile error, which is the guarantee the
 desktop gets from having one class per language and the one property that makes
 this worth 900 lines of `override val`.
 
-Both settings live in `AppearanceStore` and reach the UI through
+Both settings live in `SettingsStore`, whose appearance seam reaches the UI through
 `AppearanceViewModel`, so changing either recomposes and never recreates the
 activity. They are persisted in a Preferences DataStore under the enum member
-name.
+name. The welcome state shares the same store. Changes update the observable
+state immediately and rapid writes are coalesced over 500 ms before DataStore
+persists the last snapshot. Stopping the activity flushes a pending snapshot
+immediately from an application-owned scope, with a process lifecycle fallback.
 
 A debug-only **token catalogue** shows every colour, type size, spacing and
 radius on one page with live theme and language pickers. It is the whole UI in a
@@ -166,6 +171,26 @@ See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
 which also carries the contrast review list — colours that fail WCAG on the
 desktop values and are deliberately **not** being changed until the end of the
 port.
+
+## Local persistence
+
+Room stores the installed-game registry and playtime in separate tables. Their
+service keeps independent concurrency gates, and Room transactions make a
+playtime increment atomic. Storage errors are logged and degrade to empty data,
+matching the desktop behavior without exposing database details to later
+ViewModels.
+
+The game-library root is fixed. It uses the app-specific external files area
+when that volume is mounted and falls back to internal files otherwise. It
+needs no storage permission and is removed with the app on uninstall. There is
+no download-directory setting or folder picker on Android. Step 08 will place
+transfer files below this injected root; step 07 does not download anything.
+
+Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
+format matches the desktop, files are named by month, roll at 10 MB and are
+retained for six months. Retention maintenance runs on the I/O dispatcher when
+the process starts. Debug builds can inspect them with Android Studio's Device
+Explorer or `adb run-as` without making the directory public.
 
 ## Contributing
 

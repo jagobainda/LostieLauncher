@@ -94,5 +94,6 @@ secrets.json
 
 .bugs-resueltos/
 .claude/
+.codex/
 .docs/
 releases/

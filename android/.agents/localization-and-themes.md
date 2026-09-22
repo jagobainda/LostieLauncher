@@ -116,9 +116,9 @@ What binds:
 
 ## Switching either one
 
-Both settings live in `AppearanceStore` (`service/settings/`) and reach the UI
-through `AppearanceViewModel`, which resolves the palette's theme and the
-catalogue and exposes them as one state. `MainActivity` provides them and does
+Both settings live in `SettingsStore` (`service/settings/`) and reach the UI
+through its narrow `AppearanceStore` parent and `AppearanceViewModel`, which
+resolves the palette's theme and the catalogue and exposes them as one state. `MainActivity` provides them and does
 **not** react to a change: both are ordinary state, so a change recomposes and
 the activity is never recreated and never loses screen state. That is the
 behaviour requirement, and it is why neither uses a resource qualifier.
@@ -134,9 +134,9 @@ desktop's ordinal. A name survives a member being inserted into the middle of
 the enum; an ordinal does not. An unrecognised value falls back to Volcarona and
 Spanish, which is the desktop's own behaviour.
 
-`AppearanceStore` is the appearance half of settings and says so. **Port plan
-step 07 owns the rest** and should extend that DataStore rather than introduce a
-second mechanism beside it.
+`SettingsStore` also owns welcome state and debounces persistence writes for
+500 ms. Appearance changes remain immediately observable while rapid changes
+are coalesced into one DataStore transaction.
 
 ## The token catalogue
 

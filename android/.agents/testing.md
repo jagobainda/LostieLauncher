@@ -232,3 +232,38 @@ Nothing in that table is a case that stopped being interesting. Each is either
 **owned by a later step**, or **has no input on Android** — and those are
 different, so they are worth telling apart when one of these tables is read
 again at step 15.
+
+## Desktop test parity: local persistence
+
+Port plan step 07 moved settings, the installed-game registry, playtime and file
+logging onto Android-native storage. These tests stay on the JVM: DataStore and
+Room sit behind interfaces, repository behavior uses fakes, and file logging is
+exercised only under `@TempDir`.
+
+| Desktop class or subset | Decl. | Android | Outcome |
+| --- | ---: | --- | --- |
+| `SettingsServiceTests` | 17 | `model/AppearanceSettingsTest`, `service/settings/DataStoreSettingsStoreTest` | 8 behaviors ported; 9 path cases dropped with configurable storage |
+| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/RoomLocalLibraryStoreTest` | 13 behaviors ported; three legacy-file cases became Room constraints and transactions |
+| `LogsMaintenanceTests` | 15 | `util/log/LogFilesTest` | all 15 ported |
+| `LogsTests` | 5 | `util/log/LogFilesTest`, `util/log/FileLoggerTest` | all 5 ported |
+
+Android-only coverage pins corrupt and failed DataStore operations, debounced
+last-write-wins behavior, concurrent changes to different settings, invalid
+database UUIDs, database degradation, concurrent Room repository calls, file
+logger concurrency and filesystem failure swallowing.
+
+The nine dropped settings cases all inspect `DownloadDirectory`: blank and
+relative sanitization, preservation of a chosen absolute path, OneDrive and
+install-directory placement, and root derivation. Android has no such setting.
+`StorageModule` chooses the app-specific external files area when mounted and
+falls back to internal files, so none of those inputs exists.
+
+Duplicate non-empty game IDs remain representable because renamed catalogue
+entries have different normalized name keys. The repository therefore mirrors
+the desktop's read-time rule: first occurrence wins by ID, while Room enforces
+name uniqueness for legacy ID-less entries. The three declarations that no
+longer translate are duplicate ID-less names, a null legacy name and atomic
+`.tmp` replacement; Room schema constraints cover the first two and its
+transactions replace the file protocol. Empty data, replacement by
+case-insensitive name, removal, accumulation, concurrency and graceful failure
+remain covered.
