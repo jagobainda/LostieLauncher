@@ -121,6 +121,24 @@ Already in place:
 - [`StorageLocations`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/storage/StorageLocations.kt)
   — the injected roots for game files and logs. Game files use app-specific
   external storage with an internal fallback; logs use `noBackupFilesDir`.
+- [`DownloadManager`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/download/DownloadManager.kt)
+  — the command and observable-state boundary for one active download. Room is
+  the durable source of truth, so activity recreation does not own the transfer.
+- `DownloadWorkScheduler` and `DownloadTransfer` — WorkManager and OkHttp stay
+  behind separate seams. The first owns lifecycle-resilient foreground work;
+  the second owns ranged I/O, retry, inactivity timeout and atomic finalization.
+- `DownloadWorkerRunner` — the worker's compare-and-set state machine is free of
+  Android worker types. `GameDownloadWorker` is only the adapter for foreground
+  notification and WorkManager progress callbacks.
+- `DownloadedFileHandoff` — completion ends at a downloaded archive. The
+  installation step can consume it later without coupling extraction to the
+  transfer engine.
+
+`DownloadManager.purgeStale` materializes `DownloadCachePolicy`: callers pass
+the non-empty catalogue id set after a successful load, managed files older
+than 14 days or belonging to removed games are deleted, and inactive Room rows
+are removed once no transfer artifact remains. An empty catalogue never purges,
+because a failed catalogue request must not turn into data loss.
 
 Prefer extracting a branchy decision into a pure function and testing it
 directly over testing it through a ViewModel. The desktop's `*Policy` types are

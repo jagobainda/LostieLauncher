@@ -267,3 +267,26 @@ longer translate are duplicate ID-less names, a null legacy name and atomic
 transactions replace the file protocol. Empty data, replacement by
 case-insensitive name, removal, accumulation, concurrency and graceful failure
 remain covered.
+
+## Desktop test parity: downloads
+
+Port plan step 08 separates the desktop service's transfer protocol from its
+special-version configuration lookup. The Android transfer cases run through a
+real OkHttp client and loopback `MockWebServer`; persistent command behavior is
+tested at the Room and scheduler seams, the worker state machine is exercised
+without Android through `DownloadWorkerRunner`, and filesystem cleanup and cache
+maintenance stay under `@TempDir`.
+
+| Desktop class or subset | Decl. | Android | Outcome |
+| --- | ---: | --- | --- |
+| `DownloadServiceTests` transfer subset | 12 | `service/download/OkHttpDownloadTransferTest`, `DefaultDownloadManagerTest` | ranged resume, invalidation, retry, completion and command state ported |
+| `DownloadArtifactsTests` | 4 | `service/download/DownloadFileStoreTest` | archive, partial and metadata cleanup covered as one Android operation |
+| `FileFinalizerTests` (`MoveAsync`) | 4 | `OkHttpDownloadTransferTest`, `util/file/FileMoveRetryPolicyTest` | finalization and retry classification split at the I/O seam |
+| — | — | `DownloadWorkerRunnerTest` | Android-only coverage for stale-work guards, progress CAS, completion, failure, permission denial and pause-versus-cancel |
+| — | — | `util/download/DownloadResumePolicyTest`, `DownloadProgressCalculatorTest`, `DownloadUrlResolverTest` | Android-only pure coverage for response decisions, progress and URL construction |
+
+The seven `DownloadServiceTests` declarations for fetching and parsing
+`game.config` are not transfer cases. They remain with special-version product
+orchestration rather than being hidden inside the byte-to-disk service. Device
+acceptance covers the behavior JVM tests intentionally cannot: a live CDN
+transfer remains visible through backgrounding and activity recreation.

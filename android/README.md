@@ -29,7 +29,8 @@ authority on what the app must do is the desktop side, under
 | Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
 | File logs                             | done — monthly files, 10 MB roll and six-month retention |
 | Pure decision utilities               | done — ported with their desktop test cases             |
-| Downloads and screens                 | not started                                             |
+| Download engine                       | done — resumable, observable and lifecycle-resilient    |
+| Product screens                       | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
 ## The stack, and why
@@ -94,8 +95,9 @@ Anything touching the network, the filesystem or a platform service sits behind
 a narrow interface with a thin adapter, and the decision logic moves into a pure
 function in `util/`. The seams that exist so far are `DispatcherProvider`
 (threading), `Logger`, `java.time.Clock` (so content expiry can be pinned in a
-test) and `MaintenanceFlagApi`. The rules, including what each layer may depend
-on: [.agents/architecture.md](.agents/architecture.md).
+test), `MaintenanceFlagApi`, `DownloadManager`, `DownloadTransfer`,
+`DownloadWorkScheduler` and `DownloadedFileHandoff`. The rules, including what
+each layer may depend on: [.agents/architecture.md](.agents/architecture.md).
 
 `util/` is where that pays off. It holds the desktop's decision functions and
 nothing else — version comparison, playtime formatting, accent-insensitive
@@ -183,8 +185,22 @@ ViewModels.
 The game-library root is fixed. It uses the app-specific external files area
 when that volume is mounted and falls back to internal files otherwise. It
 needs no storage permission and is removed with the app on uninstall. There is
-no download-directory setting or folder picker on Android. Step 08 will place
-transfer files below this injected root; step 07 does not download anything.
+no download-directory setting or folder picker on Android. Archives, partials
+and resume metadata live under the injected root's `downloads/` directory.
+
+Downloads are durable WorkManager jobs backed by a Room row exposed as a
+`Flow`. The foreground notification keeps a large transfer visible outside the
+activity; pausing cancels only the worker and retains its validated partial,
+resuming sends a ranged request with `If-Range`, and cancelling removes the
+archive, partial and metadata. A failed transfer retains its validated partial
+for the next attempt; a permission failure removes it. Cache maintenance keeps
+recent files for catalogue entries and removes managed files older than 14 days,
+files for removed games and durable rows whose artifacts are gone. Only one
+transfer may be active. A completed archive crosses the `DownloadedFileHandoff`
+seam; extraction and installation remain step 09 work and are deliberately
+absent here. The debug build exposes a smallest-game download harness so
+progress, pause, resume, cancellation, rotation and background behavior can be
+exercised without shipping test UI in the release APK.
 
 Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
 format matches the desktop, files are named by month, roll at 10 MB and are
