@@ -130,9 +130,28 @@ Already in place:
 - `DownloadWorkerRunner` — the worker's compare-and-set state machine is free of
   Android worker types. `GameDownloadWorker` is only the adapter for foreground
   notification and WorkManager progress callbacks.
-- `DownloadedFileHandoff` — completion ends at a downloaded archive. The
-  installation step can consume it later without coupling extraction to the
-  transfer engine.
+- `DownloadedFileHandoff` — completion ends at a downloaded archive and calls
+  `GameInstallationService.install`. The pending implementation reports
+  `NotSupportedYet` and leaves the archive untouched.
+- `GameInstallationService` — installation, uninstall, per-game lookup and an
+  observable installed-game list. `observeInstallation(gameId)` exposes
+  verification, extraction and terminal outcomes to presentation, including a
+  recoverable terminal state when an installer is eventually implemented.
+- `GameLaunchService` and `PlaySessionService` — launching, running signals,
+  observable active sessions and playtime accounting. Pending implementations
+  report unsupported rather than claiming a game is stopped or a session ended.
+- `GameLocationService` — help availability, opening game/help files, and
+  returning an opaque partial-uninstall location to its owning adapter.
+
+Game lifecycle operations always go through `service/game/`. ViewModels must
+not call `LocalLibraryStore.registerGame`, `removeGame` or `addPlaytime`; those
+writes belong behind the game seam after the Android runtime decision. A
+completed download is only a finished transfer, never proof of installation.
+While the adapter is pending, presentation must show its
+`Finished(NotSupportedYet)` state only for a game with a `COMPLETED` download
+row; the adapter reports that state for any id, including games never downloaded.
+The open decisions and exact TODO markers are in
+[docs/game-runtime-options.md](../docs/game-runtime-options.md).
 
 `DownloadManager.purgeStale` materializes `DownloadCachePolicy`: callers pass
 the non-empty catalogue id set after a successful load, managed files older

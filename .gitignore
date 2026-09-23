@@ -12,6 +12,8 @@
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+# The Android logging package is source code, not generated output.
+!android/**/util/log/
 
 # ----- Visual Studio files -----
 .vs/

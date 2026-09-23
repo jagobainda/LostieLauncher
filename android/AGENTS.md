@@ -24,6 +24,8 @@ behavioural contract is [`../spec/`](../spec/); where the spec and
 [`../desktop/`](../desktop/) disagree, **the desktop code wins** and the drift is
 a bug in the spec. The human-facing docs are
 [CONTRIBUTING.md](../CONTRIBUTING.md) and [README.md](README.md).
+The deliberately pending game installation and launch contract is documented in
+[docs/game-runtime-options.md](docs/game-runtime-options.md).
 
 ## Non-negotiables
 
@@ -61,6 +63,7 @@ desktop's layer for layer.
 ```
 android/
 ├── .agents/          # the topic files linked above
+├── docs/             # open game runtime decisions and their consequences
 ├── .editorconfig     # Kotlin and Gradle rules (inherits the monorepo baseline)
 ├── build.gradle.kts  # plugin versions + the Spotless/ktlint gate
 ├── settings.gradle.kts

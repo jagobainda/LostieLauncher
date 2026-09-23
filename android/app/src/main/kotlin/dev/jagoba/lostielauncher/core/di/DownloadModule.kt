@@ -18,9 +18,9 @@ import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
 import dev.jagoba.lostielauncher.service.download.DownloadWorkScheduler
 import dev.jagoba.lostielauncher.service.download.DownloadedFileHandoff
+import dev.jagoba.lostielauncher.service.download.InstallDownloadedFileHandoff
 import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.download.OkHttpDownloadTransfer
-import dev.jagoba.lostielauncher.service.download.PendingDownloadedFileHandoff
 import dev.jagoba.lostielauncher.service.download.WorkManagerDownloadScheduler
 import dev.jagoba.lostielauncher.util.download.DownloadCachePolicy
 import javax.inject.Singleton
@@ -79,7 +79,7 @@ internal abstract class DownloadBindingsModule {
 
     @Binds
     @Singleton
-    internal abstract fun bindHandoff(impl: PendingDownloadedFileHandoff): DownloadedFileHandoff
+    internal abstract fun bindHandoff(impl: InstallDownloadedFileHandoff): DownloadedFileHandoff
 
     @Binds
     @Singleton

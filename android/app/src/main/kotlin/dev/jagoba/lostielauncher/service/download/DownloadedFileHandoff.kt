@@ -1,6 +1,8 @@
 package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.model.DownloadedFile
+import dev.jagoba.lostielauncher.model.GameInstallationRequest
+import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -10,8 +12,20 @@ interface DownloadedFileHandoff {
 }
 
 @Singleton
-internal class PendingDownloadedFileHandoff @Inject constructor(private val logger: Logger) : DownloadedFileHandoff {
+internal class InstallDownloadedFileHandoff @Inject constructor(
+    private val installer: GameInstallationService,
+    private val logger: Logger,
+) : DownloadedFileHandoff {
     override suspend fun deliver(file: DownloadedFile) {
-        logger.info("Downloaded file is ready for downstream handling: ${file.gameId}.")
+        // TODO-ANDROID-GAME-RUNTIME-08: Decide how to persist the catalogue UUID, hash and variant because the worker can outlive the catalogue screen.
+        val result = installer.install(
+            GameInstallationRequest(
+                file = file,
+                catalogueId = null,
+                expectedSha256 = null,
+                variant = null,
+            ),
+        )
+        logger.info("Downloaded file handoff result for ${file.gameId}: $result.")
     }
 }
