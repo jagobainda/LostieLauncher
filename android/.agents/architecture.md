@@ -45,13 +45,59 @@ a placeholder file to "reserve" it — create it with its first real type.
 `app/src/debug/` and `app/src/release/` exist and each holds its own
 `ui/StartSurface.kt`. That is how something is made **debug-only**: not a
 `BuildConfig.DEBUG` branch, which still ships the code, but a symbol `main`
-calls that has a different implementation per build type. The debug one shows
-the token catalogue; the release one shows `EmptyScreen`.
+calls that has a different implementation per build type. Both render the
+navigation shell; the debug one also hands it a debug-tools action (the bug
+icon in the top bar) that swaps the section content for the download harness
+and the token catalogue, and the system back gesture closes it again. The
+release one passes nothing, so neither surface is compiled into it.
 
 Two consequences. A file added to one build type's source set must be added to
 the other or the release build stops compiling — and CI only builds debug, so
 nobody finds out until someone runs `assembleRelease`. And a step that adds
 something R8 can break has to run `assembleRelease` itself for the same reason.
+
+### The shell
+
+`ui/screen/LauncherShell.kt` is the only screen root that reads
+`MainViewModel`. It maps `MainUiState` onto stateless pieces in
+`ui/component/` (`ShellTopBar`, `OfflinePill`, `ShellNavigationRail`,
+`ShellNavigationBar`, `LauncherTooltip`) and hosts the active section.
+
+- **Navigation has one source of truth, `NavigationStore`.** There is no
+  navigation library and no back stack: the desktop has five top-level
+  sections and no history, and a `NavController` would be a second record of
+  the current section beside the one ViewModels already navigate through.
+  Screen ViewModels obtained with `hiltViewModel()` are therefore scoped to the
+  activity, and survive rotation.
+- **System back is state.** `MainUiState.canNavigateBack` is true on every
+  section but Home and `MainViewModel.navigateBack()` returns to Home; on Home
+  the shell leaves back to the system. On Android 12 and later that moves the
+  task to the background; on 8 to 11 it finishes the activity, and the next
+  launch starts on Home. Either way it is the platform convention for
+  top-level destinations.
+- **The layout adapts to the space, not to the device type.**
+  `shellNavigationLayout` (`ui/screen/ShellNavigationLayout.kt`, JVM-tested)
+  decides from the width and from the height below the 50 dp title bar once
+  the system bars are taken off. Below `LauncherSizes.NavigationRailBreakpoint`
+  (600 dp, Material's compact width boundary) it is always the bottom bar. At
+  or above it the desktop's rail is used - 90 dp wide, top group and bottom
+  group - and all six items stay visible. They keep the desktop's 60 dp and
+  15 dp inset when there is room; when there is not, the items shrink first,
+  then the vertical inset gives way, and no item ever goes below
+  `LauncherSizes.MinimumTouchTarget` (48 dp). On a tablet that is the desktop
+  composition exactly. On a 411 dp-tall phone in landscape it is 48 dp items
+  with a 12.5 dp inset and the two groups meeting in the middle. A rail never
+  scrolls: only if six 48 dp targets cannot fit at all is the bottom bar used.
+  The bottom bar is flush with the screen edge and puts the active indicator on
+  the outer edge, as the rail has it on the left.
+- **What went with the window.** The minimize and close buttons, the 1 px
+  window border, the drag region and the `Saved Games` rail action have no
+  meaning on Android (`spec/10-windows-only.md` 6 and 14). Hover states are
+  kept for a mouse and mapped to the pressed state for touch; tooltips open on
+  long press. There is no ripple, because the desktop has no press animation.
+- **Title-bar social buttons come from state** (`MainUiState.contextLinks`),
+  and their tooltips are `ExternalLink.brandName`: brand names, not copy, kept
+  in the model as `AppLanguage.displayName` is.
 
 ## Dependency injection
 

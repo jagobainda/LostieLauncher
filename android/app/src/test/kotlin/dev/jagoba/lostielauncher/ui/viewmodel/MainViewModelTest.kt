@@ -10,6 +10,7 @@ import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -117,6 +118,57 @@ class MainViewModelTest {
         coordinator.refreshCatalogue()
         runCurrent()
         sut.state.value.isOffline shouldBe true
+        sut.state.value.canRefresh shouldBe true
+    }
+
+    @Test
+    fun `title bar links follow the active section`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.contextLinks shouldBe listOf(ExternalLink.TWITCH, ExternalLink.YOUTUBE, ExternalLink.TWITTER)
+        sut.navigate(LauncherSection.SETTINGS)
+        runCurrent()
+        sut.state.value.contextLinks shouldBe listOf(ExternalLink.GITHUB)
+        listOf(LauncherSection.GAMES, LauncherSection.LIBRARY, LauncherSection.FAQS).forEach { section ->
+            sut.navigate(section)
+            runCurrent()
+            sut.state.value.contextLinks shouldBe emptyList()
+        }
+    }
+
+    @Test
+    fun `back returns to home from any section and is not handled on home`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.canNavigateBack shouldBe false
+        sut.navigateBack()
+        runCurrent()
+        sut.state.value.section shouldBe LauncherSection.HOME
+        LauncherSection.entries.filter { it != LauncherSection.HOME }.forEach { section ->
+            sut.navigate(section)
+            runCurrent()
+            sut.state.value.canNavigateBack shouldBe true
+            sut.navigateBack()
+            runCurrent()
+            sut.state.value.section shouldBe LauncherSection.HOME
+            sut.state.value.canNavigateBack shouldBe false
+        }
+    }
+
+    @Test
+    fun `refresh indicator is disabled while the global refresh runs`() = runTest(dispatcher) {
+        coordinator.refreshHome(AppLanguage.ESP)
+        coordinator.refreshCatalogue()
+        val sut = createSut()
+        runCurrent()
+        content.gameBarrier = CompletableDeferred()
+        sut.refresh()
+        runCurrent()
+        sut.state.value.isRefreshing shouldBe true
+        sut.state.value.canRefresh shouldBe false
+        content.gameBarrier?.complete(Unit)
+        runCurrent()
+        sut.state.value.isRefreshing shouldBe false
         sut.state.value.canRefresh shouldBe true
     }
 

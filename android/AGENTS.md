@@ -63,7 +63,7 @@ desktop's layer for layer.
 ```
 android/
 ├── .agents/          # the topic files linked above
-├── docs/             # open game runtime decisions and their consequences
+├── docs/             # open game runtime decisions; third-party asset licences
 ├── .editorconfig     # Kotlin and Gradle rules (inherits the monorepo baseline)
 ├── build.gradle.kts  # plugin versions + the Spotless/ktlint gate
 ├── settings.gradle.kts
@@ -83,7 +83,7 @@ android/
         │   ├── util/        # pure decision functions, formatting, logging
         │   └── ui/          # MainActivity, screen/ component/ dialog/ theme/ viewmodel/
         ├── main/res/        # only what the platform reads before Kotlin runs
-        ├── debug/kotlin/    # debug-only surfaces — the token catalogue
+        ├── debug/kotlin/    # debug-only surfaces — token catalogue, download harness
         ├── release/kotlin/  #   and their release counterparts, so neither ships the other
         └── test/kotlin/     # JVM unit tests, mirroring the packages above
 ```

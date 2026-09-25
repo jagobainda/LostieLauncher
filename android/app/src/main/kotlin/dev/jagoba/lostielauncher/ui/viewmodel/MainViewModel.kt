@@ -30,7 +30,16 @@ data class MainUiState(
     val canRefresh: Boolean = false,
     val pendingLibraryGameId: String? = null,
     val externalLinkNotice: ExternalLinkNotice? = null,
-)
+) {
+    val contextLinks: List<ExternalLink> get() = contextLinksFor(section)
+    val canNavigateBack: Boolean get() = section != LauncherSection.HOME
+}
+
+private fun contextLinksFor(section: LauncherSection): List<ExternalLink> = when (section) {
+    LauncherSection.HOME -> listOf(ExternalLink.TWITCH, ExternalLink.YOUTUBE, ExternalLink.TWITTER)
+    LauncherSection.SETTINGS -> listOf(ExternalLink.GITHUB)
+    LauncherSection.GAMES, LauncherSection.LIBRARY, LauncherSection.FAQS -> emptyList()
+}
 
 data class ExternalLinkNotice(val link: ExternalLink, val result: ExternalLinkResult)
 
@@ -82,6 +91,10 @@ class MainViewModel @Inject constructor(
 
     fun navigate(section: LauncherSection) {
         navigation.navigate(section)
+    }
+
+    fun navigateBack() {
+        if (navigation.state.value.section != LauncherSection.HOME) navigation.navigate(LauncherSection.HOME)
     }
 
     fun consumeLibraryGame(gameId: String) {

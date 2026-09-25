@@ -45,7 +45,7 @@ this table is the reasoning, not the source of truth.
 | DI | Hilt (KSP) | compile-time verified graph, everything a singleton — the desktop's centralized container, constructor injection included |
 | HTTP | OkHttp + Retrofit + kotlinx.serialization | the desktop runs three HTTP clients with three different timeouts for three reasons; three `OkHttpClient`s sharing a pool is the direct equivalent, and raw OkHttp handles the resumable, ranged download |
 | Persistence | DataStore (settings) + Room (local library) | settings are a small typed record; the installed-game list is queried and joined |
-| Navigation | Navigation Compose, type-safe routes | Navigation 3 is not stable yet; revisit when it is |
+| Navigation | `NavigationStore` (one section value) + `BackHandler`, no navigation library | the launcher has five top-level sections and no back stack, like the desktop; a `NavController` would be a second source of truth beside the store the ViewModels already navigate through |
 | Tests | JUnit 5, MockK, Kotest assertions, Turbine | the closest mapping of the desktop's xUnit + NSubstitute + Shouldly |
 | Format gate | Spotless + ktlint | this side's `dotnet format --verify-no-changes` |
 
@@ -165,9 +165,9 @@ persists the last snapshot. Stopping the activity flushes a pending snapshot
 immediately from an application-owned scope, with a process lifecycle fallback.
 
 A debug-only **token catalogue** shows every colour, type size, spacing and
-radius on one page with live theme and language pickers. It is the whole UI in a
-debug build today, and it lives in `src/debug/`, so it is not compiled into a
-release APK at all.
+radius on one page with live theme and language pickers. In a debug build it is
+reached from the bug icon in the top bar, beside the download harness; it lives
+in `src/debug/`, so it is not compiled into a release APK at all.
 
 See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
 which also carries the contrast review list — colours that fail WCAG on the

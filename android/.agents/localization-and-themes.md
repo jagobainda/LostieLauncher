@@ -38,6 +38,8 @@ What binds:
   ViewModel. The desktop has exactly three deliberate exceptions and
   [`spec/10-windows-only.md`](../../spec/10-windows-only.md) §15 lists them; the
   only one that survives the port is the product name `"Lostie Launcher"`.
+  The title bar's social tooltips are brand names too and live on
+  `ExternalLink.brandName`, not in a composable.
 - **A new string means the key and all eight translations.** English left in
   the other seven is a review rejection. It is also a compile error: `Strings`
   is an interface with 114 abstract properties and eight `object`s implementing
@@ -106,6 +108,12 @@ What binds:
   widths and durations are inline at each use site in its XAML. Naming them is
   allowed. Changing one is not, and a value that appears there but nowhere in
   the XAML is a bug.
+- **Two desktop spacing values are still owed a token**, because nothing on
+  this side uses them yet: **7** (`SettingsView.xaml:71`, the vertical half of
+  `10,7`, step 14) and **1** (`ScrollViewerStyle.xaml:13`, the scrollbar thumb's
+  `1,2` margin, step 12). The step that ports each one adds it to
+  `LauncherSpacing` rather than inlining the number. The third gap, **5**, is
+  `LauncherSpacing.Snug`. `spec/06-design-tokens.md` omits all three.
 - Sizes are `dp` — WPF's device-independent pixel is 1/96 inch, the same as a
   `dp` — and **font sizes are `sp`**, which is the one deliberate divergence:
   Android scales text by the user's accessibility setting and a launcher that
@@ -148,7 +156,8 @@ you meant.
 
 It is in **`src/debug/`**, not behind a `BuildConfig.DEBUG` branch, so it is not
 compiled into a release APK at all. `StartSurface` has one implementation per
-build type — debug shows the catalogue, release shows `EmptyScreen` — and
+build type — debug renders the shell with a debug-tools action that opens the
+catalogue and the download harness, release renders the shell alone — and
 `MainActivity` calls it without knowing which. A file added to one build type's
 source set must be added to the other, or the release build stops compiling.
 
