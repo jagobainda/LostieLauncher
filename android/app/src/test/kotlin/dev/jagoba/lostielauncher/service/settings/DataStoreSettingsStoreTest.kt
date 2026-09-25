@@ -57,12 +57,13 @@ class DataStoreSettingsStoreTest {
                 stringPreferencesKey("appearance.theme") to "Mewtwo",
                 stringPreferencesKey("appearance.language") to "EUS",
                 booleanPreferencesKey("onboarding.hasSeenWelcome") to true,
+                booleanPreferencesKey("games.autoUpdate") to true,
             ),
         )
         val sut = createSut(store, StandardTestDispatcher(testScheduler))
 
         sut.settings.test {
-            awaitItem() shouldBe AppSettings(AppTheme.Mewtwo, AppLanguage.EUS, true)
+            awaitItem() shouldBe AppSettings(AppTheme.Mewtwo, AppLanguage.EUS, true, true)
         }
     }
 
@@ -173,6 +174,19 @@ class DataStoreSettingsStoreTest {
 
         store.updateCount shouldBe 1
         store.current()[stringPreferencesKey("appearance.theme")] shouldBe "Torterra"
+    }
+
+    @Test
+    fun `games auto-update is stored and survives a fresh settings reader`() = runTest {
+        val store = FakeDataStore()
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val sut = createSut(store, dispatcher)
+        sut.setAutoUpdate(true)
+        sut.flush()
+        store.current()[booleanPreferencesKey("games.autoUpdate")] shouldBe true
+        createSut(store, dispatcher).settings.test {
+            awaitItem().autoUpdate shouldBe true
+        }
     }
 
     @Test

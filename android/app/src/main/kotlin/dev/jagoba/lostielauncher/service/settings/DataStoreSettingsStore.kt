@@ -68,6 +68,8 @@ internal class DataStoreSettingsStore @Inject constructor(
         it.copy(hasSeenWelcome = hasSeenWelcome)
     }
 
+    override suspend fun setAutoUpdate(autoUpdate: Boolean) = update { it.copy(autoUpdate = autoUpdate) }
+
     override suspend fun flush() {
         val scheduled = gate.withLock {
             flushJob?.cancel()
@@ -96,6 +98,7 @@ internal class DataStoreSettingsStore @Inject constructor(
                 preferences[ThemeKey] = snapshot.theme.name
                 preferences[LanguageKey] = snapshot.language.name
                 preferences[HasSeenWelcomeKey] = snapshot.hasSeenWelcome
+                preferences[AutoUpdateKey] = snapshot.autoUpdate
             }
         } catch (cause: CancellationException) {
             throw cause
@@ -111,11 +114,13 @@ internal class DataStoreSettingsStore @Inject constructor(
         theme = AppTheme.fromNameOrDefault(preferences[ThemeKey]),
         language = AppLanguage.fromNameOrDefault(preferences[LanguageKey]),
         hasSeenWelcome = preferences[HasSeenWelcomeKey] ?: false,
+        autoUpdate = preferences[AutoUpdateKey] ?: false,
     )
 
     private companion object {
         val ThemeKey = stringPreferencesKey("appearance.theme")
         val LanguageKey = stringPreferencesKey("appearance.language")
         val HasSeenWelcomeKey = booleanPreferencesKey("onboarding.hasSeenWelcome")
+        val AutoUpdateKey = booleanPreferencesKey("games.autoUpdate")
     }
 }

@@ -8,5 +8,7 @@ interface SettingsStore : AppearanceStore {
 
     suspend fun setHasSeenWelcome(hasSeenWelcome: Boolean)
 
+    suspend fun setAutoUpdate(autoUpdate: Boolean)
+
     suspend fun flush()
 }

@@ -286,7 +286,60 @@ maintenance stay under `@TempDir`.
 | — | — | `util/download/DownloadResumePolicyTest`, `DownloadProgressCalculatorTest`, `DownloadUrlResolverTest` | Android-only pure coverage for response decisions, progress and URL construction |
 
 The seven `DownloadServiceTests` declarations for fetching and parsing
-`game.config` are not transfer cases. They remain with special-version product
-orchestration rather than being hidden inside the byte-to-disk service. Device
+`game.config` are not transfer cases. Step 10 added
+`SpecialVersionServiceTest` and `SpecialVersionPolicyTest` for the lookup and
+validation path; `SpecialVersionConfigTest` already covers the parser. Device
 acceptance covers the behavior JVM tests intentionally cannot: a live CDN
 transfer remains visible through backgrounding and activity recreation.
+
+## Desktop test parity: ViewModels
+
+Step 10 replaced WPF property notifications with immutable `StateFlow` values.
+The desktop has 130 ViewModel test declarations across seven suites. Android
+cases below exercise the portable decisions at their new owners. Counts are
+desktop declarations, not a claim of one Android test per declaration. The
+JVM suite must be rerun after each change rather than relying on a fixed total.
+
+| Desktop suite | Decl. | Android coverage | Port decision |
+| --- | ---: | --- | --- |
+| `MainViewModelTests` | 8 | `MainViewModelTest`, `NavigationStoreTest`, `LauncherDataCoordinatorTest`, `ExternalLinkOptionsModuleTest` | Section/title, refresh guard and ordering, and validated social links are covered. WPF active-property notifications become one section value. |
+| `GlobalViewModelTests` | 10 | `GlobalViewModelTest` | Busy state follows download and refresh flows. The play-session counter becomes `GameLaunchService.activeSessions`; unsupported is unknown, not zero. |
+| `HomeViewModelTests` | 14 | `HomeViewModelTest`, `LauncherDataCoordinatorTest`, `ContentServiceTest` | Initial, language, periodic, stale and maintenance cases remain. Process startup now owns loading and polling; cache failure and recovery belong to `ContentServiceTest`. |
+| `GamesViewModelTests` | 29 | `GamesViewModelTest`, `GameIdentityMatcherTest`, `PendingGameOperationsTest` | Update, zero and recorded playtime, navigation, busy guards, missing-folder offer and unsupported results are covered. Process tracking, file locks, folder deletion and window restoration remain behind the pending game seam or are Windows-only. |
+| `LibraryViewModelTests` | 33 | `LibraryViewModelTest`, download service tests, `SpecialVersionServiceTest`, `SpecialVersionPolicyTest` | Catalogue statuses, playtime, update, download commands, maintenance, cache purge and key outcomes are covered. Worker transfer remains in step 08; integrity and extraction wait behind step 09's installation seam. |
+| `FaqsViewModelTests` | 6 | `FaqsViewModelTest`, `FaqsTest`, `SearchMatcherTest` | Search, manual expansion, reset, language changes and language-wide count remain. |
+| `SettingsViewModelTests` | 30 | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | Appearance, welcome, installed app version and games auto-update remain. Registry startup, window state, folder picker, OneDrive and launcher self-update cases have no Android counterpart. |
+
+| Desktop case or group | Android owner | Outcome |
+| --- | --- | --- |
+| `LibraryViewModelTests.LoadGames_WhenLocalVersionMatchesRemote_FlagsItAsDownloaded`, `LoadGames_WhenGameNotInstalledLocally_LeavesStatusAsAvailable`, older-version case | `LibraryViewModelTest` | Explicit `LibraryCardStatus`; a current installed game cannot start again from its card. |
+| `LoadGames_AppliesPlaytimesFromContentService`, `RefreshAsync_RequestsGamesAgain_FromContentService` | `LibraryViewModelTest`, `LauncherDataCoordinatorTest` | Initial and global-refresh playtime projection, catalogue reload. |
+| `ResumingPausedGame_ContinuesItsOwnDownload_NotAnotherPausedGame`, `StartDownloadCommand_WhenAlreadyDownloading_ReturnsImmediatelyAndDoesNothing` | `LibraryViewModelTest` | Per-game resume and global transfer guard. |
+| `GetSpecialVersionConfigErrorMessage_WhenNotFound/WhenNetworkError/WhenInvalidResponse` | `LibraryViewModelTest`, `SpecialVersionServiceTest` | Missing/invalid parsed config gives key-not-found; unparseable response, server or transport failure gives download-error. Cancelled lookup is represented by coroutine cancellation, with no notice; success proceeds to download. |
+| `GamesViewModelTests.LoadInstalledGames_WhenRemoteAndLocalVersionsMatch_DoesNotFlagUpdate`, `BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero`, `NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested` | `GamesViewModelTest` | Ported. |
+| Desktop game session, file-lock, uninstall filesystem and Help-folder enumeration cases | `PendingGameOperationsTest` and future game adapter | Android game runtime is unresolved in step 09. The pending seam reports unsupported without claiming desktop file or process behavior. |
+| Desktop `LibraryViewModelTests` hash verification, extraction and directory finalization cases | Step 08 transfer tests and future step 09 installer | Transfer finalization is covered; installation and hash verification remain pending. |
+| `SettingsViewModelTests.FormatVersion_*` | `SettingsViewModelTest`, `VersionUtilsTest` | Android publishes its `BuildConfig.VERSION_NAME` with one `v` prefix. Assembly-specific four/two-component and null cases do not apply to a packaged Android version name. |
+| `SettingsViewModelTests.AutoUpdate_WhenChanged_PersistsSettings` and `GamesViewModel` initial auto-update | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | The maintainer chose the spec behavior: games auto-update is persisted, defaults off, and runs sequentially at process startup for regular outdated installations. Launcher self-update remains excluded. |
+
+The Games and Library screens now share one identity rule: match non-empty IDs
+first, and use the name only when at least one side has no usable ID. A matching
+name with conflicting IDs is not an installation. This resolves the desktop
+disagreement recorded in `spec/02-screens.md` and is pinned by
+`GameIdentityMatcherTest` and `GamesViewModelTest`.
+
+`AppearanceViewModelTest` moved into `SettingsViewModelTest` when the existing
+appearance-only ViewModel was folded into Settings. The same `SettingsStore`
+still owns theme, language and welcome state. The absence of a loaded settings
+snapshot remains distinct from the stored defaults, preventing a first-frame
+theme or language flash.
+
+The desktop's Saved Games folder action is omitted because it names a Windows
+profile folder with no Android counterpart. Window minimize and tray behavior,
+Windows startup, OneDrive detection, the directory picker and launcher
+self-update are likewise absent under the decisions already recorded for step
+07 and in `spec/10-windows-only.md`. Library maintenance actions remain enabled
+and explain a blocked request once per blocked streak. The first foreground
+process `onStart` starts Home and catalogue loading, so headless process starts
+do not trigger launcher requests, and navigation scoping cannot strand either
+screen.

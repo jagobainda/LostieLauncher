@@ -14,13 +14,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.jagoba.lostielauncher.core.lifecycle.ApplicationLifecycleObserver
 import dev.jagoba.lostielauncher.model.SettingsOptions
 import dev.jagoba.lostielauncher.ui.theme.LostieLauncherTheme
-import dev.jagoba.lostielauncher.ui.viewmodel.AppearanceViewModel
+import dev.jagoba.lostielauncher.ui.viewmodel.SettingsViewModel
 import dev.jagoba.lostielauncher.util.policy.StartupWindowPolicy
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val appearanceViewModel: AppearanceViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
 
     @Inject
     internal lateinit var settingsOptions: SettingsOptions
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         keepStartingWindowUntilSettingsLoad()
         setContent {
-            val state by appearanceViewModel.state.collectAsStateWithLifecycle()
+            val state by settingsViewModel.state.collectAsStateWithLifecycle()
             val appearance = state ?: return@setContent
 
             LostieLauncherTheme(theme = appearance.theme) {
@@ -43,8 +43,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     StartSurface(
                         theme = appearance.theme,
-                        onThemeSelected = appearanceViewModel::selectTheme,
-                        onLanguageSelected = appearanceViewModel::selectLanguage,
+                        onThemeSelected = settingsViewModel::selectTheme,
+                        onLanguageSelected = settingsViewModel::selectLanguage,
                     )
                 }
             }
@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
             object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     val shouldKeep = StartupWindowPolicy.shouldKeep(
-                        settingsLoaded = appearanceViewModel.state.value != null,
+                        settingsLoaded = settingsViewModel.state.value != null,
                         elapsedMilliseconds = SystemClock.uptimeMillis() - startedAt,
                         timeout = settingsOptions.startupLoadTimeout,
                     )

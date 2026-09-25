@@ -111,7 +111,7 @@ Already in place:
   — the transport for the one endpoint whose answer is a status code, so the
   decisions that follow from the code stay testable without a socket.
 - [`SettingsStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/SettingsStore.kt)
-  — the DataStore seam for theme, language and welcome state. `AppearanceStore`
+  — the DataStore seam for theme, language, welcome and games auto-update state. `AppearanceStore`
   is its narrow UI-facing parent. Updates are visible immediately and a 500 ms
   debounce coalesces persistence writes. Activity and process stop events flush
   any pending snapshot from an application-owned I/O scope.
@@ -142,6 +142,30 @@ Already in place:
   report unsupported rather than claiming a game is stopped or a session ended.
 - `GameLocationService` — help availability, opening game/help files, and
   returning an opaque partial-uninstall location to its owning adapter.
+- `LauncherDataCoordinator` — the shared Home and catalogue snapshots and the
+  refresh sequence. The first foreground `onStart` starts its initial loads and
+  Home timer, independently of screen ViewModel creation. Home and catalogue load
+  concurrently on a global refresh; the installed-game projection is
+  invalidated only after both finish.
+- `GameAutoUpdateCoordinator` — reads the persisted game-update preference at
+  process startup, waits for the catalogue and installed games, then queues
+  regular outdated games sequentially through `DownloadManager`.
+- `NavigationStore` — selected section and a pending Library target. An action
+  can be consumed while the target remains available for the future Library
+  screen to scroll to and acknowledge.
+- `SpecialVersionService` — the `game.config` lookup through the content HTTP
+  client, separate from the archive transfer.
+- `ExternalLinkService` — opens only validated HTTPS destinations through an
+  Android handler. `MainViewModel` sees a result and no `Intent` or `Context`.
+
+The seven presentation ViewModels have no ViewModel-to-ViewModel references.
+`MainViewModel` projects shell state from the coordinator, navigation and
+download flows. `GlobalViewModel` derives busy state from download and refresh
+flows and derives game activity from `GameLaunchService.activeSessions`.
+`SettingsViewModel` also owns the appearance and app version state previously exposed by
+`AppearanceViewModel`; both the activity and the Settings screen observe the
+same `SettingsStore`. The process lifecycle starts shared loading without
+requiring Home, Library or Games ViewModels to exist.
 
 Game lifecycle operations always go through `service/game/`. ViewModels must
 not call `LocalLibraryStore.registerGame`, `removeGame` or `addPlaytime`; those
