@@ -23,13 +23,14 @@ authority on what the app must do is the desktop side, under
 | CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
 | Dependency injection graph            | started — `core/di/`, persistence and network modules   |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 114 keys and 6 FAQs, in eight languages          |
+| Text catalogue                        | done — 115 keys and 6 FAQs, in eight languages          |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
 | File logs                             | done — monthly files, 10 MB roll and six-month retention |
 | Pure decision utilities               | done — ported with their desktop test cases             |
 | Download engine                       | done — resumable, observable and lifecycle-resilient    |
+| Shared components                     | done — game, news, notification, FAQ cards and skeletons |
 | Product screens                       | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
@@ -44,6 +45,7 @@ this table is the reasoning, not the source of truth.
 | UI | Jetpack Compose + Material 3 | declarative UI; the desktop's XAML has no Android equivalent worth emulating |
 | DI | Hilt (KSP) | compile-time verified graph, everything a singleton — the desktop's centralized container, constructor injection included |
 | HTTP | OkHttp + Retrofit + kotlinx.serialization | the desktop runs three HTTP clients with three different timeouts for three reasons; three `OkHttpClient`s sharing a pool is the direct equivalent, and raw OkHttp handles the resumable, ranged download |
+| Images | Coil 3 (OkHttp fetcher) | the game logos are remote PNGs on the CDN; Coil is the Compose-native loader, and only an HTTPS URL is ever handed to it |
 | Persistence | DataStore (settings) + Room (local library) | settings are a small typed record; the installed-game list is queried and joined |
 | Navigation | `NavigationStore` (one section value) + `BackHandler`, no navigation library | the launcher has five top-level sections and no back stack, like the desktop; a `NavController` would be a second source of truth beside the store the ViewModels already navigate through |
 | Tests | JUnit 5, MockK, Kotest assertions, Turbine | the closest mapping of the desktop's xUnit + NSubstitute + Shouldly |
@@ -148,7 +150,7 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 114
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 115
 string keys and six FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.

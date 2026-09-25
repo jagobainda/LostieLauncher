@@ -4,9 +4,6 @@ package dev.jagoba.lostielauncher.content.strings
 
 import dev.jagoba.lostielauncher.content.Strings
 
-/**
- * Portuguese, ported verbatim from `desktop/LostieLauncher/Content/Strings.cs`.
- */
 internal object PorStrings : Strings {
     override val titleHome = "Início"
     override val titleGames = "Meus Jogos"
@@ -88,6 +85,7 @@ internal object PorStrings : Strings {
     override val statusExtracting = "Descomprimindo..."
     override val statusVerifying = "Verificando integridade..."
     override val statusUninstalling = "Desinstalando..."
+    override val statusNotSupportedYet = "Ainda não disponível no Android"
     override val gameExeNotFoundTitle = "Jogo não encontrado"
     override val gameExeNotFoundMessage = "O executável do jogo não foi encontrado. Tente reinstalá-lo."
     override val hashMismatchTitle = "Erro de integridade"

@@ -99,6 +99,74 @@ something R8 can break has to run `assembleRelease` itself for the same reason.
   and their tooltips are `ExternalLink.brandName`: brand names, not copy, kept
   in the model as `AppLanguage.displayName` is.
 
+### Components
+
+`ui/component/` holds the desktop's `Views/Components/`: `LibraryGameCard` and
+`InstalledGameCard` (the two modes of `GameCardComponent`), `NewsCard`,
+`NotificationCard`, `FaqCard`, and a skeleton for each of the first three. The
+debug catalogue (`src/debug/…/ComponentCatalogScreen.kt`, behind the bug
+action) shows every one in every state, under the live theme and language
+pickers.
+
+- **Stateless, and they know no ViewModel.** A card takes an immutable state
+  (`LibraryGameCardState`, `InstalledGameCardState`) or plain values, and
+  lambdas. Fixed labels come from `LocalStrings`, as the desktop's cards bind
+  `Strings.*`. `LibraryCardStatus` lives in `model/` so that the component and
+  `LibraryViewModel` share it without the component importing the ViewModel
+  package.
+- **The game card adapts by measurement, not by device.** `GameCardColumns`
+  keeps the desktop's three columns (logo, text, actions) while the text column
+  keeps at least `LauncherSizes.GameCardTitleWidth`. When it can't, the actions
+  drop to a right-aligned row under the text and wrap if needed. The skeleton
+  uses the same layout, so content arriving never shifts it.
+- **"Not supported yet" is a state, never a dead button.** The Library card
+  renders `INSTALLATION_UNSUPPORTED` as the disabled "Downloaded" chip plus an
+  amber `StatusNotSupportedYet` line: the archive is downloaded, the game is
+  not installed. On a My Games card, `runtimeSupported = false` marks Play,
+  Help, Open folder and Uninstall (the four that go through `service/game/`)
+  with an amber dot and adds the text to their long-press tooltip. They stay
+  tappable, so the seam's `NotSupportedYet` reaches the ViewModel as a notice
+  rather than the tap doing nothing.
+- **Links are gesture-driven text.** `LinkText` renders `RichText.runs`
+  (`util/text/`: link detection plus search highlighting). A tap calls
+  `onOpenLink` with the canonical HTTPS URL. A long press shows that URL, which
+  is the touch stand-in for the desktop's hover tooltip. A press recolours the
+  link to the hover accent, and each link is also a TalkBack custom action.
+  Opening the URL is the caller's job, through `ExternalLinkService`.
+- **Logos load through Coil**, and only after `HttpsUrls.parseOrNull` accepts
+  the URL, as the desktop's converter does.
+- **Regex patterns must run on ICU.** Android compiles `java.util.regex`
+  through ICU, which rejects inline flags the JVM accepts. `(?U)` crashed the
+  first link-scanning card on a device while every JVM test passed.
+  `LinkTextParser` therefore spells out its Unicode word class instead of
+  switching one on. JVM tests cannot catch this, so a regex change needs a run
+  on a device.
+
+#### Where the cards differ from the desktop
+
+Measured against `Views/Components/*.xaml`, `Styles/SkeletonStyles.xaml` and
+`Styles/ScrollViewerStyle.xaml`. Everything not listed matches the XAML value
+for value. Where `spec/07-components.md` disagrees with the XAML, the XAML was
+followed.
+
+| Area | Desktop | Android | Why |
+| --- | --- | --- | --- |
+| Card dates | Always en-US (`dd MMM yyyy` / `dd MMM`): WPF bindings format in en-US and the app never overrides that | The launcher's language: day, standalone abbreviated month, year (`CardDateFormatter`) | Step 02 decision 7: visible dates follow the selected language. The standalone month keeps Catalan and Valencian from printing the genitive (`de març`, `d'abr.`), and the month is lowercased in every language but English, because locale data disagrees on the case (JDK 17 gives Galician `Mar.`, JDK 21 `mar.`). The abbreviation itself still comes from the platform's locale data, so a dot can differ between Android versions. `CardDateFormatterTest` pins all eight languages on the build's JDK |
+| Card layout | Fixed three columns in a fixed-size window | Three columns while the text keeps `GameCardTitleWidth`; otherwise the actions drop under the text and wrap | A phone is narrower than the desktop's content area; the rule is measured, so a tablet keeps the desktop layout |
+| Labelled card buttons | No horizontal padding: the style sets `Padding="14,0"` but its template never binds it, so width is `MinWidth="110"` or the content | Same, no padding | Matched. `spec/07` says `14,0` and is wrong |
+| Disabled secondary card buttons | No disabled look (same colours, just inert) | 0.5 opacity, like the accent buttons | Touch has no hover to reveal that a button is inert; a button that looks live and does nothing is exactly what the port must avoid |
+| Hover and tooltips | Mouse hover colours; tooltips on hover; link hover recolours and shows the URL | A mouse still gets the hover colours; a press shows the desktop's pressed colour, or the hover colour for links, which have no pressed state; tooltips and link URLs open on long press | The touch equivalent of each mouse interaction, as the step 11 shell established; no ripple, because the desktop has no press animation |
+| Missing or failed logo | Empty well (the Pokéball shows only when there is no URL) | Pokéball until the image loads, and again if it fails | An empty well reads as broken on a slow mobile connection |
+| Text metrics | Segoe UI, no letter spacing, font-derived line height | Material's default body style neutralised theme-wide (`Typography(bodyLarge = TextStyle.Default)` in `Theme.kt`), so text has no extra letter spacing or 24 sp line height | Material's defaults made wrapped card text visibly looser and wider than the desktop's. It also tightens the step 11 shell's labels, towards the desktop |
+| Running game | The card has no running state; running is a global signal (`GlobalViewModel`) | No running state either | Faithful. The prompt lists "en ejecución" generically, but the desktop card has none, and inventing one would be a divergence |
+| `INSTALLATION_PENDING` (Android only) | No such state: verification starts as soon as the transfer ends | Progress block at 100 % with "100%", empty action column | The gap between the finished transfer and the installer's first report; the bar stays where the download left it, so nothing jumps |
+| `INSTALLATION_UNSUPPORTED` (Android only) | No such state | Disabled "Downloaded" chip plus an amber `StatusNotSupportedYet` line | The archive is downloaded and the game is not installed; see "Not supported yet" above |
+| `INSTALLATION_FAILED` (Android only) | Failure shows a `DownloadError` or `HashMismatch` dialog and resets the card to Available | Amber `DownloadErrorTitle` line, empty action column | The card cannot know which failure happened, and `LibraryViewModel` offers no retry yet (R-10-g); step 14 owns the retry path |
+| Unsupported My Games actions (Android only) | Every action works | Amber dot, tooltip line, still tappable | The seam answers `NotSupportedYet`; see above |
+| Card bottom margin | 10 px inside each card | Not in the component; the list spaces cards 10 dp apart | Compose components do not carry outer margins |
+| Touch target | 32 px buttons | 32 dp buttons, below Android's 48 dp minimum | Kept for fidelity; step 15's accessibility pass decides |
+| Scrollbar | Custom 8 px trough and thumb on every list | Not ported | A permanent trough on a touch list fights the platform's own scroll indicator. The screens that own the lists decide, and the 1 dp spacing token waits for them |
+
 ## Dependency injection
 
 - Hilt, with every binding a **singleton in `SingletonComponent`** and resolved

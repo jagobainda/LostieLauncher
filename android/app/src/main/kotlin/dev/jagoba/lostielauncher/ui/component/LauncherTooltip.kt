@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,6 +16,18 @@ import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LauncherTooltip(text: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    LauncherTooltipBox(text, rememberTooltipState(), enableUserInput = true, modifier = modifier, content = content)
+}
+
+@ExperimentalMaterial3Api
+@Composable
+internal fun LauncherTooltipBox(
+    text: String,
+    state: TooltipState,
+    enableUserInput: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     val colors = LocalLauncherColors.current
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
@@ -23,8 +36,9 @@ fun LauncherTooltip(text: String, modifier: Modifier = Modifier, content: @Compo
                 Text(text, fontSize = LauncherType.CaptionSize)
             }
         },
-        state = rememberTooltipState(),
+        state = state,
         modifier = modifier,
+        enableUserInput = enableUserInput,
         content = content,
     )
 }

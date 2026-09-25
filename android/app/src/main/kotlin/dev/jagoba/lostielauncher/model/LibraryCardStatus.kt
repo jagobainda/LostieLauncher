@@ -1,0 +1,14 @@
+package dev.jagoba.lostielauncher.model
+
+enum class LibraryCardStatus {
+    AVAILABLE,
+    DOWNLOADING,
+    PAUSED,
+    DOWNLOADED,
+    UPDATE_AVAILABLE,
+    VERIFYING_INTEGRITY,
+    EXTRACTING,
+    INSTALLATION_PENDING,
+    INSTALLATION_UNSUPPORTED,
+    INSTALLATION_FAILED,
+}

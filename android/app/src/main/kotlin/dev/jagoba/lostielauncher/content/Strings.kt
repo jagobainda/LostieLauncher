@@ -10,24 +10,6 @@ import dev.jagoba.lostielauncher.content.strings.PorStrings
 import dev.jagoba.lostielauncher.content.strings.ValStrings
 import dev.jagoba.lostielauncher.model.AppLanguage
 
-/**
- * Every user-visible string in the launcher, one property per key.
- *
- * Ported from `desktop/LostieLauncher/Content/Strings.cs`, key for key and in
- * its declaration order. The desktop has one implementation of `IStrings` per
- * language and resolves the whole object when the setting changes; this does
- * the same, so a language change is one reference swap and nothing has to
- * re-read a resource table.
- *
- * The guarantee that matters is the desktop's: a key missing from a language is
- * a **compile error**, not a fallback to another language at runtime. Adding a
- * string therefore means adding it to all eight implementations in the same
- * change.
- *
- * Placeholders are the desktop's `{0}`, `{1}` form and are substituted with
- * [withArgs]. Their count and order are identical in all eight languages;
- * `StringsTest` is what keeps that true.
- */
 interface Strings {
     val titleHome: String
     val titleGames: String
@@ -109,6 +91,7 @@ interface Strings {
     val statusExtracting: String
     val statusVerifying: String
     val statusUninstalling: String
+    val statusNotSupportedYet: String
     val gameExeNotFoundTitle: String
     val gameExeNotFoundMessage: String
     val hashMismatchTitle: String
@@ -145,13 +128,6 @@ interface Strings {
     val downloadDirStepRename: String
 }
 
-/**
- * The catalogue for [language].
- *
- * Total, unlike the desktop's `switch` with a `default` arm: the `when` is
- * exhaustive over the enum, so a ninth language is a compile error here rather
- * than a silent fall back to Spanish.
- */
 fun stringsFor(language: AppLanguage): Strings = when (language) {
     AppLanguage.ESP -> EspStrings
     AppLanguage.ENG -> EngStrings

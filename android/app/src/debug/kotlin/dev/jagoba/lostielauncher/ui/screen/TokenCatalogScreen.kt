@@ -49,25 +49,6 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 import dev.jagoba.lostielauncher.ui.theme.isDark
 
-/**
- * Every visual token the launcher has, on one scrolling page, with a theme
- * picker and a language picker at the top.
- *
- * This is port plan step 05's acceptance criterion and it exists to be looked
- * at: pick each of the ten themes in turn and the fourteen colour swatches, the
- * type scale, the spacing scale and the radii all repaint without the
- * application restarting; pick each of the eight languages and the sample copy
- * changes the same way. Both survive a cold start, because both are read back
- * from the same store they were written to.
- *
- * It is **not** a component gallery. Nothing here is a reusable component —
- * port plan step 12 builds those, against these tokens — and nothing here is
- * meant to look like the launcher. Everything is labelled with the name a
- * caller uses, because being able to read a name off the screen is the point.
- *
- * Debug builds only: this file is in `src/debug`, so it is not compiled into a
- * release APK at all.
- */
 @Composable
 fun TokenCatalogScreen(
     theme: AppTheme,
@@ -83,52 +64,12 @@ fun TokenCatalogScreen(
         modifier = modifier
             .fillMaxSize()
             .background(colors.primaryBg),
-        // The activity is edge-to-edge, so the catalogue has to inset itself
-        // out from under the status bar and the gesture handle. Real screens
-        // get this from the shell port plan step 11 builds; this one has no
-        // shell above it.
         contentPadding = WindowInsets.safeDrawing
             .asPaddingValues()
             .plus(LauncherSpacing.Screen),
         verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Section),
     ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium)) {
-                SectionHeader("Theme")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-                    verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-                ) {
-                    AppTheme.entries.forEach { candidate ->
-                        Chip(
-                            label = candidate.name,
-                            selected = candidate == theme,
-                            onClick = { onThemeSelected(candidate) },
-                        )
-                    }
-                }
-                Caption(if (colors.isDark()) "dark palette" else "light palette")
-            }
-        }
-
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium)) {
-                SectionHeader("Language")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-                    verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-                ) {
-                    AppLanguage.entries.forEach { candidate ->
-                        Chip(
-                            label = candidate.displayName,
-                            selected = candidate == language,
-                            onClick = { onLanguageSelected(candidate) },
-                        )
-                    }
-                }
-                Caption("${language.name} · wire code \"${language.code}\"")
-            }
-        }
+        item { AppearancePickers(theme, onThemeSelected, onLanguageSelected) }
 
         item { SectionHeader("Colour — the 14 theme keys") }
         items(colorRoles(colors)) { (name, color) -> Swatch(name, color) }
@@ -226,10 +167,44 @@ fun TokenCatalogScreen(
     }
 }
 
-// --- the pieces, all local to this screen ---------------------------------
+@Composable
+internal fun AppearancePickers(
+    theme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+    onLanguageSelected: (AppLanguage) -> Unit,
+) {
+    val colors = LocalLauncherColors.current
+    val language = LocalAppLanguage.current
+    Column(verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium)) {
+        SectionHeader("Theme")
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
+            verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
+        ) {
+            AppTheme.entries.forEach { candidate ->
+                Chip(label = candidate.name, selected = candidate == theme, onClick = { onThemeSelected(candidate) })
+            }
+        }
+        Caption(if (colors.isDark()) "dark palette" else "light palette")
+        SectionHeader("Language")
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
+            verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
+        ) {
+            AppLanguage.entries.forEach { candidate ->
+                Chip(
+                    label = candidate.displayName,
+                    selected = candidate == language,
+                    onClick = { onLanguageSelected(candidate) },
+                )
+            }
+        }
+        Caption("${language.name} · wire code \"${language.code}\"")
+    }
+}
 
 @Composable
-private fun SectionHeader(text: String) {
+internal fun SectionHeader(text: String) {
     Text(
         text = text,
         color = LocalLauncherColors.current.primaryFg,
@@ -239,7 +214,7 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun Caption(text: String) {
+internal fun Caption(text: String) {
     Text(
         text = text,
         color = LocalLauncherColors.current.secondaryFgDim,
@@ -278,11 +253,6 @@ private fun Swatch(name: String, color: Color) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Large),
     ) {
-        // Over the secondary background, because the five overlays are alpha
-        // and a swatch on nothing would show the page through and read as the
-        // wrong colour. The hairline border is what makes `primaryBg` visible
-        // at all — without it that one swatch is the same colour as the page
-        // behind it and looks like a missing value.
         Box(
             Modifier
                 .size(LauncherSizes.NavigationItemSize, LauncherSpacing.Section)
@@ -359,8 +329,6 @@ private fun RadiusTile(name: String, value: Dp) {
     }
 }
 
-// --- the tables the lists above walk --------------------------------------
-
 private fun colorRoles(colors: LauncherColors): List<Pair<String, Color>> = listOf(
     "primaryBg" to colors.primaryBg,
     "secondaryBg" to colors.secondaryBg,
@@ -414,12 +382,6 @@ private fun radiusScale(): List<Pair<String, Dp>> = listOf(
     "ExtraLarge 16" to LauncherRadii.ExtraLarge,
 )
 
-/**
- * `#AARRGGBB`, the form `spec/06-design-tokens.md` and the desktop XAML use, so
- * a value read off the screen can be compared to the specification without
- * converting anything in your head. Built by hand rather than with
- * `String.format`, which would follow the device locale.
- */
 private fun Color.toHex(): String {
     val argb = toArgb()
     val digits = "0123456789ABCDEF"
@@ -430,14 +392,6 @@ private fun Color.toHex(): String {
     return out.toString()
 }
 
-/**
- * The system insets plus a uniform gutter on every side.
- *
- * `PaddingValues` has no `plus`, and the two have to be added rather than
- * chosen between: the status bar inset is what keeps the first header out from
- * under the clock, and the gutter is [LauncherSpacing.Screen], the desktop's
- * own screen content padding.
- */
 @Composable
 private fun PaddingValues.plus(all: Dp): PaddingValues {
     val direction = LocalLayoutDirection.current

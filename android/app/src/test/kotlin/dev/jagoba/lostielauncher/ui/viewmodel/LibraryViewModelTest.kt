@@ -7,6 +7,7 @@ import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
+import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup

@@ -4,9 +4,6 @@ package dev.jagoba.lostielauncher.content.strings
 
 import dev.jagoba.lostielauncher.content.Strings
 
-/**
- * Basque, ported verbatim from `desktop/LostieLauncher/Content/Strings.cs`.
- */
 internal object EusStrings : Strings {
     override val titleHome = "Hasiera"
     override val titleGames = "Nire Jokoak"
@@ -88,6 +85,7 @@ internal object EusStrings : Strings {
     override val statusExtracting = "Deskonprimatzen..."
     override val statusVerifying = "Osotasuna egiaztatzen..."
     override val statusUninstalling = "Desinstalatzen..."
+    override val statusNotSupportedYet = "Oraindik ez dago erabilgarri Androiden"
     override val gameExeNotFoundTitle = "Jokoa ez da aurkitu"
     override val gameExeNotFoundMessage = "Jokoaren exekutagarria ez da aurkitu. Saiatu berrinstalatzea."
     override val hashMismatchTitle = "Osotasun errorea"

@@ -59,6 +59,33 @@ object LauncherSizes {
     val OfflinePillIcon: Dp = 12.dp
     val NavigationRailBreakpoint: Dp = 600.dp
     val MinimumTouchTarget: Dp = 48.dp
+    val GameCardLogoWidth: Dp = 110.dp
+    val GameCardLogoHeight: Dp = 80.dp
+    val GameCardLogoPlaceholder: Dp = 32.dp
+    val GameCardTitleWidth: Dp = 180.dp
+    val CardButtonHeight: Dp = 32.dp
+    val CardButtonMinWidth: Dp = 110.dp
+    val CardIconButtonMinWidth: Dp = 32.dp
+    val CardButtonIcon: Dp = 13.dp
+    val CardIconButtonIcon: Dp = 14.dp
+    val CardMetaIcon: Dp = 12.dp
+    val CardUpdateArrow: Dp = 10.dp
+    val CardHeaderIcon: Dp = 16.dp
+    val NotSupportedMarker: Dp = 6.dp
+    val ProgressBarHeight: Dp = 4.dp
+    val NotificationStripeWidth: Dp = 4.dp
+    val SkeletonTitleHeight: Dp = 18.dp
+    val SkeletonLineHeight: Dp = 12.dp
+    val SkeletonGameMetaWidth: Dp = 120.dp
+    val SkeletonTagWidth: Dp = 60.dp
+    val SkeletonNewsTitleWidth: Dp = 200.dp
+    val SkeletonNewsLineWidth: Dp = 220.dp
+    val SkeletonNotificationTitleWidth: Dp = 130.dp
+    val SkeletonNotificationTitleHeight: Dp = 14.dp
+    val SkeletonNotificationLineHeight: Dp = 11.dp
+    val SkeletonNotificationDateWidth: Dp = 30.dp
+    const val SPINNER_DASH = 13f
+    const val SPINNER_GAP = 7f
 }
 
 object LauncherRadii {
@@ -85,6 +112,10 @@ object LauncherElevation {
 
 object LauncherOpacity {
     const val NAVIGATION_ACTION_DISABLED = 0.3f
+    const val CARD_BUTTON_DISABLED = 0.5f
+    const val CARD_STATUS_CHIP = 0.6f
+    const val SUCCESS_HOVER = 0.85f
+    const val SUCCESS_PRESSED = 0.7f
 }
 
 object LauncherMotion {

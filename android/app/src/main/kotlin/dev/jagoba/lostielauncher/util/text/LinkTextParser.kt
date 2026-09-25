@@ -2,23 +2,7 @@ package dev.jagoba.lostielauncher.util.text
 
 import dev.jagoba.lostielauncher.util.net.HttpsUrls
 
-/**
- * Splits a block of CDN-authored text into plain and link segments, ported from
- * the desktop's `Utils/LinkTextParser.cs`.
- *
- * News bodies and FAQ answers are plain strings on the wire with no markup, and
- * the people writing them type `github.com/...` as often as a full URL. This is
- * what turns either into something tappable without trusting the payload: a
- * candidate only becomes a link if it survives [HttpsUrls.parseOrNull], so an
- * `http://` mirror in a news item renders as text and nothing else.
- *
- * Two consequences worth keeping in mind when rendering: trailing sentence
- * punctuation stays in the following **plain** segment rather than being
- * swallowed into the link, and the displayed text of a link is the candidate as
- * it was written, which is not always its target.
- */
 object LinkTextParser {
-    /** One run of text, a link when [url] is set. */
     data class Segment(val text: String, val url: String?) {
         val isLink: Boolean get() = url != null
     }
@@ -27,19 +11,13 @@ object LinkTextParser {
 
     private const val HTTPS_PREFIX = "https://"
 
-    /**
-     * The desktop's pattern, character for character, with one addition: the
-     * leading `(?U)`.
-     *
-     * .NET's `\w` and `\b` are Unicode-aware by default and Java's are ASCII-only
-     * until `UNICODE_CHARACTER_CLASS` is switched on. Without it the look-behind
-     * would not see the accented letter in `Escríbenos a soporte@…` as a word
-     * character, and the guard that keeps this from firing inside an email
-     * address would come apart on exactly the Spanish text the CDN serves.
-     */
+    private const val WORD = """\p{L}\p{Mn}\p{Nd}\p{Pc}"""
+
+    private const val NON_SPACE = """[^\s\x{85}\p{Z}]"""
+
     private val LINK_REGEX = Regex(
-        """(?U)https://\S+|(?<![\w@./-])(?:www\.[\w-]+(?:\.[\w-]+)+|""" +
-            """(?:[\w-]+\.)+(?:com|net|org|es|eu|io|gg|dev|app|me|co|tv|info)\b)(?:/\S*)?""",
+        """https://$NON_SPACE+|(?<![$WORD@./-])(?:www\.[$WORD-]+(?:\.[$WORD-]+)+|""" +
+            """(?:[$WORD-]+\.)+(?:com|net|org|es|eu|io|gg|dev|app|me|co|tv|info)(?![$WORD]))(?:/$NON_SPACE*)?""",
         RegexOption.IGNORE_CASE,
     )
 

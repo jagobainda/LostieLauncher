@@ -18,10 +18,15 @@ import androidx.compose.ui.res.painterResource
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppTheme
+import dev.jagoba.lostielauncher.ui.screen.ComponentCatalogScreen
 import dev.jagoba.lostielauncher.ui.screen.DownloadHarnessScreen
 import dev.jagoba.lostielauncher.ui.screen.LauncherShell
 import dev.jagoba.lostielauncher.ui.screen.TokenCatalogScreen
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
+
+private enum class DebugTab { DOWNLOADS, TOKENS, COMPONENTS }
+
+private const val COMPONENTS_LABEL = "Components"
 
 @Composable
 fun StartSurface(
@@ -46,25 +51,34 @@ private fun DebugTools(
     onLanguageSelected: (AppLanguage) -> Unit,
 ) {
     val strings = LocalStrings.current
-    var showDownloads by rememberSaveable { mutableStateOf(true) }
+    var tab by rememberSaveable { mutableStateOf(DebugTab.DOWNLOADS) }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(LauncherSpacing.Medium),
         ) {
-            OutlinedButton(onClick = { showDownloads = true }) {
+            OutlinedButton(onClick = { tab = DebugTab.DOWNLOADS }) {
                 Text(strings.btnDownload)
             }
-            OutlinedButton(onClick = { showDownloads = false }) {
+            OutlinedButton(onClick = { tab = DebugTab.TOKENS }) {
                 Text(strings.settingsTheme)
+            }
+            OutlinedButton(onClick = { tab = DebugTab.COMPONENTS }) {
+                Text(COMPONENTS_LABEL)
             }
         }
         Box(Modifier.fillMaxSize()) {
-            if (showDownloads) {
-                DownloadHarnessScreen()
-            } else {
-                TokenCatalogScreen(
+            when (tab) {
+                DebugTab.DOWNLOADS -> DownloadHarnessScreen()
+
+                DebugTab.TOKENS -> TokenCatalogScreen(
+                    theme = theme,
+                    onThemeSelected = onThemeSelected,
+                    onLanguageSelected = onLanguageSelected,
+                )
+
+                DebugTab.COMPONENTS -> ComponentCatalogScreen(
                     theme = theme,
                     onThemeSelected = onThemeSelected,
                     onLanguageSelected = onLanguageSelected,

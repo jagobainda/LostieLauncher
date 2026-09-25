@@ -12,6 +12,7 @@ import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.InstalledGamesState
+import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
@@ -61,19 +62,6 @@ data class LibraryGameUiState(
     val installationUnsupported: Boolean
         get() = installation ==
             GameInstallationState.Finished(dev.jagoba.lostielauncher.model.GameInstallationResult.NotSupportedYet)
-}
-
-enum class LibraryCardStatus {
-    AVAILABLE,
-    DOWNLOADING,
-    PAUSED,
-    DOWNLOADED,
-    UPDATE_AVAILABLE,
-    VERIFYING_INTEGRITY,
-    EXTRACTING,
-    INSTALLATION_PENDING,
-    INSTALLATION_UNSUPPORTED,
-    INSTALLATION_FAILED,
 }
 
 enum class LibraryNotice {

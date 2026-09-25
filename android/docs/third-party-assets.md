@@ -1,6 +1,6 @@
 # Third-party assets
 
-The shell's icons are the same glyphs the desktop draws through
+The shell's and the cards' icons are the same glyphs the desktop draws through
 MahApps.Metro.IconPacks, converted to Android vector drawables. The path data
 is unchanged; only the container format differs.
 
@@ -14,6 +14,23 @@ is unchanged; only the container format differs.
 | `ic_nav_settings` | `cog` | Lucide | ISC |
 | `ic_debug_tools` (debug only) | `bug` | Lucide | ISC |
 | `ic_offline` | `cloud-off-outline` | [Material Design Icons](https://pictogrammers.com/library/mdi/) | Apache-2.0 |
+| `ic_chevron_down` | `chevron-down` | Lucide | ISC |
+| `ic_card_pokeball` | `pokeball` | Material Design Icons | Apache-2.0 |
+| `ic_card_harddisk` | `harddisk` | Material Design Icons | Apache-2.0 |
+| `ic_card_tag` | `tag-outline` | Material Design Icons | Apache-2.0 |
+| `ic_card_clock` | `clock-outline` | Material Design Icons | Apache-2.0 |
+| `ic_card_arrow_right` | `arrow-right` | Material Design Icons | Apache-2.0 |
+| `ic_card_download` | `download` | Material Design Icons | Apache-2.0 |
+| `ic_card_pause` | `pause` | Material Design Icons | Apache-2.0 |
+| `ic_card_close` | `close` | Material Design Icons | Apache-2.0 |
+| `ic_card_play` | `play` | Material Design Icons | Apache-2.0 |
+| `ic_card_check` | `check` | Material Design Icons | Apache-2.0 |
+| `ic_card_update` | `update` | Material Design Icons | Apache-2.0 |
+| `ic_card_help` | `help-circle-outline` | Material Design Icons | Apache-2.0 |
+| `ic_card_key` | `key-variant` | Material Design Icons | Apache-2.0 |
+| `ic_card_folder_open` | `folder-open` | Material Design Icons | Apache-2.0 |
+| `ic_card_trash` | `trash-can-outline` | Material Design Icons | Apache-2.0 |
+| `ic_card_not_supported` (Android only) | `alert-circle-outline` | Material Design Icons | Apache-2.0 |
 | `ic_social_github` | `github` | [Simple Icons](https://simpleicons.org) | CC0-1.0 |
 | `ic_social_twitch` | `twitch` | Simple Icons | CC0-1.0 |
 | `ic_social_youtube` | `youtube` | Simple Icons | CC0-1.0 |
