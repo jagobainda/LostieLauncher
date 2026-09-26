@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.model.NewsItem
 import dev.jagoba.lostielauncher.model.NotificationItem
+import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import javax.inject.Inject
@@ -33,6 +34,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val coordinator: LauncherDataCoordinator,
     private val settings: SettingsStore,
+    private val externalLinks: ExternalLinkService,
 ) : ViewModel() {
     val state: StateFlow<HomeUiState> = coordinator.home.map { data ->
         HomeUiState(
@@ -46,5 +48,9 @@ class HomeViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch { coordinator.refreshHome(settings.settings.first().language) }
+    }
+
+    fun openLink(url: String) {
+        externalLinks.openUrl(url)
     }
 }

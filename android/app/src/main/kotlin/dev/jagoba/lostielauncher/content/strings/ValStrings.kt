@@ -86,7 +86,7 @@ internal object ValStrings : Strings {
     override val statusVerifying = "Comprovant integritat..."
     override val statusUninstalling = "Desinstal·lant..."
     override val statusNotSupportedYet = "Encara no disponible en Android"
-    override val notSupportedYetMessage = "Instal·lar, jugar i desinstal·lar jocs encara no està disponible en la versió d'Android."
+    override val notSupportedYetMessage = "Instal·lar, jugar, obrir les seues carpetes i desinstal·lar jocs encara no està disponible en la versió d'Android."
     override val locationNoHandlerTitle = "No es pot obrir la carpeta"
     override val locationNoHandlerMessage = "No hi ha cap aplicació en este dispositiu que puga obrir la carpeta del joc."
     override val gameExeNotFoundTitle = "Joc no trobat"

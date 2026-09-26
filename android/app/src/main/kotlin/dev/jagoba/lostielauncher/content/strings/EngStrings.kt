@@ -86,7 +86,7 @@ internal object EngStrings : Strings {
     override val statusVerifying = "Verifying integrity..."
     override val statusUninstalling = "Uninstalling..."
     override val statusNotSupportedYet = "Not available on Android yet"
-    override val notSupportedYetMessage = "Installing, playing and uninstalling games is not available in the Android version yet."
+    override val notSupportedYetMessage = "Installing, playing and uninstalling games, and opening their folders, is not available in the Android version yet."
     override val locationNoHandlerTitle = "Cannot open the folder"
     override val locationNoHandlerMessage = "No app on this device can open the game folder."
     override val gameExeNotFoundTitle = "Game not found"

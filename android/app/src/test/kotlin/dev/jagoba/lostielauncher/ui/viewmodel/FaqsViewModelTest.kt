@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test
 class FaqsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val settings = TestSettingsStore()
+    private val links = TestExternalLinkService()
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -27,7 +28,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `loads all FAQs collapsed in current language`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         sut.state.value.rows.size shouldBe faqsFor(AppLanguage.ESP).size
         sut.state.value.rows.all { !it.isExpanded } shouldBe true
@@ -35,7 +36,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `search matches answer ignoring accents and expands matches`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         sut.setSearchText("instalacion")
         runCurrent()
@@ -45,7 +46,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `no match and clear search reproduce empty and collapsed states`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         sut.setSearchText("unmatched-term-xyz")
         runCurrent()
@@ -58,7 +59,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change reloads FAQs`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
         runCurrent()
@@ -67,7 +68,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `tapping FAQ toggles expansion and search resets it`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         val index = sut.state.value.rows.first().index
         sut.toggleFaq(index)
@@ -86,7 +87,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change discards expansion overrides`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings)
+        val sut = FaqsViewModel(settings, links)
         runCurrent()
         sut.toggleFaq(sut.state.value.rows.first().index)
         runCurrent()
@@ -98,5 +99,12 @@ class FaqsViewModelTest {
     @Test
     fun `all supported languages have the same FAQ count`() {
         AppLanguage.entries.map { faqsFor(it).size }.distinct().size shouldBe 1
+    }
+
+    @Test
+    fun `answer links open through the link service`() = runTest(dispatcher) {
+        val sut = FaqsViewModel(settings, links)
+        sut.openLink("https://example.com")
+        links.openedUrls shouldBe listOf("https://example.com")
     }
 }

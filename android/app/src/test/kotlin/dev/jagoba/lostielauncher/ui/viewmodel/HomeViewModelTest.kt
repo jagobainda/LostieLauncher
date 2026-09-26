@@ -30,6 +30,7 @@ class HomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val content = TestContentService()
     private val settings = TestSettingsStore()
+    private val links = TestExternalLinkService()
     private val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -124,8 +125,16 @@ class HomeViewModelTest {
         content.homeCalls shouldBe 3
     }
 
+    @Test
+    fun `news links open through the link service`() = runTest(dispatcher) {
+        val sut = createSut(backgroundScope)
+        sut.openLink("https://example.com")
+        links.openedUrls shouldBe listOf("https://example.com")
+        sut.viewModelScope.cancel()
+    }
+
     private fun createSut(scope: CoroutineScope): HomeViewModel {
         coordinator.start(scope, settings, HomeRefreshOptions(2.minutes))
-        return HomeViewModel(coordinator, settings)
+        return HomeViewModel(coordinator, settings, links)
     }
 }

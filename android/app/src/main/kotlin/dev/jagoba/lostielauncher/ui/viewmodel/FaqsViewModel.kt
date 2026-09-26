@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.content.FaqEntry
 import dev.jagoba.lostielauncher.content.faqsFor
 import dev.jagoba.lostielauncher.model.AppLanguage
+import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.util.text.SearchMatcher
 import javax.inject.Inject
@@ -27,7 +28,8 @@ data class FaqsUiState(
 }
 
 @HiltViewModel
-class FaqsViewModel @Inject constructor(settings: SettingsStore) : ViewModel() {
+class FaqsViewModel @Inject constructor(settings: SettingsStore, private val externalLinks: ExternalLinkService) :
+    ViewModel() {
     private val search = MutableStateFlow("")
     private val expansion = MutableStateFlow<Pair<AppLanguage?, Map<Int, Boolean>>>(null to emptyMap())
     val state: StateFlow<FaqsUiState> = combine(search, settings.settings, expansion) { term, stored, expanded ->
@@ -56,5 +58,9 @@ class FaqsViewModel @Inject constructor(settings: SettingsStore) : ViewModel() {
         val row = state.value.rows.firstOrNull { it.index == index } ?: return
         expansion.value = state.value.language to
             (expansion.value.second + (index to !row.isExpanded))
+    }
+
+    fun openLink(url: String) {
+        externalLinks.openUrl(url)
     }
 }

@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameRunningSignal
@@ -52,6 +53,7 @@ class GamesViewModelTest {
         runCurrent()
         sut.state.value.installedStateKnown shouldBe false
         sut.state.value.isEmpty shouldBe false
+        sut.state.value.isInstalledStateUnsupported shouldBe true
     }
 
     @Test
@@ -305,6 +307,33 @@ class GamesViewModelTest {
         sut.acceptMissingLocationDownload()
         sut.state.value.notice shouldBe null
         navigation.state.value.section shouldBe LauncherSection.HOME
+    }
+
+    @Test
+    fun `help that is not supported yet stays tappable and explains`() = runTest(dispatcher) {
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.games.single().canOpenHelpLocation shouldBe true
+        sut.openHelpLocation("Test Game")
+        runCurrent()
+        sut.state.value.notice shouldBe GamesNotice.NOT_SUPPORTED_YET
+        locations.help = GameHelpAvailability.NOT_FOUND
+        sut.refresh()
+        runCurrent()
+        sut.state.value.games.single().canOpenHelpLocation shouldBe false
+    }
+
+    @Test
+    fun `runtime support follows the launch seam`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.runtimeSupported shouldBe false
+        launch.current.value = GameActivityState.Active(emptySet())
+        runCurrent()
+        sut.state.value.runtimeSupported shouldBe true
     }
 
     private fun createSut() =

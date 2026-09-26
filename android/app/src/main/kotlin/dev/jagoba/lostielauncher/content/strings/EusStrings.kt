@@ -86,7 +86,7 @@ internal object EusStrings : Strings {
     override val statusVerifying = "Osotasuna egiaztatzen..."
     override val statusUninstalling = "Desinstalatzen..."
     override val statusNotSupportedYet = "Oraindik ez dago erabilgarri Androiden"
-    override val notSupportedYetMessage = "Jokoak instalatzea, jokatzea eta desinstalatzea ez dago oraindik erabilgarri Android bertsioan."
+    override val notSupportedYetMessage = "Jokoak instalatzea, jokatzea, haien karpetak irekitzea eta desinstalatzea ez dago oraindik erabilgarri Android bertsioan."
     override val locationNoHandlerTitle = "Ezin da karpeta ireki"
     override val locationNoHandlerMessage = "Gailu honetan ez dago jokoaren karpeta ireki dezakeen aplikaziorik."
     override val gameExeNotFoundTitle = "Jokoa ez da aurkitu"

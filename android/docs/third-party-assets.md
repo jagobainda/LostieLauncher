@@ -1,6 +1,6 @@
 # Third-party assets
 
-The shell's, the cards' and the dialogs' icons are the same glyphs the desktop draws through
+The shell's, the cards', the dialogs' and the screens' icons are the same glyphs the desktop draws through
 MahApps.Metro.IconPacks, converted to Android vector drawables. The path data
 is unchanged; only the container format differs.
 
@@ -41,6 +41,15 @@ is unchanged; only the container format differs.
 | `ic_dialog_open_in_new` | `open-in-new` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_database_check` | `database-check` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_close` | `window-close` | Material Design Icons | Apache-2.0 |
+| `ic_home_cloud_alert` | `cloud-alert-outline` | Material Design Icons | Apache-2.0 |
+| `ic_home_newspaper` | `newspaper-variant-outline` | Material Design Icons | Apache-2.0 |
+| `ic_home_bell_off` | `bell-off-outline` | Material Design Icons | Apache-2.0 |
+| `ic_games_gamepad` | `gamepad-variant-outline` | Material Design Icons | Apache-2.0 |
+| `ic_settings_refresh` | `refresh` | Material Design Icons | Apache-2.0 |
+| `ic_settings_palette` | `palette` | Material Design Icons | Apache-2.0 |
+| `ic_faqs_search` | `search` | Lucide | ISC |
+| `ic_faqs_clear` | `x` | Lucide | ISC |
+| `ic_faqs_search_x` | `search-x` | Lucide | ISC |
 | `ic_social_github` | `github` | [Simple Icons](https://simpleicons.org) | CC0-1.0 |
 | `ic_social_twitch` | `twitch` | Simple Icons | CC0-1.0 |
 | `ic_social_youtube` | `youtube` | Simple Icons | CC0-1.0 |

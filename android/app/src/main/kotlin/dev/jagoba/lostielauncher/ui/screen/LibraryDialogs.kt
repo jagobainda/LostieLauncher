@@ -24,6 +24,7 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
     val strings = LocalStrings.current
     val notice = state.notice
     val download = downloadConfirmState(state)
+    val requestNotifications = rememberNotificationPermissionRequest()
     when {
         notice != null -> LauncherMessageBox(
             spec = notice.messageBox(strings),
@@ -34,7 +35,10 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
         download != null -> DownloadConfirmDialog(
             state = download,
             onViewPage = viewModel::openPendingGamePage,
-            onConfirm = viewModel::confirmDownload,
+            onConfirm = { key ->
+                requestNotifications()
+                viewModel.confirmDownload(key)
+            },
             onDismiss = viewModel::dismissPrompt,
         )
 

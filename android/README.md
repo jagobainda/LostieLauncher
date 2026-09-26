@@ -32,7 +32,7 @@ authority on what the app must do is the desktop side, under
 | Download engine                       | done — resumable, observable and lifecycle-resilient    |
 | Shared components                     | done — game, news, notification, FAQ cards and skeletons |
 | Dialogs and notices                   | done — message box, download, special version, welcome   |
-| Product screens                       | not started                                             |
+| Product screens                       | done — Home, My Games, Library, FAQs and Settings        |
 | Installing and launching a game       | out of scope for now                                    |
 
 ## The stack, and why

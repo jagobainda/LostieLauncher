@@ -223,7 +223,7 @@ internal fun Caption(text: String) {
 }
 
 @Composable
-private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
     val colors = LocalLauncherColors.current
     Box(
         modifier = Modifier

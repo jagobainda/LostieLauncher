@@ -45,6 +45,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.jagoba.lostielauncher.R
@@ -168,8 +169,9 @@ internal fun DialogFooterButtons(content: @Composable RowScope.() -> Unit) {
 internal fun DialogButton(
     label: String,
     style: DialogButtonStyle,
-    width: Dp,
     onClick: () -> Unit,
+    width: Dp = Dp.Unspecified,
+    horizontalPadding: Dp = 0.dp,
     enabled: Boolean = true,
 ) {
     val colors = LocalLauncherColors.current
@@ -201,7 +203,8 @@ internal fun DialogButton(
                 enabled = enabled,
                 role = Role.Button,
                 onClick = onClick,
-            ),
+            )
+            .padding(horizontal = horizontalPadding),
         contentAlignment = Alignment.Center,
     ) {
         Text(

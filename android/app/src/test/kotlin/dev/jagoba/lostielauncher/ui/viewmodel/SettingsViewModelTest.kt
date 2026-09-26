@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.model.AppVersion
 import dev.jagoba.lostielauncher.model.Appearance
+import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test
 class SettingsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val store = FakeSettingsStore()
+    private val installation = TestInstallation()
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -105,7 +107,20 @@ class SettingsViewModelTest {
         store.current.value.autoUpdate shouldBe true
     }
 
-    private fun createSut() = SettingsViewModel(store, AppVersion("1.2.3"))
+    @Test
+    fun `auto update is unsupported until installed games can be known`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value?.autoUpdateSupported shouldBe false
+        sut.setAutoUpdate(true)
+        runCurrent()
+        sut.state.value?.autoUpdate shouldBe true
+        installation.current.value = InstalledGamesState.Available(emptyList())
+        runCurrent()
+        sut.state.value?.autoUpdateSupported shouldBe true
+    }
+
+    private fun createSut() = SettingsViewModel(store, AppVersion("1.2.3"), installation)
 
     private class FakeSettingsStore : SettingsStore {
         val current = MutableStateFlow(AppSettings())

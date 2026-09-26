@@ -87,7 +87,9 @@ card shows for anything that goes through the unimplemented install and launch
 seam (`docs/game-runtime-options.md`): the Library card's
 `INSTALLATION_UNSUPPORTED` line and the tooltip of every marked My Games
 action. `NotSupportedYetMessage` is the body of the message box that answers a
-tap on one of those actions, with `StatusNotSupportedYet` as its title. The
+tap on one of those actions, with `StatusNotSupportedYet` as its title, and
+the pair is also My Games' state while installed games cannot be known. It
+names every game action, opening a game's folders included. The
 desktop has no such state, so it has no such keys. Both go when the seam is
 implemented, in all eight languages at once.
 
@@ -103,8 +105,12 @@ Step 13 dropped the dialogs that only exist for Windows reasons (see
 `ChangeDownloadDir*`, `DownloadDirNotUsable*` with the three
 `DownloadDirStep*`, `OneDriveWarning*` and the four `ExitWarning*`. Nothing
 reads them. Removing them from all eight languages is left to step 15, together
-with `SettingsCheckForUpdates`, `SettingsDownloadDir`, `BtnBrowse` and
-`SettingsOneDriveWarning`, whose Settings rows step 14 decides.
+with `SettingsCheckForUpdates`, `SettingsDownloadDir`, `BtnBrowse`,
+`SettingsGamesStoredIn` and `SettingsOneDriveWarning`. Step 14 dropped their
+Settings rows: the "Check for updates" button went with launcher self-update,
+and the download-directory row with its path box and "games are stored in"
+line went with the folder picker (step 07 decision 3). The Settings screen
+keeps games auto-update, the version string, language and theme.
 
 ## Themes — 10 palettes, identical key sets
 
@@ -134,14 +140,15 @@ What binds:
   widths and durations are inline at each use site in its XAML. Naming them is
   allowed. Changing one is not, and a value that appears there but nowhere in
   the XAML is a bug.
-- **Two desktop spacing values are still owed a token**, because nothing on
-  this side uses them yet: **7** (`SettingsView.xaml:71`, the vertical half of
-  `10,7`, step 14) and **1** (`ScrollViewerStyle.xaml:13`, the scrollbar thumb's
-  `1,2` margin). The step that ports each one adds it to
-  `LauncherSpacing` rather than inlining the number. The third gap, **5**, is
-  `LauncherSpacing.Snug`. `spec/06-design-tokens.md` omits all three. Step 12 did not port the
-  scrollbar (see [architecture.md](architecture.md#components)), so the **1**
-  now waits for whichever step does.
+- **Two desktop spacing values have no token**, because nothing on this side
+  uses them: **7** (`SettingsView.xaml:71`, the vertical half of `10,7`) and
+  **1** (`ScrollViewerStyle.xaml:13`, the scrollbar thumb's `1,2` margin). The
+  7 belongs only to the download-directory path box, which step 14 dropped with
+  its row, and the 1 only to the scrollbar, which step 12 did not port (see
+  [architecture.md](architecture.md#components)). A step that brings either
+  back adds the token to `LauncherSpacing` rather than inlining the number. The
+  third gap, **5**, is `LauncherSpacing.Snug`. `spec/06-design-tokens.md` omits
+  all three.
 - Sizes are `dp` — WPF's device-independent pixel is 1/96 inch, the same as a
   `dp` — and **font sizes are `sp`**, which is the one deliberate divergence:
   Android scales text by the user's accessibility setting and a launcher that

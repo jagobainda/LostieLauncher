@@ -116,6 +116,18 @@ object LauncherSizes {
     val ComboBoxChevronColumn: Dp = 30.dp
     val ComboBoxChevronWidth: Dp = 8.dp
     val ComboBoxChevronHeight: Dp = 4.dp
+    val EmptyStateIcon: Dp = 48.dp
+    val EmptyStateIconSmall: Dp = 36.dp
+    val HomeBannerIcon: Dp = 22.dp
+    val HomeColumnMinWidth: Dp = 280.dp
+    val SearchBarHeight: Dp = 40.dp
+    val SearchIcon: Dp = 16.dp
+    val SearchClearButton: Dp = 24.dp
+    val SearchClearIcon: Dp = 12.dp
+    val SettingsRowIcon: Dp = 16.dp
+    val ToggleTrackWidth: Dp = 44.dp
+    val ToggleTrackHeight: Dp = 24.dp
+    val ToggleThumb: Dp = 18.dp
     const val SPINNER_DASH = 13f
     const val SPINNER_GAP = 7f
 }

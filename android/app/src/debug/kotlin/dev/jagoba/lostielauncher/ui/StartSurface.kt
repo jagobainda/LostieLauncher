@@ -22,13 +22,15 @@ import dev.jagoba.lostielauncher.ui.screen.ComponentCatalogScreen
 import dev.jagoba.lostielauncher.ui.screen.DialogCatalogScreen
 import dev.jagoba.lostielauncher.ui.screen.DownloadHarnessScreen
 import dev.jagoba.lostielauncher.ui.screen.LauncherShell
+import dev.jagoba.lostielauncher.ui.screen.ScreenCatalogScreen
 import dev.jagoba.lostielauncher.ui.screen.TokenCatalogScreen
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 
-private enum class DebugTab { DOWNLOADS, TOKENS, COMPONENTS, DIALOGS }
+private enum class DebugTab { DOWNLOADS, TOKENS, COMPONENTS, DIALOGS, SCREENS }
 
 private const val COMPONENTS_LABEL = "Components"
 private const val DIALOGS_LABEL = "Dialogs"
+private const val SCREENS_LABEL = "Screens"
 
 @Composable
 fun StartSurface(
@@ -73,6 +75,9 @@ private fun DebugTools(
             OutlinedButton(onClick = { tab = DebugTab.DIALOGS }) {
                 Text(DIALOGS_LABEL)
             }
+            OutlinedButton(onClick = { tab = DebugTab.SCREENS }) {
+                Text(SCREENS_LABEL)
+            }
         }
         Box(Modifier.fillMaxSize()) {
             when (tab) {
@@ -95,6 +100,8 @@ private fun DebugTools(
                     onThemeSelected = onThemeSelected,
                     onLanguageSelected = onLanguageSelected,
                 )
+
+                DebugTab.SCREENS -> ScreenCatalogScreen()
             }
         }
     }

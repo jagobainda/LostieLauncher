@@ -86,7 +86,7 @@ internal object GalStrings : Strings {
     override val statusVerifying = "Comprobando integridade..."
     override val statusUninstalling = "Desinstalando..."
     override val statusNotSupportedYet = "Aínda non dispoñible en Android"
-    override val notSupportedYetMessage = "Instalar, xogar e desinstalar xogos aínda non está dispoñible na versión de Android."
+    override val notSupportedYetMessage = "Instalar, xogar, abrir os seus cartafoles e desinstalar xogos aínda non está dispoñible na versión de Android."
     override val locationNoHandlerTitle = "Non se pode abrir o cartafol"
     override val locationNoHandlerMessage = "Non hai ningunha aplicación neste dispositivo que poida abrir o cartafol do xogo."
     override val gameExeNotFoundTitle = "Xogo non atopado"

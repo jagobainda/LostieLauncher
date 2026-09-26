@@ -86,7 +86,7 @@ internal object CatStrings : Strings {
     override val statusVerifying = "Comprovant integritat..."
     override val statusUninstalling = "Desinstal·lant..."
     override val statusNotSupportedYet = "Encara no disponible a Android"
-    override val notSupportedYetMessage = "Instal·lar, jugar i desinstal·lar jocs encara no està disponible a la versió d'Android."
+    override val notSupportedYetMessage = "Instal·lar, jugar, obrir les seves carpetes i desinstal·lar jocs encara no està disponible a la versió d'Android."
     override val locationNoHandlerTitle = "No es pot obrir la carpeta"
     override val locationNoHandlerMessage = "No hi ha cap aplicació en aquest dispositiu que pugui obrir la carpeta del joc."
     override val gameExeNotFoundTitle = "Joc no trobat"

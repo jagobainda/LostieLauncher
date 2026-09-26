@@ -86,7 +86,7 @@ internal object FraStrings : Strings {
     override val statusVerifying = "Vérification de l'intégrité..."
     override val statusUninstalling = "Désinstallation en cours..."
     override val statusNotSupportedYet = "Pas encore disponible sur Android"
-    override val notSupportedYetMessage = "L'installation, le lancement et la désinstallation des jeux ne sont pas encore disponibles dans la version Android."
+    override val notSupportedYetMessage = "L'installation, le lancement, l'ouverture des dossiers et la désinstallation des jeux ne sont pas encore disponibles dans la version Android."
     override val locationNoHandlerTitle = "Impossible d'ouvrir le dossier"
     override val locationNoHandlerMessage = "Aucune application de cet appareil ne peut ouvrir le dossier du jeu."
     override val gameExeNotFoundTitle = "Jeu non trouvé"

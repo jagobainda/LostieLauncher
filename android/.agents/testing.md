@@ -321,6 +321,7 @@ JVM suite must be rerun after each change rather than relying on a fixed total.
 | Desktop `LibraryViewModelTests` hash verification, extraction and directory finalization cases | Step 08 transfer tests and future step 09 installer | Transfer finalization is covered; installation and hash verification remain pending. |
 | `SettingsViewModelTests.FormatVersion_*` | `SettingsViewModelTest`, `VersionUtilsTest` | Android publishes its `BuildConfig.VERSION_NAME` with one `v` prefix. Assembly-specific four/two-component and null cases do not apply to a packaged Android version name. |
 | `SettingsViewModelTests.AutoUpdate_WhenChanged_PersistsSettings` and `GamesViewModel` initial auto-update | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | The maintainer chose the spec behavior: games auto-update is persisted, defaults off, and runs sequentially at process startup for regular outdated installations. Launcher self-update remains excluded. |
+| `GameInfoTests.DownloadSpeedText_*` (4) | `DownloadSpeedFormatterTest` | Ported with the same four values (0, 2048, exactly 1 MiB, 5 MiB). The desktop formats in the current culture and its tests read the separator from it; Android pins the invariant `.` (step 02 decision 8), and a test sets a Spanish default locale to prove it. The formatter feeds the Library card through `CardStateMappingTest`. |
 
 The Games and Library screens now share one identity rule: match non-empty IDs
 first, and use the name only when at least one side has no usable ID. A matching

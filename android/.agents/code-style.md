@@ -72,12 +72,13 @@ default formatting is accepted as-is), `max_line_length = 120`, and
   `kotlin.text` already owns and would silently win. A label written inline is
   invisible to seven of the eight languages.
 
-  There are exactly two exemptions, and they are not a precedent:
-  `src/debug/…/TokenCatalogScreen.kt` and `src/debug/…/ComponentCatalogScreen.kt`
-  write their section headings, token names and state names in English. They
+  The exemptions are the debug catalogues, and they are not a precedent:
+  `src/debug/…/TokenCatalogScreen.kt`, `ComponentCatalogScreen.kt`,
+  `DialogCatalogScreen.kt` and `ScreenCatalogScreen.kt` write their section
+  headings, token names and state names in English. They
   name types and properties a developer reads in the source —
   `LauncherSpacing.Card`, `LibraryCardStatus.PAUSED` — so translating them would
-  make the screens useless at the one job they have, and neither file is
+  make the screens useless at the one job they have, and no such file is
   compiled into a release build. The component catalogue's sample payloads
   (game titles, news and notification bodies) stand in for CDN data, which is
   never translated either; every label a component draws still comes from the

@@ -4,12 +4,6 @@ package dev.jagoba.lostielauncher.content
 
 import dev.jagoba.lostielauncher.model.AppLanguage
 
-/**
- * The six FAQ entries for [language], in the order the desktop lists them.
- *
- * The FAQ screen filters this list by a search term; it never reorders it. Like
- * [stringsFor], the `when` is exhaustive rather than defaulting to Spanish.
- */
 fun faqsFor(language: AppLanguage): List<FaqEntry> = when (language) {
     AppLanguage.ESP -> EspFaqs
     AppLanguage.ENG -> EngFaqs
@@ -28,7 +22,7 @@ private val EspFaqs = listOf(
     ),
     FaqEntry(
         "¿Dónde se instalan los juegos y cómo cambio la carpeta?",
-        "Los juegos se instalan en el directorio de descargas configurado. Puedes cambiarlo en Ajustes, en la opción Directorio de descargas. Si ya tienes juegos instalados, tendrás que moverlos manualmente a la nueva ruta.",
+        "En Android, los juegos se guardan en el almacenamiento propio del launcher y esa carpeta no se puede cambiar. Si desinstalas el launcher, los juegos descargados se borran con él.",
     ),
     FaqEntry(
         "¿Perderé mis partidas guardadas al actualizar o desinstalar un juego?",
@@ -55,7 +49,7 @@ private val EngFaqs = listOf(
     ),
     FaqEntry(
         "Where are games installed and how do I change the folder?",
-        "Games are installed in the configured download directory. You can change it in Settings, under Download directory. If you already have games installed, you will need to move them manually to the new path.",
+        "On Android, games are stored in the launcher's own storage, and that folder cannot be changed. If you uninstall the launcher, the downloaded games are removed with it.",
     ),
     FaqEntry(
         "Will I lose my saved games when updating or uninstalling a game?",
@@ -82,7 +76,7 @@ private val CatFaqs = listOf(
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvio la carpeta?",
-        "Els jocs s'instal·len al directori de descàrregues configurat. Pots canviar-lo a Configuració, a l'opció Directori de descàrregues. Si ja tens jocs instal·lats, hauràs de moure'ls manualment a la nova ruta.",
+        "A Android, els jocs es guarden a l'emmagatzematge propi del launcher i aquesta carpeta no es pot canviar. Si desinstal·les el launcher, els jocs descarregats s'esborren amb ell.",
     ),
     FaqEntry(
         "Perdré les meves partides desades en actualitzar o desinstal·lar un joc?",
@@ -109,7 +103,7 @@ private val EusFaqs = listOf(
     ),
     FaqEntry(
         "Non instalatzen dira jokoak eta nola aldatzen dut karpeta?",
-        "Jokoak konfiguratutako deskarga direktorioan instalatzen dira. Ezarpenetan alda dezakezu, Deskarga direktorioa aukeran. Dagoeneko jokoak instalatuta badituzu, eskuz mugitu beharko dituzu bide berrira.",
+        "Android-en, jokoak launcher-aren biltegiratze propioan gordetzen dira, eta karpeta hori ezin da aldatu. Launcher-a desinstalatzen baduzu, deskargatutako jokoak ere ezabatu egiten dira.",
     ),
     FaqEntry(
         "Gordetako partidak galduko ditut joko bat eguneratzean edo desinstalatzean?",
@@ -136,7 +130,7 @@ private val GalFaqs = listOf(
     ),
     FaqEntry(
         "Onde se instalan os xogos e como cambio o cartafol?",
-        "Os xogos instálanse no directorio de descargas configurado. Podes cambialo en Axustes, na opción Directorio de descargas. Se xa tes xogos instalados, terás que movelos manualmente á nova ruta.",
+        "En Android, os xogos gárdanse no almacenamento propio do launcher e ese cartafol non se pode cambiar. Se desinstalas o launcher, os xogos descargados bórranse con el.",
     ),
     FaqEntry(
         "Perderei as miñas partidas gardadas ao actualizar ou desinstalar un xogo?",
@@ -163,7 +157,7 @@ private val PorFaqs = listOf(
     ),
     FaqEntry(
         "Onde os jogos são instalados e como mudo a pasta?",
-        "Os jogos são instalados no diretório de downloads configurado. Você pode alterá-lo em Configurações, na opção Diretório de downloads. Se você já tiver jogos instalados, precisará movê-los manualmente para o novo caminho.",
+        "No Android, os jogos são salvos no armazenamento próprio do launcher e essa pasta não pode ser alterada. Se você desinstalar o launcher, os jogos baixados são removidos junto com ele.",
     ),
     FaqEntry(
         "Vou perder meus saves ao atualizar ou desinstalar um jogo?",
@@ -190,7 +184,7 @@ private val ValFaqs = listOf(
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvie la carpeta?",
-        "Els jocs s'instal·len al directori de descàrregues configurat. Pots canviar-lo a Ajustos, a l'opció Directori de descàrregues. Si ja tens jocs instal·lats, hauràs de moure'ls manualment a la nova ruta.",
+        "En Android, els jocs es guarden en l'emmagatzematge propi del launcher i eixa carpeta no es pot canviar. Si desinstal·les el launcher, els jocs descarregats s'esborren amb ell.",
     ),
     FaqEntry(
         "Perdré les meues partides guardades en actualitzar o desinstal·lar un joc?",
@@ -217,7 +211,7 @@ private val FraFaqs = listOf(
     ),
     FaqEntry(
         "Où les jeux sont-ils installés et comment changer de dossier ?",
-        "Les jeux sont installés dans le répertoire de téléchargement configuré. Vous pouvez le modifier dans Paramètres, sous Répertoire de téléchargement. Si vous avez déjà des jeux installés, vous devrez les déplacer manuellement vers le nouveau chemin.",
+        "Sur Android, les jeux sont enregistrés dans le stockage propre du launcher et ce dossier ne peut pas être modifié. Si vous désinstallez le launcher, les jeux téléchargés sont supprimés avec lui.",
     ),
     FaqEntry(
         "Vais-je perdre mes sauvegardes en mettant à jour ou en désinstallant un jeu ?",

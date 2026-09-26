@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameLaunchResult
@@ -47,7 +48,7 @@ data class InstalledGameUiState(
     val canPlay: Boolean get() = !isUpdating && !isUninstalling && (!hasUpdate || !game.type.isNullOrEmpty())
     val canUpdate: Boolean get() = !isUpdating && !isUninstalling && hasUpdate
     val canSwitchSpecialVersion: Boolean get() = !isUpdating && !isUninstalling && remote != null
-    val canOpenHelpLocation: Boolean get() = helpAvailability == GameHelpAvailability.AVAILABLE
+    val canOpenHelpLocation: Boolean get() = helpAvailability != GameHelpAvailability.NOT_FOUND
     val canOpenGameLocation: Boolean get() = !isUpdating && !isUninstalling
     val canUninstall: Boolean get() = !isUninstalling
 }
@@ -74,9 +75,11 @@ data class GamesUiState(
     val blockingLocation: GameLocationReference? = null,
     val notice: GamesNotice? = null,
     val noticeGameName: String? = null,
+    val runtimeSupported: Boolean = true,
 ) {
     val isEmpty: Boolean get() = !isLoading && installedStateKnown && games.isEmpty()
     val isListVisible: Boolean get() = !isLoading && games.isNotEmpty()
+    val isInstalledStateUnsupported: Boolean get() = !isLoading && !installedStateKnown
 }
 
 @HiltViewModel
@@ -94,6 +97,12 @@ class GamesViewModel @Inject constructor(
     val state: StateFlow<GamesUiState> = mutableState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            launch.activeSessions.collect { activity ->
+                mutableState.value =
+                    mutableState.value.copy(runtimeSupported = activity !is GameActivityState.NotSupportedYet)
+            }
+        }
         viewModelScope.launch {
             combine(
                 installation.installedGames,

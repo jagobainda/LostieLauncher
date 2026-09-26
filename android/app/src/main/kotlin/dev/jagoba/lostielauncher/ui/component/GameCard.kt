@@ -550,7 +550,7 @@ private fun ProgressLabel(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun StatusNotice(text: String) {
+internal fun StatusNotice(text: String) {
     Row(Modifier.padding(top = LauncherSpacing.Medium), verticalAlignment = Alignment.CenterVertically) {
         Icon(
             painter = painterResource(R.drawable.ic_card_not_supported),

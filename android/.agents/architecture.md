@@ -247,6 +247,66 @@ them; the pending one answers `NotSupportedYet`.
 | ✕ accessibility | No name | No content description either | The catalogue has no "close" key; step 15's accessibility pass |
 | Key field and path box on Sylveon | `TertiaryBg` equals `PrimaryBg`, so they are invisible | The same | Faithful; on step 15's contrast list |
 
+### Screens
+
+`ui/screen/` holds the desktop's `Views/Partials/`: `HomeScreen`,
+`GamesScreen`, `LibraryScreen`, `FaqsScreen` and `SettingsScreen`, each
+reading only its own ViewModel. `LauncherShell` picks one from
+`MainUiState.section` inside a `SaveableStateHolder` keyed by section, so a
+section's saveable state (list scroll, FAQ search text) survives switching away
+and back, as the desktop's persistent views keep theirs. The debug catalogue's
+Screens tab renders `HomeContent` and `GamesContent` in every state, including
+the ones a device cannot reach today (the offline banner, a My Games list).
+
+- **Pure mappings, no decisions.** `LibraryGameUiState.toCardState()` and
+  `InstalledGameUiState.toCardState()` turn ViewModel state into the card
+  contracts, and only format: `PlaytimeFormatter` and `DownloadSpeedFormatter`
+  (the desktop's `DownloadSpeedText`, invariant culture). `CardStateMappingTest`
+  pins them. Every guard and every state (empty, list, "installed state not
+  supported") comes from the ViewModel.
+- **Scrolling to a game** is `MainUiState.pendingLibraryGameId`, passed down by
+  the shell. The Library scrolls the card to the top of the list once it
+  exists, then calls `consumeLibraryGame`. `LibraryViewModel` consumes the
+  action half first, because it reacts to the state as it is emitted and the
+  screen only after the next frame.
+- **Download notifications.** On Android 13 and later, confirming a download
+  and starting an update ask for `POST_NOTIFICATIONS` if it is not granted
+  (`rememberNotificationPermissionRequest`). The transfer starts at once
+  whatever the answer, and the progress notification appears once it is
+  granted. A resume never asks, because it follows a start. An update started
+  from My Games or by auto-update does not ask either.
+- **"Not supported yet" is a state here too.** While `installedGames` is
+  `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
+  `NotSupportedYetMessage` with the Library button, not an empty list and not a
+  blank screen. `GamesUiState.runtimeSupported` follows
+  `GameLaunchService.activeSessions` and marks the card actions. A help folder
+  whose availability is `NOT_SUPPORTED_YET` stays visible and tappable, so the
+  tap answers with the notice.
+- **Settings** keeps games auto-update, the version string, language and theme.
+  Start with Windows and start minimized went in step 07, "Check for updates"
+  with launcher self-update, and the download-directory row with the folder
+  picker. The keys go in step 15. Auto-update can only act on installed games,
+  so while `installedGames` is `NotSupportedYet` its row carries the amber
+  `StatusNotSupportedYet` line (`SettingsUiState.autoUpdateSupported`). The
+  switch still toggles and persists `games.autoUpdate`, so the preference is
+  kept for the day the seam is implemented.
+
+#### Where the screens differ from the desktop
+
+| Area | Desktop | Android | Why |
+| --- | --- | --- | --- |
+| Home columns | Two equal columns, each scrolling on its own, 20 px apart | The same while each column keeps `LauncherSizes.HomeColumnMinWidth` (280 dp, Android only); below that one list, news then notifications, with the banner scrolling at its top | A phone in portrait cannot hold two readable columns; a tablet and a landscape phone keep the desktop layout |
+| Card margins | 10 px inside every card and skeleton | 10 dp under every item, by the screen | Compose components carry no outer margin (see the cards' table) |
+| Settings rows | Only the switch toggles | The whole auto-update row toggles, with `Role.Switch` | A 44 × 24 switch is a small target, and a settings row that toggles is the Android convention |
+| Settings row layout | Label and control overlap in one grid cell | The label takes the remaining width beside the control | A narrow screen would otherwise draw the label under the combo box |
+| FAQ search | Text box in the view; caret `SecondaryFg` | The same, plus Search on the keyboard closes it | A soft keyboard needs a way out |
+| Library scroll | `BringIntoView`: the minimum scroll | `scrollToItem`: the card at the top of the list | No minimal-scroll API on `LazyListState`; still instant, as the desktop is |
+| Search bar and key field on Sylveon | `TertiaryBg` equals `PrimaryBg`, so they are invisible | The same | Faithful; on step 15's contrast list |
+| Scrollbar | 8 px custom scrollbar on every list | None | See the cards' table |
+| Auto-update row | A plain switch | The same switch, plus the amber `StatusNotSupportedYet` line while installed games cannot be known | Updating installed games depends on the pending seam; a switch that silently does nothing is what the port must avoid |
+| FAQ "where are games installed" | Games go to the configured download directory, changeable in Settings | Games live in the launcher's own storage, the folder cannot be changed, and uninstalling the launcher removes them, in all eight languages | The download-directory setting does not exist on Android (step 07 decision 3); `FaqsTest` fails if an answer names it again |
+| `INSTALLATION_FAILED` retry | The card resets to Available after the dialog | No start action yet | Unreachable while the installer is pending; how a failed installation is retried is `TODO-ANDROID-GAME-RUNTIME-08` |
+
 ## Dependency injection
 
 - Hilt, with every binding a **singleton in `SingletonComponent`** and resolved

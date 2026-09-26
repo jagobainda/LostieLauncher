@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -57,6 +58,7 @@ fun LauncherShell(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showDebug by rememberSaveable { mutableStateOf(false) }
+    val sections = rememberSaveableStateHolder()
 
     BackHandler(enabled = state.canNavigateBack, onBack = viewModel::navigateBack)
     BackHandler(enabled = showDebug) { showDebug = false }
@@ -74,7 +76,19 @@ fun LauncherShell(
         },
         modifier = modifier,
     ) {
-        if (showDebug) debugContent() else SectionPlaceholder(title = state.title)
+        if (showDebug) {
+            debugContent()
+        } else {
+            sections.SaveableStateProvider(state.section.name) {
+                when (state.section) {
+                    LauncherSection.HOME -> HomeScreen()
+                    LauncherSection.GAMES -> GamesScreen()
+                    LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
+                    LauncherSection.FAQS -> FaqsScreen()
+                    LauncherSection.SETTINGS -> SettingsScreen()
+                }
+            }
+        }
     }
 
     LibraryDialogs()
