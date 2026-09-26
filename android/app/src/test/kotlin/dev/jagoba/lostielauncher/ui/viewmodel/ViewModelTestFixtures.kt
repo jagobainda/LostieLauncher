@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.model.Appearance
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
+import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import dev.jagoba.lostielauncher.model.ExternalLink
@@ -131,6 +132,10 @@ internal class TestDownloads : DownloadManager {
         purged += knownGameIds
         return 0
     }
+
+    var destination = DownloadDestination("/games/downloads", 64L * 1024 * 1024 * 1024)
+
+    override suspend fun destination(): DownloadDestination = destination
 }
 
 internal class TestInstallation : GameInstallationService {
@@ -142,8 +147,10 @@ internal class TestInstallation : GameInstallationService {
     override suspend fun install(request: GameInstallationRequest): GameInstallationResult =
         GameInstallationResult.NotSupportedYet
 
-    override fun observeInstallation(gameId: String): Flow<GameInstallationState> =
+    var installation: Flow<GameInstallationState> =
         flowOf(GameInstallationState.Finished(GameInstallationResult.NotSupportedYet))
+
+    override fun observeInstallation(gameId: String): Flow<GameInstallationState> = installation
 
     override suspend fun uninstall(game: GameTarget): GameUninstallResult {
         uninstalls++
@@ -214,8 +221,15 @@ internal class TestExternalLinkService : ExternalLinkService {
     val opened = mutableListOf<ExternalLink>()
     var result = ExternalLinkResult.OPENED
 
+    val openedUrls = mutableListOf<String>()
+
     override fun open(link: ExternalLink): ExternalLinkResult {
         opened += link
+        return result
+    }
+
+    override fun openUrl(url: String): ExternalLinkResult {
+        openedUrls += url
         return result
     }
 }

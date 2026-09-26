@@ -92,6 +92,9 @@ interface Strings {
     val statusVerifying: String
     val statusUninstalling: String
     val statusNotSupportedYet: String
+    val notSupportedYetMessage: String
+    val locationNoHandlerTitle: String
+    val locationNoHandlerMessage: String
     val gameExeNotFoundTitle: String
     val gameExeNotFoundMessage: String
     val hashMismatchTitle: String

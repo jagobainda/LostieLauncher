@@ -1,6 +1,6 @@
 # Third-party assets
 
-The shell's and the cards' icons are the same glyphs the desktop draws through
+The shell's, the cards' and the dialogs' icons are the same glyphs the desktop draws through
 MahApps.Metro.IconPacks, converted to Android vector drawables. The path data
 is unchanged; only the container format differs.
 
@@ -31,6 +31,16 @@ is unchanged; only the container format differs.
 | `ic_card_folder_open` | `folder-open` | Material Design Icons | Apache-2.0 |
 | `ic_card_trash` | `trash-can-outline` | Material Design Icons | Apache-2.0 |
 | `ic_card_not_supported` (Android only) | `alert-circle-outline` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_information` | `information` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_alert` | `alert` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_key` | `key` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_party_popper` | `party-popper` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_gamepad` | `gamepad` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_translate` | `translate` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_github` | `github` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_open_in_new` | `open-in-new` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_database_check` | `database-check` | Material Design Icons | Apache-2.0 |
+| `ic_dialog_close` | `window-close` | Material Design Icons | Apache-2.0 |
 | `ic_social_github` | `github` | [Simple Icons](https://simpleicons.org) | CC0-1.0 |
 | `ic_social_twitch` | `twitch` | Simple Icons | CC0-1.0 |
 | `ic_social_youtube` | `youtube` | Simple Icons | CC0-1.0 |

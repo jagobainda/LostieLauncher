@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
+import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import dev.jagoba.lostielauncher.model.DownloadStatus
@@ -20,6 +21,7 @@ import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
+import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
@@ -69,6 +71,10 @@ enum class LibraryNotice {
     DOWNLOAD_BUSY,
     DOWNLOAD_INVALID,
     DOWNLOAD_NOT_FOUND,
+    DOWNLOAD_FAILED,
+    DOWNLOAD_PERMISSION_DENIED,
+    INSTALLATION_HASH_MISMATCH,
+    INSTALLATION_FAILED,
     SPECIAL_KEY_INVALID,
     SPECIAL_KEY_NOT_FOUND,
     SPECIAL_DOWNLOAD_ERROR,
@@ -110,16 +116,20 @@ data class LibraryUiState(
     val isLoading: Boolean = true,
     val games: List<LibraryGameUiState> = emptyList(),
     val pendingDownloadGameId: String? = null,
+    val downloadDestination: DownloadDestination? = null,
     val pendingCancelGameId: String? = null,
     val pendingSpecialGameId: String? = null,
     val notice: LibraryNotice? = null,
 ) {
+    val pendingDownloadGame: GameInfo?
+        get() = pendingDownloadGameId?.let { id -> games.firstOrNull { it.game.gameId == id }?.game }
     val isEmpty: Boolean get() = !isLoading && games.isEmpty()
     val isListVisible: Boolean get() = !isLoading && games.isNotEmpty()
 }
 
 private data class LibraryTransient(
     val pendingDownloadGameId: String? = null,
+    val downloadDestination: DownloadDestination? = null,
     val pendingCancelGameId: String? = null,
     val pendingSpecialGameId: String? = null,
     val notice: LibraryNotice? = null,
@@ -135,6 +145,7 @@ class LibraryViewModel @Inject constructor(
     private val content: ContentService,
     private val specialVersions: SpecialVersionService,
     private val navigation: NavigationStore,
+    private val externalLinks: ExternalLinkService,
 ) : ViewModel() {
     private val transient = MutableStateFlow(LibraryTransient())
     private val playtimes = MutableStateFlow<Map<UUID, Int>>(emptyMap())
@@ -197,6 +208,7 @@ class LibraryViewModel @Inject constructor(
         base.copy(
             games = base.games.map { row -> row.copy(playtimeMinutes = row.game.id?.let(times::get) ?: 0) },
             pendingDownloadGameId = transient.pendingDownloadGameId,
+            downloadDestination = transient.downloadDestination,
             pendingCancelGameId = transient.pendingCancelGameId,
             pendingSpecialGameId = transient.pendingSpecialGameId,
             notice = transient.notice,
@@ -204,6 +216,28 @@ class LibraryViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryUiState())
 
     init {
+        viewModelScope.launch {
+            var previous = emptyMap<String, DownloadStatus>()
+            downloads.downloads.collect { rows ->
+                val notice = rows.firstNotNullOfOrNull { row ->
+                    row.status.failureNotice()?.takeIf { previous[row.gameId] in ACTIVE_STATUSES }
+                }
+                previous = rows.associate { it.gameId to it.status }
+                if (notice != null) transient.value = transient.value.copy(notice = notice)
+            }
+        }
+        viewModelScope.launch {
+            var previous: Map<String, GameInstallationState>? = null
+            installationStates.collect { phases ->
+                val before = previous
+                previous = phases
+                if (before == null) return@collect
+                val notice = phases.entries.firstNotNullOfOrNull { (gameId, phase) ->
+                    phase.failureNotice()?.takeIf { before[gameId] != phase }
+                }
+                if (notice != null) transient.value = transient.value.copy(notice = notice)
+            }
+        }
         viewModelScope.launch {
             coordinator.gamesRevision.collect {
                 playtimes.value = library.getPlaytimes()
@@ -242,14 +276,18 @@ class LibraryViewModel @Inject constructor(
             if (row.download?.status == DownloadStatus.PAUSED) {
                 record(downloads.resume(gameId))
             } else {
-                transient.value = transient.value.copy(pendingDownloadGameId = gameId, notice = null)
+                transient.value = transient.value.copy(
+                    pendingDownloadGameId = gameId,
+                    downloadDestination = downloads.destination(),
+                    notice = null,
+                )
             }
         }
     }
 
     fun confirmDownload(key: String? = null) {
         val gameId = transient.value.pendingDownloadGameId ?: return
-        transient.value = transient.value.copy(pendingDownloadGameId = null)
+        transient.value = transient.value.copy(pendingDownloadGameId = null, downloadDestination = null)
         val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
         viewModelScope.launch {
             val trimmedKey = key?.trim().orEmpty()
@@ -259,6 +297,10 @@ class LibraryViewModel @Inject constructor(
                 startSpecialVersion(game, trimmedKey)
             }
         }
+    }
+
+    fun openPendingGamePage() {
+        state.value.pendingDownloadGame?.pageUrl?.takeIf(String::isNotBlank)?.let(externalLinks::openUrl)
     }
 
     fun startUpdate(gameId: String) {
@@ -373,5 +415,28 @@ class LibraryViewModel @Inject constructor(
             DownloadCommandResult.INVALID_STATE -> LibraryNotice.DOWNLOAD_INVALID
         }
         transient.value = transient.value.copy(notice = notice)
+    }
+
+    private companion object {
+        val ACTIVE_STATUSES = setOf(DownloadStatus.QUEUED, DownloadStatus.DOWNLOADING)
+
+        fun GameInstallationState.failureNotice(): LibraryNotice? =
+            when ((this as? GameInstallationState.Finished)?.result) {
+                GameInstallationResult.InvalidHash, GameInstallationResult.HashMismatch ->
+                    LibraryNotice.INSTALLATION_HASH_MISMATCH
+
+                GameInstallationResult.MissingArchive,
+                GameInstallationResult.ExtractionFailed,
+                GameInstallationResult.RegistryFailed,
+                -> LibraryNotice.INSTALLATION_FAILED
+
+                else -> null
+            }
+
+        fun DownloadStatus.failureNotice(): LibraryNotice? = when (this) {
+            DownloadStatus.FAILED -> LibraryNotice.DOWNLOAD_FAILED
+            DownloadStatus.PERMISSION_DENIED -> LibraryNotice.DOWNLOAD_PERMISSION_DENIED
+            else -> null
+        }
     }
 }

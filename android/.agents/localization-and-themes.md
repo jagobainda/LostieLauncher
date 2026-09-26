@@ -25,7 +25,7 @@ itself reads before any Kotlin runs, and says so.
 
 | Thing | Where |
 | --- | --- |
-| The 115 keys | `content/Strings.kt` — the `Strings` interface |
+| The 118 keys | `content/Strings.kt` — the `Strings` interface |
 | The eight implementations | `content/strings/<Lang>Strings.kt`, one `object` each |
 | Resolving one | `stringsFor(language)`, exhaustive over `AppLanguage` |
 | The 6 FAQ entries × 8 | `content/Faqs.kt`, resolved with `faqsFor(language)` |
@@ -42,14 +42,14 @@ What binds:
   `ExternalLink.brandName`, not in a composable.
 - **A new string means the key and all eight translations.** English left in
   the other seven is a review rejection. It is also a compile error: `Strings`
-  is an interface with 115 abstract properties and eight `object`s implementing
+  is an interface with 118 abstract properties and eight `object`s implementing
   it, which is exactly the desktop's guarantee and the reason the catalogue is
   900 lines of `override val` rather than a map.
 - **Placeholders keep the same count and order in all eight languages.** Eight
   keys carry one, they use the desktop's `{0}` syntax, and the arguments are
   positional — a translation that swapped `{0}` and `{1}` would put a filesystem
   path where a game name belongs, in one language only. `StringsTest` asserts
-  no drift across all 115 × 8.
+  no drift across all 118 × 8.
 - **Substitution is `String.withArgs`, and the name is load-bearing.**
   `kotlin.text` declares `String.format(vararg Any?)` and is default-imported,
   so an extension called `format` here would not shadow it — it would *lose* to
@@ -80,14 +80,31 @@ its persisted field — half-removing one is the failure mode to avoid, and
 That is the whole list. Every other key was ported, including ones whose screen
 does not exist yet.
 
-### One key this side has and the desktop does not
+### Four keys this side has and the desktop does not
 
 `StatusNotSupportedYet` ("Not available on Android yet") is the text the game
 card shows for anything that goes through the unimplemented install and launch
 seam (`docs/game-runtime-options.md`): the Library card's
 `INSTALLATION_UNSUPPORTED` line and the tooltip of every marked My Games
-action. The desktop has no such state, so it has no such key. It goes when the
-seam is implemented, in all eight languages at once.
+action. `NotSupportedYetMessage` is the body of the message box that answers a
+tap on one of those actions, with `StatusNotSupportedYet` as its title. The
+desktop has no such state, so it has no such keys. Both go when the seam is
+implemented, in all eight languages at once.
+
+`LocationNoHandlerTitle` and `LocationNoHandlerMessage` answer
+`OpenGameLocationResult.NoHandler`: Android can have no app that opens a
+folder, which Explorer never lacks. `StringsTest` asserts all four by name.
+
+### Keys kept although their dialog is gone
+
+Step 13 dropped the dialogs that only exist for Windows reasons (see
+[architecture.md](architecture.md#dialogs)), but kept their keys:
+`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`, `UpdateAvailable*`,
+`ChangeDownloadDir*`, `DownloadDirNotUsable*` with the three
+`DownloadDirStep*`, `OneDriveWarning*` and the four `ExitWarning*`. Nothing
+reads them. Removing them from all eight languages is left to step 15, together
+with `SettingsCheckForUpdates`, `SettingsDownloadDir`, `BtnBrowse` and
+`SettingsOneDriveWarning`, whose Settings rows step 14 decides.
 
 ## Themes — 10 palettes, identical key sets
 

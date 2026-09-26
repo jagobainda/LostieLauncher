@@ -23,7 +23,7 @@ authority on what the app must do is the desktop side, under
 | CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
 | Dependency injection graph            | started — `core/di/`, persistence and network modules   |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 115 keys and 6 FAQs, in eight languages          |
+| Text catalogue                        | done — 118 keys and 6 FAQs, in eight languages          |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
@@ -31,6 +31,7 @@ authority on what the app must do is the desktop side, under
 | Pure decision utilities               | done — ported with their desktop test cases             |
 | Download engine                       | done — resumable, observable and lifecycle-resilient    |
 | Shared components                     | done — game, news, notification, FAQ cards and skeletons |
+| Dialogs and notices                   | done — message box, download, special version, welcome   |
 | Product screens                       | not started                                             |
 | Installing and launching a game       | out of scope for now                                    |
 
@@ -150,7 +151,7 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 115
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 118
 string keys and six FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.

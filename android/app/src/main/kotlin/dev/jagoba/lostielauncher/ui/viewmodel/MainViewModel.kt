@@ -30,6 +30,7 @@ data class MainUiState(
     val canRefresh: Boolean = false,
     val pendingLibraryGameId: String? = null,
     val externalLinkNotice: ExternalLinkNotice? = null,
+    val isWelcomeVisible: Boolean = false,
 ) {
     val contextLinks: List<ExternalLink> get() = contextLinksFor(section)
     val canNavigateBack: Boolean get() = section != LauncherSection.HOME
@@ -52,6 +53,7 @@ class MainViewModel @Inject constructor(
     private val externalLinks: ExternalLinkService,
 ) : ViewModel() {
     private val linkNotice = MutableStateFlow<ExternalLinkNotice?>(null)
+    private val welcome = MutableStateFlow(false)
     private val shell = combine(
         navigation.state,
         settings.settings,
@@ -80,14 +82,29 @@ class MainViewModel @Inject constructor(
         coordinator.isRefreshing,
         downloads.downloads,
         linkNotice,
-    ) { shell, refreshing, rows, notice ->
+        welcome,
+    ) { shell, refreshing, rows, notice, welcomeVisible ->
         val downloading = rows.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING }
         shell.copy(
             isRefreshing = refreshing,
             canRefresh = shell.canRefresh && !refreshing && !downloading,
             externalLinkNotice = notice,
+            isWelcomeVisible = welcomeVisible,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
+
+    init {
+        viewModelScope.launch {
+            if (settings.settings.first().hasSeenWelcome) return@launch
+            navigation.navigate(LauncherSection.LIBRARY)
+            settings.setHasSeenWelcome(true)
+            welcome.value = true
+        }
+    }
+
+    fun dismissWelcome() {
+        welcome.value = false
+    }
 
     fun navigate(section: LauncherSection) {
         navigation.navigate(section)

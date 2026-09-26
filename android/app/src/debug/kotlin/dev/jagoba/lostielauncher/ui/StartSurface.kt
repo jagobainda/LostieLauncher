@@ -2,7 +2,7 @@ package dev.jagoba.lostielauncher.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,14 +19,16 @@ import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.ui.screen.ComponentCatalogScreen
+import dev.jagoba.lostielauncher.ui.screen.DialogCatalogScreen
 import dev.jagoba.lostielauncher.ui.screen.DownloadHarnessScreen
 import dev.jagoba.lostielauncher.ui.screen.LauncherShell
 import dev.jagoba.lostielauncher.ui.screen.TokenCatalogScreen
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 
-private enum class DebugTab { DOWNLOADS, TOKENS, COMPONENTS }
+private enum class DebugTab { DOWNLOADS, TOKENS, COMPONENTS, DIALOGS }
 
 private const val COMPONENTS_LABEL = "Components"
+private const val DIALOGS_LABEL = "Dialogs"
 
 @Composable
 fun StartSurface(
@@ -36,6 +38,7 @@ fun StartSurface(
     modifier: Modifier = Modifier,
 ) {
     LauncherShell(
+        onLanguageSelected = onLanguageSelected,
         modifier = modifier,
         debugIcon = painterResource(R.drawable.ic_debug_tools),
         debugContent = {
@@ -53,7 +56,7 @@ private fun DebugTools(
     val strings = LocalStrings.current
     var tab by rememberSaveable { mutableStateOf(DebugTab.DOWNLOADS) }
     Column(Modifier.fillMaxSize()) {
-        Row(
+        FlowRow(
             Modifier
                 .fillMaxWidth()
                 .padding(LauncherSpacing.Medium),
@@ -67,6 +70,9 @@ private fun DebugTools(
             OutlinedButton(onClick = { tab = DebugTab.COMPONENTS }) {
                 Text(COMPONENTS_LABEL)
             }
+            OutlinedButton(onClick = { tab = DebugTab.DIALOGS }) {
+                Text(DIALOGS_LABEL)
+            }
         }
         Box(Modifier.fillMaxSize()) {
             when (tab) {
@@ -79,6 +85,12 @@ private fun DebugTools(
                 )
 
                 DebugTab.COMPONENTS -> ComponentCatalogScreen(
+                    theme = theme,
+                    onThemeSelected = onThemeSelected,
+                    onLanguageSelected = onLanguageSelected,
+                )
+
+                DebugTab.DIALOGS -> DialogCatalogScreen(
                     theme = theme,
                     onThemeSelected = onThemeSelected,
                     onLanguageSelected = onLanguageSelected,

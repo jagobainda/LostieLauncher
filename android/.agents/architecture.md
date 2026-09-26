@@ -167,6 +167,86 @@ followed.
 | Touch target | 32 px buttons | 32 dp buttons, below Android's 48 dp minimum | Kept for fidelity; step 15's accessibility pass decides |
 | Scrollbar | Custom 8 px trough and thumb on every list | Not ported | A permanent trough on a touch list fights the platform's own scroll indicator. The screens that own the lists decide, and the 1 dp spacing token waits for them |
 
+### Dialogs
+
+`ui/dialog/` holds the desktop's `Views/Dialogs/`: `LauncherMessageBox` (the
+generic box, driven by a `MessageBoxSpec` of title, message, `OK` or `YES_NO`,
+and the `UPDATE`, `INFORMATION` or `ERROR` glyph), `DownloadConfirmDialog`,
+`SpecialVersionDialog` and `WelcomeDialog`, all on one frame, `LauncherDialog`:
+50 dp title bar, body, 60 dp footer, `primaryBg` with a 1 dp `primaryFg` border.
+They are Compose `Dialog`s with the launcher's own look, never the system's,
+and they know no ViewModel. `LauncherComboBox` (`ui/component/`) is the
+desktop's `SettingsComboBoxStyle`; the welcome dialog uses it and Settings will.
+The debug catalogue's Dialogs tab opens every dialog and every message box the
+app can raise.
+
+- **The notice seam is state, not a callback.** The desktop's services raise
+  dialogs through `IUpdateNotifier` and `IDownloadLocationNotifier`; both exist
+  for Windows-only features and are gone. Here services return outcomes,
+  ViewModels turn them into notice enums and pending prompts in their state,
+  and the hosts in `ui/screen/` (`LibraryDialogs`, `GamesDialogs`) map that
+  state to a dialog through pure functions (`LibraryNotice.messageBox`,
+  `gamesMessage`, `downloadConfirmState`), tested in `DialogMessagesTest`. Each
+  host shows one dialog at a time, a notice before a prompt. The two hosts are
+  independent, so a Library notice and a My Games prompt can stack, as two
+  desktop modals raised by different ViewModels would.
+- **The hosts are always composed.** `LauncherShell` places both, and the
+  welcome, beside the section content, so a notice raised while another
+  section is on screen (a download that fails while the user is on Home) shows
+  wherever the user is, as the desktop's modal does.
+- **A failed transfer is a transition.** `LibraryViewModel` raises
+  `DOWNLOAD_FAILED` or `DOWNLOAD_PERMISSION_DENIED` when a row goes from
+  `QUEUED`/`DOWNLOADING` to `FAILED`/`PERMISSION_DENIED`. A row that was
+  already failed when the ViewModel started raises nothing, so a failure
+  while the process was dead is not reported on the next launch. The
+  installation follows the same rule: when a game's `observeInstallation`
+  changes to `InvalidHash` or `HashMismatch` it raises
+  `INSTALLATION_HASH_MISMATCH` (`HashMismatch*`), and to `MissingArchive`,
+  `ExtractionFailed` or `RegistryFailed` it raises `INSTALLATION_FAILED`
+  (`DownloadError*`), the desktop's two messages for a failed install. A dropped
+  connection does not reach `FAILED` at all: WorkManager's network constraint
+  stops the worker and reschedules it.
+- **Rotation and process death.** What is open lives in the activity-scoped
+  ViewModels, so it survives rotation. The text of a key field is
+  `rememberSaveable`. Back is the desktop's Escape: No on a yes/no box, no
+  result on an OK box, cancel on the others.
+- **First run.** `MainViewModel` reads the settings once. If the welcome has
+  not been seen, it navigates to Library, persists the flag and then shows the
+  dialog, in the desktop's order, so the welcome never shows twice.
+
+**Dropped, because they exist only for Windows reasons.** Launcher
+self-update (`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`,
+`UpdateAvailable*`, `spec/10` 5), the download folder (`ChangeDownloadDir*`,
+`DownloadDirNotUsable*`, step 07 decision 3), `OneDriveWarning*` (`spec/10` 9),
+the exit warning (`ExitWarning*`: back from Home backgrounds the task and a
+transfer keeps running in WorkManager) and the English pre-startup fatal
+error (the system's crash dialog covers it). Their keys are still in the
+catalogue; see [localization-and-themes.md](localization-and-themes.md).
+
+**Android-only outcomes and their text.** `DOWNLOAD_BUSY`, `DOWNLOAD_INVALID`
+and `DOWNLOAD_NOT_FOUND` show `DownloadError*`. `LAUNCH_FAILED` shows
+`GameExeNotFound*`. `NOT_SUPPORTED_YET` shows `StatusNotSupportedYet` over
+`NotSupportedYetMessage`. `LOCATION_NO_HANDLER` shows `LocationNoHandler*`. A
+failed external link stays silent, as on the desktop. The installation
+failures only reach the user once an installer behind `service/game/` reports
+them; the pending one answers `NotSupportedYet`.
+
+#### Where the dialogs differ from the desktop
+
+| Area | Desktop | Android | Why |
+| --- | --- | --- | --- |
+| Size | Fixed windows (420, 480 × 420, 440 × 250, 480 × 500); the message box 220 to 560 tall | The desktop width, capped at the screen minus 16 dp a side; the heights capped to the screen, with the body scrolling | A phone is narrower than every dialog |
+| Chrome | Draggable title bar, ✕ hovering to `#E81123` | ✕ kept, `#E81123` on hover and press; no drag | There is no window to move |
+| Keyboard | Enter confirms, Escape cancels, Y and N answer | Back cancels; the key fields confirm on the keyboard's Done | `spec/10` 13 |
+| Scrim | None: the dialog is a separate window over its owner | The platform's dim behind the dialog | On touch, a modal with no scrim reads as part of the page underneath |
+| Owner and topmost | Topmost when the main window is hidden in the tray | The state waits in the ViewModel and shows when the activity is visible | There is no window to raise over others; nothing is lost |
+| Download path | The game's install directory | `gamesRoot/downloads`, where the archive lands | Where a game gets installed is `TODO-ANDROID-GAME-RUNTIME-07`; the label already says "download path" |
+| Free space | The path's drive, em dash when it cannot be read | `usableSpace` of the nearest existing ancestor, em dash when unreadable, same formatting (`FreeSpaceFormatter`) | App-specific storage has a queryable volume, which settles `spec/10` 10 |
+| Download logo | The image as soon as the URL is valid | The Pokéball until it loads, as on the cards | See the cards' table |
+| Path tooltip | Hover | Long press | Step 11 decision 4 |
+| ✕ accessibility | No name | No content description either | The catalogue has no "close" key; step 15's accessibility pass |
+| Key field and path box on Sylveon | `TertiaryBg` equals `PrimaryBg`, so they are invisible | The same | Faithful; on step 15's contrast list |
+
 ## Dependency injection
 
 - Hilt, with every binding a **singleton in `SingletonComponent`** and resolved

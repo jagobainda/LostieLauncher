@@ -13,5 +13,5 @@ fun StartSurface(
     onLanguageSelected: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LauncherShell(modifier = modifier)
+    LauncherShell(onLanguageSelected = onLanguageSelected, modifier = modifier)
 }

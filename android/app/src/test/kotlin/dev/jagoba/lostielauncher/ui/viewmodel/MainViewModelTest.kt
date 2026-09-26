@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.model.AppLanguage
+import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
@@ -27,7 +28,7 @@ class MainViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val content = TestContentService()
     private val downloads = TestDownloads()
-    private val settings = TestSettingsStore()
+    private val settings = TestSettingsStore().apply { current.value = AppSettings(hasSeenWelcome = true) }
     private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
     private val navigation = NavigationStore()
     private val externalLinks = TestExternalLinkService()
@@ -170,6 +171,27 @@ class MainViewModelTest {
         runCurrent()
         sut.state.value.isRefreshing shouldBe false
         sut.state.value.canRefresh shouldBe true
+    }
+
+    @Test
+    fun `first run opens the library, persists the flag and shows the welcome once`() = runTest(dispatcher) {
+        settings.current.value = AppSettings(hasSeenWelcome = false)
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.section shouldBe LauncherSection.LIBRARY
+        sut.state.value.isWelcomeVisible shouldBe true
+        settings.current.value.hasSeenWelcome shouldBe true
+        sut.dismissWelcome()
+        runCurrent()
+        sut.state.value.isWelcomeVisible shouldBe false
+    }
+
+    @Test
+    fun `a returning user sees no welcome and stays on home`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.isWelcomeVisible shouldBe false
+        sut.state.value.section shouldBe LauncherSection.HOME
     }
 
     private fun createSut() = MainViewModel(navigation, coordinator, settings, downloads, externalLinks)

@@ -21,6 +21,8 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -40,6 +42,7 @@ class LibraryViewModelTest {
     private val special = TestSpecialVersionService()
     private val navigation = NavigationStore()
     private val settings = TestSettingsStore()
+    private val externalLinks = TestExternalLinkService()
     private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -334,8 +337,106 @@ class LibraryViewModelTest {
         navigation.state.value.libraryAction shouldBe null
     }
 
+    @Test
+    fun `a transfer that fails or is denied raises its notice once`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.FAILED))
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.DOWNLOAD_FAILED
+        sut.clearNotice()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.FAILED).copy(percent = 51.0))
+        runCurrent()
+        sut.state.value.notice shouldBe null
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.QUEUED))
+        runCurrent()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.PERMISSION_DENIED))
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.DOWNLOAD_PERMISSION_DENIED
+    }
+
+    @Test
+    fun `a transfer that had already failed before the screen existed raises nothing`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.FAILED))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.state.value.notice shouldBe null
+    }
+
+    @Test
+    fun `download prompt carries the destination and the game page`() = runTest(dispatcher) {
+        val remote = testGame().copy(pageUrl = "https://example.com/game")
+        content.games = listOf(remote)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.state.value.pendingDownloadGame shouldBe remote
+        sut.state.value.downloadDestination shouldBe downloads.destination
+        sut.openPendingGamePage()
+        externalLinks.openedUrls shouldBe listOf("https://example.com/game")
+        sut.dismissPrompt()
+        runCurrent()
+        sut.state.value.pendingDownloadGame shouldBe null
+        sut.state.value.downloadDestination shouldBe null
+    }
+
+    @Test
+    fun `an installation that turns into a failure raises its notice`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val phase = MutableStateFlow<GameInstallationState>(GameInstallationState.VerifyingIntegrity)
+        installation.installation = phase
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.state.value.notice shouldBe null
+        phase.value = GameInstallationState.Finished(GameInstallationResult.HashMismatch)
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.INSTALLATION_HASH_MISMATCH
+    }
+
+    @Test
+    fun `a transfer that completes into a failed installation raises the installation notice`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.installation = flowOf(GameInstallationState.Finished(GameInstallationResult.ExtractionFailed))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.INSTALLATION_FAILED
+    }
+
+    @Test
+    fun `an installation that had already failed before the screen existed raises nothing`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.installation = flowOf(GameInstallationState.Finished(GameInstallationResult.InvalidHash))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.state.value.notice shouldBe null
+        sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_FAILED
+    }
+
     private fun createSut(scope: CoroutineScope): LibraryViewModel {
         coordinator.start(scope, settings, HomeRefreshOptions(2.minutes))
-        return LibraryViewModel(coordinator, downloads, installation, library, content, special, navigation)
+        return LibraryViewModel(
+            coordinator,
+            downloads,
+            installation,
+            library,
+            content,
+            special,
+            navigation,
+            externalLinks,
+        )
     }
 }

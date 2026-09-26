@@ -1,6 +1,8 @@
 package dev.jagoba.lostielauncher.service.download
 
+import android.annotation.SuppressLint
 import dev.jagoba.lostielauncher.model.DownloadCacheEntry
+import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadTransferOptions
 import dev.jagoba.lostielauncher.model.GameDownloadArgs
 import dev.jagoba.lostielauncher.service.storage.StorageLocations
@@ -21,6 +23,8 @@ internal interface DownloadFileStore {
     fun hasArtifacts(destinationPath: String): Boolean
 
     fun hasResumablePartial(destinationPath: String): Boolean
+
+    fun destination(): DownloadDestination
 }
 
 @Singleton
@@ -32,6 +36,14 @@ internal class DefaultDownloadFileStore @Inject constructor(
 
     override fun destinationFor(args: GameDownloadArgs): File =
         File(downloadsDirectory, DownloadPathUtils.getZipFileName(args))
+
+    @SuppressLint("UsableSpace")
+    override fun destination(): DownloadDestination {
+        val freeBytes = runCatching {
+            generateSequence(downloadsDirectory, File::getParentFile).firstOrNull(File::exists)?.usableSpace
+        }.getOrNull()?.takeIf { it > 0 }
+        return DownloadDestination(downloadsDirectory.absolutePath, freeBytes)
+    }
 
     override fun deleteArtifacts(destinationPath: String): Int {
         val partPath = DownloadPathUtils.getPartFilePath(destinationPath)

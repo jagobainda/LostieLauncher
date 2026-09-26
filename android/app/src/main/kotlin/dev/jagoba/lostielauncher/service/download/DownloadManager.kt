@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
+import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import kotlinx.coroutines.flow.Flow
@@ -17,4 +18,6 @@ interface DownloadManager {
     suspend fun cancel(gameId: String): DownloadCommandResult
 
     suspend fun purgeStale(knownGameIds: Set<String>): Int
+
+    suspend fun destination(): DownloadDestination
 }

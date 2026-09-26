@@ -2,6 +2,8 @@ package dev.jagoba.lostielauncher.model
 
 data class DownloadRequest(val displayName: String, val args: GameDownloadArgs)
 
+data class DownloadDestination(val path: String, val freeBytes: Long?)
+
 data class DownloadSnapshot(
     val gameId: String,
     val displayName: String,

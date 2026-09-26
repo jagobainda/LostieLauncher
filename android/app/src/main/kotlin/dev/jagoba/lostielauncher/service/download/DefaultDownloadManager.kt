@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
+import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadOptions
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
@@ -139,6 +140,10 @@ internal class DefaultDownloadManager @Inject constructor(
             logger.error("Download cache maintenance failed.", error)
             0
         }
+    }
+
+    override suspend fun destination(): DownloadDestination = withContext(dispatchers.io) {
+        fileStore.destination()
     }
 
     private suspend fun hasActiveDownload(): Boolean = dao.countWithStatuses(ACTIVE_STATUSES) > 0

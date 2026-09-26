@@ -434,13 +434,18 @@ internal fun GameCardColumns(
 }
 
 @Composable
-private fun GameLogo(url: String?) {
+internal fun GameLogo(
+    url: String?,
+    width: Dp = LauncherSizes.GameCardLogoWidth,
+    height: Dp = LauncherSizes.GameCardLogoHeight,
+    placeholderSize: Dp = LauncherSizes.GameCardLogoPlaceholder,
+) {
     val colors = LocalLauncherColors.current
     val model = remember(url) { HttpsUrls.parseOrNull(url)?.toString() }
     var loaded by remember(model) { mutableStateOf(false) }
     Box(
         Modifier
-            .size(LauncherSizes.GameCardLogoWidth, LauncherSizes.GameCardLogoHeight)
+            .size(width, height)
             .clip(RoundedCornerShape(LauncherRadii.Medium))
             .background(colors.tertiaryBg)
             .padding(LauncherSpacing.Snug),
@@ -451,7 +456,7 @@ private fun GameLogo(url: String?) {
                 painter = painterResource(R.drawable.ic_card_pokeball),
                 contentDescription = null,
                 tint = colors.overlayMedium,
-                modifier = Modifier.size(LauncherSizes.GameCardLogoPlaceholder),
+                modifier = Modifier.size(placeholderSize),
             )
         }
         if (model != null) {

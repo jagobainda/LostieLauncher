@@ -254,6 +254,59 @@ class GamesViewModelTest {
         sut.state.value.games.single().canPlay shouldBe false
     }
 
+    @Test
+    fun `game running notice names the game its message is about`() = runTest(dispatcher) {
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        launch.signal = GameRunningSignal.TRACKED_SESSION
+        val sut = createSut()
+        runCurrent()
+        sut.requestUninstall("Test Game")
+        runCurrent()
+        sut.state.value.noticeGameName shouldBe "Test Game"
+        sut.dismissPrompt()
+        sut.state.value.noticeGameName shouldBe null
+    }
+
+    @Test
+    fun `confirming a possibly running uninstall closes the warning before the outcome`() = runTest(dispatcher) {
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        launch.signal = GameRunningSignal.POSSIBLY_RUNNING
+        installation.uninstallBarrier = CompletableDeferred()
+        val sut = createSut()
+        runCurrent()
+        sut.requestUninstall("Test Game")
+        runCurrent()
+        sut.state.value.notice shouldBe GamesNotice.POSSIBLY_RUNNING
+        sut.confirmUninstall()
+        runCurrent()
+        sut.state.value.pendingUninstall shouldBe null
+        sut.state.value.notice shouldBe null
+        installation.uninstallBarrier?.complete(Unit)
+        runCurrent()
+        sut.state.value.notice shouldBe GamesNotice.NOT_SUPPORTED_YET
+        sut.state.value.noticeGameName shouldBe "Test Game"
+    }
+
+    @Test
+    fun `accepting a missing folder with no catalogue entry just closes the prompt`() = runTest(dispatcher) {
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        locations.openResult = OpenGameLocationResult.NotFound
+        val sut = createSut()
+        runCurrent()
+        sut.openGameLocation("Test Game")
+        runCurrent()
+        sut.state.value.notice shouldBe GamesNotice.LOCATION_NOT_FOUND
+        sut.acceptMissingLocationDownload()
+        sut.state.value.notice shouldBe null
+        navigation.state.value.section shouldBe LauncherSection.HOME
+    }
+
     private fun createSut() =
         GamesViewModel(installation, launch, locations, library, coordinator, navigation, downloads)
 }

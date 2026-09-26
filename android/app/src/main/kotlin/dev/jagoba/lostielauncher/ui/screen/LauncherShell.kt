@@ -30,8 +30,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.content.Strings
+import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
+import dev.jagoba.lostielauncher.ui.LocalAppLanguage
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.OfflinePillContent
 import dev.jagoba.lostielauncher.ui.component.ShellNavigationBar
@@ -39,6 +41,7 @@ import dev.jagoba.lostielauncher.ui.component.ShellNavigationEntry
 import dev.jagoba.lostielauncher.ui.component.ShellNavigationRail
 import dev.jagoba.lostielauncher.ui.component.ShellTopBar
 import dev.jagoba.lostielauncher.ui.component.ShellTopBarAction
+import dev.jagoba.lostielauncher.ui.dialog.WelcomeDialog
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 import dev.jagoba.lostielauncher.ui.viewmodel.MainUiState
@@ -46,6 +49,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.MainViewModel
 
 @Composable
 fun LauncherShell(
+    onLanguageSelected: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
     debugIcon: Painter? = null,
     debugContent: @Composable () -> Unit = {},
@@ -71,6 +75,17 @@ fun LauncherShell(
         modifier = modifier,
     ) {
         if (showDebug) debugContent() else SectionPlaceholder(title = state.title)
+    }
+
+    LibraryDialogs()
+    GamesDialogs()
+    if (state.isWelcomeVisible) {
+        WelcomeDialog(
+            language = LocalAppLanguage.current,
+            onLanguageSelected = onLanguageSelected,
+            onOpenRepository = { viewModel.openExternalLink(ExternalLink.GITHUB) },
+            onDismiss = viewModel::dismissWelcome,
+        )
     }
 }
 

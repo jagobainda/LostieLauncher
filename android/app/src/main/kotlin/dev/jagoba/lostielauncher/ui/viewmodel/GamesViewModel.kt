@@ -73,6 +73,7 @@ data class GamesUiState(
     val pendingDownloadGameId: String? = null,
     val blockingLocation: GameLocationReference? = null,
     val notice: GamesNotice? = null,
+    val noticeGameName: String? = null,
 ) {
     val isEmpty: Boolean get() = !isLoading && installedStateKnown && games.isEmpty()
     val isListVisible: Boolean get() = !isLoading && games.isNotEmpty()
@@ -168,7 +169,7 @@ class GamesViewModel @Inject constructor(
             when (launch.runningSignal(game)) {
                 GameRunningSignal.TRACKED_SESSION ->
                     mutableState.value =
-                        mutableState.value.copy(notice = GamesNotice.GAME_RUNNING)
+                        mutableState.value.copy(notice = GamesNotice.GAME_RUNNING, noticeGameName = game.name)
 
                 GameRunningSignal.POSSIBLY_RUNNING -> mutableState.value = mutableState.value.copy(
                     pendingUninstall = game,
@@ -186,7 +187,7 @@ class GamesViewModel @Inject constructor(
 
     fun confirmUninstall() {
         val game = mutableState.value.pendingUninstall ?: return
-        mutableState.value = mutableState.value.copy(pendingUninstall = null)
+        mutableState.value = mutableState.value.copy(pendingUninstall = null, notice = null)
         viewModelScope.launch {
             uninstalling.value += game.name
             try {
@@ -199,8 +200,11 @@ class GamesViewModel @Inject constructor(
                     GameUninstallOutcome.GAME_RUNNING -> GamesNotice.GAME_RUNNING
                     GameUninstallOutcome.NOT_SUPPORTED_YET -> GamesNotice.NOT_SUPPORTED_YET
                 }
-                mutableState.value =
-                    mutableState.value.copy(notice = notice, blockingLocation = result.blockingLocation)
+                mutableState.value = mutableState.value.copy(
+                    notice = notice,
+                    noticeGameName = game.name,
+                    blockingLocation = result.blockingLocation,
+                )
             } finally {
                 uninstalling.value -= game.name
             }
@@ -221,9 +225,9 @@ class GamesViewModel @Inject constructor(
     }
 
     fun acceptMissingLocationDownload() {
-        val gameId = mutableState.value.pendingDownloadGameId ?: return
-        mutableState.value = mutableState.value.copy(pendingDownloadGameId = null, notice = null)
-        navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.DOWNLOAD)
+        val gameId = mutableState.value.pendingDownloadGameId
+        dismissPrompt()
+        if (gameId != null) navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.DOWNLOAD)
     }
 
     fun dismissPrompt() {
@@ -231,6 +235,7 @@ class GamesViewModel @Inject constructor(
             pendingUninstall = null,
             pendingDownloadGameId = null,
             notice = null,
+            noticeGameName = null,
         )
     }
 

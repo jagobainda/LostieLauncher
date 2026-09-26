@@ -18,6 +18,8 @@ enum class ExternalLinkResult {
 
 interface ExternalLinkService {
     fun open(link: ExternalLink): ExternalLinkResult
+
+    fun openUrl(url: String): ExternalLinkResult
 }
 
 internal class AndroidExternalLinkService @Inject constructor(
@@ -25,10 +27,14 @@ internal class AndroidExternalLinkService @Inject constructor(
     private val options: ExternalLinkOptions,
     private val logger: Logger,
 ) : ExternalLinkService {
-    override fun open(link: ExternalLink): ExternalLinkResult {
-        val uri = HttpsUrls.parseOrNull(options.urls[link])
+    override fun open(link: ExternalLink): ExternalLinkResult = open(options.urls[link], link.name)
+
+    override fun openUrl(url: String): ExternalLinkResult = open(url, url)
+
+    private fun open(url: String?, label: String): ExternalLinkResult {
+        val uri = HttpsUrls.parseOrNull(url)
         if (uri == null) {
-            logger.error("External link $link was rejected because its URL is not HTTPS.")
+            logger.error("External link $label was rejected because its URL is not HTTPS.")
             return ExternalLinkResult.INVALID_URL
         }
         return try {
@@ -38,7 +44,7 @@ internal class AndroidExternalLinkService @Inject constructor(
             )
             ExternalLinkResult.OPENED
         } catch (error: Exception) {
-            logger.error("Android could not open external link $link.", error)
+            logger.error("Android could not open external link $label.", error)
             ExternalLinkResult.NO_HANDLER
         }
     }
