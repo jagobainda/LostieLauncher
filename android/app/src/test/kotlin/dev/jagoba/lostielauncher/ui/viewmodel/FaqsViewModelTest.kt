@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import dev.jagoba.lostielauncher.content.faqsFor
 import dev.jagoba.lostielauncher.model.AppLanguage
 import io.kotest.matchers.shouldBe
@@ -28,15 +29,28 @@ class FaqsViewModelTest {
 
     @Test
     fun `loads all FAQs collapsed in current language`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         sut.state.value.rows.size shouldBe faqsFor(AppLanguage.ESP).size
         sut.state.value.rows.all { !it.isExpanded } shouldBe true
     }
 
     @Test
+    fun `a search restored from saved state filters as it did before the process died`() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        FaqsViewModel(settings, links, saved).setSearchText("instalacion")
+
+        val restored = FaqsViewModel(settings, links, saved)
+        runCurrent()
+
+        restored.state.value.searchText shouldBe "instalacion"
+        (restored.state.value.rows.size < faqsFor(AppLanguage.ESP).size) shouldBe true
+        restored.state.value.rows.all { it.isExpanded } shouldBe true
+    }
+
+    @Test
     fun `search matches answer ignoring accents and expands matches`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         sut.setSearchText("instalacion")
         runCurrent()
@@ -46,7 +60,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `no match and clear search reproduce empty and collapsed states`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         sut.setSearchText("unmatched-term-xyz")
         runCurrent()
@@ -59,7 +73,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change reloads FAQs`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
         runCurrent()
@@ -68,7 +82,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `tapping FAQ toggles expansion and search resets it`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         val index = sut.state.value.rows.first().index
         sut.toggleFaq(index)
@@ -87,7 +101,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change discards expansion overrides`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         runCurrent()
         sut.toggleFaq(sut.state.value.rows.first().index)
         runCurrent()
@@ -103,7 +117,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `answer links open through the link service`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links)
+        val sut = FaqsViewModel(settings, links, SavedStateHandle())
         sut.openLink("https://example.com")
         links.openedUrls shouldBe listOf("https://example.com")
     }

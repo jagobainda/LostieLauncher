@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -51,6 +52,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.inputSurface
 import dev.jagoba.lostielauncher.ui.viewmodel.FaqsViewModel
 
 @Composable
@@ -101,8 +103,8 @@ private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClea
         Modifier
             .padding(bottom = LauncherSpacing.Card)
             .fillMaxWidth()
-            .height(LauncherSizes.SearchBarHeight)
-            .background(colors.tertiaryBg, RoundedCornerShape(LauncherRadii.Medium))
+            .heightIn(min = LauncherSizes.SearchBarHeight)
+            .inputSurface(colors, RoundedCornerShape(LauncherRadii.Medium))
             .padding(horizontal = LauncherSpacing.Large),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -128,15 +130,21 @@ private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClea
                     .semantics { contentDescription = strings.faqsSearchPlaceholder },
             )
             if (query.isEmpty() && !focused) {
-                Text(strings.faqsSearchPlaceholder, color = colors.secondaryFgDim, fontSize = LauncherType.BodySize)
+                Text(
+                    strings.faqsSearchPlaceholder,
+                    color = colors.secondaryFgDim,
+                    fontSize = LauncherType.BodySize,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
-        if (query.isNotEmpty()) FaqsClearButton(onClear)
+        if (query.isNotEmpty()) FaqsClearButton(strings.faqsClearSearch, onClear)
     }
 }
 
 @Composable
-private fun FaqsClearButton(onClick: () -> Unit) {
+private fun FaqsClearButton(label: String, onClick: () -> Unit) {
     val colors = LocalLauncherColors.current
     val interactions = remember { MutableInteractionSource() }
     val hovered by interactions.collectIsHoveredAsState()
@@ -155,6 +163,7 @@ private fun FaqsClearButton(onClick: () -> Unit) {
                     Modifier
                 },
             )
+            .semantics { contentDescription = label }
             .clickable(interactionSource = interactions, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

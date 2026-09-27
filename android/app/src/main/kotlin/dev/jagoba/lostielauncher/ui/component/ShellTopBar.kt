@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -83,7 +84,7 @@ fun OfflinePill(content: OfflinePillContent, modifier: Modifier = Modifier) {
     LauncherTooltip(text = content.tooltip, modifier = modifier) {
         Row(
             Modifier
-                .height(LauncherSizes.OfflinePillHeight)
+                .heightIn(min = LauncherSizes.OfflinePillHeight)
                 .background(colors.overlaySubtle, shape)
                 .border(LauncherBorders.Thin, FixedColors.Warning, shape)
                 .padding(horizontal = LauncherSpacing.Medium)

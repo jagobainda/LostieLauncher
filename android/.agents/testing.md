@@ -56,14 +56,11 @@ class ContentServiceTest {
 
     @Test
     fun `returns an empty catalogue and logs when the content server fails`() = runTest {
-        // Arrange — the CDN is down, which must not take the app with it.
         coEvery { api.games() } throws IOException("boom")
         val sut = createSut()
 
-        // Act
         val games = sut.getGames()
 
-        // Assert
         games.shouldBeEmpty()
         verify(exactly = 1) { logger.error(any(), any()) }
     }
@@ -74,10 +71,10 @@ class ContentServiceTest {
   `@DisplayName` on the class names the unit under test.
 - Collaborators are `private val` MockK mocks; the system under test comes from
   a `createSut()` factory so each test arranges first.
-- Keep the `// Arrange` / `// Act` / `// Assert` comments and use them to say
-  *why*, not to restate the code.
-- Group related cases behind a `// ---- section ----` comment, as the desktop
-  files do.
+- Separate arrange, act and assert with a blank line, without comments: tests
+  follow the minimal-comment rule in
+  [code-style.md](code-style.md#comments-and-docs), and an edited test loses
+  the ones it had.
 - Prefer `@ParameterizedTest` over copy-pasting a `@Test`.
 
 ## Running them
@@ -230,8 +227,10 @@ pinned by `HttpsUrlsTest`.
 
 Nothing in that table is a case that stopped being interesting. Each is either
 **owned by a later step**, or **has no input on Android** — and those are
-different, so they are worth telling apart when one of these tables is read
-again at step 15.
+different, and the [parity report](../docs/parity-report.md) keeps them apart:
+steps 07 and 08 picked up the logging, artifact and finalizer rows, the
+installer, lock, process, folder and deletion rows wait on the install seam, and
+the rest have no Android input.
 
 ## Desktop test parity: local persistence
 
@@ -252,9 +251,11 @@ last-write-wins behavior, concurrent changes to different settings, invalid
 database UUIDs, database degradation, concurrent Room repository calls, file
 logger concurrency and filesystem failure swallowing.
 
-The nine dropped settings cases all inspect `DownloadDirectory`: blank and
-relative sanitization, preservation of a chosen absolute path, OneDrive and
+Eight of the nine dropped settings cases inspect `DownloadDirectory`: blank
+and relative sanitization, preservation of a chosen absolute path, OneDrive and
 install-directory placement, and root derivation. Android has no such setting.
+The ninth, `Load_SecondCall_ReturnsCachedInstanceWithoutRereadingDisk`, tests
+the desktop's read cache, which DataStore replaces.
 `StorageModule` chooses the app-specific external files area when mounted and
 falls back to internal files, so none of those inputs exists.
 

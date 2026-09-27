@@ -95,18 +95,15 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `external social link outcome is visible without Android types in the ViewModel`() = runTest(dispatcher) {
+    fun `external social link opens through the link seam and a failure stays silent`() = runTest(dispatcher) {
         val sut = createSut()
         runCurrent()
         externalLinks.result = ExternalLinkResult.NO_HANDLER
+        val before = sut.state.value
         sut.openExternalLink(ExternalLink.TWITCH)
         runCurrent()
         externalLinks.opened shouldBe listOf(ExternalLink.TWITCH)
-        sut.state.value.externalLinkNotice shouldBe
-            ExternalLinkNotice(ExternalLink.TWITCH, ExternalLinkResult.NO_HANDLER)
-        sut.clearExternalLinkNotice()
-        runCurrent()
-        sut.state.value.externalLinkNotice shouldBe null
+        sut.state.value shouldBe before
     }
 
     @Test
@@ -194,5 +191,12 @@ class MainViewModelTest {
         sut.state.value.section shouldBe LauncherSection.HOME
     }
 
-    private fun createSut() = MainViewModel(navigation, coordinator, settings, downloads, externalLinks)
+    private fun createSut() = MainViewModel(
+        navigation,
+        coordinator,
+        settings,
+        downloads,
+        externalLinks,
+        mockk<Logger>(relaxed = true),
+    )
 }

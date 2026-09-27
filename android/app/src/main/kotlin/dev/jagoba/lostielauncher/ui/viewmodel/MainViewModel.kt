@@ -8,11 +8,11 @@ import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.service.download.DownloadManager
-import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
+import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,7 +29,6 @@ data class MainUiState(
     val isRefreshing: Boolean = false,
     val canRefresh: Boolean = false,
     val pendingLibraryGameId: String? = null,
-    val externalLinkNotice: ExternalLinkNotice? = null,
     val isWelcomeVisible: Boolean = false,
 ) {
     val contextLinks: List<ExternalLink> get() = contextLinksFor(section)
@@ -42,8 +41,6 @@ private fun contextLinksFor(section: LauncherSection): List<ExternalLink> = when
     LauncherSection.GAMES, LauncherSection.LIBRARY, LauncherSection.FAQS -> emptyList()
 }
 
-data class ExternalLinkNotice(val link: ExternalLink, val result: ExternalLinkResult)
-
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val navigation: NavigationStore,
@@ -51,8 +48,8 @@ class MainViewModel @Inject constructor(
     private val settings: SettingsStore,
     downloads: DownloadManager,
     private val externalLinks: ExternalLinkService,
+    private val logger: Logger,
 ) : ViewModel() {
-    private val linkNotice = MutableStateFlow<ExternalLinkNotice?>(null)
     private val welcome = MutableStateFlow(false)
     private val shell = combine(
         navigation.state,
@@ -81,14 +78,12 @@ class MainViewModel @Inject constructor(
         shell,
         coordinator.isRefreshing,
         downloads.downloads,
-        linkNotice,
         welcome,
-    ) { shell, refreshing, rows, notice, welcomeVisible ->
+    ) { shell, refreshing, rows, welcomeVisible ->
         val downloading = rows.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING }
         shell.copy(
             isRefreshing = refreshing,
             canRefresh = shell.canRefresh && !refreshing && !downloading,
-            externalLinkNotice = notice,
             isWelcomeVisible = welcomeVisible,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
@@ -96,7 +91,8 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             if (settings.settings.first().hasSeenWelcome) return@launch
-            navigation.navigate(LauncherSection.LIBRARY)
+            logger.info("First launch detected - navigating to library and showing welcome dialog.")
+            navigate(LauncherSection.LIBRARY)
             settings.setHasSeenWelcome(true)
             welcome.value = true
         }
@@ -107,11 +103,12 @@ class MainViewModel @Inject constructor(
     }
 
     fun navigate(section: LauncherSection) {
+        logger.debug("Navigating to $section.")
         navigation.navigate(section)
     }
 
     fun navigateBack() {
-        if (navigation.state.value.section != LauncherSection.HOME) navigation.navigate(LauncherSection.HOME)
+        if (navigation.state.value.section != LauncherSection.HOME) navigate(LauncherSection.HOME)
     }
 
     fun consumeLibraryGame(gameId: String) {
@@ -120,15 +117,14 @@ class MainViewModel @Inject constructor(
 
     fun refresh() {
         if (!state.value.canRefresh) return
-        viewModelScope.launch { coordinator.refreshAll(settings.settings.first().language) }
+        logger.debug("Data refresh started.")
+        viewModelScope.launch {
+            coordinator.refreshAll(settings.settings.first().language)
+            logger.debug("Data refresh completed.")
+        }
     }
 
     fun openExternalLink(link: ExternalLink) {
-        val result = externalLinks.open(link)
-        linkNotice.value = if (result == ExternalLinkResult.OPENED) null else ExternalLinkNotice(link, result)
-    }
-
-    fun clearExternalLinkNotice() {
-        linkNotice.value = null
+        externalLinks.open(link)
     }
 }

@@ -10,7 +10,7 @@ but not a stack:
 | Side                   | Stack                     | Status                  |
 | ---------------------- | ------------------------- | ----------------------- |
 | [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | Shipping                |
-| [`android/`](android/) | Kotlin · Compose · MVVM   | Not implemented yet     |
+| [`android/`](android/) | Kotlin · Compose · MVVM   | In development          |
 
 Before you start, review the [monorepo overview](README.md) and then the README
 of the side you are contributing to — [desktop](desktop/README.md) or

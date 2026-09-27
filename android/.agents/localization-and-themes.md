@@ -25,7 +25,7 @@ itself reads before any Kotlin runs, and says so.
 
 | Thing | Where |
 | --- | --- |
-| The 118 keys | `content/Strings.kt` — the `Strings` interface |
+| The 95 keys | `content/Strings.kt` — the `Strings` interface |
 | The eight implementations | `content/strings/<Lang>Strings.kt`, one `object` each |
 | Resolving one | `stringsFor(language)`, exhaustive over `AppLanguage` |
 | The 6 FAQ entries × 8 | `content/Faqs.kt`, resolved with `faqsFor(language)` |
@@ -42,14 +42,14 @@ What binds:
   `ExternalLink.brandName`, not in a composable.
 - **A new string means the key and all eight translations.** English left in
   the other seven is a review rejection. It is also a compile error: `Strings`
-  is an interface with 118 abstract properties and eight `object`s implementing
+  is an interface with 95 abstract properties and eight `object`s implementing
   it, which is exactly the desktop's guarantee and the reason the catalogue is
   900 lines of `override val` rather than a map.
-- **Placeholders keep the same count and order in all eight languages.** Eight
-  keys carry one, they use the desktop's `{0}` syntax, and the arguments are
+- **Placeholders keep the same count and order in all eight languages.** Five
+  keys carry one (the uninstall messages), they use the desktop's `{0}` syntax, and the arguments are
   positional — a translation that swapped `{0}` and `{1}` would put a filesystem
   path where a game name belongs, in one language only. `StringsTest` asserts
-  no drift across all 118 × 8.
+  no drift across all 95 × 8.
 - **Substitution is `String.withArgs`, and the name is load-bearing.**
   `kotlin.text` declares `String.format(vararg Any?)` and is default-imported,
   so an extension called `format` here would not shadow it — it would *lose* to
@@ -67,7 +67,7 @@ What binds:
   is `es`, Valencian is `val`. They resolve the remote home content and nothing
   else.
 
-### Four keys the desktop has and this side does not
+### Thirty keys the desktop has and this side does not
 
 `SettingsStartWithWindows`, `SettingsStartMinimized`, `TrayOpen` and `TrayExit`
 are gone from all eight languages. `spec/10-windows-only.md` entries 2 and 3 and
@@ -77,10 +77,18 @@ setting means dropping its Settings row, its key in **all eight** languages and
 its persisted field — half-removing one is the failure mode to avoid, and
 `StringsTest` asserts none of the four came back.
 
-That is the whole list. Every other key was ported, including ones whose screen
-does not exist yet.
+The other 26 went at the end of the port, with the dialogs and Settings rows
+that only exist for Windows reasons (see
+[architecture.md](architecture.md#dialogs)): launcher self-update
+(`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`, `UpdateAvailable*`,
+`SettingsCheckForUpdates`), the download folder (`ChangeDownloadDir*`,
+`DownloadDirNotUsable*`, the three `DownloadDirStep*`, `SettingsDownloadDir`,
+`BtnBrowse`, `SettingsGamesStoredIn`), OneDrive (`OneDriveWarning*`,
+`SettingsOneDriveWarning`) and the four `ExitWarning*`. `StringsTest` asserts
+all thirty stay gone; `FaqsTest` keeps the desktop's download-directory labels
+as test data, to prove no FAQ answer names that setting.
 
-### Four keys this side has and the desktop does not
+### Seven keys this side has and the desktop does not
 
 `StatusNotSupportedYet` ("Not available on Android yet") is the text the game
 card shows for anything that goes through the unimplemented install and launch
@@ -95,22 +103,13 @@ implemented, in all eight languages at once.
 
 `LocationNoHandlerTitle` and `LocationNoHandlerMessage` answer
 `OpenGameLocationResult.NoHandler`: Android can have no app that opens a
-folder, which Explorer never lacks. `StringsTest` asserts all four by name.
+folder, which Explorer never lacks.
 
-### Keys kept although their dialog is gone
-
-Step 13 dropped the dialogs that only exist for Windows reasons (see
-[architecture.md](architecture.md#dialogs)), but kept their keys:
-`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`, `UpdateAvailable*`,
-`ChangeDownloadDir*`, `DownloadDirNotUsable*` with the three
-`DownloadDirStep*`, `OneDriveWarning*` and the four `ExitWarning*`. Nothing
-reads them. Removing them from all eight languages is left to step 15, together
-with `SettingsCheckForUpdates`, `SettingsDownloadDir`, `BtnBrowse`,
-`SettingsGamesStoredIn` and `SettingsOneDriveWarning`. Step 14 dropped their
-Settings rows: the "Check for updates" button went with launcher self-update,
-and the download-directory row with its path box and "games are stored in"
-line went with the folder picker (step 07 decision 3). The Settings screen
-keeps games auto-update, the version string, language and theme.
+`BtnClose` and `FaqsClearSearch` name the two icon-only controls the desktop
+leaves unnamed (the dialog ✕ and the FAQ clear button), for TalkBack.
+`StatusWaitingForConnection` is the Library card's line while a transfer waits
+for the network, a state the desktop does not have because it fails the
+download instead. `StringsTest` asserts all seven by name.
 
 ## Themes — 10 palettes, identical key sets
 
@@ -160,8 +159,9 @@ What binds:
 ## Switching either one
 
 Both settings live in `SettingsStore` (`service/settings/`) and reach the UI
-through its narrow `AppearanceStore` parent and `AppearanceViewModel`, which
-resolves the palette's theme and the catalogue and exposes them as one state. `MainActivity` provides them and does
+through its narrow `AppearanceStore` parent and `SettingsViewModel`, which
+resolves the palette's theme and the catalogue and exposes them as one state.
+`MainActivity` provides them and does
 **not** react to a change: both are ordinary state, so a change recomposes and
 the activity is never recreated and never loses screen state. That is the
 behaviour requirement, and it is why neither uses a resource qualifier.
@@ -199,9 +199,10 @@ source set must be added to the other, or the release build stops compiling.
 ## Contrast review list
 
 Measured across all ten palettes, over the surfaces each colour actually paints,
-compositing the alpha ones first. **None of these has been changed and none of
-them may be changed in a port step** — `spec/06-design-tokens.md` says to
-collect them and port plan step 15 owns resolving them. They are listed here
+compositing the alpha ones first. **No palette value has been changed**, and
+none may be changed on this side alone. The end-of-port review decided each
+row; the decisions are in [the parity report](../docs/parity-report.md#polish-done-in-this-step)
+and summed up below the table. They are listed here
 rather than in the specification because the specification records what the
 desktop is, and this is what that costs on a phone, where the screen is smaller,
 the viewing distance shorter and the ambient light unpredictable.
@@ -249,3 +250,16 @@ a whole rather than value by value.
 
 `PalettesTest` pins the last of those as a test, so a later step "tidying" one of
 them has to do it deliberately rather than by accident.
+
+What was decided:
+
+- **The light themes' inputs** are the one row fixed on Android, without
+  touching a value: `Modifier.inputSurface` (`ui/theme/InputSurface.kt`) draws a
+  1 dp `OverlayStrong` outline (4.3:1 against the page) wherever
+  `TertiaryBg` equals `PrimaryBg`. Every input uses it — the FAQ search bar,
+  the key fields, the download path box and the combo box.
+- **Hover and pressed states** are accepted: touch shows hover only for a
+  pointer, and a pressed colour lasts as long as the press.
+- **The accent as text, text on an accent button, the dim foreground and
+  `SuccessColor`** are the palettes themselves and are left for a design change
+  made on both sides at once.

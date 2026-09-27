@@ -87,10 +87,13 @@ default formatting is accepted as-is), `max_line_length = 120`, and
 
 ## Comments and docs
 
-- Comments explain **why**, not what. A comment earns its place by recording a
-  constraint or a decision the code cannot show — a desktop behaviour being
-  matched, a spec section, a workaround and its reason.
-- A KDoc on every interface and every seam, saying what it exists to isolate,
-  and on anything whose correct use is not obvious from the signature.
-- Do not narrate obvious code, and do not leave commented-out code behind.
+- **As few comments as possible.** Kotlin on this side is written without
+  comments or KDoc unless one is indispensable, and a file that is edited loses
+  the ones it had. This replaced the earlier "KDoc on every seam" rule during
+  the port; KDoc from steps 03 to 06 survives only in files nobody has edited
+  since. The reasoning lives in these topic files, in `docs/` and in the tests.
+- The exceptions are load-bearing text: the `TODO-ANDROID-GAME-RUNTIME-NN`
+  markers ([game-runtime-options.md](../docs/game-runtime-options.md)), and a
+  short `why` in a build script.
+- Do not leave commented-out code behind.
 - Everything written in English, comments and KDoc included.

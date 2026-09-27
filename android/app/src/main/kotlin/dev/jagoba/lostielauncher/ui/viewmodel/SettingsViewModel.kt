@@ -11,6 +11,7 @@ import dev.jagoba.lostielauncher.model.AppVersion
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
+import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.version.VersionUtils
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class SettingsViewModel @Inject constructor(
     private val store: SettingsStore,
     private val version: AppVersion,
     installation: GameInstallationService,
+    private val logger: Logger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<SettingsUiState?>(null)
     val state: StateFlow<SettingsUiState?> = mutableState.asStateFlow()
@@ -55,10 +57,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun selectTheme(theme: AppTheme) {
+        logger.debug("Theme changed to: $theme.")
         viewModelScope.launch { store.setTheme(theme) }
     }
 
     fun selectLanguage(language: AppLanguage) {
+        logger.debug("Language changed to: $language.")
         viewModelScope.launch { store.setLanguage(language) }
     }
 
@@ -67,6 +71,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun setAutoUpdate(enabled: Boolean) {
+        logger.info("Auto update: ${if (enabled) "enabled" else "disabled"}.")
         viewModelScope.launch { store.setAutoUpdate(enabled) }
     }
 }

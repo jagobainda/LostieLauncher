@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -62,7 +63,8 @@ fun ShellNavigationRail(
         modifier
             .width(LauncherSizes.NavigationItemSize)
             .fillMaxHeight()
-            .background(colors.secondaryBg),
+            .background(colors.secondaryBg)
+            .selectableGroup(),
     ) {
         top.forEach { ShellNavigationItem(it, IndicatorEdge.START, itemModifier) }
         Spacer(Modifier.weight(1f))
@@ -72,7 +74,7 @@ fun ShellNavigationRail(
 
 @Composable
 fun ShellNavigationBar(entries: List<ShellNavigationEntry>, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth()) {
+    Row(modifier.fillMaxWidth().selectableGroup()) {
         entries.forEach {
             ShellNavigationItem(it, IndicatorEdge.BOTTOM, Modifier.weight(1f).height(LauncherSizes.NavigationItemSize))
         }

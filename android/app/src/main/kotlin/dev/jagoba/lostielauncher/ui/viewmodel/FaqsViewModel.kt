@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,9 +29,12 @@ data class FaqsUiState(
 }
 
 @HiltViewModel
-class FaqsViewModel @Inject constructor(settings: SettingsStore, private val externalLinks: ExternalLinkService) :
-    ViewModel() {
-    private val search = MutableStateFlow("")
+class FaqsViewModel @Inject constructor(
+    settings: SettingsStore,
+    private val externalLinks: ExternalLinkService,
+    private val savedState: SavedStateHandle,
+) : ViewModel() {
+    private val search = savedState.getStateFlow(SEARCH_KEY, "")
     private val expansion = MutableStateFlow<Pair<AppLanguage?, Map<Int, Boolean>>>(null to emptyMap())
     val state: StateFlow<FaqsUiState> = combine(search, settings.settings, expansion) { term, stored, expanded ->
         val query = term.trim()
@@ -47,7 +51,7 @@ class FaqsViewModel @Inject constructor(settings: SettingsStore, private val ext
 
     fun setSearchText(text: String) {
         expansion.value = null to emptyMap()
-        search.value = text
+        savedState[SEARCH_KEY] = text
     }
 
     fun clearSearch() {
@@ -62,5 +66,9 @@ class FaqsViewModel @Inject constructor(settings: SettingsStore, private val ext
 
     fun openLink(url: String) {
         externalLinks.openUrl(url)
+    }
+
+    private companion object {
+        const val SEARCH_KEY = "faqs.search"
     }
 }

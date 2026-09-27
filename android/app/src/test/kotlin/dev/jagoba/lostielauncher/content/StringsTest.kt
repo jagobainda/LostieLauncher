@@ -14,29 +14,58 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 114 keys ported from the desktop and the four Android-only keys")
+    @DisplayName("declares the 88 keys kept from the desktop and the seven Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 118
+        keys.size shouldBe 95
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
                 "notSupportedYetMessage",
                 "locationNoHandlerTitle",
                 "locationNoHandlerMessage",
+                "btnClose",
+                "faqsClearSearch",
+                "statusWaitingForConnection",
             ),
         ) shouldBe true
     }
 
     @Test
-    @DisplayName("has dropped the four keys whose surfaces do not exist on Android")
+    @DisplayName("has dropped the keys whose surfaces do not exist on Android")
     fun `the Windows-only keys are gone from every language`() {
         val dropped = setOf(
             "settingsStartWithWindows",
             "settingsStartMinimized",
             "trayOpen",
             "trayExit",
+            "updateAvailableTitle",
+            "updateAvailableMessage",
+            "settingsDownloadDir",
+            "btnBrowse",
+            "settingsCheckForUpdates",
+            "upToDateTitle",
+            "upToDateMessage",
+            "updateCheckBusyTitle",
+            "updateCheckBusyMessage",
+            "updateCheckFailedTitle",
+            "updateCheckFailedMessage",
+            "changeDownloadDirTitle",
+            "changeDownloadDirMessage",
+            "exitWarningTitle",
+            "exitWarningDownloadMessage",
+            "exitWarningGameMessage",
+            "exitWarningBothMessage",
+            "settingsGamesStoredIn",
+            "settingsOneDriveWarning",
+            "oneDriveWarningTitle",
+            "oneDriveWarningMessage",
+            "downloadDirNotUsableTitle",
+            "downloadDirNotUsableMessage",
+            "downloadDirStepCreate",
+            "downloadDirStepWrite",
+            "downloadDirStepRename",
         )
 
         KEYS.intersect(dropped).shouldBeEmpty()
@@ -79,7 +108,7 @@ class StringsTest {
     }
 
     @Test
-    @DisplayName("carries a placeholder in exactly the eight keys the specification names")
+    @DisplayName("carries a placeholder in exactly the five uninstall messages")
     fun `the keys with placeholders are the expected ones`() {
         val withPlaceholders = KEY_GETTERS
             .filter { placeholdersOf(it.valueIn(stringsFor(AppLanguage.Default))).isNotEmpty() }
@@ -92,9 +121,6 @@ class StringsTest {
             "uninstallBlockedMessage",
             "uninstallGameRunningMessage",
             "uninstallMaybeRunningMessage",
-            "updateAvailableMessage",
-            "oneDriveWarningMessage",
-            "downloadDirNotUsableMessage",
         )
     }
 

@@ -8,9 +8,11 @@ import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestDownloads
 import dev.jagoba.lostielauncher.ui.viewmodel.TestSettingsStore
+import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import io.mockk.verify
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,5 +82,36 @@ class LauncherDataCoordinatorTest {
         }
         LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true)).refreshCatalogue()
         downloads.purged shouldBe emptyList()
+    }
+
+    @Test
+    fun `catalogue entries sharing an id keep the first and log the rest`() = runTest {
+        val logger = mockk<Logger>(relaxed = true)
+        val content = TestContentService().apply {
+            games = listOf(testGame(name = "Game 2"), testGame(name = "Game: 2"), testGame(name = "Other"))
+        }
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), logger)
+
+        coordinator.refreshCatalogue()
+
+        coordinator.catalogue.value.games.map { it.name } shouldBe listOf("Game 2", "Other")
+        verify(exactly = 1) { logger.info("Skipping duplicate catalogue entry: 'Game: 2' (id: game-2).") }
+    }
+
+    @Test
+    fun `home timer waits while nothing is visible and refreshes on return`() = runTest {
+        val content = TestContentService()
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        coordinator.start(backgroundScope, TestSettingsStore(), HomeRefreshOptions(2.minutes))
+        runCurrent()
+        coordinator.setVisible(false)
+
+        advanceTimeBy(10.minutes.inWholeMilliseconds)
+        runCurrent()
+        content.homeCalls shouldBe 1
+
+        coordinator.setVisible(true)
+        runCurrent()
+        content.homeCalls shouldBe 2
     }
 }

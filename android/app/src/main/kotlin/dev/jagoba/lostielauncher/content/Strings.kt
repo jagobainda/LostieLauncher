@@ -18,6 +18,7 @@ interface Strings {
     val titleFaqs: String
     val faqsSearchPlaceholder: String
     val faqsNoResults: String
+    val faqsClearSearch: String
     val btnOk: String
     val btnYes: String
     val btnNo: String
@@ -44,28 +45,11 @@ interface Strings {
     val uninstallGameRunningTitle: String
     val uninstallGameRunningMessage: String
     val uninstallMaybeRunningMessage: String
-    val updateAvailableTitle: String
-    val updateAvailableMessage: String
     val settingsGeneral: String
     val settingsAppearance: String
     val settingsAutoUpdate: String
     val settingsLanguage: String
-    val settingsDownloadDir: String
     val settingsTheme: String
-    val btnBrowse: String
-    val settingsCheckForUpdates: String
-    val upToDateTitle: String
-    val upToDateMessage: String
-    val updateCheckBusyTitle: String
-    val updateCheckBusyMessage: String
-    val updateCheckFailedTitle: String
-    val updateCheckFailedMessage: String
-    val changeDownloadDirTitle: String
-    val changeDownloadDirMessage: String
-    val exitWarningTitle: String
-    val exitWarningDownloadMessage: String
-    val exitWarningGameMessage: String
-    val exitWarningBothMessage: String
     val libraryNoContent: String
     val gamesNoContent: String
     val gamesGoToLibrary: String
@@ -86,11 +70,13 @@ interface Strings {
     val downloadPermissionDeniedTitle: String
     val downloadPermissionDeniedMessage: String
     val btnCancel: String
+    val btnClose: String
     val cancelDownloadConfirmTitle: String
     val cancelDownloadConfirmMessage: String
     val statusExtracting: String
     val statusVerifying: String
     val statusUninstalling: String
+    val statusWaitingForConnection: String
     val statusNotSupportedYet: String
     val notSupportedYetMessage: String
     val locationNoHandlerTitle: String
@@ -120,15 +106,6 @@ interface Strings {
     val homeContentUnavailable: String
     val contentOutOfDateLabel: String
     val contentOutOfDateMessage: String
-    val settingsGamesStoredIn: String
-    val settingsOneDriveWarning: String
-    val oneDriveWarningTitle: String
-    val oneDriveWarningMessage: String
-    val downloadDirNotUsableTitle: String
-    val downloadDirNotUsableMessage: String
-    val downloadDirStepCreate: String
-    val downloadDirStepWrite: String
-    val downloadDirStepRename: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {

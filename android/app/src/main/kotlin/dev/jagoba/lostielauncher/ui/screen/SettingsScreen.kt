@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -106,7 +108,9 @@ private fun SettingsSection(title: String, modifier: Modifier = Modifier, rows: 
             color = colors.primaryFg,
             fontSize = LauncherType.SectionSize,
             fontWeight = LauncherType.SemiBold,
-            modifier = Modifier.padding(start = LauncherSpacing.ExtraSmall, bottom = LauncherSpacing.Medium),
+            modifier = Modifier
+                .padding(start = LauncherSpacing.ExtraSmall, bottom = LauncherSpacing.Medium)
+                .semantics { heading() },
         )
         Column(
             Modifier

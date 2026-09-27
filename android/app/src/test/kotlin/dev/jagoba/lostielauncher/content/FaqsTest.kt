@@ -47,8 +47,21 @@ class FaqsTest {
     @EnumSource(AppLanguage::class)
     @DisplayName("never points to the download directory setting Android does not have")
     fun `no answer names the removed download directory setting`(language: AppLanguage) {
-        val setting = stringsFor(language).settingsDownloadDir
+        val setting = DESKTOP_DOWNLOAD_DIRECTORY_LABELS.getValue(language)
 
         faqsFor(language).filter { it.answer.contains(setting, ignoreCase = true) }.shouldBeEmpty()
+    }
+
+    private companion object {
+        val DESKTOP_DOWNLOAD_DIRECTORY_LABELS = mapOf(
+            AppLanguage.ESP to "Directorio de descargas",
+            AppLanguage.ENG to "Download directory",
+            AppLanguage.CAT to "Directori de descàrregues",
+            AppLanguage.EUS to "Deskarga direktorioa",
+            AppLanguage.GAL to "Directorio de descargas",
+            AppLanguage.POR to "Diretório de downloads",
+            AppLanguage.VAL to "Directori de descàrregues",
+            AppLanguage.FRA to "Répertoire de téléchargement",
+        )
     }
 }

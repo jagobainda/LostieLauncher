@@ -10,9 +10,10 @@ authority on what the app must do is the desktop side, under
 [`../desktop/`](../desktop/), with the extracted contract in
 [`../spec/`](../spec/); how Android does it is an Android decision.
 
-> **Early.** The project builds, runs and is tested, but it does not launch
-> games yet — see [Status](#status). Nothing below is a promise about a shipped
-> app.
+> **Feature-complete except for games themselves.** Every screen works against
+> the real CDN, but installing and launching a game on Android is an open
+> decision — see [Status](#status) and the
+> [parity report](docs/parity-report.md).
 
 ## Status
 
@@ -20,10 +21,10 @@ authority on what the app must do is the desktop side, under
 | ------------------------------------- | ------------------------------------------------------- |
 | Gradle project and app skeleton       | done — builds, runs, tested in CI                       |
 | Architecture guidelines               | done — [AGENTS.md](AGENTS.md) and [.agents/](.agents/)  |
-| CI jobs                               | done — two jobs in `../.github/workflows/ci.yml`        |
-| Dependency injection graph            | started — `core/di/`, persistence and network modules   |
+| CI jobs                               | done — format, build, tests, lint and release build     |
+| Dependency injection graph            | done — one Hilt module per area in `core/di/`           |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 118 keys and 6 FAQs, in eight languages          |
+| Text catalogue                        | done — 95 keys and 6 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
@@ -33,7 +34,11 @@ authority on what the app must do is the desktop side, under
 | Shared components                     | done — game, news, notification, FAQ cards and skeletons |
 | Dialogs and notices                   | done — message box, download, special version, welcome   |
 | Product screens                       | done — Home, My Games, Library, FAQs and Settings        |
-| Installing and launching a game       | out of scope for now                                    |
+| Accessibility, offline and logging    | done — reviewed at the end of the port                  |
+| Installing and launching a game       | pending — eleven open questions, [docs/](docs/game-runtime-options.md) |
+
+What is ported, partial, pending and deliberately not ported, with the reason
+for each: [docs/parity-report.md](docs/parity-report.md).
 
 ## The stack, and why
 
@@ -67,7 +72,7 @@ Everything runs **from this folder**, not from the repository root.
 ./gradlew lintDebug                     # Android Lint, warnings are errors
 ./gradlew spotlessApply                 # format
 ./gradlew installDebug                  # install on a connected device
-./gradlew assembleRelease               # the R8 path, which CI does not gate
+./gradlew assembleRelease               # the R8 path and the release source set
 ```
 
 Requirements: an Android SDK (the build accepts its licences and downloads what
@@ -96,10 +101,10 @@ ui/       MainActivity, screen/ component/ dialog/ theme/     (desktop: Views/, 
 
 Anything touching the network, the filesystem or a platform service sits behind
 a narrow interface with a thin adapter, and the decision logic moves into a pure
-function in `util/`. The seams that exist so far are `DispatcherProvider`
-(threading), `Logger`, `java.time.Clock` (so content expiry can be pinned in a
-test), `MaintenanceFlagApi`, `DownloadManager`, `DownloadTransfer`,
-`DownloadWorkScheduler` and `DownloadedFileHandoff`. The rules, including what
+function in `util/`. The seams include `DispatcherProvider` (threading),
+`Logger`, `java.time.Clock` (so content expiry can be pinned in a test),
+`MaintenanceFlagApi`, the download seams, the settings and library stores, and
+the four game seams in `service/game/`. The rules, including what
 each layer may depend on: [.agents/architecture.md](.agents/architecture.md).
 
 `util/` is where that pays off. It holds the desktop's decision functions and
@@ -151,7 +156,7 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 118
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 95
 string keys and six FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.
@@ -160,7 +165,7 @@ desktop gets from having one class per language and the one property that makes
 this worth 900 lines of `override val`.
 
 Both settings live in `SettingsStore`, whose appearance seam reaches the UI through
-`AppearanceViewModel`, so changing either recomposes and never recreates the
+`SettingsViewModel`, so changing either recomposes and never recreates the
 activity. They are persisted in a Preferences DataStore under the enum member
 name. The welcome state shares the same store. Changes update the observable
 state immediately and rapid writes are coalesced over 500 ms before DataStore
@@ -174,8 +179,7 @@ in `src/debug/`, so it is not compiled into a release APK at all.
 
 See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
 which also carries the contrast review list — colours that fail WCAG on the
-desktop values and are deliberately **not** being changed until the end of the
-port.
+desktop values, and what the end-of-port review decided for each.
 
 ## Local persistence
 
@@ -199,16 +203,19 @@ archive, partial and metadata. A failed transfer retains its validated partial
 for the next attempt; a permission failure removes it. Cache maintenance keeps
 recent files for catalogue entries and removes managed files older than 14 days,
 files for removed games and durable rows whose artifacts are gone. Only one
-transfer may be active. A completed archive crosses the `DownloadedFileHandoff`
-seam; extraction and installation remain step 09 work and are deliberately
-absent here. The debug build exposes a smallest-game download harness so
+transfer may be active. A transfer the system stops, such as on a dropped
+connection, goes back to the queue and the card says it is waiting for a
+connection until WorkManager resumes it. A completed archive crosses the
+`DownloadedFileHandoff` seam; extraction and installation are deliberately
+absent (see [docs/game-runtime-options.md](docs/game-runtime-options.md)). The debug build exposes a smallest-game download harness so
 progress, pause, resume, cancellation, rotation and background behavior can be
 exercised without shipping test UI in the release APK.
 
 Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
 format matches the desktop, files are named by month, roll at 10 MB and are
 retained for six months. Retention maintenance runs on the I/O dispatcher when
-the process starts. Debug builds can inspect them with Android Studio's Device
+the process starts, and every uncaught exception is written there before the
+process ends. What is logged, and at which level, follows the desktop. Debug builds can inspect them with Android Studio's Device
 Explorer or `adb run-as` without making the directory public.
 
 ## Contributing

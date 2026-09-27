@@ -25,7 +25,8 @@ behavioural contract is [`../spec/`](../spec/); where the spec and
 a bug in the spec. The human-facing docs are
 [CONTRIBUTING.md](../CONTRIBUTING.md) and [README.md](README.md).
 The deliberately pending game installation and launch contract is documented in
-[docs/game-runtime-options.md](docs/game-runtime-options.md).
+[docs/game-runtime-options.md](docs/game-runtime-options.md), and where the
+port stands against the desktop in [docs/parity-report.md](docs/parity-report.md).
 
 ## Non-negotiables
 
@@ -63,7 +64,7 @@ desktop's layer for layer.
 ```
 android/
 ├── .agents/          # the topic files linked above
-├── docs/             # open game runtime decisions; third-party asset licences
+├── docs/             # parity report; open game runtime decisions; asset licences
 ├── .editorconfig     # Kotlin and Gradle rules (inherits the monorepo baseline)
 ├── build.gradle.kts  # plugin versions + the Spotless/ktlint gate
 ├── settings.gradle.kts
@@ -105,15 +106,15 @@ either will not be merged.
 # 1. Formatting — CI runs `spotlessCheck`, so leave nothing pending
 ./gradlew spotlessApply
 
-# 2. Build, test and lint
-./gradlew assembleDebug testDebugUnitTest lintDebug
+# 2. Build, test, lint and the release build
+./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
 ```
 
 Useful while iterating:
 
 ```bash
 ./gradlew testDebugUnitTest --tests "*ContentServiceTest*"
-./gradlew assembleRelease     # the R8/minified path, worth checking before a PR
+./gradlew installDebug        # the `lostie` AVD or a connected device
 ```
 
 Notes:
@@ -143,8 +144,8 @@ Notes:
 
 - [ ] Commands were run from `android/`.
 - [ ] `./gradlew spotlessApply` leaves nothing pending.
-- [ ] `assembleDebug`, `testDebugUnitTest` and `lintDebug` are all green, with
-      no warnings.
+- [ ] `assembleDebug`, `testDebugUnitTest`, `lintDebug` and `assembleRelease`
+      are all green, with no warnings.
 - [ ] New behavior is covered by tests, and no test needs a device.
 - [ ] New strings exist in all 8 languages; new colour roles in all 10 themes.
 - [ ] New services and ViewModels are bound in a Hilt module, not constructed at

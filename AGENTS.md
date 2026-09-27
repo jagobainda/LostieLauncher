@@ -70,6 +70,7 @@ worth fixing.
     ├── build.gradle.kts, settings.gradle.kts, gradle.properties
     ├── gradle/         #   libs.versions.toml + the pinned wrapper
     ├── gradlew(.bat)   #   the wrapper — see "Where to run commands"
+    ├── docs/           #   parity report, open game-runtime decisions, asset licences
     └── app/            #   the app and its unit tests
 ```
 

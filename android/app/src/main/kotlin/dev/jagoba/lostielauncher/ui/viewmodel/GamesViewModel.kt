@@ -25,6 +25,7 @@ import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
+import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.GameIdentityMatcher
 import dev.jagoba.lostielauncher.util.version.VersionUtils
 import java.util.UUID
@@ -91,6 +92,7 @@ class GamesViewModel @Inject constructor(
     private val coordinator: LauncherDataCoordinator,
     private val navigation: NavigationStore,
     private val downloads: DownloadManager,
+    private val logger: Logger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(GamesUiState())
     private val uninstalling = MutableStateFlow<Set<String>>(emptySet())
@@ -127,6 +129,7 @@ class GamesViewModel @Inject constructor(
                         installedStateKnown = known != null,
                         games = games,
                     )
+                    if (known != null) logger.debug("Installed games loaded: ${games.size} games.")
                 } finally {
                     coordinator.setGamesLoading(false)
                 }
@@ -146,6 +149,7 @@ class GamesViewModel @Inject constructor(
         val row = find(gameName) ?: return
         if (!row.canUpdate) return
         val gameId = row.remote?.gameId ?: return
+        logger.debug("Starting update: $gameName.")
         navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.UPDATE)
     }
 
@@ -153,12 +157,14 @@ class GamesViewModel @Inject constructor(
         val row = find(gameName) ?: return
         if (!row.canSwitchSpecialVersion) return
         val gameId = row.remote?.gameId ?: return
+        logger.debug("Switching to special version: $gameName.")
         navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.SPECIAL_VERSION)
     }
 
     fun play(gameName: String) {
         val row = find(gameName) ?: return
         if (!row.canPlay) return
+        logger.debug("Launching game: $gameName.")
         viewModelScope.launch {
             val notice = when (launch.launch(target(row.game))) {
                 GameLaunchResult.Launched -> null
@@ -176,14 +182,19 @@ class GamesViewModel @Inject constructor(
         viewModelScope.launch {
             val game = target(row.game)
             when (launch.runningSignal(game)) {
-                GameRunningSignal.TRACKED_SESSION ->
+                GameRunningSignal.TRACKED_SESSION -> {
+                    logger.info("Uninstall refused, the launcher is still tracking a live process for: ${game.name}.")
                     mutableState.value =
                         mutableState.value.copy(notice = GamesNotice.GAME_RUNNING, noticeGameName = game.name)
+                }
 
-                GameRunningSignal.POSSIBLY_RUNNING -> mutableState.value = mutableState.value.copy(
-                    pendingUninstall = game,
-                    notice = GamesNotice.POSSIBLY_RUNNING,
-                )
+                GameRunningSignal.POSSIBLY_RUNNING -> {
+                    logger.info("${game.name} may still be running; warning the user instead of refusing.")
+                    mutableState.value = mutableState.value.copy(
+                        pendingUninstall = game,
+                        notice = GamesNotice.POSSIBLY_RUNNING,
+                    )
+                }
 
                 GameRunningSignal.NOT_RUNNING -> mutableState.value = mutableState.value.copy(pendingUninstall = game)
 
@@ -197,10 +208,12 @@ class GamesViewModel @Inject constructor(
     fun confirmUninstall() {
         val game = mutableState.value.pendingUninstall ?: return
         mutableState.value = mutableState.value.copy(pendingUninstall = null, notice = null)
+        logger.info("Uninstalling game: ${game.name}.")
         viewModelScope.launch {
             uninstalling.value += game.name
             try {
                 val result = installation.uninstall(game)
+                if (result.outcome == GameUninstallOutcome.COMPLETED) logger.info("Game uninstalled: ${game.name}.")
                 val notice = when (result.outcome) {
                     GameUninstallOutcome.COMPLETED -> null
                     GameUninstallOutcome.FILES_NOT_FOUND -> GamesNotice.FILES_NOT_FOUND
@@ -240,6 +253,7 @@ class GamesViewModel @Inject constructor(
     }
 
     fun dismissPrompt() {
+        mutableState.value.pendingUninstall?.let { logger.debug("Uninstall cancelled by user: ${it.name}.") }
         mutableState.value = mutableState.value.copy(
             pendingUninstall = null,
             pendingDownloadGameId = null,
@@ -252,10 +266,12 @@ class GamesViewModel @Inject constructor(
         val row = find(gameName) ?: return
         if (location == GameLocation.GAME && !row.canOpenGameLocation) return
         if (location == GameLocation.HELP && !row.canOpenHelpLocation) return
+        logger.debug("Opening ${if (location == GameLocation.GAME) "folder" else "help folder"} for: $gameName.")
         viewModelScope.launch {
             val result = locations.open(target(row.game), location)
             reportOpen(result)
             if (location == GameLocation.GAME && result == OpenGameLocationResult.NotFound) {
+                logger.info("Game folder not found for '$gameName', offering to download.")
                 mutableState.value = mutableState.value.copy(pendingDownloadGameId = row.remote?.gameId)
             }
         }

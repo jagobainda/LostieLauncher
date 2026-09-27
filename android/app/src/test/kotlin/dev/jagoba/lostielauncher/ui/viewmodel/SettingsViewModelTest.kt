@@ -8,7 +8,9 @@ import dev.jagoba.lostielauncher.model.AppVersion
 import dev.jagoba.lostielauncher.model.Appearance
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
+import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -120,7 +122,7 @@ class SettingsViewModelTest {
         sut.state.value?.autoUpdateSupported shouldBe true
     }
 
-    private fun createSut() = SettingsViewModel(store, AppVersion("1.2.3"), installation)
+    private fun createSut() = SettingsViewModel(store, AppVersion("1.2.3"), installation, mockk<Logger>(relaxed = true))
 
     private class FakeSettingsStore : SettingsStore {
         val current = MutableStateFlow(AppSettings())

@@ -88,6 +88,7 @@ internal fun LibraryGameUiState.toCardState() = LibraryGameCardState(
     remainingTime = remainingTime,
     speed = download?.takeIf { it.status == DownloadStatus.DOWNLOADING }
         ?.let { DownloadSpeedFormatter.format(it.bytesPerSecond) },
+    waitingForConnection = download?.status == DownloadStatus.QUEUED,
     canStart = canStart,
     canPause = canPause,
     canCancel = canCancel,

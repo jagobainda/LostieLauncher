@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.GameLogo
@@ -28,6 +29,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.inputSurface
 
 @Immutable
 data class DownloadConfirmState(
@@ -55,8 +57,9 @@ fun DownloadConfirmDialog(
         title = strings.downloadDialogTitle,
         width = LauncherSizes.DownloadDialogWidth,
         minHeight = LauncherSizes.DownloadDialogHeight,
-        maxHeight = LauncherSizes.DownloadDialogHeight,
+        maxHeight = Dp.Infinity,
         onDismiss = onDismiss,
+        centerBody = true,
         footer = {
             DialogFooterButtons {
                 DialogButton(
@@ -124,7 +127,7 @@ fun DownloadConfirmDialog(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(colors.tertiaryBg, RoundedCornerShape(LauncherRadii.Small))
+                        .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small))
                         .padding(horizontal = LauncherSpacing.MediumLarge, vertical = LauncherSpacing.Medium),
                 )
             }

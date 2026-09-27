@@ -158,11 +158,12 @@ jobs:
               uses: gradle/actions/setup-gradle@v6
 
             # assembleDebug proves it builds, testDebugUnitTest runs the suite,
-            # and lintDebug is the warnings-are-failures gate (the module sets
-            # warningsAsErrors). These are the three commands android/AGENTS.md
-            # tells a contributor to run before opening a PR.
+            # lintDebug is the static-analysis gate (warningsAsErrors), and
+            # assembleRelease proves the release source set and R8 still build.
+            # These are the commands android/AGENTS.md tells a contributor to
+            # run before opening a PR.
             - name: Build, test and lint
-              run: ./gradlew assembleDebug testDebugUnitTest lintDebug
+              run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
 
             - name: Upload reports on failure
               if: failure()

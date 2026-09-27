@@ -30,6 +30,16 @@ class CardStateMappingTest {
     }
 
     @Test
+    fun `queued library row waits for a connection without a stale speed`() {
+        val card = libraryRow(DownloadStatus.QUEUED, LibraryCardStatus.DOWNLOADING).toCardState()
+        card.waitingForConnection shouldBe true
+        card.speed shouldBe null
+        card.progress shouldBe 50f
+        libraryRow(DownloadStatus.DOWNLOADING, LibraryCardStatus.DOWNLOADING).toCardState()
+            .waitingForConnection shouldBe false
+    }
+
+    @Test
     fun `paused library row has no speed and keeps its progress`() {
         val card = libraryRow(DownloadStatus.PAUSED, LibraryCardStatus.PAUSED).toCardState()
         card.speed shouldBe null

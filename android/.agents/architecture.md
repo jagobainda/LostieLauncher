@@ -164,8 +164,9 @@ followed.
 | `INSTALLATION_FAILED` (Android only) | Failure shows a `DownloadError` or `HashMismatch` dialog and resets the card to Available | Amber `DownloadErrorTitle` line, empty action column | The card cannot know which failure happened, and `LibraryViewModel` offers no retry yet (R-10-g); step 14 owns the retry path |
 | Unsupported My Games actions (Android only) | Every action works | Amber dot, tooltip line, still tappable | The seam answers `NotSupportedYet`; see above |
 | Card bottom margin | 10 px inside each card | Not in the component; the list spaces cards 10 dp apart | Compose components do not carry outer margins |
-| Touch target | 32 px buttons | 32 dp buttons, below Android's 48 dp minimum | Kept for fidelity; step 15's accessibility pass decides |
-| Scrollbar | Custom 8 px trough and thumb on every list | Not ported | A permanent trough on a touch list fights the platform's own scroll indicator. The screens that own the lists decide, and the 1 dp spacing token waits for them |
+| Touch target | 32 px buttons | 32 dp buttons, below Android's 48 dp recommendation | Kept for fidelity; they meet WCAG 2.2's 24 px minimum |
+| Scrollbar | Custom 8 px trough and thumb on every list | Not ported | A permanent trough on a touch list fights the platform's own scroll indicator |
+| Waiting for a connection (Android only) | A dropped connection fails the download after three attempts | A transfer the system stops (the network constraint) returns to `QUEUED`; the card keeps its percentage and reads `StatusWaitingForConnection` instead of a frozen speed and time | WorkManager resumes it by itself when the network returns |
 
 ### Dialogs
 
@@ -220,8 +221,9 @@ self-update (`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`,
 `DownloadDirNotUsable*`, step 07 decision 3), `OneDriveWarning*` (`spec/10` 9),
 the exit warning (`ExitWarning*`: back from Home backgrounds the task and a
 transfer keeps running in WorkManager) and the English pre-startup fatal
-error (the system's crash dialog covers it). Their keys are still in the
-catalogue; see [localization-and-themes.md](localization-and-themes.md).
+error (the system's crash dialog covers it; the crash itself is logged). Their
+keys are gone from all eight languages; see
+[localization-and-themes.md](localization-and-themes.md).
 
 **Android-only outcomes and their text.** `DOWNLOAD_BUSY`, `DOWNLOAD_INVALID`
 and `DOWNLOAD_NOT_FOUND` show `DownloadError*`. `LAUNCH_FAILED` shows
@@ -235,7 +237,7 @@ them; the pending one answers `NotSupportedYet`.
 
 | Area | Desktop | Android | Why |
 | --- | --- | --- | --- |
-| Size | Fixed windows (420, 480 × 420, 440 × 250, 480 × 500); the message box 220 to 560 tall | The desktop width, capped at the screen minus 16 dp a side; the heights capped to the screen, with the body scrolling | A phone is narrower than every dialog |
+| Size | Fixed windows (420, 480 × 420, 440 × 250, 480 × 500); the message box 220 to 560 tall | The desktop width, capped at the screen minus 16 dp a side; the heights capped to the screen, with the body scrolling. The download confirmation takes its 420 as a minimum and grows to its content | A phone is narrower than every dialog. At phone width the download confirmation's text wraps taller than 420, and a fixed height hid the key field under the buttons |
 | Chrome | Draggable title bar, ✕ hovering to `#E81123` | ✕ kept, `#E81123` on hover and press; no drag | There is no window to move |
 | Keyboard | Enter confirms, Escape cancels, Y and N answer | Back cancels; the key fields confirm on the keyboard's Done | `spec/10` 13 |
 | Scrim | None: the dialog is a separate window over its owner | The platform's dim behind the dialog | On touch, a modal with no scrim reads as part of the page underneath |
@@ -244,8 +246,10 @@ them; the pending one answers `NotSupportedYet`.
 | Free space | The path's drive, em dash when it cannot be read | `usableSpace` of the nearest existing ancestor, em dash when unreadable, same formatting (`FreeSpaceFormatter`) | App-specific storage has a queryable volume, which settles `spec/10` 10 |
 | Download logo | The image as soon as the URL is valid | The Pokéball until it loads, as on the cards | See the cards' table |
 | Path tooltip | Hover | Long press | Step 11 decision 4 |
-| ✕ accessibility | No name | No content description either | The catalogue has no "close" key; step 15's accessibility pass |
-| Key field and path box on Sylveon | `TertiaryBg` equals `PrimaryBg`, so they are invisible | The same | Faithful; on step 15's contrast list |
+| Link buttons (view page, GitHub) | Never recolour: the local `Foreground` beats the style's hover setter | Recolour to the hover accent while hovered or pressed | Touch has no other press feedback; harmless |
+| ✕ accessibility | No name | Spoken as `BtnClose` | Android-only key; an icon-only control needs a label |
+| Title | Clipped at the window edge | Ellipsized | Large font scales make long titles common |
+| Key field and path box on the light themes | `TertiaryBg` equals `PrimaryBg`, so they are invisible | A 1 dp `OverlayStrong` outline (`Modifier.inputSurface`) only where that happens | Contrast review; dark themes are unchanged |
 
 ### Screens
 
@@ -285,7 +289,7 @@ the ones a device cannot reach today (the offline banner, a My Games list).
 - **Settings** keeps games auto-update, the version string, language and theme.
   Start with Windows and start minimized went in step 07, "Check for updates"
   with launcher self-update, and the download-directory row with the folder
-  picker. The keys go in step 15. Auto-update can only act on installed games,
+  picker, and their keys went with them. Auto-update can only act on installed games,
   so while `installedGames` is `NotSupportedYet` its row carries the amber
   `StatusNotSupportedYet` line (`SettingsUiState.autoUpdateSupported`). The
   switch still toggles and persists `games.autoUpdate`, so the preference is
@@ -301,7 +305,10 @@ the ones a device cannot reach today (the offline banner, a My Games list).
 | Settings row layout | Label and control overlap in one grid cell | The label takes the remaining width beside the control | A narrow screen would otherwise draw the label under the combo box |
 | FAQ search | Text box in the view; caret `SecondaryFg` | The same, plus Search on the keyboard closes it | A soft keyboard needs a way out |
 | Library scroll | `BringIntoView`: the minimum scroll | `scrollToItem`: the card at the top of the list | No minimal-scroll API on `LazyListState`; still instant, as the desktop is |
-| Search bar and key field on Sylveon | `TertiaryBg` equals `PrimaryBg`, so they are invisible | The same | Faithful; on step 15's contrast list |
+| Search bar on the light themes | `TertiaryBg` equals `PrimaryBg`, so it is invisible | A 1 dp outline, as in the dialogs' table | Contrast review |
+| FAQ placeholder | One line in a 40 px bar | Ellipsized; the bar grows with the font scale | A 200 % font wrapped and clipped it |
+| Headings | None | Home column titles and Settings section titles are TalkBack headings | Screen-reader navigation |
+| FAQ search after process death | Not applicable | The query is kept in `SavedStateHandle`, so it and the filtered list come back together | The text field restores its own saved text |
 | Scrollbar | 8 px custom scrollbar on every list | None | See the cards' table |
 | Auto-update row | A plain switch | The same switch, plus the amber `StatusNotSupportedYet` line while installed games cannot be known | Updating installed games depends on the pending seam; a switch that silently does nothing is what the port must avoid |
 | FAQ "where are games installed" | Games go to the configured download directory, changeable in Settings | Games live in the launcher's own storage, the folder cannot be changed, and uninstalling the launcher removes them, in all eight languages | The download-directory setting does not exist on Android (step 07 decision 3); `FaqsTest` fails if an answer names it again |
@@ -398,7 +405,11 @@ Already in place:
   returning an opaque partial-uninstall location to its owning adapter.
 - `LauncherDataCoordinator` — the shared Home and catalogue snapshots and the
   refresh sequence. The first foreground `onStart` starts its initial loads and
-  Home timer, independently of screen ViewModel creation. Home and catalogue load
+  Home timer, independently of screen ViewModel creation. The timer skips its
+  ticks while no activity is visible (`setVisible`, from the process lifecycle)
+  and refreshes on return. A catalogue entry whose id slug repeats an earlier
+  one is dropped and logged, because the Library list and the downloads table
+  are both keyed by it. Home and catalogue load
   concurrently on a global refresh; the installed-game projection is
   invalidated only after both finish.
 - `GameAutoUpdateCoordinator` — reads the persisted game-update preference at
@@ -416,9 +427,8 @@ The seven presentation ViewModels have no ViewModel-to-ViewModel references.
 `MainViewModel` projects shell state from the coordinator, navigation and
 download flows. `GlobalViewModel` derives busy state from download and refresh
 flows and derives game activity from `GameLaunchService.activeSessions`.
-`SettingsViewModel` also owns the appearance and app version state previously exposed by
-`AppearanceViewModel`; both the activity and the Settings screen observe the
-same `SettingsStore`. The process lifecycle starts shared loading without
+`SettingsViewModel` owns the appearance and app version state; both the
+activity and the Settings screen observe the same `SettingsStore`. The process lifecycle starts shared loading without
 requiring Home, Library or Games ViewModels to exist.
 
 Game lifecycle operations always go through `service/game/`. ViewModels must
@@ -478,3 +488,11 @@ that owns them. Which desktop test cases came across and which did not:
   `spec/03-services.md` has the degradation table, and it is behaviour, not
   advice.
 - Log messages are English and state what happened, not that a method ran.
+- **Log what the desktop logs, at the same level.** Navigation, loads and
+  counts at debug; user decisions, download lifecycle and maintenance blocks at
+  info; failures at error. The download manager logs every accepted command, so
+  a caller does not repeat it.
+- `UncaughtExceptionLogger` is installed in `LostieLauncherApplication` and
+  writes every uncaught exception to the file log before the platform handler
+  ends the process. There is no keep-alive on Android, so
+  `UnhandledExceptionPolicy` has no caller.

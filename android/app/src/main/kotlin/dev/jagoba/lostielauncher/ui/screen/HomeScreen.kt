@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -168,7 +170,9 @@ private fun HomeHeader(text: String, modifier: Modifier = Modifier) {
         color = LocalLauncherColors.current.secondaryFg,
         fontSize = LauncherType.TitleSize,
         fontWeight = LauncherType.SemiBold,
-        modifier = modifier.padding(bottom = LauncherSpacing.ExtraLarge),
+        modifier = modifier
+            .padding(bottom = LauncherSpacing.ExtraLarge)
+            .semantics { heading() },
     )
 }
 

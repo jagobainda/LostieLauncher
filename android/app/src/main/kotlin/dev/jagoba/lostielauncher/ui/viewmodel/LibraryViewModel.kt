@@ -27,6 +27,7 @@ import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.util.download.SpecialVersionPolicy
 import dev.jagoba.lostielauncher.util.format.RemainingTimeFormatter
+import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.GameIdentityMatcher
 import dev.jagoba.lostielauncher.util.version.VersionUtils
 import java.util.UUID
@@ -146,6 +147,7 @@ class LibraryViewModel @Inject constructor(
     private val specialVersions: SpecialVersionService,
     private val navigation: NavigationStore,
     private val externalLinks: ExternalLinkService,
+    private val logger: Logger,
 ) : ViewModel() {
     private val transient = MutableStateFlow(LibraryTransient())
     private val playtimes = MutableStateFlow<Map<UUID, Int>>(emptyMap())
@@ -270,7 +272,10 @@ class LibraryViewModel @Inject constructor(
         val canReplaceMissingInstall =
             allowInstalled && row.status in setOf(LibraryCardStatus.DOWNLOADED, LibraryCardStatus.UPDATE_AVAILABLE) &&
                 row.canSwitchSpecialVersion
-        if (!row.canStart && !canReplaceMissingInstall) return
+        if (!row.canStart && !canReplaceMissingInstall) {
+            logger.debug("Download request ignored for $gameId: its card is ${row.status}.")
+            return
+        }
         viewModelScope.launch {
             if (!serverActionsAvailable()) return@launch
             if (row.download?.status == DownloadStatus.PAUSED) {
@@ -305,9 +310,13 @@ class LibraryViewModel @Inject constructor(
 
     fun startUpdate(gameId: String) {
         val row = state.value.games.firstOrNull { it.game.gameId == gameId } ?: return
-        if (!row.canUpdate) return
+        if (!row.canUpdate) {
+            logger.debug("Update request ignored for $gameId: its card is ${row.status}.")
+            return
+        }
         viewModelScope.launch {
             if (!serverActionsAvailable()) return@launch
+            logger.debug("Starting update session for $gameId.")
             start(row.game, GameDownloadArgs(row.game.gameId, row.game.version, row.game.relativePath))
         }
     }
@@ -332,16 +341,21 @@ class LibraryViewModel @Inject constructor(
     private suspend fun startSpecialVersion(game: GameInfo, key: String) {
         if (!serverActionsAvailable()) return
         if (!SpecialVersionPolicy.isValidKey(key)) {
+            logger.info("Download key rejected for ${game.gameId}: invalid format.")
             transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_INVALID)
             return
         }
+        logger.debug("Fetching special version config for key: $key.")
         when (val result = specialVersions.lookup(key)) {
             is SpecialVersionLookup.Found -> {
                 if (!SpecialVersionPolicy.isValidConfig(result.config)) {
+                    logger.error("Invalid special version config for key $key: archivo='${result.config.fileName}'.")
                     transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
                 } else if (!SpecialVersionPolicy.matchesGame(result.config, game.id)) {
+                    logger.info("Special version key $key belongs to another game than ${game.gameId}.")
                     transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_MISMATCH)
                 } else {
+                    logger.debug("Starting special version session for ${game.gameId} (${result.config.version}).")
                     start(
                         game,
                         GameDownloadArgs(game.gameId, result.config.version, "/${result.config.fileName}", key),
@@ -349,17 +363,15 @@ class LibraryViewModel @Inject constructor(
                 }
             }
 
-            SpecialVersionLookup.NotFound ->
-                transient.value =
-                    transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
+            SpecialVersionLookup.NotFound -> {
+                logger.info("No special version config exists for key $key.")
+                transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
+            }
 
-            SpecialVersionLookup.NetworkError ->
-                transient.value =
-                    transient.value.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR)
-
-            SpecialVersionLookup.InvalidResponse ->
-                transient.value =
-                    transient.value.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR)
+            SpecialVersionLookup.NetworkError, SpecialVersionLookup.InvalidResponse -> {
+                logger.info("Special version config for key $key could not be read: $result.")
+                transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR)
+            }
         }
     }
 
@@ -383,6 +395,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun dismissPrompt() {
+        transient.value.pendingCancelGameId?.let { logger.debug("Cancel download aborted by user for $it.") }
         transient.value = LibraryTransient(notice = transient.value.notice)
     }
 
@@ -400,6 +413,7 @@ class LibraryViewModel @Inject constructor(
             maintenanceNoticeShown = false
             return true
         }
+        logger.info("Server-backed action blocked by maintenance flag.")
         if (!maintenanceNoticeShown) {
             transient.value = transient.value.copy(notice = LibraryNotice.SERVER_ACTIONS_UNAVAILABLE)
             maintenanceNoticeShown = true
@@ -408,6 +422,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun record(result: DownloadCommandResult) {
+        if (result != DownloadCommandResult.ACCEPTED) logger.info("Download command rejected: $result.")
         val notice = when (result) {
             DownloadCommandResult.ACCEPTED -> null
             DownloadCommandResult.BUSY -> LibraryNotice.DOWNLOAD_BUSY

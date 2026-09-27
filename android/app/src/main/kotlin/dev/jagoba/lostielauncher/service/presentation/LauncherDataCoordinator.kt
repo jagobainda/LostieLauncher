@@ -48,6 +48,7 @@ class LauncherDataCoordinator @Inject constructor(
     private val mutableRefreshing = MutableStateFlow(false)
     private val mutableGamesLoading = MutableStateFlow(false)
     private val mutableGamesRevision = MutableStateFlow(0L)
+    private val visible = MutableStateFlow(true)
     private var started = false
 
     val home: StateFlow<HomeData> = mutableHome.asStateFlow()
@@ -69,6 +70,7 @@ class LauncherDataCoordinator @Inject constructor(
         scope.launch {
             while (isActive) {
                 delay(options.interval.inWholeMilliseconds)
+                visible.first { it }
                 refreshHome(settings.settings.first().language, showLoading = false)
             }
         }
@@ -81,6 +83,10 @@ class LauncherDataCoordinator @Inject constructor(
                 val offline = content.isServerActionBlocked(force)
                 val feed = content.getHomeContent(language, force)
                 mutableHome.value = HomeData(content = feed, isOffline = offline, isLoading = false)
+                logger.debug(
+                    "Home content loaded: ${feed.news.size} news, ${feed.notifications.size} notifications. " +
+                        "Offline mode: $offline. Stale: ${feed.isStale}.",
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -94,7 +100,7 @@ class LauncherDataCoordinator @Inject constructor(
         catalogueGate.withLock {
             mutableCatalogue.value = mutableCatalogue.value.copy(isLoading = true)
             try {
-                val games = content.getGames()
+                val games = distinctGames(content.getGames())
                 mutableCatalogue.value = CatalogueData(isLoading = false, games = games)
                 if (games.isNotEmpty()) downloads.purgeStale(games.mapTo(mutableSetOf()) { it.gameId })
             } catch (cancelled: CancellationException) {
@@ -120,6 +126,19 @@ class LauncherDataCoordinator @Inject constructor(
         } finally {
             mutableRefreshing.value = false
             refreshGate.unlock()
+        }
+    }
+
+    fun setVisible(isVisible: Boolean) {
+        visible.value = isVisible
+    }
+
+    private fun distinctGames(games: List<GameInfo>): List<GameInfo> {
+        val seen = mutableSetOf<String>()
+        return games.filter { game ->
+            seen.add(game.gameId).also { unique ->
+                if (!unique) logger.info("Skipping duplicate catalogue entry: '${game.name}' (id: ${game.gameId}).")
+            }
         }
     }
 

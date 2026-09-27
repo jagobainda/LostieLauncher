@@ -41,6 +41,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.inputSurface
 
 @Composable
 fun <T> LauncherComboBox(
@@ -65,7 +66,7 @@ fun <T> LauncherComboBox(
                     faceWidth = it.width
                     faceHeight = it.height
                 }
-                .background(colors.tertiaryBg, shape)
+                .inputSurface(colors, shape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,

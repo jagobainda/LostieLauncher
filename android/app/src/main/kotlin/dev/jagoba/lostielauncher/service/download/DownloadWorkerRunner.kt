@@ -12,7 +12,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
-/** Isolates WorkManager callbacks from the download state machine. */
 internal interface DownloadWorkerRuntime {
     suspend fun setForeground(displayName: String, progress: DownloadProgress)
 
@@ -24,7 +23,6 @@ internal enum class DownloadWorkerOutcome {
     FAILURE,
 }
 
-/** Coordinates one durable transfer without depending on Android worker types. */
 @Singleton
 internal class DownloadWorkerRunner @Inject constructor(
     private val dao: DownloadDao,
@@ -74,8 +72,14 @@ internal class DownloadWorkerRunner @Inject constructor(
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) {
                 val current = dao.get(gameId)
-                if (current?.workId == workId && current.status == DownloadStatus.CANCELLED.name) {
-                    deleteArtifacts(entity)
+                if (current?.workId != workId) return@withContext
+                when (current.status) {
+                    DownloadStatus.CANCELLED.name -> deleteArtifacts(entity)
+
+                    DownloadStatus.DOWNLOADING.name -> {
+                        dao.setWorkerStatus(gameId, workId, DownloadStatus.QUEUED.name, listOf(current.status))
+                        logger.info("Download interrupted by the system, waiting to resume: $gameId.")
+                    }
                 }
             }
             throw cancelled
@@ -112,6 +116,7 @@ internal class DownloadWorkerRunner @Inject constructor(
             status = DownloadStatus.COMPLETED.name,
         )
         if (changed == 0) return DownloadWorkerOutcome.SUCCESS
+        logger.info("Download complete: ${entity.gameId}.")
         try {
             handoff.deliver(
                 DownloadedFile(
@@ -134,6 +139,7 @@ internal class DownloadWorkerRunner @Inject constructor(
         status: DownloadStatus,
         errorMessage: String?,
     ): DownloadWorkerOutcome {
+        logger.error("Download failed: ${entity.gameId} ($status): $errorMessage")
         dao.finish(
             gameId = entity.gameId,
             workId = workId,

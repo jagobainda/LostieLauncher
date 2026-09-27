@@ -437,6 +437,7 @@ class LibraryViewModelTest {
             special,
             navigation,
             externalLinks,
+            mockk<Logger>(relaxed = true),
         )
     }
 }

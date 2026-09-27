@@ -60,6 +60,7 @@ internal class DefaultDownloadManager @Inject constructor(
                 status = DownloadStatus.QUEUED.name,
             )
             if (changed == 0) return@withLock DownloadCommandResult.INVALID_STATE
+            logger.info("Retrying download from its partial: ${request.args.gameId} ${request.args.version}.")
             return@withLock enqueue(request.args.gameId, workId)
         }
         withContext(dispatchers.io) { fileStore.deleteArtifacts(destination.absolutePath) }
@@ -81,6 +82,7 @@ internal class DefaultDownloadManager @Inject constructor(
                 createdAtEpochMillis = clock.millis(),
             ),
         )
+        logger.info("Downloading: ${request.args.gameId} ${request.args.version}.")
         enqueue(request.args.gameId, workId)
     }
 
@@ -89,6 +91,7 @@ internal class DefaultDownloadManager @Inject constructor(
         if (entity.status !in ACTIVE_STATUSES) return@withLock DownloadCommandResult.INVALID_STATE
         dao.setStatus(gameId, DownloadStatus.PAUSED.name)
         scheduler.cancel(UUID.fromString(entity.workId))
+        logger.info("Download paused: $gameId.")
         DownloadCommandResult.ACCEPTED
     }
 
@@ -104,6 +107,7 @@ internal class DefaultDownloadManager @Inject constructor(
             status = DownloadStatus.QUEUED.name,
         )
         if (changed == 0) return@withLock DownloadCommandResult.INVALID_STATE
+        logger.info("Download resumed: $gameId.")
         enqueue(gameId, workId)
     }
 
@@ -113,6 +117,7 @@ internal class DefaultDownloadManager @Inject constructor(
         dao.setStatus(gameId, DownloadStatus.CANCELLED.name)
         scheduler.cancel(UUID.fromString(entity.workId))
         withContext(dispatchers.io) { fileStore.deleteArtifacts(entity.destinationPath) }
+        logger.info("Download cancelled: $gameId.")
         DownloadCommandResult.ACCEPTED
     }
 

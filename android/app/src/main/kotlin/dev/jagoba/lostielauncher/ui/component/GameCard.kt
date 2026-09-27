@@ -90,6 +90,7 @@ data class LibraryGameCardState(
     val progress: Float = 0f,
     val remainingTime: String? = null,
     val speed: String? = null,
+    val waitingForConnection: Boolean = false,
     val canStart: Boolean = true,
     val canPause: Boolean = true,
     val canCancel: Boolean = true,
@@ -529,7 +530,12 @@ private fun DownloadProgress(state: LibraryGameCardState) {
                     else -> ProgressLabel("${value.roundToInt()}%")
                 }
                 val remaining = state.remainingTime
-                if (downloading && !remaining.isNullOrEmpty()) {
+                if (downloading && state.waitingForConnection) {
+                    ProgressLabel(
+                        "· ${strings.statusWaitingForConnection}",
+                        Modifier.padding(start = LauncherSpacing.ExtraSmall),
+                    )
+                } else if (downloading && !remaining.isNullOrEmpty()) {
                     ProgressLabel("· $remaining", Modifier.padding(start = LauncherSpacing.ExtraSmall))
                 }
             }

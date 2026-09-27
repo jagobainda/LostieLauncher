@@ -35,7 +35,7 @@ they live side by side:
 | Side                   | Stack                     | Status                                                           |
 | ---------------------- | ------------------------- | ---------------------------------------------------------------- |
 | [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | **Shipping** — the Windows launcher                              |
-| [`android/`](android/) | Kotlin · Compose · MVVM   | **Early** — builds, runs and is tested; no launcher features yet |
+| [`android/`](android/) | Kotlin · Compose · MVVM   | **In development** — every screen works; games cannot run yet    |
 
 ```
 ├── .agents/            # Global agent rules (workflow, boundaries)
@@ -68,6 +68,7 @@ they live side by side:
     ├── build.gradle.kts, settings.gradle.kts, gradle.properties
     ├── gradle/         #   Version catalog + the pinned wrapper
     ├── gradlew, gradlew.bat
+    ├── docs/           #   Parity report, open game-runtime decisions, asset licences
     └── app/            #   The app and its unit tests
 ```
 
@@ -105,11 +106,14 @@ dotnet list  LostieLauncher.slnx package --vulnerable --include-transitive
 ```
 
 ```bash
-# Android — format, then build, test and lint
+# Android — format, then build, test, lint and the release build
 cd android
 ./gradlew spotlessApply
-./gradlew assembleDebug testDebugUnitTest lintDebug
+./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
 ```
+
+Where the Android port stands against the desktop, and what it still lacks, is
+in [android/docs/parity-report.md](android/docs/parity-report.md).
 
 Full detail for each side — architecture, technologies, build and configuration
 — is in [desktop/README.md](desktop/README.md) and

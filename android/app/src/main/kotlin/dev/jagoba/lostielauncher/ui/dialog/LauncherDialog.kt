@@ -44,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -58,6 +59,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.inputSurface
 
 internal enum class DialogButtonStyle { ACCENT, SECONDARY }
 
@@ -113,6 +115,7 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
     val interactions = remember { MutableInteractionSource() }
     val hovered by interactions.collectIsHoveredAsState()
     val pressed by interactions.collectIsPressedAsState()
+    val closeLabel = LocalStrings.current.btnClose
     Row(
         Modifier
             .fillMaxWidth()
@@ -132,6 +135,7 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
             fontSize = LauncherType.BodySize,
             fontWeight = LauncherType.SemiBold,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .padding(start = LauncherSpacing.Medium)
                 .weight(1f),
@@ -140,6 +144,7 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
             Modifier
                 .size(LauncherSizes.TitleBarButton)
                 .background(if (hovered || pressed) FixedColors.WindowsClose else Color.Transparent)
+                .semantics { contentDescription = closeLabel }
                 .clickable(interactionSource = interactions, indication = null, role = Role.Button, onClick = onClose),
             contentAlignment = Alignment.Center,
         ) {
@@ -277,7 +282,7 @@ internal fun DialogKeyField(label: String, value: String, onValueChange: (String
                 .padding(top = LauncherSpacing.ExtraSmall)
                 .fillMaxWidth()
                 .semantics { contentDescription = label }
-                .background(colors.tertiaryBg, RoundedCornerShape(LauncherRadii.Small))
+                .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small))
                 .padding(horizontal = LauncherSpacing.MediumLarge, vertical = LauncherSpacing.Medium),
         )
     }

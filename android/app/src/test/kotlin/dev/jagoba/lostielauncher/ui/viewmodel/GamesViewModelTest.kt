@@ -336,6 +336,14 @@ class GamesViewModelTest {
         sut.state.value.runtimeSupported shouldBe true
     }
 
-    private fun createSut() =
-        GamesViewModel(installation, launch, locations, library, coordinator, navigation, downloads)
+    private fun createSut() = GamesViewModel(
+        installation,
+        launch,
+        locations,
+        library,
+        coordinator,
+        navigation,
+        downloads,
+        mockk<Logger>(relaxed = true),
+    )
 }

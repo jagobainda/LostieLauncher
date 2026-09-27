@@ -166,6 +166,29 @@ class DownloadWorkerRunnerTest {
     }
 
     @Test
+    fun `returns a transfer stopped by the system to the queue with its partial`() = runTest {
+        coEvery { dao.get(GAME_ID) } returnsMany listOf(
+            entity(),
+            entity().copy(status = DownloadStatus.DOWNLOADING.name),
+        )
+        coEvery { transfer.download(any(), any()) } throws CancellationException("constraints not met")
+        val sut = createSut()
+
+        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
+
+        (error is CancellationException) shouldBe true
+        verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
+        coVerify(exactly = 1) {
+            dao.setWorkerStatus(
+                GAME_ID,
+                WORK_ID,
+                DownloadStatus.QUEUED.name,
+                listOf(DownloadStatus.DOWNLOADING.name),
+            )
+        }
+    }
+
+    @Test
     fun `maps an unexpected worker failure without losing persisted progress`() = runTest {
         coEvery { transfer.download(any(), any()) } throws IOException("boom")
         val sut = createSut()
