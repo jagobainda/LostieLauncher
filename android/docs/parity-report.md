@@ -160,9 +160,10 @@ in this step changes their layout. The shell picks rail or bar from the measured
 adapt by measurement, and dialogs cap to the screen and scroll.
 
 **Code quality.** Android Lint (`warningsAsErrors`) is the static-analysis
-gate and ktlint through Spotless the format gate. Lint was red on `HEAD` because
-three checks compare against the live Maven index; they are disabled, and
-Dependabot's `gradle` entry keeps versions current. CI now also runs
+gate and ktlint through Spotless the format gate. No lint check is disabled.
+Lint's version checks compare against the live Maven index, so a new release
+can turn it red without a repository change; the fix is to update the flagged
+dependency, as was done here for core-ktx, work-runtime-ktx and Spotless. CI now also runs
 `assembleRelease`, which is what catches a file added to only one build-type
 source set and anything R8 breaks.
 

@@ -25,13 +25,13 @@ minSdk = "26"
 targetSdk = "37"
 
 # ── AndroidX and Compose ────────────────────────────────────────────────────
-androidxCore = "1.19.0"
+androidxCore = "1.19.1"
 androidxActivity = "1.13.0"
 androidxLifecycle = "2.11.0"
 composeBom = "2026.09.00"
 datastore = "1.2.1"
 room = "2.8.5"                        # step 07
-work = "2.11.2"                       # step 08
+work = "2.12.0"                       # step 08
 
 # ── Dependency injection ────────────────────────────────────────────────────
 hilt = "2.60.1"
@@ -54,7 +54,7 @@ kotest = "6.2.5"
 turbine = "1.2.1"
 
 # ── Static analysis ─────────────────────────────────────────────────────────
-spotless = "8.10.2"
+spotless = "8.10.3"
 ktlint = "1.8.0"
 
 [libraries]

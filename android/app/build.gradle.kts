@@ -66,9 +66,6 @@ android {
         abortOnError = true
         checkDependencies = true
         checkReleaseBuilds = false
-        // These compare against the live Maven index, so they fail without a
-        // repository change; Dependabot's `gradle` entry owns version currency.
-        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
     }
 
     packaging {
