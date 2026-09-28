@@ -130,13 +130,11 @@ Read [spec/README.md](spec/README.md) before porting anything.
 
 `.github/` serves both sides, so treat it as shared ground:
 
-- **`workflows/ci.yml`** — five jobs. `format-check`, `build-and-test` and
-  `vulnerable-dependencies` are the desktop's, on `windows-latest` with
-  `working-directory: desktop`; the two `android-*` ones are on `ubuntu-latest`
-  with `working-directory: android`. A new job scopes itself the same way rather
-  than changing the defaults for everyone, and carries the name of its side —
-  the three desktop ones keep their original unprefixed names so existing branch
-  protection rules still match.
+- **`workflows/ci.yml`** — five jobs. The three `desktop-*` ones are on
+  `windows-latest` with `working-directory: desktop`; the two `android-*` ones
+  are on `ubuntu-latest` with `working-directory: android`. A new job scopes
+  itself the same way rather than changing the defaults for everyone, and its
+  name starts with its side, so a PR's check list says which side failed.
 - **`dependabot.yml`** — `nuget` points at `/desktop`, `gradle` at `/android`,
   `github-actions` at `/`. A new ecosystem gets its own entry; do not repoint an
   existing one.
