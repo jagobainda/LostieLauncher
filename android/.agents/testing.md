@@ -211,16 +211,16 @@ pinned by `HttpsUrlsTest`.
 | --- | --- | --- |
 | `LogsMaintenanceTests` | 15 | Log rotation and retention are **step 07's**, which is asked to decide how file logging materialises on Android. Porting the desktop's month-and-index naming now would pre-empt that decision rather than serve it. |
 | `DirectoryRemoverTests` | 11 | Recursive deletion with a reparse-point guard — filesystem, and the uninstall flow it serves does not exist yet. |
-| `OneDrivePathPolicyTests` | 9 | `spec/10-windows-only.md` §9: OneDrive detection is dropped, along with `OneDriveWarning*`. The variables and the folder convention are Windows. A cloud-backed provider behind the storage access framework would be a different check with different evidence, not this one ported. |
-| `DownloadDirectoryProbeTests` | 9 | The write-and-rename pre-flight. `spec/10` §8 keeps the *principle* and re-derives the check once the storage model is decided — step 07. |
+| `OneDrivePathPolicyTests` | 9 | OneDrive detection is dropped, along with `OneDriveWarning*`. The variables and the folder convention are Windows. A cloud-backed provider behind the storage access framework would be a different check with different evidence, not this one ported. |
+| `DownloadDirectoryProbeTests` | 9 | The write-and-rename pre-flight. The *principle* survives; the check is re-derived once the storage model is decided — step 07. |
 | `FileMoveDiagnosticsTests` | 8 | Reads attributes and lock state off a real path, and decodes a 13-entry Win32 error table. |
-| `WaitHandleSignalListenerTests` | 7 | A named kernel object. No counterpart, and `spec/09` says not to look for one. |
+| `WaitHandleSignalListenerTests` | 7 | A named kernel object. No counterpart, and none should be looked for. |
 | `GameArchiveInstallerTests` | 6 | Extract, swap, roll back — filesystem, and step 08 decides which archive formats survive. |
-| `FileLockProbeTests` | 5 | `spec/10` §11: the three-valued answer is worth keeping, how the middle value is obtained is step 09's and may not exist. |
+| `FileLockProbeTests` | 5 | The three-valued answer is worth keeping, how the middle value is obtained is step 09's and may not exist. |
 | `FolderLauncherTests` | 5 | Opens a folder in the shell. |
 | `LogsTests` | 5 | The log line's own format. Same owner as `LogsMaintenanceTests`: step 07. |
 | `ProcessUtilsTests` | 5 | Launching and tracking a game process — the step 09 seam, and out of scope for the whole port. |
-| `StartupWindowPolicyTests` | 4 | There is no window, and the setting it branches on is gone: `StartMinimized` is dropped in `spec/10`'s settings-survival table. The function has no input it could be given. |
+| `StartupWindowPolicyTests` | 4 | There is no window, and the setting it branches on is gone: `StartMinimized` is dropped on Android. The function has no input it could be given. |
 | `AsyncEventHandlerTests` | 4 | A .NET idiom, not a decision. The invariant it protects — a failure in an exit handler must not escape — carries over; the wrapper does not. |
 | `DownloadArtifactsTests` | 4 | Deletes the three files of a download. Filesystem, step 08. |
 | `FileFinalizerTests` (`MoveAsync`) | 4 | See above. |
@@ -326,8 +326,8 @@ JVM suite must be rerun after each change rather than relying on a fixed total.
 
 The Games and Library screens now share one identity rule: match non-empty IDs
 first, and use the name only when at least one side has no usable ID. A matching
-name with conflicting IDs is not an installation. This resolves the desktop
-disagreement recorded in `spec/02-screens.md` and is pinned by
+name with conflicting IDs is not an installation. This resolves a disagreement
+on the desktop, where the two screens match differently, and is pinned by
 `GameIdentityMatcherTest` and `GamesViewModelTest`.
 
 `AppearanceViewModelTest` moved into `SettingsViewModelTest` when the existing
@@ -340,8 +340,8 @@ The desktop's Saved Games folder action is omitted because it names a Windows
 profile folder with no Android counterpart. Window minimize and tray behavior,
 Windows startup, OneDrive detection, the directory picker and launcher
 self-update are likewise absent under the decisions already recorded for step
-07 and in `spec/10-windows-only.md`. Library maintenance actions remain enabled
-and explain a blocked request once per blocked streak. The first foreground
-process `onStart` starts Home and catalogue loading, so headless process starts
-do not trigger launcher requests, and navigation scoping cannot strand either
-screen.
+07 and in the [parity report](../docs/parity-report.md). Library maintenance
+actions remain enabled and explain a blocked request once per blocked streak.
+The first foreground process `onStart` starts Home and catalogue loading, so
+headless process starts do not trigger launcher requests, and navigation
+scoping cannot strand either screen.

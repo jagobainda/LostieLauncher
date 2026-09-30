@@ -7,8 +7,7 @@ what waits on a decision, and what was deliberately left behind, with the reason
 for each.
 
 The desktop code under [`../../desktop/`](../../desktop/) is the authority on
-behavior, [`../../spec/`](../../spec/) is its written contract, and the
-per-area deviations live in the three tables of
+behavior, and the per-area deviations live in the three tables of
 [`../.agents/architecture.md`](../.agents/architecture.md) (cards, dialogs,
 screens). This document summarises and does not repeat them.
 
@@ -94,14 +93,14 @@ not rediscovered:
 
 | Desktop behavior | Why | Reference |
 | --- | --- | --- |
-| Start with Windows, start minimized, the system tray | Android has no user-controlled autostart and no tray; keys and settings removed | `spec/10` 2, 3 |
-| Single-instance mutex | The Android task model already gives one instance | `spec/10` 4 |
-| Launcher self-update (Velopack), its four dialogs and the "check for updates" row | Updates come from the distribution channel | `spec/10` 5 |
-| Window chrome: minimize, close, drag region, 1 px border | There is no window | `spec/10` 6 |
-| Download-folder picker, its probe and its dialogs | Games live in app-specific storage, no permission needed | step 07 decision 3, `spec/10` 7, 8 |
-| OneDrive detection and warning | No OneDrive-synced folder can be the games root | `spec/10` 9 |
-| Keyboard shortcuts | Back replaces Escape; no hardware keyboard is assumed | `spec/10` 13 |
-| `Saved Games` rail action | A Windows profile folder | `spec/10` 14 |
+| Start with Windows, start minimized, the system tray | Android has no user-controlled autostart and no tray; keys and settings removed | `WindowsStartupService.cs`, `App.xaml.cs` |
+| Single-instance mutex | The Android task model already gives one instance | `App.xaml.cs` |
+| Launcher self-update (Velopack), its four dialogs and the "check for updates" row | Updates come from the distribution channel | `IUpdateGateway.cs` |
+| Window chrome: minimize, close, drag region, 1 px border | There is no window | `MainWindow.xaml` |
+| Download-folder picker, its probe and its dialogs | Games live in app-specific storage, no permission needed | step 07 decision 3, `DownloadDirectoryProbe.cs` |
+| OneDrive detection and warning | No OneDrive-synced folder can be the games root | `OneDrivePathPolicy.cs` |
+| Keyboard shortcuts | Back replaces Escape; no hardware keyboard is assumed | `KeyboardShortcuts.cs` |
+| `Saved Games` rail action | A Windows profile folder | `MainViewModel.cs` |
 | Exit warning | Back on Home backgrounds the task and a transfer keeps running in WorkManager, so there is nothing to lose | step 13 |
 | Pre-startup fatal error box | The system's crash dialog covers it; the crash itself is now logged | step 13 |
 | Scrollbar | A permanent trough fights the platform scroll indicator | cards' table |
@@ -185,7 +184,6 @@ Carried from the review ledger, none blocking:
 | Coil uses its own HTTP client | Kept: logos are static CDN images and need none of the content timeouts; the desktop's image loader is separate too |
 | The launcher logo is a 60 × 60 PNG, upscaled above ~440 dpi | Cosmetic |
 | No guard test against inline regex flags, which ICU rejects | A regex change still needs a device run |
-| `spec/` drift: `spec/06` spacing scale, `spec/07` card button padding, `spec/09` step assignments | `spec/` is shared ground; correct it in its own change |
 | Pre-existing Spanish comments in root `.editorconfig`, `dependabot.yml`, `CODEOWNERS` | Its own `chore/` change |
 
 ## Decisions for the maintainer

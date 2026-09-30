@@ -19,10 +19,9 @@ job, not the tool's.
 | adding user-visible text or touching the theme              | [.agents/localization-and-themes.md](.agents/localization-and-themes.md) |
 | branching, committing or opening a PR                       | [../.agents/workflow.md](../.agents/workflow.md)                         |
 
-This app is a port of the desktop launcher's **behavior**, not of its code. The
-behavioural contract is [`../spec/`](../spec/); where the spec and
-[`../desktop/`](../desktop/) disagree, **the desktop code wins** and the drift is
-a bug in the spec. The human-facing docs are
+This app is a port of the desktop launcher's **behavior**, not of its code, and
+[`../desktop/`](../desktop/) is the authority on what that behavior is. The
+human-facing docs are
 [CONTRIBUTING.md](../CONTRIBUTING.md) and [README.md](README.md).
 The deliberately pending game installation and launch contract is documented in
 [docs/game-runtime-options.md](docs/game-runtime-options.md), and where the
@@ -40,8 +39,8 @@ These apply to every Android change, with no topic file to look up:
 4. Never widen visibility to make code testable — the tests are in the same
    module and already see `internal`.
 5. A new user-visible string means **all 8 languages**. A new colour role means
-   **all 10 themes**. See [spec/05](../spec/05-localization.md) and
-   [spec/06](../spec/06-design-tokens.md).
+   **all 10 themes**. See
+   [localization-and-themes.md](.agents/localization-and-themes.md).
 6. No version literal in a build script — it goes in
    [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
 7. No URL, path or magic number inside the type that does the work: it arrives

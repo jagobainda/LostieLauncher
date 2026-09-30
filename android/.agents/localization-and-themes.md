@@ -4,11 +4,9 @@ Part of the agent guidelines — see [AGENTS.md](../AGENTS.md) for the index and
 the rules that always apply. Read this before adding any user-visible text or
 touching the theme.
 
-Everything here is subordinate to
-[`spec/05-localization.md`](../../spec/05-localization.md) and
-[`spec/06-design-tokens.md`](../../spec/06-design-tokens.md), which carry the
-actual values, and both are subordinate to the desktop code they were extracted
-from.
+Everything here is subordinate to the desktop code that holds the actual
+values: `Content/Strings.cs` and `Content/Faqs.cs` for text, `Themes/` for
+colour, and the XAML under `Views/` and `Styles/` for everything else.
 
 Both areas work the same way on the desktop and here: a fixed set of parallel
 implementations that has to stay complete, switchable at runtime, with the
@@ -35,8 +33,8 @@ itself reads before any Kotlin runs, and says so.
 What binds:
 
 - **No user-visible literal outside the catalogue**, in a composable or a
-  ViewModel. The desktop has exactly three deliberate exceptions and
-  [`spec/10-windows-only.md`](../../spec/10-windows-only.md) §15 lists them; the
+  ViewModel. The desktop has exactly three deliberate exceptions — the product
+  name, the `Saved Games` tooltip and the pre-startup fatal-error box — and the
   only one that survives the port is the product name `"Lostie Launcher"`.
   The title bar's social tooltips are brand names too and live on
   `ExternalLink.brandName`, not in a composable.
@@ -70,9 +68,9 @@ What binds:
 ### Thirty keys the desktop has and this side does not
 
 `SettingsStartWithWindows`, `SettingsStartMinimized`, `TrayOpen` and `TrayExit`
-are gone from all eight languages. `spec/10-windows-only.md` entries 2 and 3 and
-its closing table: Android has no user-controlled autostart, no tray, and no
-concept of an application running with no UI at the user's request. Dropping a
+are gone from all eight languages. Android has no user-controlled autostart, no
+tray, and no concept of an application running with no UI at the user's
+request. Dropping a
 setting means dropping its Settings row, its key in **all eight** languages and
 its persisted field — half-removing one is the failure mode to avoid, and
 `StringsTest` asserts none of the four came back.
@@ -128,8 +126,9 @@ What binds:
   colour fails contrast on Android it goes on the list below; it does not get
   changed on the way past.
 - **Never inline a colour.** A literal will not follow the active theme. The
-  four in `FixedColors` are the deliberate exceptions and
-  `spec/06-design-tokens.md` says why each one does not move.
+  four in `FixedColors` are the deliberate exceptions — the amber warning, the
+  close button's hover red, the notification severity stripes and the skeleton
+  shimmer — each fixed so it reads the same in every theme.
 - Adding a colour role means adding it to **all ten** palettes. Unlike the
   desktop — where a key missing from one dictionary is a runtime binding failure
   nobody sees until that theme is selected — here it is a compile error, because
@@ -145,9 +144,7 @@ What binds:
   7 belongs only to the download-directory path box, which step 14 dropped with
   its row, and the 1 only to the scrollbar, which step 12 did not port (see
   [architecture.md](architecture.md#components)). A step that brings either
-  back adds the token to `LauncherSpacing` rather than inlining the number. The
-  third gap, **5**, is `LauncherSpacing.Snug`. `spec/06-design-tokens.md` omits
-  all three.
+  back adds the token to `LauncherSpacing` rather than inlining the number.
 - Sizes are `dp` — WPF's device-independent pixel is 1/96 inch, the same as a
   `dp` — and **font sizes are `sp`**, which is the one deliberate divergence:
   Android scales text by the user's accessibility setting and a launcher that
@@ -169,8 +166,8 @@ behaviour requirement, and it is why neither uses a resource qualifier.
 There is one source of truth and it is the store. A selection is written, comes
 back out of `AppearanceStore.appearance`, and only then reaches the screen —
 nothing holds a second copy, and **nothing caches a resolved string in a field.**
-That last rule is what the hot switch rests on; `spec/05-localization.md` states
-it for the desktop and it holds identically here.
+That last rule is what the hot switch rests on, on the desktop and identically
+here.
 
 Persistence is a Preferences DataStore holding the **enum member name**, not the
 desktop's ordinal. A name survives a member being inserted into the middle of
@@ -202,10 +199,9 @@ Measured across all ten palettes, over the surfaces each colour actually paints,
 compositing the alpha ones first. **No palette value has been changed**, and
 none may be changed on this side alone. The end-of-port review decided each
 row; the decisions are in [the parity report](../docs/parity-report.md#polish-done-in-this-step)
-and summed up below the table. They are listed here
-rather than in the specification because the specification records what the
-desktop is, and this is what that costs on a phone, where the screen is smaller,
-the viewing distance shorter and the ambient light unpredictable.
+and summed up below the table. They are listed because the desktop values are
+kept as they are, and this is what that costs on a phone, where the screen is
+smaller, the viewing distance shorter and the ambient light unpredictable.
 
 WCAG 2.1 AA wants 4.5:1 for body text and 3:1 for large text and UI boundaries.
 The counts below are out of ten palettes.

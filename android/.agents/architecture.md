@@ -34,7 +34,7 @@ Two notes on where this diverges from the desktop, both on purpose:
   lands in `util/format/` as plain functions and is unit-tested directly.
 - **There is no `App.Services` equivalent and there must not be one.** The
   desktop keeps `SettingsViewModel.Instance` as a static because XAML cannot
-  inject; `spec/01-overview.md` says as much and says not to reproduce it.
+  inject; do not reproduce it.
   Everything here is reached by constructor injection or by `hiltViewModel()`.
 
 Only packages with something in them exist. Do not create an empty package with
@@ -92,8 +92,8 @@ something R8 can break has to run `assembleRelease` itself for the same reason.
   the outer edge, as the rail has it on the left.
 - **What went with the window.** The minimize and close buttons, the 1 px
   window border, the drag region and the `Saved Games` rail action have no
-  meaning on Android (`spec/10-windows-only.md` 6 and 14). Hover states are
-  kept for a mouse and mapped to the pressed state for touch; tooltips open on
+  meaning on Android. Hover states are kept for a mouse and mapped to the
+  pressed state for touch; tooltips open on
   long press. There is no ripple, because the desktop has no press animation.
 - **Title-bar social buttons come from state** (`MainUiState.contextLinks`),
   and their tooltips are `ExternalLink.brandName`: brand names, not copy, kept
@@ -146,14 +146,13 @@ pickers.
 
 Measured against `Views/Components/*.xaml`, `Styles/SkeletonStyles.xaml` and
 `Styles/ScrollViewerStyle.xaml`. Everything not listed matches the XAML value
-for value. Where `spec/07-components.md` disagrees with the XAML, the XAML was
-followed.
+for value.
 
 | Area | Desktop | Android | Why |
 | --- | --- | --- | --- |
 | Card dates | Always en-US (`dd MMM yyyy` / `dd MMM`): WPF bindings format in en-US and the app never overrides that | The launcher's language: day, standalone abbreviated month, year (`CardDateFormatter`) | Step 02 decision 7: visible dates follow the selected language. The standalone month keeps Catalan and Valencian from printing the genitive (`de març`, `d'abr.`), and the month is lowercased in every language but English, because locale data disagrees on the case (JDK 17 gives Galician `Mar.`, JDK 21 `mar.`). The abbreviation itself still comes from the platform's locale data, so a dot can differ between Android versions. `CardDateFormatterTest` pins all eight languages on the build's JDK |
 | Card layout | Fixed three columns in a fixed-size window | Three columns while the text keeps `GameCardTitleWidth`; otherwise the actions drop under the text and wrap | A phone is narrower than the desktop's content area; the rule is measured, so a tablet keeps the desktop layout |
-| Labelled card buttons | No horizontal padding: the style sets `Padding="14,0"` but its template never binds it, so width is `MinWidth="110"` or the content | Same, no padding | Matched. `spec/07` says `14,0` and is wrong |
+| Labelled card buttons | No horizontal padding: the style sets `Padding="14,0"` but its template never binds it, so width is `MinWidth="110"` or the content | Same, no padding | Matched |
 | Disabled secondary card buttons | No disabled look (same colours, just inert) | 0.5 opacity, like the accent buttons | Touch has no hover to reveal that a button is inert; a button that looks live and does nothing is exactly what the port must avoid |
 | Hover and tooltips | Mouse hover colours; tooltips on hover; link hover recolours and shows the URL | A mouse still gets the hover colours; a press shows the desktop's pressed colour, or the hover colour for links, which have no pressed state; tooltips and link URLs open on long press | The touch equivalent of each mouse interaction, as the step 11 shell established; no ripple, because the desktop has no press animation |
 | Missing or failed logo | Empty well (the Pokéball shows only when there is no URL) | Pokéball until the image loads, and again if it fails | An empty well reads as broken on a slow mobile connection |
@@ -217,9 +216,9 @@ app can raise.
 
 **Dropped, because they exist only for Windows reasons.** Launcher
 self-update (`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`,
-`UpdateAvailable*`, `spec/10` 5), the download folder (`ChangeDownloadDir*`,
-`DownloadDirNotUsable*`, step 07 decision 3), `OneDriveWarning*` (`spec/10` 9),
-the exit warning (`ExitWarning*`: back from Home backgrounds the task and a
+`UpdateAvailable*`), the download folder (`ChangeDownloadDir*`,
+`DownloadDirNotUsable*`, step 07 decision 3), `OneDriveWarning*`, the exit
+warning (`ExitWarning*`: back from Home backgrounds the task and a
 transfer keeps running in WorkManager) and the English pre-startup fatal
 error (the system's crash dialog covers it; the crash itself is logged). Their
 keys are gone from all eight languages; see
@@ -239,11 +238,11 @@ them; the pending one answers `NotSupportedYet`.
 | --- | --- | --- | --- |
 | Size | Fixed windows (420, 480 × 420, 440 × 250, 480 × 500); the message box 220 to 560 tall | The desktop width, capped at the screen minus 16 dp a side; the heights capped to the screen, with the body scrolling. The download confirmation takes its 420 as a minimum and grows to its content | A phone is narrower than every dialog. At phone width the download confirmation's text wraps taller than 420, and a fixed height hid the key field under the buttons |
 | Chrome | Draggable title bar, ✕ hovering to `#E81123` | ✕ kept, `#E81123` on hover and press; no drag | There is no window to move |
-| Keyboard | Enter confirms, Escape cancels, Y and N answer | Back cancels; the key fields confirm on the keyboard's Done | `spec/10` 13 |
+| Keyboard | Enter confirms, Escape cancels, Y and N answer | Back cancels; the key fields confirm on the keyboard's Done | No hardware keyboard is assumed |
 | Scrim | None: the dialog is a separate window over its owner | The platform's dim behind the dialog | On touch, a modal with no scrim reads as part of the page underneath |
 | Owner and topmost | Topmost when the main window is hidden in the tray | The state waits in the ViewModel and shows when the activity is visible | There is no window to raise over others; nothing is lost |
 | Download path | The game's install directory | `gamesRoot/downloads`, where the archive lands | Where a game gets installed is `TODO-ANDROID-GAME-RUNTIME-07`; the label already says "download path" |
-| Free space | The path's drive, em dash when it cannot be read | `usableSpace` of the nearest existing ancestor, em dash when unreadable, same formatting (`FreeSpaceFormatter`) | App-specific storage has a queryable volume, which settles `spec/10` 10 |
+| Free space | The path's drive, em dash when it cannot be read | `usableSpace` of the nearest existing ancestor, em dash when unreadable, same formatting (`FreeSpaceFormatter`) | App-specific storage has a queryable volume |
 | Download logo | The image as soon as the URL is valid | The Pokéball until it loads, as on the cards | See the cards' table |
 | Path tooltip | Hover | Long press | Step 11 decision 4 |
 | Link buttons (view page, GitHub) | Never recolour: the local `Foreground` beats the style's hover setter | Recolour to the hover accent while hovered or pressed | Touch has no other press feedback; harmless |
@@ -334,8 +333,8 @@ the ones a device cannot reach today (the offline banner, a My Games list).
   constructed in a Hilt module — the same indirection as the desktop's
   `ContentOptions` / `DownloadOptions` / `UpdateOptions`.
 - HTTP clients are provided by the graph, one per purpose with its own timeout,
-  never constructed ad hoc. `spec/03-services.md` documents why the three
-  differ. They are told apart by the qualifiers in
+  never constructed ad hoc. The [README](../README.md#reading-the-cdn) explains
+  why the three differ. They are told apart by the qualifiers in
   [`service/cdn/HttpClients.kt`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/HttpClients.kt),
   which live beside their consumers so the service layer never has to reach into
   the composition root.
@@ -448,8 +447,8 @@ are removed once no transfer artifact remains. An empty catalogue never purges,
 because a failed catalogue request must not turn into data loss.
 
 Prefer extracting a branchy decision into a pure function and testing it
-directly over testing it through a ViewModel. The desktop's `*Policy` types are
-the model; `spec/09-utilities.md` lists them.
+directly over testing it through a ViewModel. The desktop's `*Policy` types in
+`desktop/LostieLauncher/Utils/` are the model.
 
 Those are ported and live in `util/`, one sub-package per concern —
 `version/`, `format/`, `text/`, `net/`, `download/`, `file/`, `policy/`, and the
@@ -474,8 +473,7 @@ that owns them. Which desktop test cases came across and which did not:
   (`viewModelScope`, `withContext`) rather than a token parameter. Where a
   cancellation has to outlive a scope, pass a `Job` explicitly and say why.
 - State shared across threads uses an atomic, as the desktop's interlocked
-  `ActivePlaySessions` counter does — `spec/01-overview.md` says the same
-  invariant holds here.
+  `ActivePlaySessions` counter does.
 
 ## Logging and failure handling
 
@@ -484,9 +482,9 @@ that owns them. Which desktop test cases came across and which did not:
   asserted.
 - **Never swallow an exception silently.** Log it, then degrade: return an empty
   list, keep the screen usable, surface a localized message when the user needs
-  to know. The launcher must not fall over because the content server is down —
-  `spec/03-services.md` has the degradation table, and it is behaviour, not
-  advice.
+  to know. The launcher must not fall over because the content server is down;
+  how the desktop's `Services/` degrade on each failure is behaviour to match,
+  not advice.
 - Log messages are English and state what happened, not that a method ran.
 - **Log what the desktop logs, at the same level.** Navigation, loads and
   counts at debug; user decisions, download lifecycle and maintenance blocks at

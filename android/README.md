@@ -7,8 +7,7 @@ news and FAQs, ten themes and eight interface languages.
 
 It is a port of the desktop launcher's **behavior**, not of its code. The
 authority on what the app must do is the desktop side, under
-[`../desktop/`](../desktop/), with the extracted contract in
-[`../spec/`](../spec/); how Android does it is an Android decision.
+[`../desktop/`](../desktop/); how Android does it is an Android decision.
 
 > **Feature-complete except for games themselves.** Every screen works against
 > the real CDN, but installing and launching a game on Android is an open
@@ -125,8 +124,13 @@ and why: [Desktop test parity](.agents/testing.md#desktop-test-parity-utils).
 ### Reading the CDN
 
 Three endpoints, three HTTP clients, three different timeouts, and the
-differences are the behaviour rather than an accident —
-[spec/03-services.md](../spec/03-services.md) explains each one. Retrofit covers
+differences are the behaviour rather than an accident. Content gets 10 s,
+because the JSON is small and a slow CDN should fall back to the cache rather
+than stall the UI. The maintenance flag gets 3 s, because it gates every
+server-backed action and must never be what the user waits on. Downloads have
+no overall timeout, so a multi-gigabyte transfer is never cut off by the clock,
+but a 20 s connect timeout so a dead host still fails fast; stalls are caught
+by an inactivity watchdog instead. Retrofit covers
 the two JSON endpoints; the maintenance flag goes through raw OkHttp, because
 its answer is a status code and Retrofit will not let a `@HEAD` return anything
 else. Every URL and every timeout is written in `core/di/NetworkModule.kt` and
