@@ -7,16 +7,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
-/**
- * Ported from the desktop's `Models/GameInfoTests.cs`.
- *
- * Only the two derived members this port keeps on the model are here.
- * `DownloadSpeedText` and `PlaytimeText` are derived from transient download
- * and playtime state, which this model deliberately does not carry — they
- * arrive with port plan steps 08 and 06 respectively — and the desktop's
- * `PropertyChanged` cases have no counterpart at all, because the model is
- * immutable.
- */
 @DisplayName("GameInfo")
 class GameInfoTest {
     private fun createGame(name: String = "Demo", sizeGb: Double = 1.0) = GameInfo(
@@ -31,8 +21,6 @@ class GameInfoTest {
         sha256 = "",
     )
 
-    // ---- formattedSize ----
-
     @Test
     fun `reports a size of one gigabyte or more in gigabytes`() {
         createGame(sizeGb = 1.5).formattedSize shouldBe "1.5 GB"
@@ -45,13 +33,9 @@ class GameInfoTest {
 
     @Test
     fun `formats the size with a dot whatever the device locale is`() {
-        // Arrange — a locale whose decimal separator is a comma. The desktop
-        // pins the invariant culture here so the CDN's numbers never render
-        // differently on a Spanish machine; the port has to do the same.
         val original = Locale.getDefault()
         Locale.setDefault(Locale.forLanguageTag("es-ES"))
         try {
-            // Act / Assert
             createGame(sizeGb = 1.5).formattedSize shouldBe "1.5 GB"
             createGame(sizeGb = 1.0).formattedSize shouldBe "1 GB"
         } finally {
@@ -66,11 +50,8 @@ class GameInfoTest {
 
     @Test
     fun `converts gigabytes to megabytes with a 1024 divisor, not 1000`() {
-        // 0.5889 GB is the real size of the first catalogue entry.
         createGame(sizeGb = 0.5889).formattedSize shouldBe "603 MB"
     }
-
-    // ---- gameId ----
 
     @Test
     fun `slugs a name with capitals and spaces to lowercase kebab case`() {
@@ -79,8 +60,6 @@ class GameInfoTest {
 
     @Test
     fun `strips accents and symbols without leaving a dangling dash`() {
-        // Desktop BUG-048: a leading punctuation mark and a trailing '+' each
-        // become a separator run, and neither may survive as a dash.
         createGame(name = "!Hola! Mundo+").gameId shouldBe "hola-mundo"
     }
 
@@ -101,9 +80,6 @@ class GameInfoTest {
 
     @Test
     fun `lowercases the name the same way in every locale`() {
-        // Arrange — Turkish lowercases 'I' to a dotless 'i', which is not a
-        // match for [a-z] and would silently change the slug of any game with
-        // an uppercase I in its name.
         val original = Locale.getDefault()
         Locale.setDefault(Locale.forLanguageTag("tr-TR"))
         try {
@@ -115,9 +91,6 @@ class GameInfoTest {
 
     @Test
     fun `returns an empty slug for a name that is all separators`() {
-        // The desktop's "null name" case has no counterpart: the name is
-        // non-nullable here, and an explicit null in the payload never reaches
-        // the model. What survives is the degenerate name.
         createGame(name = "+++").gameId shouldBe ""
     }
 }

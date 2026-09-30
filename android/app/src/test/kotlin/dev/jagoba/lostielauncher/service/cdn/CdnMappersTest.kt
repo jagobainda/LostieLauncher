@@ -21,19 +21,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-/**
- * The language-resolution and expiry cases of the desktop's
- * `Services/ContentServiceTests.cs`, against the pure functions that took over
- * from `ContentService.Resolve` and its inline expiry filter.
- */
 @DisplayName("CdnMappers")
 class CdnMappersTest {
     private val cdnBase = "https://content.test"
 
-    /** 19 June 2026, 12:00 UTC — 14:00 in CET, since June is summer time. */
     private val clock: Clock = Clock.fixed(Instant.parse("2026-06-19T12:00:00Z"), ZoneOffset.UTC)
-
-    // ---- resolveLocalized ----
 
     @Test
     fun `returns the requested language when it is there`() {
@@ -58,8 +50,6 @@ class CdnMappersTest {
 
     @Test
     fun `picks the first key in ordinal order when no preferred language is there`() {
-        // Arrange — inserted out of order on purpose: the answer must come from
-        // the key order, not the insertion order, or two runs could disagree.
         val localized = linkedMapOf("pt" to "Ola", "ca" to "Hola", "gl" to "Ola")
 
         CdnMappers.resolveLocalized(localized, "ja") shouldBe "Hola"
@@ -91,14 +81,10 @@ class CdnMappersTest {
 
     @Test
     fun `resolves Valencian by its three-letter code`() {
-        // Arrange — not a desktop case. `val` is the one code that is not two
-        // letters, which makes it the one easiest to get wrong.
         val localized = mapOf("ca" to "catala", "val" to "valencia")
 
         CdnMappers.resolveLocalized(localized, AppLanguage.VAL.code) shouldBe "valencia"
     }
-
-    // ---- expiry ----
 
     @Test
     fun `keeps an item with no expiry`() {
@@ -107,7 +93,6 @@ class CdnMappersTest {
 
     @Test
     fun `drops an item expiring exactly now`() {
-        // The comparison is strictly greater than, so "now" is already expired.
         val now = LocalDateTime.of(2026, 6, 19, 14, 0)
 
         CdnMappers.isCurrent(CdnDateTime.parse("2026-06-19T14:00:00"), now) shouldBe false
@@ -122,7 +107,6 @@ class CdnMappersTest {
 
     @Test
     fun `drops an expired item and keeps a current one`() {
-        // Arrange — the desktop's `GetHomeContentAsync_FiltersOutExpiredItems`.
         val dto = HomeContentDto(
             news = listOf(
                 newsDto(title = "Vieja", expiresAt = "2026-06-18T00:00:00"),
@@ -130,38 +114,27 @@ class CdnMappersTest {
             ),
         )
 
-        // Act
         val content = CdnMappers.toDomain(dto, AppLanguage.ESP, clock, isStale = false)
 
-        // Assert
         content.news shouldHaveSize 1
         content.news[0].title shouldBe "Actual"
     }
 
     @Test
     fun `measures expiry in CET, not in the device zone and not in UTC`() {
-        // Arrange — the clock is pinned to 12:00 UTC, which is 14:00 CET. An
-        // item expiring at 13:00 with no offset is a CET wall-clock time, so it
-        // is already an hour past. Comparing the same 13:00 against UTC now
-        // would keep it, which is exactly the mistake this case catches.
         val dto = HomeContentDto(news = listOf(newsDto(title = "Borderline", expiresAt = "2026-06-19T13:00:00")))
 
-        // Act
         val content = CdnMappers.toDomain(dto, AppLanguage.ESP, clock, isStale = false)
 
-        // Assert
         content.news.shouldBeEmpty()
     }
 
     @Test
     fun `applies a UTC expiry by converting it to CET first`() {
-        // Arrange — 12:30 UTC is 14:30 CET, half an hour after the pinned now.
         val dto = HomeContentDto(news = listOf(newsDto(title = "Future", expiresAt = "2026-06-19T12:30:00Z")))
 
-        // Act
         val content = CdnMappers.toDomain(dto, AppLanguage.ESP, clock, isStale = false)
 
-        // Assert
         content.news shouldHaveSize 1
     }
 
@@ -171,8 +144,6 @@ class CdnMappersTest {
 
         CdnMappers.toDomain(dto, AppLanguage.ESP, clock, isStale = false).news.shouldBeEmpty()
     }
-
-    // ---- projection ----
 
     @Test
     fun `skips a null array element instead of failing the payload`() {
@@ -191,7 +162,6 @@ class CdnMappersTest {
 
     @Test
     fun `keeps the date as published rather than as converted`() {
-        // The date is rendered, not compared, so it must survive untouched.
         val dto = HomeContentDto(news = listOf(newsDto(title = "Demo", date = "2026-07-24T00:00:00")))
 
         val news = CdnMappers.toDomain(dto, AppLanguage.ESP, clock, isStale = false).news.single()
@@ -219,8 +189,6 @@ class CdnMappersTest {
         notification.id shouldBe UUID.fromString("11111111-1111-1111-1111-111111111111")
     }
 
-    // ---- catalogue ----
-
     @Test
     fun `resolves the logo against the injected CDN base`() {
         val game = CdnMappers.toDomain(GameDto(logo = "/logos/x.png"), cdnBase)
@@ -240,7 +208,6 @@ class CdnMappersTest {
 
     @Test
     fun `reads the all-zero GUID as no id`() {
-        // The desktop's `Guid.Empty`, which it takes to mean "match by name".
         CdnMappers.toDomain(GameDto(id = "00000000-0000-0000-0000-000000000000"), cdnBase).id.shouldBeNull()
     }
 
@@ -251,18 +218,12 @@ class CdnMappersTest {
             "1-2-3-4-5",
             "1111111122223333444455555555-5-5-5-5",
             "11111111-2222-3333-4444-55555555555G",
-            // These three are accepted by `Guid.TryParse`, and so by
-            // `SpecialVersionConfig.parse`, but *not* by `System.Text.Json`,
-            // which is what reads the catalogue on the desktop. The two parsers
-            // differ on purpose and this is where the difference shows.
             "11111111222233334444555555555555",
             "{11111111-2222-3333-4444-555555555555}",
             "(11111111-2222-3333-4444-555555555555)",
         ],
     )
     fun `rejects an id the catalogue's own reader would reject`(id: String) {
-        // The caller turns this into an empty catalogue, which is what the
-        // desktop does when the same value fails deserialization.
         shouldThrow<IllegalArgumentException> { CdnMappers.toDomain(GameDto(id = id), cdnBase) }
     }
 

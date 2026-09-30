@@ -17,7 +17,6 @@ internal class InstallDownloadedFileHandoff @Inject constructor(
     private val logger: Logger,
 ) : DownloadedFileHandoff {
     override suspend fun deliver(file: DownloadedFile) {
-        // TODO-ANDROID-GAME-RUNTIME-08: Decide how to persist the catalogue UUID, hash and variant because the worker can outlive the catalogue screen.
         val result = installer.install(
             GameInstallationRequest(
                 file = file,

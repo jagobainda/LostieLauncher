@@ -61,7 +61,6 @@ enum class GameUninstallOutcome {
     NOT_SUPPORTED_YET,
 }
 
-/** An uninstall location token that presentation passes back without interpreting it. */
 data class GameLocationReference(val token: String, val displayName: String?)
 
 data class GameUninstallResult(val outcome: GameUninstallOutcome, val blockingLocation: GameLocationReference? = null)

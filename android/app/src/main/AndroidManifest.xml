@@ -2,12 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!--
-        The launcher is a client of the project CDN: the game catalogue, the
-        home content and the maintenance flag all come over HTTPS. Cleartext is
-        not enabled, so `usesCleartextTraffic` stays at its API 28+ default of
-        false and every endpoint in `ContentOptions` must be https://.
-    -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
@@ -22,7 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LostieLauncher">
 
-        <!-- Label and theme are inherited from <application> above. -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">

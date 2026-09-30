@@ -2,13 +2,6 @@ package dev.jagoba.lostielauncher.ui.theme
 
 import dev.jagoba.lostielauncher.model.AppTheme
 
-/**
- * The desktop's palettes, exactly as the resource dictionaries in
- * `desktop/LostieLauncher/Themes/` write them: the XAML colour key, and the hex string with no conversion
- * applied. `PalettesTest` is what compares them to the production values, and
- * it parses these itself rather than reusing the production parser, so a bug in
- * the conversion cannot hide behind a test that shares it.
- */
 internal val DesktopPalettes: Map<AppTheme, Map<String, String>> = mapOf(
     AppTheme.Volcarona to mapOf(
         "PrimaryBgColor" to "#4d4949",

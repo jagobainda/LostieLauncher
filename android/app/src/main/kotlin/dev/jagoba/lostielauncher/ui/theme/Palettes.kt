@@ -3,20 +3,6 @@ package dev.jagoba.lostielauncher.ui.theme
 import androidx.compose.ui.graphics.Color
 import dev.jagoba.lostielauncher.model.AppTheme
 
-/**
- * The ten palettes, one per [AppTheme] member.
- *
- * Generated from the ten resource dictionaries in
- * `desktop/LostieLauncher/Themes/` and identical to them, value for value. WPF reads a six-digit `#rrggbb` as fully opaque and an
- * eight-digit `#aarrggbb` in that order, which is Compose's `0xAARRGGBB`, so
- * the conversion only ever fills in a missing `FF`. `PalettesTest` holds the
- * desktop's own values in a table and compares all 140 of them.
- *
- * Do not adjust a colour here. `spec/06-design-tokens.md` carries a contrast
- * review list — Cefireon's hover colour equalling its own text colour is the
- * conspicuous one — and resolving those is port plan step 15's, not a
- * correction to make in passing.
- */
 fun paletteFor(theme: AppTheme): LauncherColors = when (theme) {
     AppTheme.Volcarona -> VolcaronaColors
     AppTheme.Zoroark -> ZoroarkColors
@@ -30,19 +16,8 @@ fun paletteFor(theme: AppTheme): LauncherColors = when (theme) {
     AppTheme.Auretoskos -> AuretoskosColors
 }
 
-/**
- * Whether this palette composites its overlays over a dark surface.
- *
- * The desktop stores this nowhere — it is implied by whether the five overlay
- * colours are white or black. The port needs it explicitly, for the system bar
- * icons and for anything that has to pick a light or dark asset, so it is
- * derived from the one thing that actually distinguishes the two: the overlay
- * hue. Reading it rather than listing it means a new palette cannot disagree
- * with itself.
- */
 fun LauncherColors.isDark(): Boolean = overlaySubtle.red > 0.5f
 
-/** Volcarona — dark. */
 val VolcaronaColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF4D4949),
     secondaryBg = Color(0xFF3A3737),
@@ -60,7 +35,6 @@ val VolcaronaColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Zoroark — dark. */
 val ZoroarkColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF2C2933),
     secondaryBg = Color(0xFF211E2A),
@@ -78,7 +52,6 @@ val ZoroarkColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Infernape — dark. */
 val InfernapeColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF4A3535),
     secondaryBg = Color(0xFF3A2828),
@@ -96,7 +69,6 @@ val InfernapeColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Torterra — dark. */
 val TorterraColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF3A3020),
     secondaryBg = Color(0xFF2C2418),
@@ -114,7 +86,6 @@ val TorterraColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Empoleon — dark. */
 val EmpoleonColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF252E38),
     secondaryBg = Color(0xFF1C242D),
@@ -132,7 +103,6 @@ val EmpoleonColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Mewtwo — dark. */
 val MewtwoColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF342E4A),
     secondaryBg = Color(0xFF272238),
@@ -150,7 +120,6 @@ val MewtwoColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88FFFFFF),
 )
 
-/** Cefireon — light. */
 val CefireonColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFFFFEFD3),
     secondaryBg = Color(0xFFE8A772),
@@ -168,7 +137,6 @@ val CefireonColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88000000),
 )
 
-/** Sylveon — light. */
 val SylveonColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFFFDE8F0),
     secondaryBg = Color(0xFFF0B0CC),
@@ -186,7 +154,6 @@ val SylveonColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88000000),
 )
 
-/** Astrem — light. */
 val AstremColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFFEEF3FF),
     secondaryBg = Color(0xFFAEC4EC),
@@ -204,7 +171,6 @@ val AstremColors: LauncherColors = LauncherColors(
     overlayStrong = Color(0x88000000),
 )
 
-/** Auretoskos — dark. */
 val AuretoskosColors: LauncherColors = LauncherColors(
     primaryBg = Color(0xFF3B3838),
     secondaryBg = Color(0xFF2B2929),

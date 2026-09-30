@@ -6,7 +6,6 @@ import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameTarget
 import kotlinx.coroutines.flow.StateFlow
 
-/** Isolates launching a game and determining whether it is still active. */
 interface GameLaunchService {
     val activeSessions: StateFlow<GameActivityState>
 

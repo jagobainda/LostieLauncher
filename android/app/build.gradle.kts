@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    // No `org.jetbrains.kotlin.android`: AGP 9 compiles Kotlin itself.
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -17,9 +16,6 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
 
-        // The Android app versions itself. It is nowhere near parity with the
-        // desktop launcher, so it does not borrow its version number, and this
-        // is an initial value rather than a bump of anything.
         versionCode = 1
         versionName = "0.1.0"
 
@@ -45,23 +41,16 @@ android {
 
     kotlin {
         compilerOptions {
-            // Warnings are failures on both sides of this monorepo.
             allWarningsAsErrors = true
         }
     }
 
     buildFeatures {
         compose = true
-        // The HTTP clients send `User-Agent: LostieLauncher/<version>`, as the
-        // desktop does. BuildConfig.VERSION_NAME is where that version comes
-        // from, and AGP leaves BuildConfig off unless it is asked for.
         buildConfig = true
     }
 
     lint {
-        // The desktop side treats every warning as a build break; so does this
-        // one. `checkDependencies` makes the app module's report the whole
-        // report, which matters once there is more than one module.
         warningsAsErrors = true
         abortOnError = true
         checkDependencies = true
@@ -77,9 +66,6 @@ android {
     }
 }
 
-// Pins the JDK the build compiles with, so the bytecode does not depend on
-// whichever JDK happens to be running Gradle. Gradle downloads a matching one
-// if the machine has none — see the foojay resolver in settings.gradle.kts.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(libs.versions.javaTarget.get().toInt())
