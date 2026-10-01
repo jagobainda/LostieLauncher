@@ -88,7 +88,7 @@ internal class DefaultDownloadManager @Inject constructor(
 
     override suspend fun pause(gameId: String): DownloadCommandResult = commandGate.withLock {
         val entity = dao.get(gameId) ?: return@withLock DownloadCommandResult.NOT_FOUND
-        if (entity.status !in ACTIVE_STATUSES) return@withLock DownloadCommandResult.INVALID_STATE
+        if (entity.status !in DownloadStatus.ActiveNames) return@withLock DownloadCommandResult.INVALID_STATE
         dao.setStatus(gameId, DownloadStatus.PAUSED.name)
         scheduler.cancel(UUID.fromString(entity.workId))
         logger.info("Download paused: $gameId.")
@@ -128,7 +128,7 @@ internal class DefaultDownloadManager @Inject constructor(
             val purgedFiles = withContext(dispatchers.io) {
                 fileStore.purgeStale(knownGameIds, clock.instant())
             }
-            val inactive = dao.getWithStatuses(INACTIVE_STATUSES)
+            val inactive = dao.getWithStatuses(DownloadStatus.InactiveNames)
             val staleRows = withContext(dispatchers.io) {
                 inactive.filter { entity ->
                     entity.gameId.lowercase(Locale.ROOT) !in known || !fileStore.hasArtifacts(entity.destinationPath)
@@ -151,7 +151,7 @@ internal class DefaultDownloadManager @Inject constructor(
         fileStore.destination()
     }
 
-    private suspend fun hasActiveDownload(): Boolean = dao.countWithStatuses(ACTIVE_STATUSES) > 0
+    private suspend fun hasActiveDownload(): Boolean = dao.countWithStatuses(DownloadStatus.ActiveNames) > 0
 
     private suspend fun enqueue(gameId: String, workId: UUID): DownloadCommandResult = try {
         scheduler.enqueue(gameId, workId)
@@ -163,16 +163,8 @@ internal class DefaultDownloadManager @Inject constructor(
     }
 
     private companion object {
-        val ACTIVE_STATUSES = listOf(DownloadStatus.QUEUED.name, DownloadStatus.DOWNLOADING.name)
         val TERMINAL_STATUSES = setOf(
             DownloadStatus.COMPLETED.name,
-            DownloadStatus.CANCELLED.name,
-        )
-        val INACTIVE_STATUSES = listOf(
-            DownloadStatus.PAUSED.name,
-            DownloadStatus.COMPLETED.name,
-            DownloadStatus.FAILED.name,
-            DownloadStatus.PERMISSION_DENIED.name,
             DownloadStatus.CANCELLED.name,
         )
     }

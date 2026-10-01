@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.content.stringsFor
-import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.service.download.DownloadManager
@@ -80,7 +79,7 @@ class MainViewModel @Inject constructor(
         downloads.downloads,
         welcome,
     ) { shell, refreshing, rows, welcomeVisible ->
-        val downloading = rows.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING }
+        val downloading = rows.any { it.status.isActive }
         shell.copy(
             isRefreshing = refreshing,
             canRefresh = shell.canRefresh && !refreshing && !downloading,

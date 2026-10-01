@@ -34,12 +34,13 @@ internal class DownloadWorkerRunner @Inject constructor(
 ) {
     suspend fun run(gameId: String, workId: String, runtime: DownloadWorkerRuntime): DownloadWorkerOutcome {
         val entity = dao.get(gameId) ?: return DownloadWorkerOutcome.SUCCESS
-        if (entity.workId != workId || entity.status !in STARTABLE_STATUSES) return DownloadWorkerOutcome.SUCCESS
+        val startable = entity.workId == workId && entity.status in DownloadStatus.ActiveNames
+        if (!startable) return DownloadWorkerOutcome.SUCCESS
         val changed = dao.setWorkerStatus(
             gameId = gameId,
             workId = workId,
             status = DownloadStatus.DOWNLOADING.name,
-            expectedStatuses = STARTABLE_STATUSES,
+            expectedStatuses = DownloadStatus.ActiveNames,
         )
         if (changed == 0) return DownloadWorkerOutcome.SUCCESS
         val initialProgress = DownloadProgress(
@@ -162,6 +163,5 @@ internal class DownloadWorkerRunner @Inject constructor(
 
     private companion object {
         const val PERMISSION_DENIED_MESSAGE = "Download storage permission was denied."
-        val STARTABLE_STATUSES = listOf(DownloadStatus.QUEUED.name, DownloadStatus.DOWNLOADING.name)
     }
 }

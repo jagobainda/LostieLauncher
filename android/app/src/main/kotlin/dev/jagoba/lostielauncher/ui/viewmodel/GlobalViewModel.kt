@@ -3,7 +3,6 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
@@ -35,7 +34,7 @@ class GlobalViewModel @Inject constructor(
         launch.activeSessions,
     ) { rows, refreshing, activity ->
         GlobalUiState(
-            isDownloading = rows.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING },
+            isDownloading = rows.any { it.status.isActive },
             isRefreshing = refreshing,
             gameActivity = activity,
         )

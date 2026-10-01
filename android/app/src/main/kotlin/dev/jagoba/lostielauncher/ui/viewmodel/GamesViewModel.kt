@@ -3,7 +3,6 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInfo
@@ -302,7 +301,7 @@ class GamesViewModel @Inject constructor(
             playtimeMinutes = playtimes[local.id] ?: 0,
             helpAvailability = locations.helpAvailability(target(local)),
             isUpdating = remote != null && downloadRows.any {
-                it.gameId == remote.gameId && it.status in setOf(DownloadStatus.QUEUED, DownloadStatus.DOWNLOADING)
+                it.gameId == remote.gameId && it.status.isActive
             },
             isUninstalling = local.name in uninstallingNames,
         )

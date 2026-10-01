@@ -24,6 +24,15 @@ enum class DownloadStatus {
     FAILED,
     PERMISSION_DENIED,
     CANCELLED,
+    ;
+
+    val isActive: Boolean
+        get() = this == QUEUED || this == DOWNLOADING
+
+    companion object {
+        val ActiveNames: List<String> = entries.filter { it.isActive }.map { it.name }
+        val InactiveNames: List<String> = entries.filterNot { it.isActive }.map { it.name }
+    }
 }
 
 enum class DownloadCommandResult {

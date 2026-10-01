@@ -57,8 +57,7 @@ data class LibraryGameUiState(
     val canUpdate: Boolean,
     val canSwitchSpecialVersion: Boolean,
 ) {
-    val canPause: Boolean get() = download?.status == DownloadStatus.QUEUED ||
-        download?.status == DownloadStatus.DOWNLOADING
+    val canPause: Boolean get() = download?.status?.isActive == true
     val canResume: Boolean get() = canStart && download?.status == DownloadStatus.PAUSED
     val canCancel: Boolean get() = download != null &&
         download.status !in setOf(DownloadStatus.COMPLETED, DownloadStatus.CANCELLED)
@@ -173,7 +172,7 @@ class LibraryViewModel @Inject constructor(
         installationStates,
     ) { catalogue, downloadRows, installedState, phases ->
         val installed = (installedState as? InstalledGamesState.Available)?.games.orEmpty()
-        val active = downloadRows.any { it.status == DownloadStatus.QUEUED || it.status == DownloadStatus.DOWNLOADING }
+        val active = downloadRows.any { it.status.isActive }
         LibraryUiState(
             isLoading = catalogue.isLoading,
             games = catalogue.games.map { game ->
@@ -222,7 +221,7 @@ class LibraryViewModel @Inject constructor(
             var previous = emptyMap<String, DownloadStatus>()
             downloads.downloads.collect { rows ->
                 val notice = rows.firstNotNullOfOrNull { row ->
-                    row.status.failureNotice()?.takeIf { previous[row.gameId] in ACTIVE_STATUSES }
+                    row.status.failureNotice()?.takeIf { previous[row.gameId]?.isActive == true }
                 }
                 previous = rows.associate { it.gameId to it.status }
                 if (notice != null) transient.value = transient.value.copy(notice = notice)
@@ -433,8 +432,6 @@ class LibraryViewModel @Inject constructor(
     }
 
     private companion object {
-        val ACTIVE_STATUSES = setOf(DownloadStatus.QUEUED, DownloadStatus.DOWNLOADING)
-
         fun GameInstallationState.failureNotice(): LibraryNotice? =
             when ((this as? GameInstallationState.Finished)?.result) {
                 GameInstallationResult.InvalidHash, GameInstallationResult.HashMismatch ->
