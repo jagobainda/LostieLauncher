@@ -29,6 +29,9 @@ enum class DownloadStatus {
     val isActive: Boolean
         get() = this == QUEUED || this == DOWNLOADING
 
+    val isFinished: Boolean
+        get() = this == COMPLETED || this == CANCELLED
+
     companion object {
         val ActiveNames: List<String> = entries.filter { it.isActive }.map { it.name }
         val InactiveNames: List<String> = entries.filterNot { it.isActive }.map { it.name }
@@ -41,6 +44,9 @@ enum class DownloadCommandResult {
     NOT_FOUND,
     INVALID_STATE,
 }
+
+val List<DownloadSnapshot>.hasActiveDownload: Boolean
+    get() = any { it.status.isActive }
 
 data class DownloadedFile(
     val gameId: String,

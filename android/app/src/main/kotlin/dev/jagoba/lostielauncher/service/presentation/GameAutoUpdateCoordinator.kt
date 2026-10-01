@@ -59,7 +59,7 @@ class GameAutoUpdateCoordinator @Inject constructor(
                             val rows = downloads.downloads.first { snapshots ->
                                 snapshots.any { row ->
                                     row.gameId == game.gameId && row.version == game.version &&
-                                        row.status in TERMINAL_STATUSES
+                                        !row.status.isActive
                                 }
                             }
                             val row = rows.first { it.gameId == game.gameId && it.version == game.version }
@@ -81,15 +81,5 @@ class GameAutoUpdateCoordinator @Inject constructor(
                 }
             }
         }
-    }
-
-    private companion object {
-        val TERMINAL_STATUSES = setOf(
-            DownloadStatus.COMPLETED,
-            DownloadStatus.FAILED,
-            DownloadStatus.PERMISSION_DENIED,
-            DownloadStatus.PAUSED,
-            DownloadStatus.CANCELLED,
-        )
     }
 }

@@ -113,7 +113,7 @@ internal class DefaultDownloadManager @Inject constructor(
 
     override suspend fun cancel(gameId: String): DownloadCommandResult = commandGate.withLock {
         val entity = dao.get(gameId) ?: return@withLock DownloadCommandResult.NOT_FOUND
-        if (entity.status in TERMINAL_STATUSES) return@withLock DownloadCommandResult.INVALID_STATE
+        if (entity.status.toDownloadStatus().isFinished) return@withLock DownloadCommandResult.INVALID_STATE
         dao.setStatus(gameId, DownloadStatus.CANCELLED.name)
         scheduler.cancel(UUID.fromString(entity.workId))
         withContext(dispatchers.io) { fileStore.deleteArtifacts(entity.destinationPath) }
@@ -160,12 +160,5 @@ internal class DefaultDownloadManager @Inject constructor(
         dao.setStatus(gameId, DownloadStatus.FAILED.name, error.message)
         logger.error("Download work could not be scheduled for $gameId.", error)
         DownloadCommandResult.INVALID_STATE
-    }
-
-    private companion object {
-        val TERMINAL_STATUSES = setOf(
-            DownloadStatus.COMPLETED.name,
-            DownloadStatus.CANCELLED.name,
-        )
     }
 }

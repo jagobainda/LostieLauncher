@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.service.library
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.util.Locale
 import java.util.UUID
@@ -59,7 +60,7 @@ internal class RoomLocalLibraryStore @Inject constructor(
     }
 
     override suspend fun addPlaytime(gameId: UUID, minutes: Int) = withContext(dispatchers.io) {
-        if (gameId == EmptyUuid) return@withContext
+        if (gameId == MissingGameId) return@withContext
         playtimeGate.withLock {
             try {
                 dao.addPlaytime(gameId.toString(), minutes)
@@ -104,7 +105,7 @@ internal class RoomLocalLibraryStore @Inject constructor(
         val seenIds = mutableSetOf<UUID>()
         val seenNames = mutableSetOf<String>()
         return games.filter { game ->
-            val isUnique = if (game.id != EmptyUuid) seenIds.add(game.id) else seenNames.add(game.name.toNameKey())
+            val isUnique = if (game.id != MissingGameId) seenIds.add(game.id) else seenNames.add(game.name.toNameKey())
             if (!isUnique) logger.info("Skipping duplicate local game entry: '${game.name}' (id: ${game.id})")
             isUnique
         }
@@ -119,8 +120,4 @@ internal class RoomLocalLibraryStore @Inject constructor(
     )
 
     private fun String.toNameKey(): String = lowercase(Locale.ROOT)
-
-    private companion object {
-        val EmptyUuid = UUID(0, 0)
-    }
 }

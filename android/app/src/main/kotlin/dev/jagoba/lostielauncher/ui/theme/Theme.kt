@@ -41,38 +41,20 @@ fun LostieLauncherTheme(theme: AppTheme = AppTheme.Default, content: @Composable
     }
 }
 
-private fun LauncherColors.toMaterialColorScheme() = if (isDark()) {
-    darkColorScheme(
-        primary = primaryFg,
-        onPrimary = secondaryFg,
-        secondary = primaryFgHover,
-        onSecondary = secondaryFg,
-        tertiary = success,
-        onTertiary = secondaryFg,
-        background = primaryBg,
-        onBackground = secondaryFg,
-        surface = secondaryBg,
-        onSurface = secondaryFg,
-        surfaceVariant = tertiaryBg,
-        onSurfaceVariant = secondaryFgDim,
-        outline = overlayLight,
-        outlineVariant = overlaySubtle,
-    )
-} else {
-    lightColorScheme(
-        primary = primaryFg,
-        onPrimary = secondaryFg,
-        secondary = primaryFgHover,
-        onSecondary = secondaryFg,
-        tertiary = success,
-        onTertiary = secondaryFg,
-        background = primaryBg,
-        onBackground = secondaryFg,
-        surface = secondaryBg,
-        onSurface = secondaryFg,
-        surfaceVariant = tertiaryBg,
-        onSurfaceVariant = secondaryFgDim,
-        outline = overlayLight,
-        outlineVariant = overlaySubtle,
-    )
-}
+private fun LauncherColors.toMaterialColorScheme() = (if (isDark()) darkColorScheme() else lightColorScheme()).copy(
+    primary = primaryFg,
+    onPrimary = secondaryFg,
+    secondary = primaryFgHover,
+    onSecondary = secondaryFg,
+    tertiary = success,
+    onTertiary = secondaryFg,
+    background = primaryBg,
+    onBackground = secondaryFg,
+    surface = secondaryBg,
+    onSurface = secondaryFg,
+    surfaceVariant = tertiaryBg,
+    onSurfaceVariant = secondaryFgDim,
+    surfaceTint = primaryFg,
+    outline = overlayLight,
+    outlineVariant = overlaySubtle,
+)

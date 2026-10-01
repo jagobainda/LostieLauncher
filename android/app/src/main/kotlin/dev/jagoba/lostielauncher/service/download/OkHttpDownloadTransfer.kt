@@ -55,43 +55,41 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         request: DownloadTransferRequest,
         onProgress: suspend (DownloadProgress) -> Unit,
     ): DownloadTransferResult = withContext(dispatchers.io) {
-        try {
-            var lastError: IOException? = null
-            for (attempt in 1..options.maximumAttempts) {
-                try {
-                    downloadOnce(request, onProgress)
-                    return@withContext DownloadTransferResult.Success
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: AccessDeniedException) {
-                    return@withContext DownloadTransferResult.PermissionDenied
-                } catch (error: SecurityException) {
-                    return@withContext DownloadTransferResult.PermissionDenied
-                } catch (error: IOException) {
-                    lastError = error
-                    if (attempt < options.maximumAttempts) {
-                        logger.info(
-                            "Download attempt $attempt/${options.maximumAttempts} failed (${error.message}), retrying.",
-                        )
-                        delay(options.retryBaseDelay * attempt)
+        var lastError: IOException? = null
+        for (attempt in 1..options.maximumAttempts) {
+            try {
+                downloadOnce(request, onProgress)
+                return@withContext DownloadTransferResult.Success
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                when (error) {
+                    is AccessDeniedException, is SecurityException -> {
+                        logger.error("Download storage denied access.", error)
+                        return@withContext DownloadTransferResult.PermissionDenied
+                    }
+
+                    is IOException -> {
+                        lastError = error
+                        if (attempt < options.maximumAttempts) {
+                            logger.info(
+                                "Download attempt $attempt/${options.maximumAttempts} failed (${error.message}), " +
+                                    "retrying.",
+                            )
+                            delay(options.retryBaseDelay * attempt)
+                        }
+                    }
+
+                    else -> {
+                        logger.error("Download failed.", error)
+                        return@withContext DownloadTransferResult.Failed(error.message ?: DOWNLOAD_FAILED_MESSAGE)
                     }
                 }
             }
-            val message = lastError?.message ?: MAXIMUM_RETRIES_MESSAGE
-            logger.error("Download failed after ${options.maximumAttempts} attempts: $message", lastError)
-            DownloadTransferResult.Failed(MAXIMUM_RETRIES_MESSAGE)
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: AccessDeniedException) {
-            logger.error("Download storage denied access.", error)
-            DownloadTransferResult.PermissionDenied
-        } catch (error: SecurityException) {
-            logger.error("Download storage denied access.", error)
-            DownloadTransferResult.PermissionDenied
-        } catch (error: Exception) {
-            logger.error("Download failed.", error)
-            DownloadTransferResult.Failed(error.message ?: DOWNLOAD_FAILED_MESSAGE)
         }
+        val message = lastError?.message ?: MAXIMUM_RETRIES_MESSAGE
+        logger.error("Download failed after ${options.maximumAttempts} attempts: $message", lastError)
+        DownloadTransferResult.Failed(MAXIMUM_RETRIES_MESSAGE)
     }
 
     private suspend fun downloadOnce(

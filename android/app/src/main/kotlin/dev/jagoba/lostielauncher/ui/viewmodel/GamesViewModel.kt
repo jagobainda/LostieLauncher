@@ -15,6 +15,7 @@ import dev.jagoba.lostielauncher.model.GameUninstallOutcome
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
@@ -310,5 +311,5 @@ class GamesViewModel @Inject constructor(
     private fun find(gameName: String): InstalledGameUiState? =
         state.value.games.firstOrNull { it.game.name.equals(gameName, ignoreCase = true) }
 
-    private fun target(game: LocalGame): GameTarget = GameTarget(game.id.takeUnless { it == UUID(0, 0) }, game.name)
+    private fun target(game: LocalGame): GameTarget = GameTarget(game.id.takeUnless { it == MissingGameId }, game.name)
 }

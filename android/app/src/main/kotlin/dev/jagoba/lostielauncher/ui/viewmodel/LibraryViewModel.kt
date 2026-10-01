@@ -15,6 +15,7 @@ import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.hasActiveDownload
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
@@ -59,8 +60,7 @@ data class LibraryGameUiState(
 ) {
     val canPause: Boolean get() = download?.status?.isActive == true
     val canResume: Boolean get() = canStart && download?.status == DownloadStatus.PAUSED
-    val canCancel: Boolean get() = download != null &&
-        download.status !in setOf(DownloadStatus.COMPLETED, DownloadStatus.CANCELLED)
+    val canCancel: Boolean get() = download != null && !download.status.isFinished
     val installationUnsupported: Boolean
         get() = installation ==
             GameInstallationState.Finished(dev.jagoba.lostielauncher.model.GameInstallationResult.NotSupportedYet)
@@ -127,14 +127,6 @@ data class LibraryUiState(
     val isListVisible: Boolean get() = !isLoading && games.isNotEmpty()
 }
 
-private data class LibraryTransient(
-    val pendingDownloadGameId: String? = null,
-    val downloadDestination: DownloadDestination? = null,
-    val pendingCancelGameId: String? = null,
-    val pendingSpecialGameId: String? = null,
-    val notice: LibraryNotice? = null,
-)
-
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -148,7 +140,7 @@ class LibraryViewModel @Inject constructor(
     private val externalLinks: ExternalLinkService,
     private val logger: Logger,
 ) : ViewModel() {
-    private val transient = MutableStateFlow(LibraryTransient())
+    private val transient = MutableStateFlow(LibraryUiState())
     private val playtimes = MutableStateFlow<Map<UUID, Int>>(emptyMap())
     private var maintenanceNoticeShown = false
 
@@ -170,9 +162,10 @@ class LibraryViewModel @Inject constructor(
         downloads.downloads,
         installation.installedGames,
         installationStates,
-    ) { catalogue, downloadRows, installedState, phases ->
+        playtimes,
+    ) { catalogue, downloadRows, installedState, phases, times ->
         val installed = (installedState as? InstalledGamesState.Available)?.games.orEmpty()
-        val active = downloadRows.any { it.status.isActive }
+        val active = downloadRows.hasActiveDownload
         LibraryUiState(
             isLoading = catalogue.isLoading,
             games = catalogue.games.map { game ->
@@ -187,7 +180,7 @@ class LibraryViewModel @Inject constructor(
                     installed = local,
                     installedStateKnown = installedState is InstalledGamesState.Available,
                     hasUpdate = hasUpdate,
-                    playtimeMinutes = game.id?.let(playtimes.value::get) ?: 0,
+                    playtimeMinutes = game.id?.let(times::get) ?: 0,
                     download = download,
                     installation = phase,
                     status = status,
@@ -205,15 +198,8 @@ class LibraryViewModel @Inject constructor(
         )
     }
 
-    val state: StateFlow<LibraryUiState> = combine(cards, transient, playtimes) { base, transient, times ->
-        base.copy(
-            games = base.games.map { row -> row.copy(playtimeMinutes = row.game.id?.let(times::get) ?: 0) },
-            pendingDownloadGameId = transient.pendingDownloadGameId,
-            downloadDestination = transient.downloadDestination,
-            pendingCancelGameId = transient.pendingCancelGameId,
-            pendingSpecialGameId = transient.pendingSpecialGameId,
-            notice = transient.notice,
-        )
+    val state: StateFlow<LibraryUiState> = combine(cards, transient) { base, prompts ->
+        prompts.copy(isLoading = base.isLoading, games = base.games)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryUiState())
 
     init {
@@ -294,6 +280,7 @@ class LibraryViewModel @Inject constructor(
         transient.value = transient.value.copy(pendingDownloadGameId = null, downloadDestination = null)
         val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
         viewModelScope.launch {
+            if (!serverActionsAvailable()) return@launch
             val trimmedKey = key?.trim().orEmpty()
             if (trimmedKey.isEmpty()) {
                 start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
@@ -334,11 +321,12 @@ class LibraryViewModel @Inject constructor(
         val gameId = transient.value.pendingSpecialGameId ?: return
         transient.value = transient.value.copy(pendingSpecialGameId = null)
         val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
-        viewModelScope.launch { startSpecialVersion(game, key.trim()) }
+        viewModelScope.launch {
+            if (serverActionsAvailable()) startSpecialVersion(game, key.trim())
+        }
     }
 
     private suspend fun startSpecialVersion(game: GameInfo, key: String) {
-        if (!serverActionsAvailable()) return
         if (!SpecialVersionPolicy.isValidKey(key)) {
             logger.info("Download key rejected for ${game.gameId}: invalid format.")
             transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_INVALID)
@@ -395,7 +383,7 @@ class LibraryViewModel @Inject constructor(
 
     fun dismissPrompt() {
         transient.value.pendingCancelGameId?.let { logger.debug("Cancel download aborted by user for $it.") }
-        transient.value = LibraryTransient(notice = transient.value.notice)
+        transient.value = LibraryUiState(notice = transient.value.notice)
     }
 
     fun clearNotice() {
@@ -403,7 +391,6 @@ class LibraryViewModel @Inject constructor(
     }
 
     private suspend fun start(game: GameInfo, args: GameDownloadArgs) {
-        if (!serverActionsAvailable()) return
         record(downloads.start(DownloadRequest(game.name, args)))
     }
 

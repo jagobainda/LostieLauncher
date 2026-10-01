@@ -45,14 +45,8 @@ internal class DefaultDownloadFileStore @Inject constructor(
         return DownloadDestination(downloadsDirectory.absolutePath, freeBytes)
     }
 
-    override fun deleteArtifacts(destinationPath: String): Int {
-        val partPath = DownloadPathUtils.getPartFilePath(destinationPath)
-        return listOf(
-            File(destinationPath),
-            File(partPath),
-            File(DownloadPathUtils.getMetaFilePath(partPath)),
-        ).count { it.exists() && it.delete() }
-    }
+    override fun deleteArtifacts(destinationPath: String): Int =
+        artifactsOf(destinationPath).count { it.exists() && it.delete() }
 
     override fun purgeStale(knownGameIds: Set<String>, now: Instant): Int {
         val files = downloadsDirectory.listFiles()?.filter(File::isFile).orEmpty()
@@ -63,17 +57,15 @@ internal class DefaultDownloadFileStore @Inject constructor(
         return staleNames.count { fileName -> File(downloadsDirectory, fileName).delete() }
     }
 
-    override fun hasArtifacts(destinationPath: String): Boolean {
-        val partPath = DownloadPathUtils.getPartFilePath(destinationPath)
-        return listOf(
-            File(destinationPath),
-            File(partPath),
-            File(DownloadPathUtils.getMetaFilePath(partPath)),
-        ).any(File::exists)
-    }
+    override fun hasArtifacts(destinationPath: String): Boolean = artifactsOf(destinationPath).any(File::exists)
 
     override fun hasResumablePartial(destinationPath: String): Boolean {
+        val (_, part, metadata) = artifactsOf(destinationPath)
+        return part.exists() && metadata.exists()
+    }
+
+    private fun artifactsOf(destinationPath: String): List<File> {
         val partPath = DownloadPathUtils.getPartFilePath(destinationPath)
-        return File(partPath).exists() && File(DownloadPathUtils.getMetaFilePath(partPath)).exists()
+        return listOf(File(destinationPath), File(partPath), File(DownloadPathUtils.getMetaFilePath(partPath)))
     }
 }

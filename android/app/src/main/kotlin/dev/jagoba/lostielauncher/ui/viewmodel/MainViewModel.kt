@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.content.stringsFor
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
+import dev.jagoba.lostielauncher.model.hasActiveDownload
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
@@ -79,7 +80,7 @@ class MainViewModel @Inject constructor(
         downloads.downloads,
         welcome,
     ) { shell, refreshing, rows, welcomeVisible ->
-        val downloading = rows.any { it.status.isActive }
+        val downloading = rows.hasActiveDownload
         shell.copy(
             isRefreshing = refreshing,
             canRefresh = shell.canRefresh && !refreshing && !downloading,
