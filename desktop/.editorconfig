@@ -1,0 +1,65 @@
+# EditorConfig — https://editorconfig.org
+#
+# Desktop-only rules. There is no `root` key on purpose: this file inherits the
+# monorepo baseline in ../.editorconfig (charset, CRLF, indentation, final
+# newline) and adds the C#, XAML and MSBuild rules that `dotnet format`
+# enforces as a CI gate.
+#
+# ⚠ This file is authoritative for the WPF project. Do not move these rules back
+# to the repository root: the Android side has its own conventions.
+
+# ── C# ──────────────────────────────────────────────────────────────────────
+[*.cs]
+
+# --- Usings ---
+dotnet_sort_system_directives_first          = false
+dotnet_separate_import_directive_groups      = false
+dotnet_diagnostic.IDE0005.severity           = error
+
+# --- var ---
+csharp_style_var_for_built_in_types          = true:warning
+csharp_style_var_when_type_is_apparent       = true:warning
+csharp_style_var_elsewhere                   = true:warning
+
+# --- this. ---
+dotnet_style_qualification_for_field         = false:warning
+dotnet_style_qualification_for_property      = false:warning
+dotnet_style_qualification_for_method        = false:warning
+dotnet_style_qualification_for_event         = false:warning
+
+# --- Namespaces (file-scoped, C# 10+) ---
+csharp_style_namespace_declarations          = file_scoped:warning
+
+# --- Llaves (Allman) ---
+csharp_new_line_before_open_brace            = all
+csharp_new_line_before_else                  = true
+csharp_new_line_before_catch                 = true
+csharp_new_line_before_finally               = true
+
+# --- Indentación dentro de bloques ---
+csharp_indent_case_contents                  = true
+csharp_indent_switch_labels                  = true
+
+# --- Espacios ---
+csharp_space_after_cast                      = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses         = false
+csharp_space_before_colon_in_inheritance_clause                     = true
+csharp_space_after_colon_in_inheritance_clause                      = true
+
+# --- Preferir expression body solo donde tiene sentido ---
+csharp_style_expression_bodied_methods          = true:warning
+csharp_style_expression_bodied_constructors     = true:warning
+csharp_style_expression_bodied_operators        = true:warning
+csharp_style_expression_bodied_properties       = true:warning
+csharp_style_expression_bodied_indexers         = true:warning
+csharp_style_expression_bodied_accessors        = true:warning
+
+# --- Misc ---
+csharp_prefer_braces                            = false:warning
+dotnet_style_require_accessibility_modifiers    = always:warning
+
+# ── XML / XAML ───────────────────────────────────────────────────────────────
+[*.{xml,xaml,csproj,slnx,props,targets}]
+indent_size = 4

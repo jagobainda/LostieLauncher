@@ -1,0 +1,58 @@
+{
+  "news": [
+    {
+      "id": "3b5d0ad6-9cf6-434c-8da8-25b971f5f053",
+      "title": {
+        "es": "v0.9.1 Beta Abierta ya disponible",
+        "en": "v0.9.1 Open Beta now available",
+        "eu": "v0.9.1 Beta Irekia eskuragarri dago",
+        "ca": "v0.9.1 Beta Oberta ja disponible",
+        "val": "v0.9.1 Beta Oberta ja disponible",
+        "gl": "v0.9.1 Beta Aberta xa dispoñible",
+        "pt": "v0.9.1 Beta Aberta já disponível",
+        "fr": "v0.9.1 Bêta Ouverte désormais disponible"
+      },
+      "description": {
+        "es": "La versión v0.9.1 Beta Abierta ya está disponible. Para enviar sugerencias o reportar errores, puedes usar el canal #testeo-launcher en nuestro servidor de Discord. Puedes consultar el changelog completo en github.com/jagobainda/LostieLauncher/releases.",
+        "en": "Version v0.9.1 Open Beta is now available. To send suggestions or report bugs, use the #testeo-launcher channel on our Discord server. You can check the full changelog at github.com/jagobainda/LostieLauncher/releases.",
+        "eu": "v0.9.1 Beta Irekia bertsioa eskuragarri dago jada. Iradokizunak bidaltzeko edo akatsak jakinarazteko, erabili gure Discord zerbitzariko #testeo-launcher kanala. Changelog osoa hemen ikus dezakezu: github.com/jagobainda/LostieLauncher/releases.",
+        "ca": "La versió v0.9.1 Beta Oberta ja està disponible. Per enviar suggeriments o reportar errors, pots utilitzar el canal #testeo-launcher al nostre servidor de Discord. Pots consultar el changelog complet a github.com/jagobainda/LostieLauncher/releases.",
+        "val": "La versió v0.9.1 Beta Oberta ja està disponible. Per a enviar suggeriments o reportar errors, pots utilitzar el canal #testeo-launcher en el nostre servidor de Discord. Pots consultar el changelog complet a github.com/jagobainda/LostieLauncher/releases.",
+        "gl": "A versión v0.9.1 Beta Aberta xa está dispoñible. Para enviar suxestións ou informar de erros, podes usar a canle #testeo-launcher no noso servidor de Discord. Podes consultar o changelog completo en github.com/jagobainda/LostieLauncher/releases.",
+        "pt": "A versão v0.9.1 Beta Aberta já está disponível. Para enviar sugestões ou reportar bugs, podes usar o canal #testeo-launcher no nosso servidor de Discord. Podes consultar o changelog completo em github.com/jagobainda/LostieLauncher/releases.",
+        "fr": "La version v0.9.1 Bêta Ouverte est désormais disponible. Pour envoyer des suggestions ou signaler des bugs, utilisez le canal #testeo-launcher sur notre serveur Discord. Vous pouvez consulter le changelog complet sur github.com/jagobainda/LostieLauncher/releases."
+      },
+      "tag": "Release",
+      "date": "2026-07-24T00:00:00",
+      "expires_at": "2026-10-21T00:00:00"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "140431da-5f94-4a41-b8eb-32a926e3019d",
+      "title": {
+        "es": "¡Bienvenido al nuevo launcher!",
+        "en": "Welcome to the new launcher!",
+        "eu": "Ongi etorri launcher berrira!",
+        "ca": "Benvinguts al nou launcher!",
+        "val": "Benvinguts al nou launcher!",
+        "gl": "Benvidos ao novo launcher!",
+        "pt": "Bem-vindos ao novo launcher!",
+        "fr": "Bienvenue sur le nouveau launcher !"
+      },
+      "message": {
+        "es": "¡Bienvenidos al nuevo launcher de mis fangames! Creado por Jagobainda, espero que este launcher os permita tener una mejor experiencia.\n\nSi sois nuevos y os estáis preguntando qué jugar primero, os recomiendo Pokémon Añil o Pokémon Z, ya que son mis juegos más modernos y de mayor calidad. Pokémon Añil es un remake de Kanto muy adictivo con todos los Pokémon y modos para jugar locke, y Pokémon Z es una especie de Leyendas Kalos con una historia épica y que considero mi mejor juego hasta ahora.\n\nDespués podéis seguir con Pokémon Ópalo, que tiene ya unos años pero sigue jugándose bien.\n\nPokémon Titan y Pokémon Iberia se han quedado un poco viejos, ¡juégalos bajo tu propio riesgo!\n\n* EricLostie",
+        "en": "Welcome to the new launcher for my fangames! Created by Jagobainda, I hope this launcher gives you a better experience.\n\nIf you're new and wondering what to play first, I recommend Pokémon Añil or Pokémon Z, as they are my most modern and highest quality games. Pokémon Añil is a highly addictive Kanto remake with all the Pokémon and locke modes to play, and Pokémon Z is a kind of Legends Kalos with an epic story that I consider my best game so far.\n\nAfter that you can continue with Pokémon Ópalo, which is a few years old now but still plays well.\n\nPokémon Titan and Pokémon Iberia have gotten a bit old, play them at your own risk!\n\n* EricLostie",
+        "eu": "Ongi etorri nire fangameentzako launcher berrira! Jagobaindak sortua, launcher honek esperientzia hobea ematea espero dut.\n\nBerria bazara eta zer jokatu lehenengo pentsatzen ari bazara, Pokémon Añil edo Pokémon Z gomendatzen dizkizut, nire jokorik modernoenak eta kalitate handienekoak baitira. Pokémon Añil Kantoko remake oso atsegingarria da, Pokémon guztiekin eta locke moduekin jolasteko, eta Pokémon Z Legends Kalos motako zerbait da, istorio bikaina duena eta orain arte nire joko onena dela uste dut.\n\nOndoren Pokémon Ópalorekin jarrai dezakezu, urte batzuk baditu ere ondo jokatzen jarraitzen du.\n\nPokémon Titan eta Pokémon Iberia pixka bat zaharkituta geratu dira, jokatu zure erantzukizunpean!\n\n* EricLostie",
+        "ca": "Benvinguts al nou launcher dels meus fangames! Creat per Jagobainda, espero que aquest launcher us permeti tenir una millor experiència.\n\nSi sou nous i us pregunteu què jugar primer, us recomano Pokémon Añil o Pokémon Z, ja que són els meus jocs més moderns i de més qualitat. Pokémon Añil és un remake de Kanto molt addictiu amb tots els Pokémon i modes per jugar locke, i Pokémon Z és una mena de Legends Kalos amb una història èpica que considero el meu millor joc fins ara.\n\nDesprés podeu continuar amb Pokémon Ópalo, que ja té uns anys però encara es juga bé.\n\nPokémon Titan i Pokémon Iberia s'han quedat una mica vells, jugueu-hi sota el vostre propi risc!\n\n* EricLostie",
+        "val": "Benvinguts al nou launcher dels meus fangames! Creat per Jagobainda, espere que este launcher vos permeta tindre una millor experiència.\n\nSi sou nous i vos esteu preguntant què jugar primer, vos recomane Pokémon Añil o Pokémon Z, ja que són els meus jocs més moderns i de major qualitat. Pokémon Añil és un remake de Kanto molt addictiu amb tots els Pokémon i modes per a jugar locke, i Pokémon Z és una espècie de Legends Kalos amb una història èpica que considere el meu millor joc fins ara.\n\nDesprés podeu continuar amb Pokémon Ópalo, que ja té uns anys però encara es juga bé.\n\nPokémon Titan i Pokémon Iberia s'han quedat un poc vells, jugueu-los baix el vostre propi risc!\n\n* EricLostie",
+        "gl": "Benvidos ao novo launcher dos meus fangames! Creado por Jagobainda, espero que este launcher vos permita ter unha mellor experiencia.\n\nSe sodes novos e estades a preguntarvos que xogar primeiro, recoméndovos Pokémon Añil ou Pokémon Z, xa que son os meus xogos máis modernos e de maior calidade. Pokémon Añil é un remake de Kanto moi adictivo con todos os Pokémon e modos para xogar locke, e Pokémon Z é unha especie de Legends Kalos cunha historia épica que considero o meu mellor xogo ata agora.\n\nDespois podedes seguir con Pokémon Ópalo, que xa ten uns anos pero aínda se xoga ben.\n\nPokémon Titan e Pokémon Iberia quedaron un pouco vellos, xogádeos baixo o voso propio risco!\n\n* EricLostie",
+        "pt": "Bem-vindos ao novo launcher dos meus fangames! Criado por Jagobainda, espero que este launcher vos permita ter uma melhor experiência.\n\nSe são novos e estão a perguntar-se o que jogar primeiro, recomendo Pokémon Añil ou Pokémon Z, já que são os meus jogos mais modernos e de maior qualidade. Pokémon Añil é um remake de Kanto muito viciante com todos os Pokémon e modos para jogar locke, e Pokémon Z é uma espécie de Legends Kalos com uma história épica que considero o meu melhor jogo até agora.\n\nDepois podem continuar com Pokémon Ópalo, que já tem uns anos mas ainda se joga bem.\n\nPokémon Titan e Pokémon Iberia ficaram um pouco antigos, joguem-nos por vossa conta e risco!\n\n* EricLostie",
+        "fr": "Bienvenue sur le nouveau launcher de mes fangames ! Créé par Jagobainda, j'espère que ce launcher vous permettra d'avoir une meilleure expérience.\n\nSi vous êtes nouveaux et que vous vous demandez à quoi jouer en premier, je vous recommande Pokémon Añil ou Pokémon Z, car ce sont mes jeux les plus modernes et de meilleure qualité. Pokémon Añil est un remake de Kanto très addictif avec tous les Pokémon et des modes pour jouer en locke, et Pokémon Z est une sorte de Legends Kalos avec une histoire épique que je considère comme mon meilleur jeu à ce jour.\n\nEnsuite, vous pouvez continuer avec Pokémon Ópalo, qui a déjà quelques années mais qui se joue toujours bien.\n\nPokémon Titan et Pokémon Iberia ont un peu vieilli, jouez-y à vos risques et périls !\n\n* EricLostie"
+      },
+      "type": "Info",
+      "date": "2026-07-24T00:00:00",
+      "expires_at": "2026-10-22T00:00:00"
+    }
+  ]
+}
