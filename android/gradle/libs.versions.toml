@@ -12,7 +12,7 @@
 [versions]
 # ── Toolchain ───────────────────────────────────────────────────────────────
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ksp = "2.3.12"
 # AGP 9 requires JDK 17 and compiles to it by default; D8 is happy there.
 javaTarget = "17"
@@ -54,7 +54,7 @@ kotest = "6.2.5"
 turbine = "1.2.1"
 
 # ── Static analysis ─────────────────────────────────────────────────────────
-spotless = "8.10.3"
+spotless = "8.10.4"
 ktlint = "1.8.0"
 
 [libraries]
