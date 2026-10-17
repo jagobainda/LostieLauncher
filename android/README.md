@@ -84,6 +84,36 @@ downloads that JDK itself if the machine has none. Both pins matter — a
 JetBrains Runtime, the JDK a JetBrains IDE ships with, is missing `jlink` that
 AGP needs and crashes KSP's worker.
 
+### Signed release APK (maintainer only)
+
+The app is distributed as an APK outside any store, signed with the project's
+own self-signed key. Android identifies an app by that key: every release must
+be signed with the same one, or devices refuse it as an update of the installed
+app. A lost key cannot be regenerated, so the keystore and its passwords need a
+backup outside this machine.
+
+Generate the key once (about 27 years, beyond the 25 Android recommends), and
+keep the keystore outside the repository:
+
+```bash
+keytool -genkeypair -v -keystore lostie-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias lostie
+```
+
+Then create `android/keystore.properties`, which Git ignores. A relative
+`storeFile` resolves against `android/`:
+
+```properties
+storeFile=C:/path/to/lostie-release.jks
+storePassword=...
+keyAlias=lostie
+keyPassword=...
+```
+
+With that file present, `./gradlew assembleRelease` aligns and signs the APK
+itself and writes `app/build/outputs/apk/release/app-release.apk`. Without it,
+as on CI, the release is built unsigned as `app-release-unsigned.apk`.
+`./gradlew signingReport` shows which key each variant is signed with.
+
 ## Architecture
 
 MVVM with a single Hilt object graph, one Gradle module, and a layer contract

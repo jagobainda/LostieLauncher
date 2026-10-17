@@ -62,6 +62,7 @@ build/
 .cxx/
 captures/
 local.properties
+keystore.properties
 *.apk
 *.aab
 *.aar
