@@ -6,9 +6,23 @@ on:
     pull_request:
         branches: [main, development]
 
+# Two sides, two toolchains, two sets of jobs. Each job sets the
+# `working-directory` of the side it belongs to and runs exactly the commands
+# that side's AGENTS.md documents, so a green pipeline and a green local run
+# mean the same thing.
+#
+#   desktop-*  WPF / .NET, windows-latest, working-directory: desktop
+#   android-*  Gradle / Kotlin, ubuntu-latest, working-directory: android
+#
+# Every job name starts with its side, so a PR's check list says which side
+# failed. A new job follows the same rule.
 jobs:
-    format-check:
+    desktop-format-check:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout
@@ -25,8 +39,12 @@ jobs:
             - name: Check formatting
               run: dotnet format LostieLauncher.slnx --verify-no-changes --verbosity diagnostic
 
-    build-and-test:
+    desktop-build-and-test:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout
@@ -46,8 +64,12 @@ jobs:
             - name: Test
               run: dotnet test LostieLauncher.slnx --no-build --configuration Release --verbosity normal
 
-    vulnerable-dependencies:
+    desktop-vulnerable-dependencies:
         runs-on: windows-latest
+
+        defaults:
+            run:
+                working-directory: desktop
 
         steps:
             - name: Checkout
@@ -89,3 +111,64 @@ jobs:
                   }
 
                   Write-Host 'No vulnerable NuGet packages detected.'
+
+    android-format-check:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            - name: Check formatting
+              run: ./gradlew spotlessCheck
+
+    android-build-and-test:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            # assembleDebug proves it builds, testDebugUnitTest runs the suite,
+            # lintDebug is the static-analysis gate (warningsAsErrors), and
+            # assembleRelease proves the release source set and R8 still build.
+            # These are the commands android/AGENTS.md tells a contributor to
+            # run before opening a PR.
+            - name: Build, test and lint
+              run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
+
+            - name: Upload reports on failure
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: android-reports
+                  path: |
+                      android/app/build/reports/
+                      android/app/build/test-results/
+                  retention-days: 7

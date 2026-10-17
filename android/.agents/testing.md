@@ -1,0 +1,347 @@
+# Testing
+
+Part of the agent guidelines — see [AGENTS.md](../AGENTS.md) for the index and
+the rules that always apply. Read this before writing or editing any test.
+
+Tests live in `app/src/test/kotlin/`, mirroring the production packages, one
+`<Type>Test.kt` per production type. Stack: **JUnit 5** (`junit-jupiter`),
+**MockK**, **Kotest assertions**, **Turbine** for flows, and
+`kotlinx-coroutines-test`.
+
+The desktop's stack is xUnit v3 + NSubstitute + Shouldly, and the mapping is
+deliberate: `[Fact]` → `@Test`, `[Theory]` + `[InlineData]` → `@ParameterizedTest`
++ `@CsvSource`/`@MethodSource`, `Substitute.For<T>()` → `mockk()`,
+`result.ShouldBe(x)` → `result shouldBe x`, `Received(1)` → `verify(exactly = 1)`.
+A test ported from the desktop should be recognisable beside its original.
+
+## Hard rules
+
+- **No device, ever.** JVM unit tests only. No Robolectric, no
+  `androidTest/`, no emulator in CI. A test that needs a device is a test CI
+  cannot run, and it is a sign the seam is missing — add the interface instead.
+- **Nothing real on the other side of a seam.** No real network, no filesystem
+  outside a JUnit `@TempDir`, no wall-clock dependency, no machine locale
+  dependency, no `Thread.sleep`. A loopback `MockWebServer` is not "real
+  network" and is the right tool when what is under test is the HTTP stack
+  itself — `CdnPayloadTest` uses one to parse the captured CDN payloads through
+  the real OkHttp, Retrofit and `Json`, which is the only way to prove the
+  payload parses rather than prove that a fixture does.
+- **Pin the clock.** Anything that reads "now" takes the injected
+  `java.time.Clock`, and a test hands it `Clock.fixed`. A test asserting against
+  a payload that expires on a date is otherwise a test with a fuse in it.
+- Coroutines are tested with `runTest` and an injected test dispatcher, never by
+  waiting. `DispatcherProvider` exists precisely so a test can hand a
+  `StandardTestDispatcher` to the thing under test.
+- Flows are asserted with Turbine, not by collecting into a list and hoping the
+  timing works out.
+- **Never widen visibility to make something testable.** Unit tests are in the
+  same module and already see `internal`.
+- Add or update tests for **every** behaviour change, including the failure path
+  you just fixed. A bug fix without a regression test is incomplete.
+- When a test is ported from the desktop, keep the case. If a desktop case stops
+  making sense on Android, do not delete it silently: say so in the test file,
+  in the PR, and in [Desktop test parity](#desktop-test-parity-utils), which is
+  where the answer is looked up next time. Port plan step 06 is explicit about
+  this.
+
+## Shape of a test class
+
+```kotlin
+@DisplayName("ContentService")
+class ContentServiceTest {
+    private val api = mockk<ContentApi>()
+    private val logger = mockk<Logger>(relaxed = true)
+
+    private fun createSut() = ContentService(api, logger)
+
+    @Test
+    fun `returns an empty catalogue and logs when the content server fails`() = runTest {
+        coEvery { api.games() } throws IOException("boom")
+        val sut = createSut()
+
+        val games = sut.getGames()
+
+        games.shouldBeEmpty()
+        verify(exactly = 1) { logger.error(any(), any()) }
+    }
+}
+```
+
+- Names are a sentence in backticks describing scenario and expected result.
+  `@DisplayName` on the class names the unit under test.
+- Collaborators are `private val` MockK mocks; the system under test comes from
+  a `createSut()` factory so each test arranges first.
+- Separate arrange, act and assert with a blank line, without comments: tests
+  follow the minimal-comment rule in
+  [code-style.md](code-style.md#comments-and-docs), and an edited test loses
+  the ones it had.
+- Prefer `@ParameterizedTest` over copy-pasting a `@Test`.
+
+## Running them
+
+From `android/`, never from the repository root:
+
+```bash
+./gradlew testDebugUnitTest
+./gradlew testDebugUnitTest --tests "*ContentServiceTest*"
+```
+
+The suite runs on the JUnit Platform through the
+`de.mannodermaus.android-junit` plugin, which is what teaches AGP to run JUnit 5
+for Android unit tests — AGP does not do it on its own. If that plugin ever
+blocks an AGP upgrade, the fallback is JUnit 4, not an older AGP.
+
+The module compiles with `allWarningsAsErrors`, tests included. Do not add a
+suppression to make a test compile.
+
+## Desktop test parity: `Utils/`
+
+Port plan step 06 ported the desktop's **pure decision functions** — the ones
+with no I/O, no mutable state and no platform dependency — together with their
+test cases, and owed a documented correspondence in return. This is it. It
+covers `desktop/LostieLauncher.Tests/Utils/` only; the other folders belong to
+steps 04, 07, 08 and 10, which each carry their own table.
+
+Counts are `[Fact]` + `[Theory]` **declarations**, not executed cases: a theory
+with five rows is one declaration on both sides. The desktop's 24 classes
+declare 163 of them, of which 62 are here, beside 37 that are this side's own.
+
+### Ported
+
+| Desktop class | Decl. | Android | Ported | Added |
+| --- | --- | --- | --- | --- |
+| `VersionUtilsTests` | 15 | `util/version/VersionUtilsTest` | 15 | — |
+| `LinkTextParserTests` | 9 | `util/text/LinkTextParserTest` | 9 | — |
+| `DownloadPathUtilsTests` | 9 | `util/download/DownloadPathUtilsTest` | 9 | 1 |
+| `DownloadCachePolicyTests` | 7 | `util/download/DownloadCachePolicyTest` | 7 | 2 |
+| `SearchMatcherTests` | 7 | `util/text/SearchMatcherTest` | 7 | 18 |
+| `FileFinalizerTests` | 6 | `util/file/FileMoveRetryPolicyTest` | 2 | 2 |
+| `PlaytimeFormatterTests` | 4 | `util/format/PlaytimeFormatterTest` | 4 | — |
+| `ShutdownWarningPolicyTests` | 4 | `util/policy/ShutdownWarningPolicyTest` | 4 | — |
+| `UrlLauncherTests` | 3 | `util/net/HttpsUrlsTest` | 3 | 9 |
+| `UnhandledExceptionPolicyTests` | 2 | `util/policy/UnhandledExceptionPolicyTest` | 2 | — |
+| — | — | `util/version/BaseVersionTest` | — | 5 |
+
+Three of those rows need a word.
+
+- **`FileFinalizerTests` — 2 of 6.** Only `IsRetryable` is pure. The four
+  `MoveAsync` declarations drive a real file through a real move with a real
+  lock on it; that is the filesystem half of the same type and it arrives with
+  the download transfer in step 08. The desktop keeps the two apart for the same
+  reason, and so does this side: `FileMoveRetryPolicy` is the predicate and
+  nothing else.
+- **`UrlLauncherTests` — 3 of 3.** The desktop class only ever covered
+  `TryGetHttpsUri`; `OpenHttps` shells out and has no test there either. The
+  guard became `HttpsUrls`, and the shelling out lands with the screens that
+  need it.
+- **`DownloadPathUtilsTests` — paths adapted.** Two cases assert a derived path
+  and did so with a Windows one. Both functions are string concatenation, so the
+  shape proves nothing either way, and a `C:\` path in a test on this side would
+  be misleading rather than faithful.
+
+The **Added** column is Android-only coverage — 37 declarations, more than half
+the ported count — and every one exists for the same reason: something .NET
+supplies was hand-written here, so the rule it implements has to be pinned on
+this side rather than inherited.
+
+- `BaseVersionTest` — `System.Version`'s grammar and its `-1`-for-absent
+  comparison.
+- `SearchMatcherTest` — the folding that stands in for .NET's collation-aware
+  `IndexOf`: which characters carry no weight, the middle-dot contraction the
+  two Catalan-family catalogues are full of, and where a match stops when the
+  next character was dropped.
+- `HttpsUrlsTest` — the canonical form .NET gets from `Uri.AbsoluteUri`, the
+  URLs `java.net.URI` refuses and `Uri.TryCreate` accepts, and the three places
+  the canonical form still differs.
+- `FileMoveRetryPolicyTest` — the exception mapping the JVM forced.
+- `DownloadPathUtilsTest` — the cache token against the digest the desktop
+  computes, because a cache written by one side has to be read by the same
+  rules on the other.
+
+### How the collation rules were established
+
+Not by reading a specification. A probe ran `CompareInfo.Compare` under
+`IgnoreCase | IgnoreNonSpace` over **every BMP code point** and over each
+boundary case, and the implementation follows what came back:
+
+- Two Unicode categories are ignorable in full (`Format`, `EnclosingMark`) and
+  one nearly so (`Control`, except the six that collate as whitespace).
+  `NonSpacingMark` is *not* — 439 of 1066 carry weight — so dropping the
+  category is slightly over-broad, and correct for every Latin-script language
+  the launcher ships.
+- The middle dot of a Catalan `l·l` is a **contraction**, not an ignorable
+  character: `l·l` equals `ll` while `a·b` does not equal `ab`. Its condition is
+  the **left neighbour alone** — swept over every ordered pair of a 39-character
+  alphabet, the dot is dropped in 39 of 1521, exactly those preceded by `l` or
+  `L`, whatever follows and even at the end of the string. Two wrong rules are
+  easy to reach from here and both were: dropping the dot unconditionally
+  (`a·b` would match `ab`), and requiring an `l` on both sides, which silently
+  blanks the FAQ list on the keystroke where a Catalan user has typed `instal·`.
+  The neighbour is read literally, not through the folding — an accent between
+  the `l` and the dot blocks the contraction on the desktop too.
+- A match extends over a trailing character only when it belongs to the same
+  grapheme — combining marks and the two joiners, not a soft hyphen, a
+  byte-order mark, a word joiner or a control.
+
+The result was then checked end to end rather than assumed. A differential ran
+both implementations — .NET's `CompareInfo` and the **compiled** Kotlin class,
+not a re-implementation of it — over **328,051 (text, term) pairs** in three
+corpora, all drawn from the eight catalogues, the FAQ entries and both captured
+CDN payloads. Zero disagreements in all three.
+
+| Corpus | Pairs | Matching |
+| --- | --- | --- |
+| Terms derived from each text | 64,736 | 64,736 |
+| Cross product, so most pairs are negatives | 208,962 | 2,047 |
+| **Every prefix of every word**, plus a sweep of both neighbours of a middle dot | 54,353 | 46,161 |
+
+The third corpus is there because the first two could not have caught the
+both-sides bug: no shipped string contains `l` + dot + non-`l`, so only a
+half-typed search term produces one. A corpus built from whole words is not a
+corpus of what a keystroke filter is handed.
+
+The same was done for `LinkTextParser` over 912 texts: zero disagreements on the
+shipped corpus, and three on deliberately awkward synthetic URLs, all of them in
+the link *target* rather than in whether the text is a link, and all three
+pinned by `HttpsUrlsTest`.
+
+### Not ported, and why
+
+| Desktop class | Decl. | Why not |
+| --- | --- | --- |
+| `LogsMaintenanceTests` | 15 | Log rotation and retention are **step 07's**, which is asked to decide how file logging materialises on Android. Porting the desktop's month-and-index naming now would pre-empt that decision rather than serve it. |
+| `DirectoryRemoverTests` | 11 | Recursive deletion with a reparse-point guard — filesystem, and the uninstall flow it serves does not exist yet. |
+| `OneDrivePathPolicyTests` | 9 | OneDrive detection is dropped, along with `OneDriveWarning*`. The variables and the folder convention are Windows. A cloud-backed provider behind the storage access framework would be a different check with different evidence, not this one ported. |
+| `DownloadDirectoryProbeTests` | 9 | The write-and-rename pre-flight. The *principle* survives; the check is re-derived once the storage model is decided — step 07. |
+| `FileMoveDiagnosticsTests` | 8 | Reads attributes and lock state off a real path, and decodes a 13-entry Win32 error table. |
+| `WaitHandleSignalListenerTests` | 7 | A named kernel object. No counterpart, and none should be looked for. |
+| `GameArchiveInstallerTests` | 6 | Extract, swap, roll back — filesystem, and step 08 decides which archive formats survive. |
+| `FileLockProbeTests` | 5 | The three-valued answer is worth keeping, how the middle value is obtained is step 09's and may not exist. |
+| `FolderLauncherTests` | 5 | Opens a folder in the shell. |
+| `LogsTests` | 5 | The log line's own format. Same owner as `LogsMaintenanceTests`: step 07. |
+| `ProcessUtilsTests` | 5 | Launching and tracking a game process — the step 09 seam, and out of scope for the whole port. |
+| `StartupWindowPolicyTests` | 4 | There is no window, and the setting it branches on is gone: `StartMinimized` is dropped on Android. The function has no input it could be given. |
+| `AsyncEventHandlerTests` | 4 | A .NET idiom, not a decision. The invariant it protects — a failure in an exit handler must not escape — carries over; the wrapper does not. |
+| `DownloadArtifactsTests` | 4 | Deletes the three files of a download. Filesystem, step 08. |
+| `FileFinalizerTests` (`MoveAsync`) | 4 | See above. |
+
+Nothing in that table is a case that stopped being interesting. Each is either
+**owned by a later step**, or **has no input on Android** — and those are
+different, and the [parity report](../docs/parity-report.md) keeps them apart:
+steps 07 and 08 picked up the logging, artifact and finalizer rows, the
+installer, lock, process, folder and deletion rows wait on the install seam, and
+the rest have no Android input.
+
+## Desktop test parity: local persistence
+
+Port plan step 07 moved settings, the installed-game registry, playtime and file
+logging onto Android-native storage. These tests stay on the JVM: DataStore and
+Room sit behind interfaces, repository behavior uses fakes, and file logging is
+exercised only under `@TempDir`.
+
+| Desktop class or subset | Decl. | Android | Outcome |
+| --- | ---: | --- | --- |
+| `SettingsServiceTests` | 17 | `model/AppearanceSettingsTest`, `service/settings/DataStoreSettingsStoreTest` | 8 behaviors ported; 9 path cases dropped with configurable storage |
+| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/RoomLocalLibraryStoreTest` | 13 behaviors ported; three legacy-file cases became Room constraints and transactions |
+| `LogsMaintenanceTests` | 15 | `util/log/LogFilesTest` | all 15 ported |
+| `LogsTests` | 5 | `util/log/LogFilesTest`, `util/log/FileLoggerTest` | all 5 ported |
+
+Android-only coverage pins corrupt and failed DataStore operations, debounced
+last-write-wins behavior, concurrent changes to different settings, invalid
+database UUIDs, database degradation, concurrent Room repository calls, file
+logger concurrency and filesystem failure swallowing.
+
+Eight of the nine dropped settings cases inspect `DownloadDirectory`: blank
+and relative sanitization, preservation of a chosen absolute path, OneDrive and
+install-directory placement, and root derivation. Android has no such setting.
+The ninth, `Load_SecondCall_ReturnsCachedInstanceWithoutRereadingDisk`, tests
+the desktop's read cache, which DataStore replaces.
+`StorageModule` chooses the app-specific external files area when mounted and
+falls back to internal files, so none of those inputs exists.
+
+Duplicate non-empty game IDs remain representable because renamed catalogue
+entries have different normalized name keys. The repository therefore mirrors
+the desktop's read-time rule: first occurrence wins by ID, while Room enforces
+name uniqueness for legacy ID-less entries. The three declarations that no
+longer translate are duplicate ID-less names, a null legacy name and atomic
+`.tmp` replacement; Room schema constraints cover the first two and its
+transactions replace the file protocol. Empty data, replacement by
+case-insensitive name, removal, accumulation, concurrency and graceful failure
+remain covered.
+
+## Desktop test parity: downloads
+
+Port plan step 08 separates the desktop service's transfer protocol from its
+special-version configuration lookup. The Android transfer cases run through a
+real OkHttp client and loopback `MockWebServer`; persistent command behavior is
+tested at the Room and scheduler seams, the worker state machine is exercised
+without Android through `DownloadWorkerRunner`, and filesystem cleanup and cache
+maintenance stay under `@TempDir`.
+
+| Desktop class or subset | Decl. | Android | Outcome |
+| --- | ---: | --- | --- |
+| `DownloadServiceTests` transfer subset | 12 | `service/download/OkHttpDownloadTransferTest`, `DefaultDownloadManagerTest` | ranged resume, invalidation, retry, completion and command state ported |
+| `DownloadArtifactsTests` | 4 | `service/download/DownloadFileStoreTest` | archive, partial and metadata cleanup covered as one Android operation |
+| `FileFinalizerTests` (`MoveAsync`) | 4 | `OkHttpDownloadTransferTest`, `util/file/FileMoveRetryPolicyTest` | finalization and retry classification split at the I/O seam |
+| — | — | `DownloadWorkerRunnerTest` | Android-only coverage for stale-work guards, progress CAS, completion, failure, permission denial and pause-versus-cancel |
+| — | — | `util/download/DownloadResumePolicyTest`, `DownloadProgressCalculatorTest`, `DownloadUrlResolverTest` | Android-only pure coverage for response decisions, progress and URL construction |
+
+The seven `DownloadServiceTests` declarations for fetching and parsing
+`game.config` are not transfer cases. Step 10 added
+`SpecialVersionServiceTest` and `SpecialVersionPolicyTest` for the lookup and
+validation path; `SpecialVersionConfigTest` already covers the parser. Device
+acceptance covers the behavior JVM tests intentionally cannot: a live CDN
+transfer remains visible through backgrounding and activity recreation.
+
+## Desktop test parity: ViewModels
+
+Step 10 replaced WPF property notifications with immutable `StateFlow` values.
+The desktop has 130 ViewModel test declarations across seven suites. Android
+cases below exercise the portable decisions at their new owners. Counts are
+desktop declarations, not a claim of one Android test per declaration. The
+JVM suite must be rerun after each change rather than relying on a fixed total.
+
+| Desktop suite | Decl. | Android coverage | Port decision |
+| --- | ---: | --- | --- |
+| `MainViewModelTests` | 8 | `MainViewModelTest`, `NavigationStoreTest`, `LauncherDataCoordinatorTest`, `ExternalLinkOptionsModuleTest` | Section/title, refresh guard and ordering, and validated social links are covered. WPF active-property notifications become one section value. |
+| `GlobalViewModelTests` | 10 | `GlobalViewModelTest` | Busy state follows download and refresh flows. The play-session counter becomes `GameLaunchService.activeSessions`; unsupported is unknown, not zero. |
+| `HomeViewModelTests` | 14 | `HomeViewModelTest`, `LauncherDataCoordinatorTest`, `ContentServiceTest` | Initial, language, periodic, stale and maintenance cases remain. Process startup now owns loading and polling; cache failure and recovery belong to `ContentServiceTest`. |
+| `GamesViewModelTests` | 29 | `GamesViewModelTest`, `GameIdentityMatcherTest`, `PendingGameOperationsTest` | Update, zero and recorded playtime, navigation, busy guards, missing-folder offer and unsupported results are covered. Process tracking, file locks, folder deletion and window restoration remain behind the pending game seam or are Windows-only. |
+| `LibraryViewModelTests` | 33 | `LibraryViewModelTest`, download service tests, `SpecialVersionServiceTest`, `SpecialVersionPolicyTest` | Catalogue statuses, playtime, update, download commands, maintenance, cache purge and key outcomes are covered. Worker transfer remains in step 08; integrity and extraction wait behind step 09's installation seam. |
+| `FaqsViewModelTests` | 6 | `FaqsViewModelTest`, `FaqsTest`, `SearchMatcherTest` | Search, manual expansion, reset, language changes and language-wide count remain. |
+| `SettingsViewModelTests` | 30 | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | Appearance, welcome, installed app version and games auto-update remain. Registry startup, window state, folder picker, OneDrive and launcher self-update cases have no Android counterpart. |
+
+| Desktop case or group | Android owner | Outcome |
+| --- | --- | --- |
+| `LibraryViewModelTests.LoadGames_WhenLocalVersionMatchesRemote_FlagsItAsDownloaded`, `LoadGames_WhenGameNotInstalledLocally_LeavesStatusAsAvailable`, older-version case | `LibraryViewModelTest` | Explicit `LibraryCardStatus`; a current installed game cannot start again from its card. |
+| `LoadGames_AppliesPlaytimesFromContentService`, `RefreshAsync_RequestsGamesAgain_FromContentService` | `LibraryViewModelTest`, `LauncherDataCoordinatorTest` | Initial and global-refresh playtime projection, catalogue reload. |
+| `ResumingPausedGame_ContinuesItsOwnDownload_NotAnotherPausedGame`, `StartDownloadCommand_WhenAlreadyDownloading_ReturnsImmediatelyAndDoesNothing` | `LibraryViewModelTest` | Per-game resume and global transfer guard. |
+| `GetSpecialVersionConfigErrorMessage_WhenNotFound/WhenNetworkError/WhenInvalidResponse` | `LibraryViewModelTest`, `SpecialVersionServiceTest` | Missing/invalid parsed config gives key-not-found; unparseable response, server or transport failure gives download-error. Cancelled lookup is represented by coroutine cancellation, with no notice; success proceeds to download. |
+| `GamesViewModelTests.LoadInstalledGames_WhenRemoteAndLocalVersionsMatch_DoesNotFlagUpdate`, `BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero`, `NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested` | `GamesViewModelTest` | Ported. |
+| Desktop game session, file-lock, uninstall filesystem and Help-folder enumeration cases | `PendingGameOperationsTest` and future game adapter | Android game runtime is unresolved in step 09. The pending seam reports unsupported without claiming desktop file or process behavior. |
+| Desktop `LibraryViewModelTests` hash verification, extraction and directory finalization cases | Step 08 transfer tests and future step 09 installer | Transfer finalization is covered; installation and hash verification remain pending. |
+| `SettingsViewModelTests.FormatVersion_*` | `SettingsViewModelTest`, `VersionUtilsTest` | Android publishes its `BuildConfig.VERSION_NAME` with one `v` prefix. Assembly-specific four/two-component and null cases do not apply to a packaged Android version name. |
+| `SettingsViewModelTests.AutoUpdate_WhenChanged_PersistsSettings` and `GamesViewModel` initial auto-update | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | The maintainer chose the spec behavior: games auto-update is persisted, defaults off, and runs sequentially at process startup for regular outdated installations. Launcher self-update remains excluded. |
+| `GameInfoTests.DownloadSpeedText_*` (4) | `DownloadSpeedFormatterTest` | Ported with the same four values (0, 2048, exactly 1 MiB, 5 MiB). The desktop formats in the current culture and its tests read the separator from it; Android pins the invariant `.` (step 02 decision 8), and a test sets a Spanish default locale to prove it. The formatter feeds the Library card through `CardStateMappingTest`. |
+
+The Games and Library screens now share one identity rule: match non-empty IDs
+first, and use the name only when at least one side has no usable ID. A matching
+name with conflicting IDs is not an installation. This resolves a disagreement
+on the desktop, where the two screens match differently, and is pinned by
+`GameIdentityMatcherTest` and `GamesViewModelTest`.
+
+`AppearanceViewModelTest` moved into `SettingsViewModelTest` when the existing
+appearance-only ViewModel was folded into Settings. The same `SettingsStore`
+still owns theme, language and welcome state. The absence of a loaded settings
+snapshot remains distinct from the stored defaults, preventing a first-frame
+theme or language flash.
+
+The desktop's Saved Games folder action is omitted because it names a Windows
+profile folder with no Android counterpart. Window minimize and tray behavior,
+Windows startup, OneDrive detection, the directory picker and launcher
+self-update are likewise absent under the decisions already recorded for step
+07 and in the [parity report](../docs/parity-report.md). Library maintenance
+actions remain enabled and explain a blocked request once per blocked streak.
+The first foreground process `onStart` starts Home and catalogue loading, so
+headless process starts do not trigger launcher requests, and navigation
+scoping cannot strand either screen.

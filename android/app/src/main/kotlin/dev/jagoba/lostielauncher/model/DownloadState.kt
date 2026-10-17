@@ -1,0 +1,74 @@
+package dev.jagoba.lostielauncher.model
+
+data class DownloadRequest(val displayName: String, val args: GameDownloadArgs)
+
+data class DownloadDestination(val path: String, val freeBytes: Long?)
+
+data class DownloadSnapshot(
+    val gameId: String,
+    val displayName: String,
+    val version: String,
+    val status: DownloadStatus,
+    val percent: Double,
+    val bytesPerSecond: Double,
+    val downloadedBytes: Long,
+    val totalBytes: Long?,
+    val errorMessage: String?,
+)
+
+enum class DownloadStatus {
+    QUEUED,
+    DOWNLOADING,
+    PAUSED,
+    COMPLETED,
+    FAILED,
+    PERMISSION_DENIED,
+    CANCELLED,
+    ;
+
+    val isActive: Boolean
+        get() = this == QUEUED || this == DOWNLOADING
+
+    val isFinished: Boolean
+        get() = this == COMPLETED || this == CANCELLED
+
+    companion object {
+        val ActiveNames: List<String> = entries.filter { it.isActive }.map { it.name }
+        val InactiveNames: List<String> = entries.filterNot { it.isActive }.map { it.name }
+    }
+}
+
+enum class DownloadCommandResult {
+    ACCEPTED,
+    BUSY,
+    NOT_FOUND,
+    INVALID_STATE,
+}
+
+val List<DownloadSnapshot>.hasActiveDownload: Boolean
+    get() = any { it.status.isActive }
+
+data class DownloadedFile(
+    val gameId: String,
+    val displayName: String,
+    val version: String,
+    val key: String?,
+    val path: String,
+)
+
+data class DownloadProgress(
+    val percent: Double,
+    val bytesPerSecond: Double,
+    val downloadedBytes: Long,
+    val totalBytes: Long?,
+)
+
+data class DownloadResumeMetadata(val etag: String?, val lastModified: String?, val totalBytes: Long?)
+
+sealed interface DownloadTransferResult {
+    data object Success : DownloadTransferResult
+
+    data object PermissionDenied : DownloadTransferResult
+
+    data class Failed(val message: String) : DownloadTransferResult
+}
