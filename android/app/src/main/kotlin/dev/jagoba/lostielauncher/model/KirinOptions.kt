@@ -12,4 +12,6 @@ data class KirinOptions(
     val launchAction: String,
     val gamePathExtra: String,
     val archiveBufferSizeBytes: Int = DEFAULT_BUFFER_SIZE,
+    val archiveExtractionWorkers: Int = 1,
+    val archiveEntryCostBytes: Long = 0,
 )

@@ -48,7 +48,7 @@ class ArchiveGameInstallationServiceTest {
     private val archive get() = directory.resolve("downloads/demo.zip").toFile()
     private val noMediaMarker get() = File(gamesRoot, ".nomedia")
 
-    private fun createSut() = ArchiveGameInstallationService(
+    private fun createSut(entryCostBytes: Long = 0) = ArchiveGameInstallationService(
         PendingGameInstallationService(logger),
         library,
         kirin,
@@ -62,6 +62,8 @@ class ArchiveGameInstallationServiceTest {
             "",
             "",
             archiveBufferSizeBytes = 64 * 1024,
+            archiveExtractionWorkers = 4,
+            archiveEntryCostBytes = entryCostBytes,
         ),
         TestDispatcherProvider(dispatcher),
         logger,
@@ -107,35 +109,35 @@ class ArchiveGameInstallationServiceTest {
         }
 
     @Test
-    fun `reports byte progress within a large entry and finishes after installing every file`() = runTest(dispatcher) {
-        val first = "a".repeat(1024 * 1024)
-        val second = "b".repeat(3 * 1024 * 1024)
-        val hash = writeArchive("Data/first.bin" to first, "Data/second.bin" to second)
-        val sut = createSut()
+    fun `reports byte progress within a large entry and finishes without going back to indeterminate`() =
+        runTest(dispatcher) {
+            val first = "a".repeat(1024 * 1024)
+            val second = "b".repeat(3 * 1024 * 1024)
+            val hash = writeArchive("Data/first.bin" to first, "Data/second.bin" to second)
+            val sut = createSut()
 
-        sut.observeInstallation("demo").test {
-            awaitItem() shouldBe GameInstallationState.NotStarted
-            sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
-            awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
-            awaitItem() shouldBe GameInstallationState.Extracting()
-            awaitItem() shouldBe GameInstallationState.Extracting(0)
-            var previous = 0
-            var updates = 0
-            while (previous < 100) {
-                val phase = awaitItem() as GameInstallationState.Extracting
-                val percent = requireNotNull(phase.percent)
-                (percent > previous) shouldBe true
-                if (updates == 0) (percent < 25) shouldBe true
-                previous = percent
-                updates++
+            sut.observeInstallation("demo").test {
+                awaitItem() shouldBe GameInstallationState.NotStarted
+                sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+                awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+                awaitItem() shouldBe GameInstallationState.Extracting()
+                awaitItem() shouldBe GameInstallationState.Extracting(0)
+                var previous = 0
+                var updates = 0
+                while (previous < 100) {
+                    val phase = awaitItem() as GameInstallationState.Extracting
+                    val percent = requireNotNull(phase.percent)
+                    (percent > previous) shouldBe true
+                    if (updates == 0) (percent < 25) shouldBe true
+                    previous = percent
+                    updates++
+                }
+                (updates <= 100) shouldBe true
+                awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
             }
-            (updates <= 100) shouldBe true
-            awaitItem() shouldBe GameInstallationState.Extracting()
-            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
+            File(gameDirectory, "Data/first.bin").readText() shouldBe first
+            File(gameDirectory, "Data/second.bin").readText() shouldBe second
         }
-        File(gameDirectory, "Data/first.bin").readText() shouldBe first
-        File(gameDirectory, "Data/second.bin").readText() shouldBe second
-    }
 
     @Test
     fun `keeps extraction indeterminate for an archive containing only empty files`() = runTest(dispatcher) {
@@ -153,22 +155,52 @@ class ArchiveGameInstallationServiceTest {
     }
 
     @Test
-    fun `stops progress on an unsafe entry without replacing an existing installation`() = runTest(dispatcher) {
-        File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
-        val hash = writeArchive("Game.exe" to "new", "../escaped.txt" to "bad")
-        val sut = createSut()
+    fun `rejects an unsafe archive before extracting any file and keeps an existing installation`() =
+        runTest(dispatcher) {
+            File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+            val hash = writeArchive("Game.exe" to "new", "../escaped.txt" to "bad")
+            val sut = createSut()
+
+            sut.observeInstallation("demo").test {
+                awaitItem() shouldBe GameInstallationState.NotStarted
+                sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+                awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+                awaitItem() shouldBe GameInstallationState.Extracting()
+                awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.ExtractionFailed)
+            }
+            File(gameDirectory, "Game.exe").readText() shouldBe "old"
+            File(gameDirectory, "escaped.txt").exists() shouldBe false
+            File("${gameDirectory.path}.tmp").exists() shouldBe false
+        }
+
+    @Test
+    fun `counts a fixed cost per file so an archive of empty files still reports progress`() = runTest(dispatcher) {
+        val hash = writeArchive("a.bin" to "", "b.bin" to "", "c.bin" to "", "d.bin" to "")
+        val sut = createSut(entryCostBytes = 1)
 
         sut.observeInstallation("demo").test {
             awaitItem() shouldBe GameInstallationState.NotStarted
-            sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+            sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
             awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
             awaitItem() shouldBe GameInstallationState.Extracting()
             awaitItem() shouldBe GameInstallationState.Extracting(0)
+            awaitItem() shouldBe GameInstallationState.Extracting(25)
             awaitItem() shouldBe GameInstallationState.Extracting(50)
-            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.ExtractionFailed)
+            awaitItem() shouldBe GameInstallationState.Extracting(75)
+            awaitItem() shouldBe GameInstallationState.Extracting(100)
+            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
         }
-        File(gameDirectory, "Game.exe").readText() shouldBe "old"
-        File("${gameDirectory.path}.tmp").exists() shouldBe false
+    }
+
+    @Test
+    fun `creates every directory in the archive, including empty ones and unlisted parents`() = runTest(dispatcher) {
+        val hash = writeArchive("Save/" to "", "Audio/BGM/Theme.ogg" to "ogg")
+        val sut = createSut()
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+
+        File(gameDirectory, "Save").isDirectory shouldBe true
+        File(gameDirectory, "Audio/BGM/Theme.ogg").readText() shouldBe "ogg"
     }
 
     @Test
@@ -206,10 +238,11 @@ class ArchiveGameInstallationServiceTest {
         val sut = createSut()
 
         sut.install(request(hash))
+        advanceUntilIdle()
 
         File(gameDirectory, "Game.exe").readText() shouldBe "new"
         File(gameDirectory, "Obsolete.txt").exists() shouldBe false
-        File("${gameDirectory.path}.old").exists() shouldBe false
+        gamesRoot.list().orEmpty().sorted() shouldBe listOf(".nomedia", "demo")
     }
 
     @Test

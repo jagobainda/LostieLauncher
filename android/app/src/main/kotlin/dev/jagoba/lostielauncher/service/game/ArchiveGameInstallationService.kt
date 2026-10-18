@@ -12,14 +12,21 @@ import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,8 +51,10 @@ internal class ArchiveGameInstallationService @Inject constructor(
 
     override val installedGames: StateFlow<InstalledGamesState> = installed.asStateFlow()
 
+    private val background = CoroutineScope(dispatchers.io + SupervisorJob())
+
     init {
-        CoroutineScope(dispatchers.io + SupervisorJob()).launch {
+        background.launch {
             hideGamesFromMediaScanner()
             reloadInstalled()
         }
@@ -109,77 +118,124 @@ internal class ArchiveGameInstallationService @Inject constructor(
         return GameInstallationResult.Installed(game)
     }
 
-    private fun extract(archive: File, directory: File, gameId: String) {
+    private suspend fun extract(archive: File, directory: File, gameId: String) {
         if (directory.canonicalFile.parentFile != options.gamesRoot.canonicalFile) {
             throw IOException("Invalid game directory: '$directory' escapes the games root.")
         }
         val temp = File("${directory.path}.tmp")
-        val backup = File("${directory.path}.old")
         temp.deleteRecursively()
-        backup.deleteRecursively()
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")
         hideGamesFromMediaScanner()
         try {
-            val root = temp.canonicalPath + File.separator
-            var entryCount = 0
-            val buffer = ByteArray(options.archiveBufferSizeBytes)
-            val createdDirectories = mutableSetOf<File>()
-            ZipFile(archive, Charsets.UTF_8).use { zip ->
-                val totalBytes = zip.entries().asSequence().filterNot { it.isDirectory }.sumOf { it.size }
-                var extractedBytes = 0L
-                var lastPercent: Int? = null
-                fun reportProgress() {
-                    val percent = if (totalBytes > 0) {
-                        (extractedBytes.toDouble() / totalBytes * 100).toInt().coerceIn(0, 100)
-                    } else {
-                        null
-                    }
-                    if (percent != lastPercent) {
-                        lastPercent = percent
-                        setPhase(gameId, GameInstallationState.Extracting(percent))
-                    }
-                }
-                reportProgress()
-                for (entry in zip.entries()) {
-                    if (entry.isDirectory) continue
-                    val target = File(temp, entry.name.replace('\\', '/')).canonicalFile
-                    if (!target.path.startsWith(root)) {
-                        throw IOException("Zip Slip attempt detected in entry: ${entry.name}")
-                    }
-                    target.parentFile?.let { parent ->
-                        if (createdDirectories.add(parent)) parent.mkdirs()
-                    }
-                    zip.getInputStream(entry).use { input ->
-                        target.outputStream().buffered(buffer.size).use { output ->
-                            while (true) {
-                                val read = input.read(buffer)
-                                if (read < 0) break
-                                output.write(buffer, 0, read)
-                                extractedBytes += read
-                                reportProgress()
-                            }
-                        }
-                    }
-                    entryCount++
-                }
-            }
-            logger.debug("Temp extraction complete: $entryCount files.")
-            setPhase(gameId, GameInstallationState.Extracting())
-            swap(temp, backup, directory)
+            ZipFile(archive, Charsets.UTF_8).use { zip -> extractEntries(zip, temp, gameId) }
+            swap(temp, directory)
         } catch (error: Exception) {
             temp.deleteRecursively()
             throw error
         }
+        deleteInBackground(previousInstallations(directory))
     }
 
-    private fun swap(temp: File, backup: File, directory: File) {
+    private suspend fun extractEntries(zip: ZipFile, temp: File, gameId: String) {
+        val root = temp.toPath().toAbsolutePath().normalize()
+        val files = linkedMapOf<File, ZipEntry>()
+        val directories = mutableSetOf<Path>()
+        for (entry in zip.entries()) {
+            val target = root.resolve(entry.name.replace('\\', '/')).normalize()
+            if (!target.startsWith(root) || (target == root && !entry.isDirectory)) {
+                throw IOException("Zip Slip attempt detected in entry: ${entry.name}")
+            }
+            if (entry.isDirectory) {
+                directories.addWithAncestors(target, root)
+            } else {
+                files[target.toFile()] = entry
+                target.parent?.let { directories.addWithAncestors(it, root) }
+            }
+        }
+        for (directory in directories.sorted()) {
+            if (!directory.toFile().mkdir()) throw IOException("Could not create '$directory'.")
+        }
+
+        val entryCost = options.archiveEntryCostBytes
+        val progress = ExtractionProgress(files.values.sumOf { it.size.coerceAtLeast(0) + entryCost }) {
+            setPhase(gameId, GameInstallationState.Extracting(it))
+        }
+        progress.advance(0)
+        val queue = files.entries.sortedByDescending { it.value.size }
+        val next = AtomicInteger()
+        coroutineScope {
+            repeat(options.archiveExtractionWorkers.coerceAtLeast(1)) {
+                launch {
+                    val buffer = ByteArray(options.archiveBufferSizeBytes)
+                    while (true) {
+                        ensureActive()
+                        val (target, entry) = queue.getOrNull(next.getAndIncrement()) ?: break
+                        copyEntry(zip, entry, target, buffer, progress)
+                        progress.advance(entryCost)
+                    }
+                }
+            }
+        }
+        logger.debug("Temp extraction complete: ${files.size} files.")
+    }
+
+    private fun copyEntry(
+        zip: ZipFile,
+        entry: ZipEntry,
+        target: File,
+        buffer: ByteArray,
+        progress: ExtractionProgress,
+    ) {
+        zip.getInputStream(entry).use { input ->
+            target.outputStream().use { output ->
+                var filled = 0
+                while (true) {
+                    val read = input.read(buffer, filled, buffer.size - filled)
+                    if (read < 0) break
+                    filled += read
+                    if (filled == buffer.size) {
+                        output.write(buffer, 0, filled)
+                        progress.advance(filled.toLong())
+                        filled = 0
+                    }
+                }
+                if (filled > 0) {
+                    output.write(buffer, 0, filled)
+                    progress.advance(filled.toLong())
+                }
+            }
+        }
+    }
+
+    private fun MutableSet<Path>.addWithAncestors(directory: Path, root: Path) {
+        var current: Path? = directory
+        while (current != null && current != root && add(current)) current = current.parent
+    }
+
+    private fun swap(temp: File, directory: File) {
+        val backup = File("${directory.path}$PREVIOUS_INSTALLATION_SUFFIX${UUID.randomUUID()}")
         val hadExisting = directory.exists()
         if (hadExisting && !directory.renameTo(backup)) throw IOException("Could not move '$directory' aside.")
         if (!temp.renameTo(directory)) {
             if (hadExisting) backup.renameTo(directory)
             throw IOException("Could not move '$temp' into place.")
         }
-        if (hadExisting) backup.deleteRecursively()
+    }
+
+    private fun previousInstallations(directory: File): List<File> = directory.parentFile
+        ?.listFiles { file -> file.name.startsWith("${directory.name}$PREVIOUS_INSTALLATION_SUFFIX") }
+        .orEmpty()
+        .toList()
+
+    private fun deleteInBackground(directories: List<File>) {
+        if (directories.isEmpty()) return
+        background.launch {
+            for (directory in directories) {
+                if (!directory.deleteRecursively() && directory.exists()) {
+                    logger.error("Previous installation could not be deleted: ${directory.path}.")
+                }
+            }
+        }
     }
 
     private fun hideGamesFromMediaScanner() {
@@ -220,5 +276,29 @@ internal class ArchiveGameInstallationService @Inject constructor(
     private companion object {
         val SHA256_FORMAT = Regex("[0-9a-fA-F]{64}")
         const val NO_MEDIA_FILE_NAME = ".nomedia"
+        const val PREVIOUS_INSTALLATION_SUFFIX = ".old-"
+    }
+
+    private class ExtractionProgress(private val total: Long, private val report: (Int) -> Unit) {
+        private val done = AtomicLong()
+
+        @Volatile
+        private var lastPercent = -1
+
+        fun advance(units: Long) {
+            if (total <= 0) return
+            val percent = (done.addAndGet(units) * FULL_PERCENT / total).toInt().coerceIn(0, FULL_PERCENT)
+            if (percent <= lastPercent) return
+            synchronized(this) {
+                if (percent > lastPercent) {
+                    lastPercent = percent
+                    report(percent)
+                }
+            }
+        }
+
+        private companion object {
+            const val FULL_PERCENT = 100
+        }
     }
 }
