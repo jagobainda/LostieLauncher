@@ -40,21 +40,13 @@ Two notes on where this diverges from the desktop, both on purpose:
 Only packages with something in them exist. Do not create an empty package with
 a placeholder file to "reserve" it — create it with its first real type.
 
-### Build-type source sets
+### Debug-only code
 
-`app/src/debug/` and `app/src/release/` exist and each holds its own
-`ui/StartSurface.kt`. That is how something is made **debug-only**: not a
-`BuildConfig.DEBUG` branch, which still ships the code, but a symbol `main`
-calls that has a different implementation per build type. Both render the
-navigation shell; the debug one also hands it a debug-tools action (the bug
-icon in the top bar) that swaps the section content for the download harness
-and the token catalogue, and the system back gesture closes it again. The
-release one passes nothing, so neither surface is compiled into it.
-
-Two consequences. A file added to one build type's source set must be added to
-the other or the release build stops compiling — and CI only builds debug, so
-nobody finds out until someone runs `assembleRelease`. And a step that adds
-something R8 can break has to run `assembleRelease` itself for the same reason.
+There is none: every source file is in `main`, and `MainActivity` renders
+`LauncherShell` directly, so a debug and a release build show the same app. If
+a debug-only surface is ever needed, it goes in a `src/debug/` source set with
+a `src/release/` counterpart for the symbol `main` calls — not behind a
+`BuildConfig.DEBUG` branch, which still ships the code.
 
 ### The shell
 
@@ -103,10 +95,7 @@ something R8 can break has to run `assembleRelease` itself for the same reason.
 
 `ui/component/` holds the desktop's `Views/Components/`: `LibraryGameCard` and
 `InstalledGameCard` (the two modes of `GameCardComponent`), `NewsCard`,
-`NotificationCard`, `FaqCard`, and a skeleton for each of the first three. The
-debug catalogue (`src/debug/…/ComponentCatalogScreen.kt`, behind the bug
-action) shows every one in every state, under the live theme and language
-pickers.
+`NotificationCard`, `FaqCard`, and a skeleton for each of the first three.
 
 - **Stateless, and they know no ViewModel.** A card takes an immutable state
   (`LibraryGameCardState`, `InstalledGameCardState`) or plain values, and
@@ -177,8 +166,6 @@ and the `UPDATE`, `INFORMATION` or `ERROR` glyph), `DownloadConfirmDialog`,
 They are Compose `Dialog`s with the launcher's own look, never the system's,
 and they know no ViewModel. `LauncherComboBox` (`ui/component/`) is the
 desktop's `SettingsComboBoxStyle`; the welcome dialog uses it and Settings will.
-The debug catalogue's Dialogs tab opens every dialog and every message box the
-app can raise.
 
 - **The notice seam is state, not a callback.** The desktop's services raise
   dialogs through `IUpdateNotifier` and `IDownloadLocationNotifier`; both exist
@@ -257,9 +244,7 @@ them; the pending one answers `NotSupportedYet`.
 reading only its own ViewModel. `LauncherShell` picks one from
 `MainUiState.section` inside a `SaveableStateHolder` keyed by section, so a
 section's saveable state (list scroll, FAQ search text) survives switching away
-and back, as the desktop's persistent views keep theirs. The debug catalogue's
-Screens tab renders `HomeContent` and `GamesContent` in every state, including
-the ones a device cannot reach today (the offline banner, a My Games list).
+and back, as the desktop's persistent views keep theirs.
 
 - **Pure mappings, no decisions.** `LibraryGameUiState.toCardState()` and
   `InstalledGameUiState.toCardState()` turn ViewModel state into the card

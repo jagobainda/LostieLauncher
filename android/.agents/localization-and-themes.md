@@ -178,21 +178,6 @@ Spanish, which is the desktop's own behaviour.
 500 ms. Appearance changes remain immediately observable while rapid changes
 are coalesced into one DataStore transaction.
 
-## The token catalogue
-
-`ui/screen/TokenCatalogScreen.kt` shows every colour in the active palette with
-its name and hex, the type scale, the spacing scale, the radii, the borders, the
-four durations and a sample of the text catalogue, with live theme and language
-pickers. It is the fastest way to see whether a change to any of this did what
-you meant.
-
-It is in **`src/debug/`**, not behind a `BuildConfig.DEBUG` branch, so it is not
-compiled into a release APK at all. `StartSurface` has one implementation per
-build type — debug renders the shell with a debug-tools action that opens the
-token catalogue, the component catalogue and the download harness, release
-renders the shell alone — and `MainActivity` calls it without knowing which. A file added to one build type's
-source set must be added to the other, or the release build stops compiling.
-
 ## Contrast review list
 
 Measured across all ten palettes, over the surfaces each colour actually paints,

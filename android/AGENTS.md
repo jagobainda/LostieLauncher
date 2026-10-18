@@ -83,8 +83,6 @@ android/
         │   ├── util/        # pure decision functions, formatting, logging
         │   └── ui/          # MainActivity, screen/ component/ dialog/ theme/ viewmodel/
         ├── main/res/        # only what the platform reads before Kotlin runs
-        ├── debug/kotlin/    # debug-only surfaces — token catalogue, download harness
-        ├── release/kotlin/  #   and their release counterparts, so neither ships the other
         └── test/kotlin/     # JVM unit tests, mirroring the packages above
 ```
 

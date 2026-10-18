@@ -12,7 +12,6 @@ is unchanged; only the container format differs.
 | `ic_nav_refresh` | `refresh-cw` | Lucide | ISC |
 | `ic_nav_faqs` | `circle-question-mark` | Lucide | ISC |
 | `ic_nav_settings` | `cog` | Lucide | ISC |
-| `ic_debug_tools` (debug only) | `bug` | Lucide | ISC |
 | `ic_offline` | `cloud-off-outline` | [Material Design Icons](https://pictogrammers.com/library/mdi/) | Apache-2.0 |
 | `ic_chevron_down` | `chevron-down` | Lucide | ISC |
 | `ic_card_pokeball` | `pokeball` | Material Design Icons | Apache-2.0 |

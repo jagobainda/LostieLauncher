@@ -38,7 +38,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 
-data class ShellTopBarAction(val key: String, val label: String?, val icon: Painter, val onClick: () -> Unit)
+data class ShellTopBarAction(val key: String, val label: String, val icon: Painter, val onClick: () -> Unit)
 
 @Composable
 fun ShellTopBar(
@@ -115,12 +115,12 @@ private fun ShellTopBarButton(action: ShellTopBarAction) {
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.collectIsPressedAsState()
     val hovered by interactions.collectIsHoveredAsState()
-    val button: @Composable () -> Unit = {
+    LauncherTooltip(text = action.label) {
         Box(
             Modifier
                 .size(LauncherSizes.TitleBarButton)
                 .then(if (pressed || hovered) Modifier.background(colors.overlayMedium) else Modifier)
-                .semantics { action.label?.let { contentDescription = it } }
+                .semantics { contentDescription = action.label }
                 .clickable(
                     interactionSource = interactions,
                     indication = null,
@@ -137,6 +137,4 @@ private fun ShellTopBarButton(action: ShellTopBarAction) {
             )
         }
     }
-    val label = action.label
-    if (label != null) LauncherTooltip(text = label, content = button) else button()
 }

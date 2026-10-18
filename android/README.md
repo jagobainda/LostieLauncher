@@ -206,11 +206,6 @@ state immediately and rapid writes are coalesced over 500 ms before DataStore
 persists the last snapshot. Stopping the activity flushes a pending snapshot
 immediately from an application-owned scope, with a process lifecycle fallback.
 
-A debug-only **token catalogue** shows every colour, type size, spacing and
-radius on one page with live theme and language pickers. In a debug build it is
-reached from the bug icon in the top bar, beside the download harness; it lives
-in `src/debug/`, so it is not compiled into a release APK at all.
-
 See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
 which also carries the contrast review list — colours that fail WCAG on the
 desktop values, and what the end-of-port review decided for each.
@@ -243,9 +238,7 @@ connection until WorkManager resumes it. A completed archive crosses the
 `DownloadedFileHandoff` seam, which verifies it, extracts it into
 `/storage/emulated/0/LostieLauncher/<slug>` and registers the game in Kirin and
 the local library. Play launches it through Kirin's shortcut intent (see
-[docs/game-runtime-options.md](docs/game-runtime-options.md)). The debug build exposes a smallest-game download harness so
-progress, pause, resume, cancellation, rotation and background behavior can be
-exercised without shipping test UI in the release APK.
+[docs/game-runtime-options.md](docs/game-runtime-options.md)).
 
 Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
 format matches the desktop, files are named by month, roll at 10 MB and are

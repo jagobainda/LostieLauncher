@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jagoba.lostielauncher.core.lifecycle.ApplicationLifecycleObserver
 import dev.jagoba.lostielauncher.model.SettingsOptions
+import dev.jagoba.lostielauncher.ui.screen.LauncherShell
 import dev.jagoba.lostielauncher.ui.theme.LostieLauncherTheme
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsViewModel
 import dev.jagoba.lostielauncher.util.policy.StartupWindowPolicy
@@ -41,11 +42,7 @@ class MainActivity : ComponentActivity() {
                     LocalStrings provides appearance.strings,
                     LocalAppLanguage provides appearance.language,
                 ) {
-                    StartSurface(
-                        theme = appearance.theme,
-                        onThemeSelected = settingsViewModel::selectTheme,
-                        onLanguageSelected = settingsViewModel::selectLanguage,
-                    )
+                    LauncherShell(onLanguageSelected = settingsViewModel::selectLanguage)
                 }
             }
         }

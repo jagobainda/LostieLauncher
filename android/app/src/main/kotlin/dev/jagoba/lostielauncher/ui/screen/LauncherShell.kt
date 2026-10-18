@@ -19,12 +19,8 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -52,41 +48,27 @@ import dev.jagoba.lostielauncher.ui.viewmodel.MainViewModel
 fun LauncherShell(
     onLanguageSelected: (AppLanguage) -> Unit,
     modifier: Modifier = Modifier,
-    debugIcon: Painter? = null,
-    debugContent: @Composable () -> Unit = {},
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showDebug by rememberSaveable { mutableStateOf(false) }
     val sections = rememberSaveableStateHolder()
 
     BackHandler(enabled = state.canNavigateBack, onBack = viewModel::navigateBack)
-    BackHandler(enabled = showDebug) { showDebug = false }
 
     LauncherShellLayout(
         state = state,
-        onNavigate = {
-            showDebug = false
-            viewModel.navigate(it)
-        },
+        onNavigate = viewModel::navigate,
         onRefresh = viewModel::refresh,
         onOpenLink = viewModel::openExternalLink,
-        debugAction = debugIcon?.let { icon ->
-            ShellTopBarAction(key = "debug", label = null, icon = icon, onClick = { showDebug = !showDebug })
-        },
         modifier = modifier,
     ) {
-        if (showDebug) {
-            debugContent()
-        } else {
-            sections.SaveableStateProvider(state.section.name) {
-                when (state.section) {
-                    LauncherSection.HOME -> HomeScreen()
-                    LauncherSection.GAMES -> GamesScreen()
-                    LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
-                    LauncherSection.FAQS -> FaqsScreen()
-                    LauncherSection.SETTINGS -> SettingsScreen()
-                }
+        sections.SaveableStateProvider(state.section.name) {
+            when (state.section) {
+                LauncherSection.HOME -> HomeScreen()
+                LauncherSection.GAMES -> GamesScreen()
+                LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
+                LauncherSection.FAQS -> FaqsScreen()
+                LauncherSection.SETTINGS -> SettingsScreen()
             }
         }
     }
@@ -110,7 +92,6 @@ fun LauncherShellLayout(
     onRefresh: () -> Unit,
     onOpenLink: (ExternalLink) -> Unit,
     modifier: Modifier = Modifier,
-    debugAction: ShellTopBarAction? = null,
     content: @Composable () -> Unit,
 ) {
     val colors = LocalLauncherColors.current
@@ -129,7 +110,7 @@ fun LauncherShellLayout(
     val bottom = shellDestinations(BOTTOM_SECTIONS, state, strings, onNavigate)
     val actions = state.contextLinks.map { link ->
         ShellTopBarAction(link.name, link.brandName, painterResource(link.iconRes()), onClick = { onOpenLink(link) })
-    } + listOfNotNull(debugAction)
+    }
     val offline = if (state.isOffline) {
         OfflinePillContent(
             label = strings.offlineModeLabel,
