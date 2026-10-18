@@ -11,12 +11,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.EmptyState
 import dev.jagoba.lostielauncher.ui.component.GameCardSkeleton
+import dev.jagoba.lostielauncher.ui.component.InstalledCardActionsReserve
 import dev.jagoba.lostielauncher.ui.component.InstalledGameCard
 import dev.jagoba.lostielauncher.ui.component.InstalledGameCardState
 import dev.jagoba.lostielauncher.ui.dialog.DialogButton
@@ -89,7 +91,7 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
             action = { GoToLibraryButton(actions.goToLibrary) },
         )
 
-        else -> GameCardSkeletons(GAMES_SKELETON_COUNT, modifier)
+        else -> GameCardSkeletons(GAMES_SKELETON_COUNT, InstalledCardActionsReserve, modifier)
     }
 }
 
@@ -104,14 +106,14 @@ private fun GoToLibraryButton(onClick: () -> Unit) {
 }
 
 @Composable
-internal fun GameCardSkeletons(count: Int, modifier: Modifier = Modifier) {
+internal fun GameCardSkeletons(count: Int, actionsReserve: Dp, modifier: Modifier = Modifier) {
     Column(
         modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(LauncherSpacing.Screen),
     ) {
-        repeat(count) { GameCardSkeleton(Modifier.padding(bottom = LauncherSpacing.MediumLarge)) }
+        repeat(count) { GameCardSkeleton(actionsReserve, Modifier.padding(bottom = LauncherSpacing.MediumLarge)) }
     }
 }
 

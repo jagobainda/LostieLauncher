@@ -104,10 +104,17 @@ a `src/release/` counterpart for the symbol `main` calls — not behind a
   `LibraryViewModel` share it without the component importing the ViewModel
   package.
 - **The game card adapts by measurement, not by device.** `GameCardColumns`
-  keeps the desktop's three columns (logo, text, actions) while the text column
-  keeps at least `LauncherSizes.GameCardTitleWidth`. When it can't, the actions
-  drop to a right-aligned row under the text and wrap if needed. The skeleton
-  uses the same layout, so content arriving never shifts it.
+  keeps the desktop's three columns (logo, text with its status under it,
+  actions) while the text column keeps at least
+  `LauncherSizes.GameCardTitleWidth`. When it can't, the card stacks: logo and
+  text on top, and a footer with the status (progress, notices) on the left and
+  the actions on the right. `gameCardLayout` (JVM-tested) decides from the
+  width and the card type's actions reserve, the widest set of actions that
+  card can show, not from the actions on screen. A state change therefore never
+  switches the layout, and every card in a list shares one. The footer is
+  always there and at least one button tall, so starting, verifying or
+  finishing a download never changes a card's height. The skeleton takes the
+  same reserve, so content arriving never shifts it.
 - **"Not supported yet" is a state, never a dead button.** The Library card
   renders `INSTALLATION_UNSUPPORTED` as the disabled "Downloaded" chip plus an
   amber `StatusNotSupportedYet` line: the archive is downloaded, the game is
@@ -138,7 +145,8 @@ for value.
 | Area | Desktop | Android | Why |
 | --- | --- | --- | --- |
 | Card dates | Always en-US (`dd MMM yyyy` / `dd MMM`): WPF bindings format in en-US and the app never overrides that | The launcher's language: day, standalone abbreviated month, year (`CardDateFormatter`) | Step 02 decision 7: visible dates follow the selected language. The standalone month keeps Catalan and Valencian from printing the genitive (`de març`, `d'abr.`), and the month is lowercased in every language but English, because locale data disagrees on the case (JDK 17 gives Galician `Mar.`, JDK 21 `mar.`). The abbreviation itself still comes from the platform's locale data, so a dot can differ between Android versions. `CardDateFormatterTest` pins all eight languages on the build's JDK |
-| Card layout | Fixed three columns in a fixed-size window | Three columns while the text keeps `GameCardTitleWidth`; otherwise the actions drop under the text and wrap | A phone is narrower than the desktop's content area; the rule is measured, so a tablet keeps the desktop layout |
+| Card layout | Fixed three columns in a fixed-size window | Three columns while the text keeps `GameCardTitleWidth` beside the reserved actions column; otherwise stacked, with a footer of at least one button's height holding the status and the actions | A phone is narrower than the desktop's content area; the rule is measured, so a tablet keeps the desktop layout. The reserve and the fixed footer keep a card's shape and height independent of its state |
+| "Downloaded" chip | Content width | `CardButtonMinWidth`, like the other labelled buttons | Download turning into Downloaded no longer changes the button's width |
 | Labelled card buttons | No horizontal padding: the style sets `Padding="14,0"` but its template never binds it, so width is `MinWidth="110"` or the content | Same, no padding | Matched |
 | Disabled secondary card buttons | No disabled look (same colours, just inert) | 0.5 opacity, like the accent buttons | Touch has no hover to reveal that a button is inert; a button that looks live and does nothing is exactly what the port must avoid |
 | Hover and tooltips | Mouse hover colours; tooltips on hover; link hover recolours and shows the URL | A mouse still gets the hover colours; a press shows the desktop's pressed colour, or the hover colour for links, which have no pressed state; tooltips and link URLs open on long press | The touch equivalent of each mouse interaction, as the step 11 shell established; no ripple, because the desktop has no press animation |

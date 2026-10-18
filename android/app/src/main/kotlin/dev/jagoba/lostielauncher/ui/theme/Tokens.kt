@@ -65,7 +65,7 @@ object LauncherSizes {
     val GameCardTitleWidth: Dp = 180.dp
     val CardButtonHeight: Dp = 32.dp
     val CardButtonMinWidth: Dp = 110.dp
-    val CardIconButtonMinWidth: Dp = 32.dp
+    val CardIconButtonSize: Dp = 32.dp
     val CardButtonIcon: Dp = 13.dp
     val CardIconButtonIcon: Dp = 14.dp
     val CardMetaIcon: Dp = 12.dp

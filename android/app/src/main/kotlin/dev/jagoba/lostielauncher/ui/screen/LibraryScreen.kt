@@ -17,6 +17,7 @@ import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.EmptyState
+import dev.jagoba.lostielauncher.ui.component.LibraryCardActionsReserve
 import dev.jagoba.lostielauncher.ui.component.LibraryGameCard
 import dev.jagoba.lostielauncher.ui.component.LibraryGameCardState
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
@@ -74,7 +75,7 @@ fun LibraryScreen(
             modifier = modifier,
         )
 
-        else -> GameCardSkeletons(LIBRARY_SKELETON_COUNT, modifier)
+        else -> GameCardSkeletons(LIBRARY_SKELETON_COUNT, LibraryCardActionsReserve, modifier)
     }
 }
 

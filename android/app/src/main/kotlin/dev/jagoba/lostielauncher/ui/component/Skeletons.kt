@@ -38,7 +38,7 @@ import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 private val ShimmerStops = listOf(FixedColors.ShimmerEdge, FixedColors.ShimmerPeak, FixedColors.ShimmerEdge)
 
 @Composable
-fun GameCardSkeleton(modifier: Modifier = Modifier) {
+fun GameCardSkeleton(actionsReserve: Dp, modifier: Modifier = Modifier) {
     GameCardColumns(
         logo = {
             SkeletonBlock(
@@ -60,12 +60,14 @@ fun GameCardSkeleton(modifier: Modifier = Modifier) {
                 )
             }
         },
+        status = {},
         actions = {
             SkeletonBlock(
                 LauncherRadii.Small,
                 Modifier.size(LauncherSizes.CardButtonMinWidth, LauncherSizes.CardButtonHeight),
             )
         },
+        actionsReserve = actionsReserve,
         modifier = modifier
             .clearAndSetSemantics {}
             .background(LocalLauncherColors.current.secondaryBg, RoundedCornerShape(LauncherRadii.Medium))

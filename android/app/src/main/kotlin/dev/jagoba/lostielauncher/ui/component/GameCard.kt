@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -124,6 +123,12 @@ private val PROGRESS_STATUSES = setOf(
 
 private const val FULL_PROGRESS = 100f
 
+internal val LibraryCardActionsReserve =
+    LauncherSizes.CardButtonMinWidth + LauncherSpacing.Small + LauncherSizes.CardIconButtonSize
+
+internal val InstalledCardActionsReserve =
+    (LauncherSizes.CardButtonMinWidth + LauncherSizes.CardIconButtonSize) * 2 + LauncherSpacing.Small * 3
+
 private val SineInOut = Easing { fraction -> -(cos(PI * fraction).toFloat() - 1f) / 2f }
 
 @Composable
@@ -139,6 +144,7 @@ fun LibraryGameCard(
     GameCardFrame(
         logoUrl = state.logoUrl,
         pulsing = state.status == LibraryCardStatus.DOWNLOADING,
+        actionsReserve = LibraryCardActionsReserve,
         modifier = modifier,
         text = {
             CardTitle(state.title)
@@ -150,8 +156,10 @@ fun LibraryGameCard(
                 MetaItem(R.drawable.ic_card_tag, state.version)
                 if (state.playtime.isNotEmpty()) MetaItem(R.drawable.ic_card_clock, state.playtime)
             }
-            if (state.status in PROGRESS_STATUSES) DownloadProgress(state)
+        },
+        status = {
             when (state.status) {
+                in PROGRESS_STATUSES -> DownloadProgress(state)
                 LibraryCardStatus.INSTALLATION_UNSUPPORTED -> StatusNotice(strings.statusNotSupportedYet)
                 LibraryCardStatus.INSTALLATION_FAILED -> StatusNotice(strings.downloadErrorTitle)
                 else -> Unit
@@ -229,6 +237,7 @@ fun InstalledGameCard(
     GameCardFrame(
         logoUrl = state.logoUrl,
         pulsing = false,
+        actionsReserve = InstalledCardActionsReserve,
         modifier = modifier,
         text = {
             CardTitle(state.title)
@@ -276,6 +285,7 @@ fun InstalledGameCard(
                 )
             }
         },
+        status = {},
         actions = {
             if (state.isUninstalling) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -321,8 +331,10 @@ fun InstalledGameCard(
 private fun GameCardFrame(
     logoUrl: String?,
     pulsing: Boolean,
+    actionsReserve: Dp,
     modifier: Modifier,
     text: @Composable ColumnScope.() -> Unit,
+    status: @Composable () -> Unit,
     actions: @Composable () -> Unit,
 ) {
     val colors = LocalLauncherColors.current
@@ -347,7 +359,9 @@ private fun GameCardFrame(
         GameCardColumns(
             logo = { GameLogo(logoUrl) },
             text = { Column(content = text) },
+            status = status,
             actions = actions,
+            actionsReserve = actionsReserve,
             modifier = Modifier
                 .background(colors.secondaryBg, shape)
                 .padding(LauncherSpacing.Card),
@@ -358,49 +372,6 @@ private fun GameCardFrame(
                 .graphicsLayer { alpha = pulse.value }
                 .border(LauncherBorders.Thick, colors.primaryFg, shape),
         )
-    }
-}
-
-@Composable
-internal fun GameCardColumns(
-    logo: @Composable () -> Unit,
-    text: @Composable () -> Unit,
-    actions: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Layout(
-        contents = listOf({ Box { logo() } }, { Box { text() } }, { Box { actions() } }),
-        modifier = modifier.fillMaxWidth(),
-    ) { (logoSlot, textSlot, actionsSlot), constraints ->
-        val width = constraints.maxWidth
-        val inset = LauncherSpacing.Card.roundToPx()
-        val loose = constraints.copy(minWidth = 0, minHeight = 0)
-        val logoPlaceable = logoSlot.first().measure(loose)
-        val actionsWidth = actionsSlot.first().maxIntrinsicWidth(constraints.maxHeight)
-        val inlineTextWidth = width - logoPlaceable.width - actionsWidth - 2 * inset
-        if (inlineTextWidth >= LauncherSizes.GameCardTitleWidth.roundToPx()) {
-            val actionsPlaceable = actionsSlot.first().measure(loose)
-            val textPlaceable = textSlot.first().measure(
-                loose.copy(minWidth = inlineTextWidth, maxWidth = inlineTextWidth),
-            )
-            val height = maxOf(logoPlaceable.height, textPlaceable.height, actionsPlaceable.height)
-            layout(width, height) {
-                logoPlaceable.place(0, (height - logoPlaceable.height) / 2)
-                textPlaceable.place(logoPlaceable.width + inset, (height - textPlaceable.height) / 2)
-                actionsPlaceable.place(width - actionsPlaceable.width, (height - actionsPlaceable.height) / 2)
-            }
-        } else {
-            val textWidth = (width - logoPlaceable.width - inset).coerceAtLeast(0)
-            val textPlaceable = textSlot.first().measure(loose.copy(minWidth = textWidth, maxWidth = textWidth))
-            val actionsPlaceable = actionsSlot.first().measure(loose)
-            val top = maxOf(logoPlaceable.height, textPlaceable.height)
-            val gap = if (actionsPlaceable.height > 0) LauncherSpacing.Large.roundToPx() else 0
-            layout(width, top + gap + actionsPlaceable.height) {
-                logoPlaceable.place(0, (top - logoPlaceable.height) / 2)
-                textPlaceable.place(logoPlaceable.width + inset, (top - textPlaceable.height) / 2)
-                actionsPlaceable.place(width - actionsPlaceable.width, top + gap)
-            }
-        }
     }
 }
 
@@ -481,7 +452,23 @@ private fun DownloadProgress(state: LibraryGameCardState) {
     val value = (if (extracting) state.extractionProgress ?: 0f else state.progress).coerceIn(0f, FULL_PROGRESS)
     val downloading = state.status == LibraryCardStatus.DOWNLOADING
     val barShape = RoundedCornerShape(LauncherRadii.Hair)
-    Column(Modifier.padding(top = LauncherSpacing.Medium)) {
+    val label = when (state.status) {
+        LibraryCardStatus.EXTRACTING -> if (indeterminate) {
+            strings.statusExtracting
+        } else {
+            "${strings.statusExtracting} ${value.roundToInt()}%"
+        }
+
+        LibraryCardStatus.VERIFYING_INTEGRITY -> strings.statusVerifying
+
+        else -> "${value.roundToInt()}%"
+    }
+    val detail = when {
+        !downloading -> null
+        state.waitingForConnection -> strings.statusWaitingForConnection
+        else -> state.remainingTime?.takeIf { it.isNotEmpty() }
+    }
+    Column {
         if (indeterminate) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().height(LauncherSizes.ProgressBarHeight),
@@ -504,49 +491,34 @@ private fun DownloadProgress(state: LibraryGameCardState) {
             }
         }
         Row(Modifier.padding(top = LauncherSpacing.Micro)) {
-            Row(Modifier.weight(1f)) {
-                when (state.status) {
-                    LibraryCardStatus.EXTRACTING -> ProgressLabel(
-                        if (indeterminate) {
-                            strings.statusExtracting
-                        } else {
-                            "${strings.statusExtracting} ${value.roundToInt()}%"
-                        },
-                    )
-
-                    LibraryCardStatus.VERIFYING_INTEGRITY -> ProgressLabel(strings.statusVerifying)
-
-                    else -> ProgressLabel("${value.roundToInt()}%")
-                }
-                val remaining = state.remainingTime
-                if (downloading && state.waitingForConnection) {
-                    ProgressLabel(
-                        "· ${strings.statusWaitingForConnection}",
-                        Modifier.padding(start = LauncherSpacing.ExtraSmall),
-                    )
-                } else if (downloading && !remaining.isNullOrEmpty()) {
-                    ProgressLabel("· $remaining", Modifier.padding(start = LauncherSpacing.ExtraSmall))
-                }
-            }
+            ProgressLabel(
+                text = listOfNotNull(label, detail).joinToString(" · "),
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
             val speed = state.speed
-            if (downloading && speed != null) ProgressLabel(speed)
+            if (downloading && speed != null) {
+                ProgressLabel(speed, maxLines = 1, modifier = Modifier.padding(start = LauncherSpacing.Small))
+            }
         }
     }
 }
 
 @Composable
-private fun ProgressLabel(text: String, modifier: Modifier = Modifier) {
+private fun ProgressLabel(text: String, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
     Text(
         text,
         color = LocalLauncherColors.current.secondaryFgDim,
         fontSize = LauncherType.LabelSize,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier,
     )
 }
 
 @Composable
-internal fun StatusNotice(text: String) {
-    Row(Modifier.padding(top = LauncherSpacing.Medium), verticalAlignment = Alignment.CenterVertically) {
+internal fun StatusNotice(text: String, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Icon(
             painter = painterResource(R.drawable.ic_card_not_supported),
             contentDescription = null,
@@ -622,7 +594,7 @@ private fun CardButton(
     val labelled = label != null
     val description = label ?: tooltip
     val secondary = style == CardButtonStyle.SECONDARY
-    val minWidth = if (secondary) LauncherSizes.CardIconButtonMinWidth else LauncherSizes.CardButtonMinWidth
+    val minWidth = if (labelled) LauncherSizes.CardButtonMinWidth else LauncherSizes.CardIconButtonSize
     val fontWeight = if (secondary) LauncherType.Normal else LauncherType.SemiBold
     val button: @Composable () -> Unit = {
         Box(
@@ -639,7 +611,15 @@ private fun CardButton(
                     role = Role.Button,
                     onClick = onClick,
                 )
-                .then(if (secondary) Modifier.padding(horizontal = LauncherSpacing.MediumLarge) else Modifier),
+                .then(
+                    if (secondary &&
+                        labelled
+                    ) {
+                        Modifier.padding(horizontal = LauncherSpacing.MediumLarge)
+                    } else {
+                        Modifier
+                    },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

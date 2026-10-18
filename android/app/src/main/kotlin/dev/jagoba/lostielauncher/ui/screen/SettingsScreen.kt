@@ -144,7 +144,7 @@ private fun SettingsRow(
         Spacer(Modifier.width(LauncherSpacing.MediumLarge))
         Column(Modifier.weight(1f)) {
             Text(text = label, color = colors.secondaryFg, fontSize = LauncherType.BodySize)
-            if (notice != null) StatusNotice(notice)
+            if (notice != null) StatusNotice(notice, Modifier.padding(top = LauncherSpacing.Medium))
         }
         control()
     }
