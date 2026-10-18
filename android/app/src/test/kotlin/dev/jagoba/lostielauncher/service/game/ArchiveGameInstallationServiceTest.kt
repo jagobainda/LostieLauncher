@@ -21,13 +21,16 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @DisplayName("ArchiveGameInstallationService")
 class ArchiveGameInstallationServiceTest {
     @TempDir
@@ -42,6 +45,7 @@ class ArchiveGameInstallationServiceTest {
     private val gamesRoot get() = directory.resolve("LostieLauncher").toFile()
     private val gameDirectory get() = File(gamesRoot, "demo")
     private val archive get() = directory.resolve("downloads/demo.zip").toFile()
+    private val noMediaMarker get() = File(gamesRoot, ".nomedia")
 
     private fun createSut() = ArchiveGameInstallationService(
         PendingGameInstallationService(logger),
@@ -99,6 +103,34 @@ class ArchiveGameInstallationServiceTest {
             sut.observeInstallation("demo").first() shouldBe
                 GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
         }
+
+    @Test
+    fun `hides the games root from the media scanner when installing`() = runTest(dispatcher) {
+        val hash = writeArchive("Game.exe" to "exe", "Graphics/Pictures/title.png" to "png")
+        val sut = createSut()
+
+        sut.install(request(hash))
+
+        noMediaMarker.isFile shouldBe true
+    }
+
+    @Test
+    fun `hides an existing games root from the media scanner on startup`() = runTest(dispatcher) {
+        gamesRoot.mkdirs()
+
+        createSut()
+        advanceUntilIdle()
+
+        noMediaMarker.isFile shouldBe true
+    }
+
+    @Test
+    fun `does not create the games root on startup when nothing is installed`() = runTest(dispatcher) {
+        createSut()
+        advanceUntilIdle()
+
+        gamesRoot.exists() shouldBe false
+    }
 
     @Test
     fun `replaces the files of a previous installation`() = runTest(dispatcher) {

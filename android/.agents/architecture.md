@@ -384,8 +384,9 @@ Already in place:
   `KirinOptions.gamesRoot/<slug>` through `.tmp` and `.old` as the desktop
   does, deletes the archive, then registers the game in Kirin's shared
   `game-library.json` (`KirinGameLibrary`, merged by path) and in
-  `LocalLibraryStore`. Uninstall and lookup still delegate to the pending
-  adapter.
+  `LocalLibraryStore`. It keeps a `.nomedia` marker in that shared root, on
+  startup and before each extraction, so MediaStore does not index the games'
+  images. Uninstall and lookup still delegate to the pending adapter.
 - `GameInstallationService` — installation, uninstall, per-game lookup and an
   observable installed-game list. `observeInstallation(gameId)` exposes
   verification, extraction and terminal outcomes to presentation, including a

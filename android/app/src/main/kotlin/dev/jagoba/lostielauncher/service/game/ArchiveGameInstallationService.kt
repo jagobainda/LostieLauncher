@@ -45,7 +45,10 @@ internal class ArchiveGameInstallationService @Inject constructor(
     override val installedGames: StateFlow<InstalledGamesState> = installed.asStateFlow()
 
     init {
-        CoroutineScope(dispatchers.io + SupervisorJob()).launch { reloadInstalled() }
+        CoroutineScope(dispatchers.io + SupervisorJob()).launch {
+            hideGamesFromMediaScanner()
+            reloadInstalled()
+        }
     }
 
     override fun observeInstallation(gameId: String): Flow<GameInstallationState> =
@@ -115,6 +118,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         temp.deleteRecursively()
         backup.deleteRecursively()
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")
+        hideGamesFromMediaScanner()
         try {
             val root = temp.canonicalPath + File.separator
             var entryCount = 0
@@ -148,6 +152,16 @@ internal class ArchiveGameInstallationService @Inject constructor(
         if (hadExisting) backup.deleteRecursively()
     }
 
+    private fun hideGamesFromMediaScanner() {
+        if (!options.gamesRoot.isDirectory) return
+        val marker = File(options.gamesRoot, NO_MEDIA_FILE_NAME)
+        try {
+            marker.createNewFile()
+        } catch (error: IOException) {
+            logger.error("Could not create '$marker'; game images may appear in the gallery.", error)
+        }
+    }
+
     private fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
@@ -175,5 +189,6 @@ internal class ArchiveGameInstallationService @Inject constructor(
 
     private companion object {
         val SHA256_FORMAT = Regex("[0-9a-fA-F]{64}")
+        const val NO_MEDIA_FILE_NAME = ".nomedia"
     }
 }
