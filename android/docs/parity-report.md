@@ -32,7 +32,7 @@ green. CI runs the same five.
 | Home | `HomeViewModel`, 2-minute refresh | `HomeScreen`, coordinator timer | CET expiry, sticky staleness, both banners. The timer skips ticks while no activity is visible and catches up on return |
 | Downloads | `DownloadService`, `LibraryViewModel` | WorkManager + Room + OkHttp | Pause, resume, cancel, retry from a partial, `If-Range`, cache purge, one transfer at a time. Survives backgrounding, rotation and a network drop; a transfer the system stops goes back to `QUEUED` and the card says it is waiting for a connection |
 | Special versions | key field in the download dialog, the switch dialog | `SpecialVersionService`, `SpecialVersionPolicy`, both dialogs | Every desktop outcome keeps its own message |
-| Maintenance and offline | maintenance flag, offline pill and banners | same | Fails open; a blocked action explains itself once per blocked streak |
+| Maintenance and offline | maintenance flag, offline pill and banners | the same, plus `NetworkMonitor`: no validated internet connection also means offline mode | The flag fails open; a blocked action explains itself once per blocked streak, as maintenance or as offline. When the connection returns, Home and the catalogue reload by themselves, with no manual refresh. The desktop only knows the flag |
 | FAQs | `FaqsViewModel`, collation search | `FaqsViewModel`, `SearchMatcher` | Search matches .NET over the shipped corpus (0 of 328,051 pairs differ). One answer is Android content, because the desktop's is false here |
 | Settings | theme, language, auto-update, version | same four rows | Persisted in DataStore under the names in `architecture.md` |
 | First run | welcome dialog after navigating to Library | same order | Shown once |

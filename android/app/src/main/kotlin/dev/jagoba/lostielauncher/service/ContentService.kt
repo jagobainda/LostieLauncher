@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.service.cdn.CdnMappers
 import dev.jagoba.lostielauncher.service.cdn.ContentApi
 import dev.jagoba.lostielauncher.service.cdn.MaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.dto.HomeContentDto
+import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.IOException
 import java.time.Clock
@@ -32,6 +33,7 @@ interface ContentService {
 internal class DefaultContentService @Inject constructor(
     private val contentApi: ContentApi,
     private val maintenanceFlagApi: MaintenanceFlagApi,
+    private val network: NetworkMonitor,
     private val options: ContentOptions,
     private val clock: Clock,
     private val logger: Logger,
@@ -47,7 +49,7 @@ internal class DefaultContentService @Inject constructor(
     override suspend fun getGames(): List<GameInfo> {
         try {
             if (isServerActionBlocked()) {
-                logger.info("Games list request skipped because server actions are blocked by the maintenance flag.")
+                logger.info("Games list request skipped because server actions are blocked.")
                 return emptyList()
             }
 
@@ -123,6 +125,11 @@ internal class DefaultContentService @Inject constructor(
     }
 
     override suspend fun isServerActionBlocked(forceRefresh: Boolean): Boolean {
+        if (!network.isOnline.value) {
+            logger.debug("No internet connection. Server-backed actions are blocked until it returns.")
+            return true
+        }
+
         val cached = maintenanceFlagCache
         if (!forceRefresh && cached != null && clock.instant() < cached.expiresAt) return cached.blocked
 

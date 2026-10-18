@@ -33,6 +33,7 @@ import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
+import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
@@ -41,6 +42,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+
+internal class TestNetworkMonitor(online: Boolean = true) : NetworkMonitor {
+    override val isOnline = MutableStateFlow(online)
+}
 
 internal class TestSettingsStore : SettingsStore {
     val current = MutableStateFlow(AppSettings())

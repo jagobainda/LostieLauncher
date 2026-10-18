@@ -7,6 +7,7 @@ import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestDownloads
+import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.ui.viewmodel.TestSettingsStore
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -29,13 +30,13 @@ class LauncherDataCoordinatorTest {
         val content = TestContentService()
         val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
         val settings = TestSettingsStore()
-        coordinator.start(backgroundScope, settings, HomeRefreshOptions(2.minutes))
+        coordinator.start(backgroundScope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         runCurrent()
         coordinator.home.value.isLoading shouldBe false
         coordinator.catalogue.value.isLoading shouldBe false
         content.homeCalls shouldBe 1
         content.gameCalls shouldBe 1
-        coordinator.start(backgroundScope, settings, HomeRefreshOptions(2.minutes))
+        coordinator.start(backgroundScope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         runCurrent()
         content.gameCalls shouldBe 1
         advanceTimeBy(2.minutes.inWholeMilliseconds)
@@ -102,7 +103,7 @@ class LauncherDataCoordinatorTest {
     fun `home timer waits while nothing is visible and refreshes on return`() = runTest {
         val content = TestContentService()
         val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
-        coordinator.start(backgroundScope, TestSettingsStore(), HomeRefreshOptions(2.minutes))
+        coordinator.start(backgroundScope, TestSettingsStore(), TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         runCurrent()
         coordinator.setVisible(false)
 
@@ -113,5 +114,43 @@ class LauncherDataCoordinatorTest {
         coordinator.setVisible(true)
         runCurrent()
         content.homeCalls shouldBe 2
+    }
+
+    @Test
+    fun `losing the connection enters offline mode without refetching anything`() = runTest {
+        val content = TestContentService()
+        val network = TestNetworkMonitor()
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        coordinator.start(backgroundScope, TestSettingsStore(), network, HomeRefreshOptions(2.minutes))
+        runCurrent()
+        content.blocked = true
+
+        network.isOnline.value = false
+        runCurrent()
+
+        coordinator.home.value.isOffline shouldBe true
+        content.homeForces.last() shouldBe false
+        content.gameCalls shouldBe 1
+    }
+
+    @Test
+    fun `regaining the connection reloads home and catalogue without a manual refresh`() = runTest {
+        val content = TestContentService().apply { blocked = true }
+        val network = TestNetworkMonitor(online = false)
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        coordinator.start(backgroundScope, TestSettingsStore(), network, HomeRefreshOptions(2.minutes))
+        runCurrent()
+        coordinator.home.value.isOffline shouldBe true
+        content.blocked = false
+        content.games = listOf(testGame())
+
+        network.isOnline.value = true
+        runCurrent()
+
+        coordinator.home.value.isOffline shouldBe false
+        coordinator.catalogue.value.games.map { it.gameId } shouldBe listOf(testGame().gameId)
+        content.flagForces.last() shouldBe true
+        coordinator.isRefreshing.value shouldBe false
+        coordinator.gamesRevision.value shouldBe 1
     }
 }

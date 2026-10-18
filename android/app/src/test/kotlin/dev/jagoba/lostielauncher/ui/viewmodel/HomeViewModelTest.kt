@@ -134,7 +134,7 @@ class HomeViewModelTest {
     }
 
     private fun createSut(scope: CoroutineScope): HomeViewModel {
-        coordinator.start(scope, settings, HomeRefreshOptions(2.minutes))
+        coordinator.start(scope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         return HomeViewModel(coordinator, settings, links)
     }
 }

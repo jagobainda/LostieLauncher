@@ -41,6 +41,7 @@ class LibraryViewModelTest {
     private val navigation = NavigationStore()
     private val settings = TestSettingsStore()
     private val externalLinks = TestExternalLinkService()
+    private val network = TestNetworkMonitor()
     private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -210,6 +211,22 @@ class LibraryViewModelTest {
         sut.requestDownload(remote.gameId)
         runCurrent()
         sut.state.value.notice shouldBe LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+    }
+
+    @Test
+    fun `missing connection explains offline mode instead of maintenance`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        network.isOnline.value = false
+        content.blocked = true
+
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+
+        downloads.starts.size shouldBe 0
+        sut.state.value.notice shouldBe LibraryNotice.OFFLINE
     }
 
     @Test
@@ -403,12 +420,13 @@ class LibraryViewModelTest {
     }
 
     private fun createSut(scope: CoroutineScope): LibraryViewModel {
-        coordinator.start(scope, settings, HomeRefreshOptions(2.minutes))
+        coordinator.start(scope, settings, network, HomeRefreshOptions(2.minutes))
         return LibraryViewModel(
             coordinator,
             downloads,
             installation,
             content,
+            network,
             special,
             navigation,
             externalLinks,

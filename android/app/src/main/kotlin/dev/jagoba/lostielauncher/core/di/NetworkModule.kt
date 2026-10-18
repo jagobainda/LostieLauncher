@@ -15,6 +15,8 @@ import dev.jagoba.lostielauncher.service.cdn.DownloadClient
 import dev.jagoba.lostielauncher.service.cdn.MaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.OkHttpMaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.SecurityFlagClient
+import dev.jagoba.lostielauncher.service.network.ConnectivityNetworkMonitor
+import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -119,6 +121,10 @@ object NetworkModule {
     @Provides
     @Singleton
     internal fun provideContentService(service: DefaultContentService): ContentService = service
+
+    @Provides
+    @Singleton
+    internal fun provideNetworkMonitor(monitor: ConnectivityNetworkMonitor): NetworkMonitor = monitor
 }
 
 @Qualifier

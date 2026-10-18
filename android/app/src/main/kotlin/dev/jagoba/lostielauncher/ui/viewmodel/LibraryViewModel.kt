@@ -22,6 +22,7 @@ import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
+import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
@@ -65,6 +66,7 @@ data class LibraryGameUiState(
 
 enum class LibraryNotice {
     SERVER_ACTIONS_UNAVAILABLE,
+    OFFLINE,
     DOWNLOAD_BUSY,
     DOWNLOAD_INVALID,
     DOWNLOAD_NOT_FOUND,
@@ -131,6 +133,7 @@ class LibraryViewModel @Inject constructor(
     private val downloads: DownloadManager,
     private val installation: GameInstallationService,
     private val content: ContentService,
+    private val network: NetworkMonitor,
     private val specialVersions: SpecialVersionService,
     private val navigation: NavigationStore,
     private val externalLinks: ExternalLinkService,
@@ -382,9 +385,13 @@ class LibraryViewModel @Inject constructor(
             maintenanceNoticeShown = false
             return true
         }
-        logger.info("Server-backed action blocked by maintenance flag.")
+        val offline = !network.isOnline.value
+        logger.info(
+            "Server-backed action blocked by ${if (offline) "missing internet connection" else "maintenance flag"}.",
+        )
         if (!maintenanceNoticeShown) {
-            transient.value = transient.value.copy(notice = LibraryNotice.SERVER_ACTIONS_UNAVAILABLE)
+            val notice = if (offline) LibraryNotice.OFFLINE else LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+            transient.value = transient.value.copy(notice = notice)
             maintenanceNoticeShown = true
         }
         return false

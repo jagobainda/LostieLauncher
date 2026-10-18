@@ -7,6 +7,7 @@ import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.ContentOptions
 import dev.jagoba.lostielauncher.model.NotificationType
 import dev.jagoba.lostielauncher.service.DefaultContentService
+import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -261,7 +262,7 @@ class CdnPayloadTest {
             .create(ContentApi::class.java)
         val flagApi = OkHttpMaintenanceFlagApi(client, TestDispatchers)
 
-        return DefaultContentService(contentApi, flagApi, options, clock, logger)
+        return DefaultContentService(contentApi, flagApi, TestNetworkMonitor(), options, clock, logger)
     }
 
     private companion object {

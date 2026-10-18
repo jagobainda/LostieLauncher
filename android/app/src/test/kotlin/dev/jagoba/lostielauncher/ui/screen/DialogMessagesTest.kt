@@ -35,6 +35,12 @@ class DialogMessagesTest {
             MessageBoxButtons.OK,
             MessageBoxIcon.INFORMATION,
         )
+        LibraryNotice.OFFLINE.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.offlineModeLabel,
+            strings.serverMaintenanceNotificationMessage,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.INFORMATION,
+        )
         LibraryNotice.DOWNLOAD_PERMISSION_DENIED.messageBox(strings) shouldBe error(
             strings.downloadPermissionDeniedTitle,
             strings.downloadPermissionDeniedMessage,

@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.service.cdn.dto.CdnDateTime
 import dev.jagoba.lostielauncher.service.cdn.dto.GameDto
 import dev.jagoba.lostielauncher.service.cdn.dto.HomeContentDto
 import dev.jagoba.lostielauncher.service.cdn.dto.NewsItemDto
+import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -38,6 +39,7 @@ class ContentServiceTest {
     private val contentApi = mockk<ContentApi>()
     private val flagApi = mockk<MaintenanceFlagApi>()
     private val logger = mockk<Logger>(relaxed = true)
+    private val network = TestNetworkMonitor()
 
     private val options = ContentOptions(
         cdnBaseUrl = "https://content.test",
@@ -49,7 +51,7 @@ class ContentServiceTest {
 
     private val clock = MutableClock(Instant.parse("2026-06-19T12:00:00Z"))
 
-    private fun createSut() = DefaultContentService(contentApi, flagApi, options, clock, logger)
+    private fun createSut() = DefaultContentService(contentApi, flagApi, network, options, clock, logger)
 
     private fun maintenanceOff() {
         coEvery { flagApi.head(any()) } returns 404
@@ -69,6 +71,16 @@ class ContentServiceTest {
     @Test
     fun `does not even ask for the catalogue while maintenance is on`() = runTest {
         coEvery { flagApi.head(any()) } returns 200
+
+        val games = createSut().getGames()
+
+        games.shouldBeEmpty()
+        coVerify(exactly = 0) { contentApi.catalogue(any()) }
+    }
+
+    @Test
+    fun `does not even ask for the catalogue without an internet connection`() = runTest {
+        network.isOnline.value = false
 
         val games = createSut().getGames()
 
@@ -184,6 +196,32 @@ class ContentServiceTest {
         sut.isServerActionBlocked(forceRefresh = true)
 
         coVerify(exactly = 2) { flagApi.head(any()) }
+    }
+
+    @Test
+    fun `blocks server actions without probing the flag while there is no internet connection`() = runTest {
+        network.isOnline.value = false
+
+        val blocked = createSut().isServerActionBlocked(forceRefresh = true)
+
+        blocked shouldBe true
+        coVerify(exactly = 0) { flagApi.head(any()) }
+        verify(exactly = 0) { logger.error(any(), any()) }
+    }
+
+    @Test
+    fun `stops blocking as soon as the internet connection returns`() = runTest {
+        maintenanceOff()
+        network.isOnline.value = false
+        val sut = createSut()
+        val offline = sut.isServerActionBlocked()
+
+        network.isOnline.value = true
+        val online = sut.isServerActionBlocked()
+
+        offline shouldBe true
+        online shouldBe false
+        coVerify(exactly = 1) { flagApi.head(any()) }
     }
 
     @Test

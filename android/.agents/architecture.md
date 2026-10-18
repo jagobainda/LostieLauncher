@@ -362,6 +362,11 @@ Already in place:
 - [`MaintenanceFlagApi`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/cdn/MaintenanceFlagApi.kt)
   — the transport for the one endpoint whose answer is a status code, so the
   decisions that follow from the code stay testable without a socket.
+- [`NetworkMonitor`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/network/NetworkMonitor.kt)
+  — connectivity as a `StateFlow`, true while the default network has validated
+  internet. Without it `ContentService` blocks server actions without probing
+  the flag, which is offline mode, and `LauncherDataCoordinator` reloads Home
+  and the catalogue when it returns. The desktop has no counterpart.
 - [`SettingsStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/SettingsStore.kt)
   — the DataStore seam for theme, language, welcome and games auto-update state. `AppearanceStore`
   is its narrow UI-facing parent. Updates are visible immediately and a 500 ms

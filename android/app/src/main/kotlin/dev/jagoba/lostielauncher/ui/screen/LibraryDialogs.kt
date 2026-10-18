@@ -83,6 +83,12 @@ internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (
         icon = MessageBoxIcon.INFORMATION,
     )
 
+    LibraryNotice.OFFLINE -> MessageBoxSpec(
+        strings.offlineModeLabel,
+        strings.serverMaintenanceNotificationMessage,
+        icon = MessageBoxIcon.INFORMATION,
+    )
+
     LibraryNotice.DOWNLOAD_BUSY,
     LibraryNotice.DOWNLOAD_INVALID,
     LibraryNotice.DOWNLOAD_NOT_FOUND,

@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
+import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
@@ -58,7 +60,7 @@ class LauncherDataCoordinator @Inject constructor(
     val gamesRevision: StateFlow<Long> = mutableGamesRevision.asStateFlow()
 
     @Synchronized
-    fun start(scope: CoroutineScope, settings: SettingsStore, options: HomeRefreshOptions) {
+    fun start(scope: CoroutineScope, settings: SettingsStore, network: NetworkMonitor, options: HomeRefreshOptions) {
         if (started) return
         started = true
         scope.launch {
@@ -67,6 +69,18 @@ class LauncherDataCoordinator @Inject constructor(
             }
         }
         scope.launch { refreshCatalogue() }
+        scope.launch {
+            network.isOnline.drop(1).collect { online ->
+                val language = settings.settings.first().language
+                if (online) {
+                    logger.info("Internet connection restored. Reloading home and catalogue.")
+                    reload(language, showLoading = false)
+                } else {
+                    logger.info("Internet connection lost. Entering offline mode.")
+                    refreshHome(language, force = false, showLoading = false)
+                }
+            }
+        }
         scope.launch {
             while (isActive) {
                 delay(options.interval.inWholeMilliseconds)
@@ -121,17 +135,21 @@ class LauncherDataCoordinator @Inject constructor(
         if (!refreshGate.tryLock()) return
         mutableRefreshing.value = true
         try {
-            coroutineScope {
-                val homeRefresh = async { refreshHome(language) }
-                val catalogueRefresh = async { refreshCatalogue() }
-                homeRefresh.await()
-                catalogueRefresh.await()
-            }
-            mutableGamesRevision.value += 1
+            reload(language)
         } finally {
             mutableRefreshing.value = false
             refreshGate.unlock()
         }
+    }
+
+    private suspend fun reload(language: AppLanguage, showLoading: Boolean = true) {
+        coroutineScope {
+            val homeRefresh = async { refreshHome(language, showLoading = showLoading) }
+            val catalogueRefresh = async { refreshCatalogue() }
+            homeRefresh.await()
+            catalogueRefresh.await()
+        }
+        mutableGamesRevision.value += 1
     }
 
     fun setVisible(isVisible: Boolean) {
