@@ -15,7 +15,6 @@ data class NavigationState(
 )
 
 enum class LibraryNavigationAction {
-    DOWNLOAD,
     UPDATE,
     SPECIAL_VERSION,
 }

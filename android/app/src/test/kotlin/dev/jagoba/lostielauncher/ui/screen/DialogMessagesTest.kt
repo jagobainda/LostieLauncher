@@ -93,9 +93,7 @@ class DialogMessagesTest {
     }
 
     @Test
-    fun `missing folder offers the download and unsupported explains itself`() {
-        gamesMessage(GamesUiState(notice = GamesNotice.LOCATION_NOT_FOUND), strings)!!.confirmation shouldBe
-            GamesConfirmation.DOWNLOAD_MISSING
+    fun `unsupported explains itself`() {
         gamesMessage(GamesUiState(notice = GamesNotice.NOT_SUPPORTED_YET), strings)!!.spec shouldBe MessageBoxSpec(
             strings.statusNotSupportedYet,
             strings.notSupportedYetMessage,

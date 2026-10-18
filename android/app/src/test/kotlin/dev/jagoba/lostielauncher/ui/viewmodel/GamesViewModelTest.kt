@@ -1,13 +1,11 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.model.DownloadStatus
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LocalGame
-import dev.jagoba.lostielauncher.model.OpenGameLocationResult
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
@@ -165,14 +163,13 @@ class GamesViewModelTest {
     }
 
     @Test
-    fun `active update disables play switch and folder until transfer stops`() = runTest(dispatcher) {
+    fun `active update disables play and switch until transfer stops`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
         installation.current.value = InstalledGamesState.Available(
             listOf(LocalGame(remote.id!!, remote.name, "v1.0", "special")),
         )
-        locations.help = GameHelpAvailability.AVAILABLE
         val sut = createSut()
         runCurrent()
         downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
@@ -181,39 +178,15 @@ class GamesViewModelTest {
         row.isUpdating shouldBe true
         row.canPlay shouldBe false
         row.canSwitchSpecialVersion shouldBe false
-        row.canOpenGameLocation shouldBe false
-        row.canOpenHelpLocation shouldBe true
         row.canUninstall shouldBe true
         sut.play(remote.name)
         sut.switchToSpecialVersion(remote.name)
-        sut.openGameLocation(remote.name)
-        sut.openHelpLocation(remote.name)
         runCurrent()
         launch.launches shouldBe 0
-        locations.opens shouldBe 1
         navigation.state.value.section shouldBe LauncherSection.HOME
         downloads.current.value = listOf(testDownload(remote, DownloadStatus.PAUSED))
         runCurrent()
         sut.state.value.games.single().isUpdating shouldBe false
-    }
-
-    @Test
-    fun `missing game folder offers matching catalogue download`() = runTest(dispatcher) {
-        val remote = testGame()
-        content.games = listOf(remote)
-        coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
-        locations.openResult = OpenGameLocationResult.NotFound
-        val sut = createSut()
-        runCurrent()
-        sut.openGameLocation(remote.name)
-        runCurrent()
-        sut.state.value.pendingDownloadGameId shouldBe remote.gameId
-        sut.acceptMissingLocationDownload()
-        navigation.state.value.libraryAction shouldBe LibraryNavigationAction.DOWNLOAD
-        navigation.state.value.pendingLibraryGameId shouldBe remote.gameId
     }
 
     @Test
@@ -290,39 +263,6 @@ class GamesViewModelTest {
         runCurrent()
         sut.state.value.notice shouldBe GamesNotice.NOT_SUPPORTED_YET
         sut.state.value.noticeGameName shouldBe "Test Game"
-    }
-
-    @Test
-    fun `accepting a missing folder with no catalogue entry just closes the prompt`() = runTest(dispatcher) {
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
-        coordinator.refreshCatalogue()
-        locations.openResult = OpenGameLocationResult.NotFound
-        val sut = createSut()
-        runCurrent()
-        sut.openGameLocation("Test Game")
-        runCurrent()
-        sut.state.value.notice shouldBe GamesNotice.LOCATION_NOT_FOUND
-        sut.acceptMissingLocationDownload()
-        sut.state.value.notice shouldBe null
-        navigation.state.value.section shouldBe LauncherSection.HOME
-    }
-
-    @Test
-    fun `help that is not supported yet stays tappable and explains`() = runTest(dispatcher) {
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
-        coordinator.refreshCatalogue()
-        val sut = createSut()
-        runCurrent()
-        sut.state.value.games.single().canOpenHelpLocation shouldBe true
-        sut.openHelpLocation("Test Game")
-        runCurrent()
-        sut.state.value.notice shouldBe GamesNotice.NOT_SUPPORTED_YET
-        locations.help = GameHelpAvailability.NOT_FOUND
-        sut.refresh()
-        runCurrent()
-        sut.state.value.games.single().canOpenHelpLocation shouldBe false
     }
 
     private fun createSut() = GamesViewModel(

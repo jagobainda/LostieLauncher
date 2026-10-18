@@ -3,10 +3,8 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameLaunchResult
-import dev.jagoba.lostielauncher.model.GameLocation
 import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameTarget
@@ -41,15 +39,12 @@ data class InstalledGameUiState(
     val remote: GameInfo?,
     val hasUpdate: Boolean,
     val playtimeMinutes: Int,
-    val helpAvailability: GameHelpAvailability,
     val isUpdating: Boolean,
     val isUninstalling: Boolean,
 ) {
     val canPlay: Boolean get() = !isUpdating && !isUninstalling && (!hasUpdate || !game.type.isNullOrEmpty())
     val canUpdate: Boolean get() = !isUpdating && !isUninstalling && hasUpdate
     val canSwitchSpecialVersion: Boolean get() = !isUpdating && !isUninstalling && remote != null
-    val canOpenHelpLocation: Boolean get() = helpAvailability != GameHelpAvailability.NOT_FOUND
-    val canOpenGameLocation: Boolean get() = !isUpdating && !isUninstalling
     val canUninstall: Boolean get() = !isUninstalling
 }
 
@@ -62,7 +57,6 @@ enum class GamesNotice {
     FILES_NOT_FOUND,
     FILES_LEFT_BEHIND,
     NOTHING_DELETED,
-    LOCATION_NOT_FOUND,
     LOCATION_NO_HANDLER,
 }
 
@@ -71,7 +65,6 @@ data class GamesUiState(
     val installedStateKnown: Boolean = false,
     val games: List<InstalledGameUiState> = emptyList(),
     val pendingUninstall: GameTarget? = null,
-    val pendingDownloadGameId: String? = null,
     val blockingLocation: GameLocationReference? = null,
     val notice: GamesNotice? = null,
     val noticeGameName: String? = null,
@@ -225,61 +218,30 @@ class GamesViewModel @Inject constructor(
         }
     }
 
-    fun openGameLocation(gameName: String) {
-        openLocation(gameName, GameLocation.GAME)
-    }
-
-    fun openHelpLocation(gameName: String) {
-        openLocation(gameName, GameLocation.HELP)
-    }
-
     fun openBlockingLocation() {
         val location = mutableState.value.blockingLocation ?: return
         viewModelScope.launch { reportOpen(locations.openBlockingLocation(location)) }
-    }
-
-    fun acceptMissingLocationDownload() {
-        val gameId = mutableState.value.pendingDownloadGameId
-        dismissPrompt()
-        if (gameId != null) navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.DOWNLOAD)
     }
 
     fun dismissPrompt() {
         mutableState.value.pendingUninstall?.let { logger.debug("Uninstall cancelled by user: ${it.name}.") }
         mutableState.value = mutableState.value.copy(
             pendingUninstall = null,
-            pendingDownloadGameId = null,
             notice = null,
             noticeGameName = null,
         )
     }
 
-    private fun openLocation(gameName: String, location: GameLocation) {
-        val row = find(gameName) ?: return
-        if (location == GameLocation.GAME && !row.canOpenGameLocation) return
-        if (location == GameLocation.HELP && !row.canOpenHelpLocation) return
-        logger.debug("Opening ${if (location == GameLocation.GAME) "folder" else "help folder"} for: $gameName.")
-        viewModelScope.launch {
-            val result = locations.open(target(row.game), location)
-            reportOpen(result)
-            if (location == GameLocation.GAME && result == OpenGameLocationResult.NotFound) {
-                logger.info("Game folder not found for '$gameName', offering to download.")
-                mutableState.value = mutableState.value.copy(pendingDownloadGameId = row.remote?.gameId)
-            }
-        }
-    }
-
     private fun reportOpen(result: OpenGameLocationResult) {
         val notice = when (result) {
-            OpenGameLocationResult.Opened -> null
-            OpenGameLocationResult.NotFound -> GamesNotice.LOCATION_NOT_FOUND
+            OpenGameLocationResult.Opened, OpenGameLocationResult.NotFound -> null
             OpenGameLocationResult.NoHandler -> GamesNotice.LOCATION_NO_HANDLER
             OpenGameLocationResult.NotSupportedYet -> GamesNotice.NOT_SUPPORTED_YET
         }
         mutableState.value = mutableState.value.copy(notice = notice)
     }
 
-    private suspend fun toUiState(
+    private fun toUiState(
         local: LocalGame,
         catalogue: List<GameInfo>,
         playtimes: Map<UUID, Int>,
@@ -292,7 +254,6 @@ class GamesViewModel @Inject constructor(
             remote = remote,
             hasUpdate = remote != null && VersionUtils.isNewerVersion(remote.version, local.version),
             playtimeMinutes = playtimes[local.id] ?: 0,
-            helpAvailability = locations.helpAvailability(target(local)),
             isUpdating = remote != null && downloadRows.any {
                 it.gameId == remote.gameId && it.status.isActive
             },

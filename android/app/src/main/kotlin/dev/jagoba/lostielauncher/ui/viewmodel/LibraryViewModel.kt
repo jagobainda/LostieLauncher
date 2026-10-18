@@ -235,7 +235,6 @@ class LibraryViewModel @Inject constructor(
                 val gameId = target.pendingLibraryGameId ?: return@collect
                 if (current.games.none { it.game.gameId == gameId }) return@collect
                 when (target.libraryAction) {
-                    LibraryNavigationAction.DOWNLOAD -> requestDownload(gameId, allowInstalled = true)
                     LibraryNavigationAction.UPDATE -> startUpdate(gameId)
                     LibraryNavigationAction.SPECIAL_VERSION -> requestSpecialVersion(gameId)
                     null -> Unit
@@ -252,12 +251,9 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun requestDownload(gameId: String, allowInstalled: Boolean = false) {
+    fun requestDownload(gameId: String) {
         val row = state.value.games.firstOrNull { it.game.gameId == gameId } ?: return
-        val canReplaceMissingInstall =
-            allowInstalled && row.status in setOf(LibraryCardStatus.DOWNLOADED, LibraryCardStatus.UPDATE_AVAILABLE) &&
-                row.canSwitchSpecialVersion
-        if (!row.canStart && !canReplaceMissingInstall) {
+        if (!row.canStart) {
             logger.debug("Download request ignored for $gameId: its card is ${row.status}.")
             return
         }

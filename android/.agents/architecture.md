@@ -266,9 +266,7 @@ and back, as the desktop's persistent views keep theirs.
 - **"Not supported yet" is a state here too.** While `installedGames` is
   `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
   `NotSupportedYetMessage` with the Library button, not an empty list and not a
-  blank screen. A help folder
-  whose availability is `NOT_SUPPORTED_YET` stays visible and tappable, so the
-  tap answers with the notice.
+  blank screen.
 - **Settings** keeps games auto-update, the version string, language and theme.
   Start with Windows and start minimized went in step 07, "Check for updates"
   with launcher self-update, and the download-directory row with the folder

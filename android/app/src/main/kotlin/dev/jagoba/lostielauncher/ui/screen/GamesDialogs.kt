@@ -15,7 +15,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.GamesNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesViewModel
 
-internal enum class GamesConfirmation { ACKNOWLEDGE, UNINSTALL, OPEN_BLOCKING_LOCATION, DOWNLOAD_MISSING }
+internal enum class GamesConfirmation { ACKNOWLEDGE, UNINSTALL, OPEN_BLOCKING_LOCATION }
 
 internal data class GamesMessage(val spec: MessageBoxSpec, val confirmation: GamesConfirmation)
 
@@ -30,8 +30,6 @@ fun GamesDialogs(viewModel: GamesViewModel = hiltViewModel()) {
                 GamesConfirmation.ACKNOWLEDGE -> viewModel.dismissPrompt()
 
                 GamesConfirmation.UNINSTALL -> viewModel.confirmUninstall()
-
-                GamesConfirmation.DOWNLOAD_MISSING -> viewModel.acceptMissingLocationDownload()
 
                 GamesConfirmation.OPEN_BLOCKING_LOCATION -> {
                     viewModel.dismissPrompt()
@@ -106,16 +104,6 @@ internal fun gamesMessage(state: GamesUiState, strings: Strings): GamesMessage? 
                 MessageBoxButtons.YES_NO,
             ),
             GamesConfirmation.OPEN_BLOCKING_LOCATION,
-        )
-
-        GamesNotice.LOCATION_NOT_FOUND -> GamesMessage(
-            MessageBoxSpec(
-                strings.folderNotFoundTitle,
-                strings.folderNotFoundMessage,
-                MessageBoxButtons.YES_NO,
-                MessageBoxIcon.INFORMATION,
-            ),
-            GamesConfirmation.DOWNLOAD_MISSING,
         )
 
         GamesNotice.LOCATION_NO_HANDLER ->

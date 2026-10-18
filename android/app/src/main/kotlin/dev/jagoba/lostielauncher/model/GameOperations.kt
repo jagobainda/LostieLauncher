@@ -98,17 +98,6 @@ sealed interface PlaySessionResult {
     data object NotSupportedYet : PlaySessionResult
 }
 
-enum class GameLocation {
-    GAME,
-    HELP,
-}
-
-enum class GameHelpAvailability {
-    AVAILABLE,
-    NOT_FOUND,
-    NOT_SUPPORTED_YET,
-}
-
 sealed interface OpenGameLocationResult {
     data object Opened : OpenGameLocationResult
 

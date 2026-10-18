@@ -103,11 +103,9 @@ data class InstalledGameCardState(
     val specialType: String?,
     val updateVersion: String?,
     val playtime: String,
-    val showHelp: Boolean,
     val canPlay: Boolean = true,
     val canUpdate: Boolean = true,
     val canSwitchSpecialVersion: Boolean = true,
-    val canOpenFolder: Boolean = true,
     val canUninstall: Boolean = true,
     val isUninstalling: Boolean = false,
 )
@@ -226,9 +224,7 @@ fun InstalledGameCard(
     state: InstalledGameCardState,
     onPlay: () -> Unit,
     onUpdate: () -> Unit,
-    onOpenHelp: () -> Unit,
     onSwitchSpecialVersion: () -> Unit,
-    onOpenFolder: () -> Unit,
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -312,27 +308,13 @@ fun InstalledGameCard(
                             onClick = onUpdate,
                         )
                     }
-                    if (state.showHelp) {
-                        GameIconButton(R.drawable.ic_card_help, strings.tooltipOpenHelp, true, onOpenHelp)
-                    }
                     GameIconButton(
                         R.drawable.ic_card_key,
                         strings.tooltipSwitchSpecialVersion,
                         state.canSwitchSpecialVersion,
                         onSwitchSpecialVersion,
                     )
-                    GameIconButton(
-                        R.drawable.ic_card_folder_open,
-                        strings.tooltipOpenFolder,
-                        state.canOpenFolder,
-                        onOpenFolder,
-                    )
-                    GameIconButton(
-                        R.drawable.ic_card_trash,
-                        strings.tooltipUninstall,
-                        state.canUninstall,
-                        onUninstall,
-                    )
+                    GameIconButton(R.drawable.ic_card_trash, strings.tooltipUninstall, state.canUninstall, onUninstall)
                 }
             }
         },

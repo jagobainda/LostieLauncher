@@ -25,9 +25,7 @@ is unchanged; only the container format differs.
 | `ic_card_play` | `play` | Material Design Icons | Apache-2.0 |
 | `ic_card_check` | `check` | Material Design Icons | Apache-2.0 |
 | `ic_card_update` | `update` | Material Design Icons | Apache-2.0 |
-| `ic_card_help` | `help-circle-outline` | Material Design Icons | Apache-2.0 |
 | `ic_card_key` | `key-variant` | Material Design Icons | Apache-2.0 |
-| `ic_card_folder_open` | `folder-open` | Material Design Icons | Apache-2.0 |
 | `ic_card_trash` | `trash-can-outline` | Material Design Icons | Apache-2.0 |
 | `ic_card_not_supported` (Android only) | `alert-circle-outline` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_information` | `information` | Material Design Icons | Apache-2.0 |

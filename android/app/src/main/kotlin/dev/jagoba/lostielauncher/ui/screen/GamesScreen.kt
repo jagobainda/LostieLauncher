@@ -32,9 +32,7 @@ private const val GAMES_SKELETON_COUNT = 5
 internal class GamesActions(
     val play: (String) -> Unit,
     val update: (String) -> Unit,
-    val openHelp: (String) -> Unit,
     val switchSpecialVersion: (String) -> Unit,
-    val openFolder: (String) -> Unit,
     val uninstall: (String) -> Unit,
     val goToLibrary: () -> Unit,
 )
@@ -47,9 +45,7 @@ fun GamesScreen(modifier: Modifier = Modifier, viewModel: GamesViewModel = hiltV
         actions = GamesActions(
             play = viewModel::play,
             update = viewModel::update,
-            openHelp = viewModel::openHelpLocation,
             switchSpecialVersion = viewModel::switchToSpecialVersion,
-            openFolder = viewModel::openGameLocation,
             uninstall = viewModel::requestUninstall,
             goToLibrary = viewModel::navigateToLibrary,
         ),
@@ -71,9 +67,7 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
                     state = row.toCardState(),
                     onPlay = { actions.play(name) },
                     onUpdate = { actions.update(name) },
-                    onOpenHelp = { actions.openHelp(name) },
                     onSwitchSpecialVersion = { actions.switchSpecialVersion(name) },
-                    onOpenFolder = { actions.openFolder(name) },
                     onUninstall = { actions.uninstall(name) },
                     modifier = Modifier.padding(bottom = LauncherSpacing.MediumLarge),
                 )
@@ -128,11 +122,9 @@ internal fun InstalledGameUiState.toCardState() = InstalledGameCardState(
     specialType = game.type,
     updateVersion = remote?.version?.takeIf { hasUpdate },
     playtime = PlaytimeFormatter.format(playtimeMinutes),
-    showHelp = canOpenHelpLocation,
     canPlay = canPlay,
     canUpdate = canUpdate,
     canSwitchSpecialVersion = canSwitchSpecialVersion,
-    canOpenFolder = canOpenGameLocation,
     canUninstall = canUninstall,
     isUninstalling = isUninstalling,
 )

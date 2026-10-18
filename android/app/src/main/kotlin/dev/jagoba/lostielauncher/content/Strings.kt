@@ -28,12 +28,8 @@ interface Strings {
     val btnResume: String
     val btnUpdate: String
     val btnPlay: String
-    val tooltipOpenFolder: String
-    val tooltipOpenHelp: String
     val tooltipUninstall: String
     val tooltipRefresh: String
-    val folderNotFoundTitle: String
-    val folderNotFoundMessage: String
     val uninstallConfirmTitle: String
     val uninstallConfirmMessage: String
     val uninstallNotFoundTitle: String

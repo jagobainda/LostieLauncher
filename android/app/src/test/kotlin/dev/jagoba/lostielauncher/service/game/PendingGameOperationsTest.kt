@@ -3,12 +3,10 @@ package dev.jagoba.lostielauncher.service.game
 import app.cash.turbine.test
 import dev.jagoba.lostielauncher.model.DownloadedFile
 import dev.jagoba.lostielauncher.model.GameActivityState
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameLaunchResult
-import dev.jagoba.lostielauncher.model.GameLocation
 import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GamePlaySession
 import dev.jagoba.lostielauncher.model.GameRunningSignal
@@ -108,22 +106,11 @@ class PendingGameOperationsTest {
     }
 
     @Test
-    fun `both game and help locations return unsupported`() = runTest {
-        val sut = PendingGameLocationService(logger)
-
-        sut.open(game, GameLocation.GAME) shouldBe OpenGameLocationResult.NotSupportedYet
-        sut.open(game, GameLocation.HELP) shouldBe OpenGameLocationResult.NotSupportedYet
-        verify(exactly = 2) { logger.info(match { it.contains("Game location") }) }
-    }
-
-    @Test
-    fun `help availability and partial uninstall location remain explicit`() = runTest {
+    fun `partial uninstall location remains explicit`() = runTest {
         val sut = PendingGameLocationService(logger)
         val blocker = GameLocationReference("opaque-blocker", "Leftover game files")
 
-        sut.helpAvailability(game) shouldBe GameHelpAvailability.NOT_SUPPORTED_YET
         sut.openBlockingLocation(blocker) shouldBe OpenGameLocationResult.NotSupportedYet
-        verify(exactly = 1) { logger.info(match { it.contains("Help availability requested for Demo") }) }
         verify(exactly = 1) { logger.info(match { it.contains("Uninstall blocker location requested") }) }
     }
 }

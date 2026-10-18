@@ -23,7 +23,7 @@ itself reads before any Kotlin runs, and says so.
 
 | Thing | Where |
 | --- | --- |
-| The 95 keys | `content/Strings.kt` — the `Strings` interface |
+| The 91 keys | `content/Strings.kt` — the `Strings` interface |
 | The eight implementations | `content/strings/<Lang>Strings.kt`, one `object` each |
 | Resolving one | `stringsFor(language)`, exhaustive over `AppLanguage` |
 | The 6 FAQ entries × 8 | `content/Faqs.kt`, resolved with `faqsFor(language)` |
@@ -94,7 +94,7 @@ seam (`docs/game-runtime-options.md`): the Library card's
 `INSTALLATION_UNSUPPORTED` line. `NotSupportedYetMessage` is the body of the message box that answers a
 tap on one of those actions, with `StatusNotSupportedYet` as its title, and
 the pair is also My Games' state while installed games cannot be known. It
-names every game action, opening a game's folders included. The
+names every game action. The
 desktop has no such state, so it has no such keys. Both go when the seam is
 implemented, in all eight languages at once.
 

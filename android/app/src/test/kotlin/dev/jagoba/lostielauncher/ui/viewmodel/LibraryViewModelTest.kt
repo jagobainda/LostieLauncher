@@ -307,37 +307,6 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `missing folder navigation offers reinstall for an otherwise downloaded game`() = runTest(dispatcher) {
-        val remote = testGame()
-        content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
-        navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.DOWNLOAD)
-        val sut = createSut(backgroundScope)
-        runCurrent()
-        sut.state.value.games.single().canStart shouldBe false
-        sut.state.value.pendingDownloadGameId shouldBe remote.gameId
-        navigation.state.value.libraryAction shouldBe null
-    }
-
-    @Test
-    fun `missing folder navigation offers current catalogue version when update exists`() = runTest(dispatcher) {
-        val remote = testGame(version = "v2.0")
-        content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
-        )
-        navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.DOWNLOAD)
-        val sut = createSut(backgroundScope)
-        runCurrent()
-        sut.state.value.games.single().status shouldBe LibraryCardStatus.UPDATE_AVAILABLE
-        sut.state.value.games.single().canStart shouldBe false
-        sut.state.value.pendingDownloadGameId shouldBe remote.gameId
-        navigation.state.value.libraryAction shouldBe null
-    }
-
-    @Test
     fun `a transfer that fails or is denied raises its notice once`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)

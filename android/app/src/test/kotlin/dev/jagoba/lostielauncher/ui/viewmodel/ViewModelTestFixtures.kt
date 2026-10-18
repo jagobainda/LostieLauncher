@@ -10,13 +10,11 @@ import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.GameActivityState
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameLaunchResult
-import dev.jagoba.lostielauncher.model.GameLocation
 import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameTarget
@@ -177,16 +175,7 @@ internal class TestLaunch : GameLaunchService {
 }
 
 internal class TestLocations : GameLocationService {
-    var help = GameHelpAvailability.NOT_SUPPORTED_YET
     var openResult: OpenGameLocationResult = OpenGameLocationResult.NotSupportedYet
-    var opens = 0
-
-    override suspend fun helpAvailability(game: GameTarget): GameHelpAvailability = help
-
-    override suspend fun open(game: GameTarget, location: GameLocation): OpenGameLocationResult {
-        opens++
-        return openResult
-    }
 
     override suspend fun openBlockingLocation(location: GameLocationReference): OpenGameLocationResult = openResult
 }

@@ -1,7 +1,6 @@
 package dev.jagoba.lostielauncher.ui.screen
 
 import dev.jagoba.lostielauncher.model.DownloadStatus
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
@@ -64,20 +63,15 @@ class CardStateMappingTest {
     }
 
     @Test
-    fun `installed row maps guards and help`() {
-        val card = installedRow(hasUpdate = false, help = GameHelpAvailability.NOT_SUPPORTED_YET)
-            .copy(isUpdating = true)
-            .toCardState()
+    fun `installed row maps its guards`() {
+        val card = installedRow(hasUpdate = false).copy(isUpdating = true).toCardState()
         card.title shouldBe "Local Name"
         card.installedVersion shouldBe "v1.0"
         card.specialType shouldBe "NUZLOCKE"
         card.logoUrl shouldBe game.logoUrl
-        card.showHelp shouldBe true
-        card.canOpenFolder shouldBe false
+        card.canPlay shouldBe false
         card.canSwitchSpecialVersion shouldBe false
         card.canUninstall shouldBe true
-        installedRow(hasUpdate = false, help = GameHelpAvailability.NOT_FOUND)
-            .toCardState().showHelp shouldBe false
     }
 
     private fun libraryRow(status: DownloadStatus?, cardStatus: LibraryCardStatus) = LibraryGameUiState(
@@ -95,14 +89,12 @@ class CardStateMappingTest {
         canSwitchSpecialVersion = true,
     )
 
-    private fun installedRow(hasUpdate: Boolean, help: GameHelpAvailability = GameHelpAvailability.AVAILABLE) =
-        InstalledGameUiState(
-            game = LocalGame(UUID.randomUUID(), "Local Name", "v1.0", "NUZLOCKE"),
-            remote = game,
-            hasUpdate = hasUpdate,
-            playtimeMinutes = 0,
-            helpAvailability = help,
-            isUpdating = false,
-            isUninstalling = false,
-        )
+    private fun installedRow(hasUpdate: Boolean) = InstalledGameUiState(
+        game = LocalGame(UUID.randomUUID(), "Local Name", "v1.0", "NUZLOCKE"),
+        remote = game,
+        hasUpdate = hasUpdate,
+        playtimeMinutes = 0,
+        isUpdating = false,
+        isUninstalling = false,
+    )
 }

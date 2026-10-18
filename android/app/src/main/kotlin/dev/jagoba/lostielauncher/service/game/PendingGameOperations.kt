@@ -1,12 +1,10 @@
 package dev.jagoba.lostielauncher.service.game
 
 import dev.jagoba.lostielauncher.model.GameActivityState
-import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameLaunchResult
-import dev.jagoba.lostielauncher.model.GameLocation
 import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GamePlaySession
 import dev.jagoba.lostielauncher.model.GameRunningSignal
@@ -78,16 +76,6 @@ internal class PendingPlaySessionService @Inject constructor(private val logger:
 
 @Singleton
 internal class PendingGameLocationService @Inject constructor(private val logger: Logger) : GameLocationService {
-    override suspend fun helpAvailability(game: GameTarget): GameHelpAvailability {
-        logger.info("Help availability requested for ${game.name}; Android help lookup is not supported yet.")
-        return GameHelpAvailability.NOT_SUPPORTED_YET
-    }
-
-    override suspend fun open(game: GameTarget, location: GameLocation): OpenGameLocationResult {
-        logger.info("Game location ${location.name} requested for ${game.name}; Android opening is not supported yet.")
-        return OpenGameLocationResult.NotSupportedYet
-    }
-
     override suspend fun openBlockingLocation(location: GameLocationReference): OpenGameLocationResult {
         logger.info("Uninstall blocker location requested for ${location.token}; Android opening is not supported yet.")
         return OpenGameLocationResult.NotSupportedYet

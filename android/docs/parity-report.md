@@ -17,7 +17,7 @@ screens). This document summarises and does not repeat them.
 | --- | --- |
 | **Ported and working** | Catalogue, home news and notifications, resumable downloads, special-version keys, maintenance flag and offline behavior, FAQs with search, settings, first-run welcome, social links, ten themes, eight languages, file logging, every dialog and notice |
 | **Ported partially** | My Games, games auto-update and the Library card after a download: all built against the install seam and rendered as "not available on Android yet" |
-| **Pending by design** | Installing, uninstalling, launching, running detection, playtime, opening game and help folders: the eleven `TODO-ANDROID-GAME-RUNTIME` questions below |
+| **Pending by design** | Installing, uninstalling, launching, running detection, playtime: the eleven `TODO-ANDROID-GAME-RUNTIME` questions below |
 | **Not ported** | Everything that exists only because the desktop is a Windows program: tray, autostart, self-update, window chrome, single instance, keyboard shortcuts, the download-folder picker, OneDrive, `Saved Games`, the exit warning |
 
 The gates, run from `android/`: `spotlessCheck`, `assembleDebug`,
@@ -37,7 +37,7 @@ green. CI runs the same five.
 | Settings | theme, language, auto-update, version | same four rows | Persisted in DataStore under the names in `architecture.md` |
 | First run | welcome dialog after navigating to Library | same order | Shown once |
 | Social links | title-bar buttons, HTTPS guard | same | A failed link stays silent, as on the desktop |
-| Themes and text | 10 palettes, 118 keys × 8 languages | 10 palettes, 95 keys × 8 languages | 88 desktop keys kept, 7 Android-only. Hot switching, no activity recreation |
+| Themes and text | 10 palettes, 118 keys × 8 languages | 10 palettes, 91 keys × 8 languages | 84 desktop keys kept, 7 Android-only. Hot switching, no activity recreation |
 | Dialogs and notices | `CustomMessageBox` and the three dialogs | `LauncherDialog` and friends | Every kept message box is pinned by `DialogMessagesTest` |
 | Logging | `Logs` in `%LOCALAPPDATA%` | `FileLogger` in `noBackupFilesDir/logs` | Same line format, monthly files, 10 MiB roll, six months. The same events are logged at the same levels: navigation and loads at debug, user decisions and download lifecycle at info, failures at error, plus every uncaught exception |
 
@@ -70,10 +70,10 @@ code, and answering one removes the marker and its section together.
 | `-04` | How Play launches a game | Open |
 | `-05` | Whether a running signal is possible without another app's process or lock | Open |
 | `-06` | What marks a session's start and end for playtime | Open |
-| `-07` | How game and help files are exposed (URI, in-app viewer, nothing) | Open |
+| `-07` | How game and help files are exposed (URI, in-app viewer, nothing) | Decided for My Games: nothing, both buttons removed |
 | `-08` | How to persist the catalogue id, expected hash and variant with the download, and how a failed install is retried | Open. Engineering work once `-01` is answered, not a platform question |
 | `-09` | Where installation phases and results are stored so they survive process death | Open |
-| `-10` | What counts as game help on Android | Open |
+| `-10` | What counts as game help on Android | Decided: the card has no help action |
 | `-11` | How a partial-uninstall blocker is identified and opened | Open |
 
 Things that will need doing when the seam is implemented, recorded so they are
@@ -101,6 +101,7 @@ not rediscovered:
 | OneDrive detection and warning | No OneDrive-synced folder can be the games root | `OneDrivePathPolicy.cs` |
 | Keyboard shortcuts | Back replaces Escape; no hardware keyboard is assumed | `KeyboardShortcuts.cs` |
 | `Saved Games` rail action | A Windows profile folder | `MainViewModel.cs` |
+| My Games' open-folder and help-folder buttons, and the reinstall offer for a missing folder | A raw folder means little on a phone and no file manager is guaranteed to open it | `GamesViewModel.cs` |
 | Exit warning | Back on Home backgrounds the task and a transfer keeps running in WorkManager, so there is nothing to lose | step 13 |
 | Pre-startup fatal error box | The system's crash dialog covers it; the crash itself is now logged | step 13 |
 | Scrollbar | A permanent trough fights the platform scroll indicator | cards' table |
@@ -176,7 +177,7 @@ Carried from the review ledger, none blocking:
 | Games auto-update stops without a notice under maintenance, where the desktop shows `ServerActionsUnavailable*` once | Inert while installed games are unknown; wire the notice when the seam lands |
 | A card whose action column is empty still reserves the inset beside it, so its text wraps 16 dp earlier (`INSTALLATION_PENDING`, `INSTALLATION_FAILED`) | Cosmetic |
 | Spacing token 1 has no owner: its only desktop use is the scrollbar thumb, which is not ported | Add it to `LauncherSpacing` if a scrollbar is ever ported |
-| Scrolling the Library to a game (from My Games' update and missing-folder paths) was never run on a device | Its producers need installed games, so it waits on the seam; the code was read and the navigation state is unit-tested |
+| Scrolling the Library to a game (from My Games' update path) was never run on a device | Its producers need installed games, so it waits on the seam; the code was read and the navigation state is unit-tested |
 | After a network drop mid-download the card shows its last speed and time for up to a minute before "waiting for a connection" | The card changes when WorkManager stops the worker, which follows the stalled connection failing (about 47 s on the emulator); the line also flashes for a moment whenever a download is queued |
 | The section is not restored after process death | Parity: the desktop starts on Home |
 | Open prompts and notices do not survive process death; a notice can pre-empt a prompt and drop a typed key; a prompt whose game disappears reappears if it returns | Rare, cosmetic |

@@ -37,7 +37,7 @@ operations and handle `NotSupportedYet` explicitly.
 | Uninstall | `GamesViewModel.GetRunningSignal` blocks a tracked live process and warns on a locked executable. `UninstallCoreAsync` retries folder deletion. If nothing was deleted, registration remains; if deletion was partial, registration is removed and the blocking path is reported; a missing folder has its own outcome. | `GameInstallationService.uninstall` retains the five desktop outcomes plus unsupported and an optional opaque blocking location that can be passed to `GameLocationService.openBlockingLocation`. |
 | Launch and running state | `GamesViewModel.Play` checks `Game.exe`, starts it in its own working directory and minimizes the launcher. It tracks the `Process`; a file-lock probe gives a weaker maybe-running signal after the tracked process is gone. | `GameLaunchService.launch` distinguishes launched, missing, failed and unsupported. `runningSignal` preserves stopped, tracked, possible and unsupported as separate values. `activeSessions` exposes a flow for global state; the pending adapter emits `NotSupportedYet` rather than an empty set. |
 | Playtime | On process exit the desktop computes whole elapsed UTC minutes, ignores nonpositive durations and empty GUIDs, records positive minutes through `ContentService.AddPlaytimeAsync`, updates both cards and restores the window. | `PlaySessionService.recordCompletedSession` takes typed GUID and endpoints and returns recorded minutes, ignored or unsupported. The existing `LocalLibraryStore` is the eventual ledger; no direct caller writes it for game sessions yet. |
-| Locations | `GamesViewModel.OpenFolderAsync` opens the game directory, offering a download if it is absent. `OpenHelpFolder` looks for a case-insensitive `ayuda` child; its availability controls the help button. `FolderLauncher` refuses missing directories before asking Explorer to open them. | `GameLocationService.helpAvailability` distinguishes available, absent and unsupported. `open` identifies game or help, while `openBlockingLocation` handles an opaque uninstall location. The offer to download remains a presentation decision. |
+| Locations | `GamesViewModel.OpenFolderAsync` opens the game directory, offering a download if it is absent. `OpenHelpFolder` looks for a case-insensitive `ayuda` child; its availability controls the help button. `FolderLauncher` refuses missing directories before asking Explorer to open them. | My Games has no folder or help buttons, so `GameLocationService` only keeps `openBlockingLocation`, which handles an opaque uninstall location. |
 
 The desktop implementation is the authority for these details:
 `desktop/LostieLauncher/ViewModels/LibraryViewModel.cs`,
@@ -91,9 +91,10 @@ its latest phase and terminal result after process recreation.
    Activity callbacks alone do not prove the game exited. Usage events require
    user-granted access and only have a limited retention window. If there is no
    reliable signal, do not write invented minutes into `LocalLibraryStore`.
-7. **TODO-ANDROID-GAME-RUNTIME-07 — game and help locations.** Decide whether
-   these buttons expose app-owned files through a scoped `content://` URI and a
-   document handler, show an in-app help viewer, or disappear. A Windows-style
+7. **TODO-ANDROID-GAME-RUNTIME-07 — game and help locations.** Decided for
+   My Games: the open-folder and help buttons disappear. The original question
+   was whether they expose app-owned files through a scoped `content://` URI
+   and a document handler, show an in-app help viewer, or disappear. A Windows-style
    absolute path cannot be passed to an arbitrary Android file manager. If the
    library moves to a user-selected document tree, access is URI based and its
    persistence and provider behavior need a separate design.
@@ -112,11 +113,8 @@ its latest phase and terminal result after process recreation.
    while no screen is alive. The pending adapter can replay unsupported without
    storage; a real adapter must retain per-game terminal state across process
    recreation.
-10. **TODO-ANDROID-GAME-RUNTIME-10 — help availability.** Decide whether an
-    Android game can contain browsable help files or has help inside its app,
-    because the desktop's `ayuda` directory cannot be assumed for a package.
-    The result must drive the card's help action without probing storage from
-    presentation.
+10. **TODO-ANDROID-GAME-RUNTIME-10 — help availability.** Decided: the card
+    has no help action, so nothing probes for the desktop's `ayuda` directory.
 11. **TODO-ANDROID-GAME-RUNTIME-11 — partial-uninstall location.** Decide how
     to identify and expose a blocker after partial removal because it might be
     an app-owned file, a document URI or a package. The UI receives an opaque
