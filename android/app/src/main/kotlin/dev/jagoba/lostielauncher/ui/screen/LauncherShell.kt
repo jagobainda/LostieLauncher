@@ -17,9 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -97,16 +101,7 @@ fun LauncherShellLayout(
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
     val insets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
-    val refresh = ShellNavigationEntry(
-        key = "refresh",
-        label = strings.tooltipRefresh,
-        icon = painterResource(R.drawable.ic_nav_refresh),
-        selected = false,
-        enabled = state.canRefresh,
-        isAction = true,
-        onClick = onRefresh,
-    )
-    val top = shellDestinations(TOP_SECTIONS, state, strings, onNavigate) + refresh
+    val top = shellDestinations(TOP_SECTIONS, state, strings, onNavigate)
     val bottom = shellDestinations(BOTTOM_SECTIONS, state, strings, onNavigate)
     val actions = state.contextLinks.map { link ->
         ShellTopBarAction(link.name, link.brandName, painterResource(link.iconRes()), onClick = { onOpenLink(link) })
@@ -160,7 +155,7 @@ fun LauncherShellLayout(
                                 end = LauncherSizes.ShellInset,
                                 bottom = layout.verticalInset,
                             ),
-                    ) { content() }
+                    ) { SectionContent(state, onRefresh, content) }
                 }
             } else {
                 Box(
@@ -169,7 +164,7 @@ fun LauncherShellLayout(
                         .fillMaxWidth()
                         .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal))
                         .padding(LauncherSizes.ShellInset),
-                ) { content() }
+                ) { SectionContent(state, onRefresh, content) }
                 ShellNavigationBar(
                     entries = top + bottom,
                     modifier = Modifier
@@ -185,6 +180,30 @@ private val TOP_SECTIONS = listOf(LauncherSection.HOME, LauncherSection.GAMES, L
 private val BOTTOM_SECTIONS = listOf(LauncherSection.FAQS, LauncherSection.SETTINGS)
 
 @Composable
+private fun SectionContent(state: MainUiState, onRefresh: () -> Unit, content: @Composable () -> Unit) {
+    if (state.section !in TOP_SECTIONS) {
+        content()
+        return
+    }
+    val colors = LocalLauncherColors.current
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = onRefresh,
+        state = pullState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = state.isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = colors.secondaryBg,
+                color = colors.primaryFg,
+            )
+        },
+    ) { content() }
+}
+
+@Composable
 private fun shellDestinations(
     sections: List<LauncherSection>,
     state: MainUiState,
@@ -196,8 +215,6 @@ private fun shellDestinations(
         label = section.label(strings),
         icon = painterResource(section.iconRes()),
         selected = state.section == section,
-        enabled = true,
-        isAction = false,
         onClick = { onNavigate(section) },
     )
 }

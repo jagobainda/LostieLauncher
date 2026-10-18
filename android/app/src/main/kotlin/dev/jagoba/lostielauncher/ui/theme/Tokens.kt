@@ -154,7 +154,6 @@ object LauncherElevation {
 }
 
 object LauncherOpacity {
-    const val NAVIGATION_ACTION_DISABLED = 0.3f
     const val CARD_BUTTON_DISABLED = 0.5f
     const val CARD_STATUS_CHIP = 0.6f
     const val SUCCESS_HOVER = 0.85f

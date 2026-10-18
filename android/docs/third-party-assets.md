@@ -9,7 +9,6 @@ is unchanged; only the container format differs.
 | `ic_nav_home` | `house` | [Lucide](https://lucide.dev) | ISC |
 | `ic_nav_games` | `play` | Lucide | ISC |
 | `ic_nav_library` | `download` | Lucide | ISC |
-| `ic_nav_refresh` | `refresh-cw` | Lucide | ISC |
 | `ic_nav_faqs` | `circle-question-mark` | Lucide | ISC |
 | `ic_nav_settings` | `cog` | Lucide | ISC |
 | `ic_offline` | `cloud-off-outline` | [Material Design Icons](https://pictogrammers.com/library/mdi/) | Apache-2.0 |
