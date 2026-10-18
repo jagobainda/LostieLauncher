@@ -113,6 +113,36 @@ class GamesViewModelTest {
     }
 
     @Test
+    fun `unknown running state still asks to confirm the uninstall`() = runTest(dispatcher) {
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        val sut = createSut()
+        runCurrent()
+        sut.requestUninstall("Test Game")
+        runCurrent()
+        sut.state.value.pendingUninstall?.name shouldBe "Test Game"
+        sut.state.value.notice shouldBe null
+    }
+
+    @Test
+    fun `uninstall purges the finished download so the library card is available again`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        coordinator.refreshCatalogue()
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, remote.version, null)))
+        val sut = createSut()
+        runCurrent()
+        downloads.purged.clear()
+        sut.requestUninstall(remote.name)
+        runCurrent()
+        sut.confirmUninstall()
+        runCurrent()
+        downloads.purged shouldBe listOf(setOf(remote.gameId))
+    }
+
+    @Test
     fun `pending uninstall result is represented explicitly`() = runTest(dispatcher) {
         installation.current.value =
             InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Test Game", "v1", null)))

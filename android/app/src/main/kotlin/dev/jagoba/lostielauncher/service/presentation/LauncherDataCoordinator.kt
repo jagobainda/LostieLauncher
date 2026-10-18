@@ -102,7 +102,7 @@ class LauncherDataCoordinator @Inject constructor(
             try {
                 val games = distinctGames(content.getGames())
                 mutableCatalogue.value = CatalogueData(isLoading = false, games = games)
-                if (games.isNotEmpty()) downloads.purgeStale(games.mapTo(mutableSetOf()) { it.gameId })
+                purgeStaleDownloads()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -110,6 +110,11 @@ class LauncherDataCoordinator @Inject constructor(
                 mutableCatalogue.value = mutableCatalogue.value.copy(isLoading = false)
             }
         }
+    }
+
+    suspend fun purgeStaleDownloads() {
+        val games = catalogue.value.games
+        if (games.isNotEmpty()) downloads.purgeStale(games.mapTo(mutableSetOf()) { it.gameId })
     }
 
     suspend fun refreshAll(language: AppLanguage) {

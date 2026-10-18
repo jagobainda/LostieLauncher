@@ -65,7 +65,7 @@ code, and answering one removes the marker and its section together.
 | Marker | Question | Status |
 | --- | --- | --- |
 | `-01` | What an Android game artifact is (APK, data for a bundled runtime, an external listing) and how it is installed | Open |
-| `-02` | What uninstall removes, and whether it asks the system to remove a package | Open |
+| `-02` | What uninstall removes, and whether it asks the system to remove a package | Decided: the game folder, its Kirin entry and its local record; no package is involved |
 | `-03` | Which source is authoritative for installed identity and version | Open |
 | `-04` | How Play launches a game | Open |
 | `-05` | Whether a running signal is possible without another app's process or lock | Open |

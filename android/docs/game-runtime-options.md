@@ -18,8 +18,11 @@ and reported as `RegistryFailed`. Launch is implemented by `KirinGameLaunchServi
 Play resolves `LostieLauncher/<slug>` and sends Kirin's explicit
 `LAUNCH_GAME_SHORTCUT` intent with that directory; a missing directory reports
 `GameNotFound` and an intent Android cannot deliver reports `LaunchFailed`.
-Running-state detection, uninstall and lookup remain pending. Playtime is not
-tracked on Android (item 6).
+Uninstall deletes `LostieLauncher/<slug>`, removes its entry from Kirin's library
+and the local registry, and reports the desktop outcomes; if nothing could be
+deleted, both registrations remain. Running state is unknown, so uninstall asks
+for the usual confirmation. Running-state detection, opening a partial-uninstall
+blocker and lookup remain pending. Playtime is not tracked on Android (item 6).
 
 The searchable marker `TODO-ANDROID-GAME-RUNTIME` has exactly eleven numbered
 questions. Each marker occurs once in code, beside the deferred method or handoff.

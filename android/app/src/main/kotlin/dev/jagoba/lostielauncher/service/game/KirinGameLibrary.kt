@@ -11,6 +11,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
@@ -25,13 +26,8 @@ internal class KirinGameLibrary @Inject constructor(
     suspend fun register(title: String, gameDirectory: File) = withContext(dispatchers.io) {
         val file = options.libraryFile
         val path = gameDirectory.absolutePath
-        val entries = if (file.exists()) {
-            (json.parseToJsonElement(file.readText()) as? JsonArray)?.toMutableList()
-                ?: throw IOException("Kirin library '$file' is not a JSON array.")
-        } else {
-            mutableListOf()
-        }
-        val index = entries.indexOfFirst { ((it as? JsonObject)?.get(PATH) as? JsonPrimitive)?.content == path }
+        val entries = if (file.exists()) read(file) else mutableListOf()
+        val index = entries.indexOfFirst { it.path == path }
         if (index >= 0) {
             entries[index] = JsonObject(entries[index].jsonObject + (TITLE to JsonPrimitive(title)))
         } else {
@@ -44,10 +40,25 @@ internal class KirinGameLibrary @Inject constructor(
                 ),
             )
         }
-        write(file, json.encodeToString(JsonArray.serializer(), JsonArray(entries)))
+        write(file, entries)
     }
 
-    private fun write(file: File, content: String) {
+    suspend fun unregister(gameDirectory: File) = withContext(dispatchers.io) {
+        val file = options.libraryFile
+        if (!file.exists()) return@withContext
+        val path = gameDirectory.absolutePath
+        val entries = read(file)
+        if (entries.removeAll { it.path == path }) write(file, entries)
+    }
+
+    private fun read(file: File): MutableList<JsonElement> =
+        (json.parseToJsonElement(file.readText()) as? JsonArray)?.toMutableList()
+            ?: throw IOException("Kirin library '$file' is not a JSON array.")
+
+    private val JsonElement.path: String? get() = ((this as? JsonObject)?.get(PATH) as? JsonPrimitive)?.content
+
+    private fun write(file: File, entries: List<JsonElement>) {
+        val content = json.encodeToString(JsonArray.serializer(), JsonArray(entries))
         val directory = file.absoluteFile.parentFile ?: throw IOException("Kirin library '$file' has no directory.")
         if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Could not create '$directory'.")
         val temp = File(directory, "${file.name}.tmp")

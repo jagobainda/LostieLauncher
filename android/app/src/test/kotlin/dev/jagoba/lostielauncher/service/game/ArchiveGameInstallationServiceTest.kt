@@ -6,6 +6,9 @@ import dev.jagoba.lostielauncher.model.DownloadedFile
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.model.GameTarget
+import dev.jagoba.lostielauncher.model.GameUninstallOutcome
+import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
@@ -299,4 +302,50 @@ class ArchiveGameInstallationServiceTest {
 
             coVerify(exactly = 0) { library.registerGame(any()) }
         }
+
+    @Test
+    fun `uninstall deletes the game directory and both registrations`() = runTest(dispatcher) {
+        File(gameDirectory, "Data/Scripts.rxdata").apply { parentFile?.mkdirs() }.writeText("data")
+        coEvery { library.getGames() } returns emptyList()
+        val sut = createSut()
+
+        sut.uninstall(GameTarget(gameId, "Demo")) shouldBe GameUninstallResult(GameUninstallOutcome.COMPLETED)
+
+        gameDirectory.exists() shouldBe false
+        coVerify(exactly = 1) { kirin.unregister(gameDirectory) }
+        coVerify(exactly = 1) { library.removeGame("Demo") }
+        sut.installedGames.value shouldBe InstalledGamesState.Available(emptyList())
+    }
+
+    @Test
+    fun `uninstall of a missing directory still cleans up the registrations`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.uninstall(GameTarget(gameId, "Demo")) shouldBe GameUninstallResult(GameUninstallOutcome.FILES_NOT_FOUND)
+
+        coVerify(exactly = 1) { kirin.unregister(gameDirectory) }
+        coVerify(exactly = 1) { library.removeGame("Demo") }
+    }
+
+    @Test
+    fun `uninstall removes the local record even when Kirin cannot be updated`() = runTest(dispatcher) {
+        gameDirectory.mkdirs()
+        coEvery { kirin.unregister(any()) } throws IOException("denied")
+        val sut = createSut()
+
+        sut.uninstall(GameTarget(gameId, "Demo")) shouldBe GameUninstallResult(GameUninstallOutcome.COMPLETED)
+
+        coVerify(exactly = 1) { library.removeGame("Demo") }
+    }
+
+    @Test
+    fun `uninstall refuses a name whose directory would be the games root`() = runTest(dispatcher) {
+        File(gamesRoot, "other/Game.exe").apply { parentFile?.mkdirs() }.writeText("exe")
+        val sut = createSut()
+
+        sut.uninstall(GameTarget(null, "!!!")) shouldBe GameUninstallResult(GameUninstallOutcome.NOTHING_DELETED)
+
+        File(gamesRoot, "other/Game.exe").exists() shouldBe true
+        coVerify(exactly = 0) { library.removeGame(any()) }
+    }
 }

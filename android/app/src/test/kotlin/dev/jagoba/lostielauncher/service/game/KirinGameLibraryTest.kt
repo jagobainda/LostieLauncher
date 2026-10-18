@@ -88,4 +88,25 @@ class KirinGameLibraryTest {
         libraryFile.readText() shouldBe "{}"
         File(libraryFile.parentFile, "${libraryFile.name}.tmp").exists() shouldBe false
     }
+
+    @Test
+    fun `unregister removes only the game entry`() = runTest(dispatcher) {
+        val other = entry("Other", "/storage/other")
+        libraryFile.parentFile?.mkdirs()
+        libraryFile.writeText(JsonArray(listOf(other, entry("Demo", gameDirectory.absolutePath))).toString())
+        val sut = createSut()
+
+        sut.unregister(gameDirectory)
+
+        readLibrary() shouldBe JsonArray(listOf(other))
+    }
+
+    @Test
+    fun `unregister does not create a missing library`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.unregister(gameDirectory)
+
+        libraryFile.exists() shouldBe false
+    }
 }

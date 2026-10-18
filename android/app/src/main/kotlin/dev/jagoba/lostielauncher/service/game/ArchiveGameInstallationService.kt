@@ -4,10 +4,15 @@ import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.model.GameLocationReference
+import dev.jagoba.lostielauncher.model.GameTarget
+import dev.jagoba.lostielauncher.model.GameUninstallOutcome
+import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.MissingGameId
+import dev.jagoba.lostielauncher.model.gameSlug
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
@@ -99,7 +104,8 @@ internal class ArchiveGameInstallationService @Inject constructor(
         }
 
         setPhase(file.gameId, GameInstallationState.Extracting())
-        val directory = File(options.gamesRoot, file.gameId)
+        val directory = gameDirectory(file.gameId)
+            ?: throw IOException("Invalid game directory: '${file.gameId}' escapes the games root.")
         extract(archive, directory, file.gameId)
         deleteArchive(archive)
 
@@ -118,10 +124,54 @@ internal class ArchiveGameInstallationService @Inject constructor(
         return GameInstallationResult.Installed(game)
     }
 
-    private suspend fun extract(archive: File, directory: File, gameId: String) {
-        if (directory.canonicalFile.parentFile != options.gamesRoot.canonicalFile) {
-            throw IOException("Invalid game directory: '$directory' escapes the games root.")
+    override suspend fun uninstall(game: GameTarget): GameUninstallResult = withContext(dispatchers.io) {
+        val directory = gameDirectory(gameSlug(game.name))
+        if (directory == null) {
+            logger.error("Uninstall refused for ${game.name}: its directory escapes the games root.")
+            return@withContext GameUninstallResult(GameUninstallOutcome.NOTHING_DELETED)
         }
+        val existed = directory.exists()
+        var deleted = 0
+        var blocking: File? = null
+        if (existed) {
+            for (entry in directory.walkBottomUp()) {
+                if (entry.delete()) {
+                    deleted++
+                } else if (blocking == null) {
+                    blocking = entry
+                }
+            }
+        }
+        val location = blocking?.let { GameLocationReference(it.path, it.path) }
+        if (location != null && deleted == 0) {
+            logger.error("Uninstall deleted nothing of ${game.name}. Blocked at: ${location.token}.")
+            return@withContext GameUninstallResult(GameUninstallOutcome.NOTHING_DELETED, location)
+        }
+        try {
+            kirin.unregister(directory)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("Kirin unregistration failed for ${game.name}.", error)
+        }
+        library.removeGame(game.name)
+        reloadInstalled()
+        when {
+            location != null -> {
+                logger.error("Uninstall could not delete every file of ${game.name}. Blocked at: ${location.token}.")
+                GameUninstallResult(GameUninstallOutcome.FILES_LEFT_BEHIND, location)
+            }
+
+            existed -> GameUninstallResult(GameUninstallOutcome.COMPLETED)
+
+            else -> GameUninstallResult(GameUninstallOutcome.FILES_NOT_FOUND)
+        }
+    }
+
+    private fun gameDirectory(gameId: String): File? =
+        File(options.gamesRoot, gameId).takeIf { it.canonicalFile.parentFile == options.gamesRoot.canonicalFile }
+
+    private suspend fun extract(archive: File, directory: File, gameId: String) {
         val temp = File("${directory.path}.tmp")
         temp.deleteRecursively()
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")

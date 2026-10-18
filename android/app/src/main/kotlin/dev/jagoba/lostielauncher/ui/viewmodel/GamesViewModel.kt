@@ -176,11 +176,8 @@ class GamesViewModel @Inject constructor(
                     )
                 }
 
-                GameRunningSignal.NOT_RUNNING -> mutableState.value = mutableState.value.copy(pendingUninstall = game)
-
-                GameRunningSignal.NOT_SUPPORTED_YET ->
-                    mutableState.value =
-                        mutableState.value.copy(notice = GamesNotice.NOT_SUPPORTED_YET)
+                GameRunningSignal.NOT_RUNNING, GameRunningSignal.NOT_SUPPORTED_YET ->
+                    mutableState.value = mutableState.value.copy(pendingUninstall = game)
             }
         }
     }
@@ -194,6 +191,7 @@ class GamesViewModel @Inject constructor(
             try {
                 val result = installation.uninstall(game)
                 if (result.outcome == GameUninstallOutcome.COMPLETED) logger.info("Game uninstalled: ${game.name}.")
+                coordinator.purgeStaleDownloads()
                 val notice = when (result.outcome) {
                     GameUninstallOutcome.COMPLETED -> null
                     GameUninstallOutcome.FILES_NOT_FOUND -> GamesNotice.FILES_NOT_FOUND
