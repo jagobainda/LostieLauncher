@@ -94,7 +94,7 @@ private fun cardStatus(
     DownloadStatus.COMPLETED -> when (installation) {
         GameInstallationState.VerifyingIntegrity -> LibraryCardStatus.VERIFYING_INTEGRITY
 
-        GameInstallationState.Extracting -> LibraryCardStatus.EXTRACTING
+        is GameInstallationState.Extracting -> LibraryCardStatus.EXTRACTING
 
         is GameInstallationState.Finished -> when (installation.result) {
             is GameInstallationResult.Installed -> LibraryCardStatus.DOWNLOADED

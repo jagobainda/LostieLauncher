@@ -89,9 +89,9 @@ internal class ArchiveGameInstallationService @Inject constructor(
             return GameInstallationResult.HashMismatch
         }
 
-        setPhase(file.gameId, GameInstallationState.Extracting)
+        setPhase(file.gameId, GameInstallationState.Extracting())
         val directory = File(options.gamesRoot, file.gameId)
-        extract(archive, directory)
+        extract(archive, directory, file.gameId)
         deleteArchive(archive)
 
         val game = LocalGame(request.catalogueId ?: MissingGameId, file.displayName, file.version, request.variant)
@@ -109,7 +109,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         return GameInstallationResult.Installed(game)
     }
 
-    private fun extract(archive: File, directory: File) {
+    private fun extract(archive: File, directory: File, gameId: String) {
         if (directory.canonicalFile.parentFile != options.gamesRoot.canonicalFile) {
             throw IOException("Invalid game directory: '$directory' escapes the games root.")
         }
@@ -122,19 +122,49 @@ internal class ArchiveGameInstallationService @Inject constructor(
         try {
             val root = temp.canonicalPath + File.separator
             var entryCount = 0
+            val buffer = ByteArray(options.archiveBufferSizeBytes)
+            val createdDirectories = mutableSetOf<File>()
             ZipFile(archive, Charsets.UTF_8).use { zip ->
+                val totalBytes = zip.entries().asSequence().filterNot { it.isDirectory }.sumOf { it.size }
+                var extractedBytes = 0L
+                var lastPercent: Int? = null
+                fun reportProgress() {
+                    val percent = if (totalBytes > 0) {
+                        (extractedBytes.toDouble() / totalBytes * 100).toInt().coerceIn(0, 100)
+                    } else {
+                        null
+                    }
+                    if (percent != lastPercent) {
+                        lastPercent = percent
+                        setPhase(gameId, GameInstallationState.Extracting(percent))
+                    }
+                }
+                reportProgress()
                 for (entry in zip.entries()) {
                     if (entry.isDirectory) continue
                     val target = File(temp, entry.name.replace('\\', '/')).canonicalFile
                     if (!target.path.startsWith(root)) {
                         throw IOException("Zip Slip attempt detected in entry: ${entry.name}")
                     }
-                    target.parentFile?.mkdirs()
-                    zip.getInputStream(entry).use { input -> target.outputStream().use(input::copyTo) }
+                    target.parentFile?.let { parent ->
+                        if (createdDirectories.add(parent)) parent.mkdirs()
+                    }
+                    zip.getInputStream(entry).use { input ->
+                        target.outputStream().buffered(buffer.size).use { output ->
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read < 0) break
+                                output.write(buffer, 0, read)
+                                extractedBytes += read
+                                reportProgress()
+                            }
+                        }
+                    }
                     entryCount++
                 }
             }
             logger.debug("Temp extraction complete: $entryCount files.")
+            setPhase(gameId, GameInstallationState.Extracting())
             swap(temp, backup, directory)
         } catch (error: Exception) {
             temp.deleteRecursively()
@@ -165,7 +195,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
     private fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            val buffer = ByteArray(options.archiveBufferSizeBytes)
             while (true) {
                 val read = input.read(buffer)
                 if (read < 0) break

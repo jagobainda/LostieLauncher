@@ -14,6 +14,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.EmptyState
 import dev.jagoba.lostielauncher.ui.component.LibraryGameCard
@@ -85,6 +86,7 @@ internal fun LibraryGameUiState.toCardState() = LibraryGameCardState(
     playtime = PlaytimeFormatter.format(playtimeMinutes),
     status = status,
     progress = download?.percent?.toFloat() ?: 0f,
+    extractionProgress = (installation as? GameInstallationState.Extracting)?.percent?.toFloat(),
     remainingTime = remainingTime,
     speed = download?.takeIf { it.status == DownloadStatus.DOWNLOADING }
         ?.let { DownloadSpeedFormatter.format(it.bytesPerSecond) },

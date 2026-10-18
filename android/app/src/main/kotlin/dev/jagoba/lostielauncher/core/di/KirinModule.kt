@@ -35,5 +35,6 @@ internal object KirinModule {
         launchActivity = "com.gmax.kirin.LibraryActivity",
         launchAction = "com.gmax.kirin.action.LAUNCH_GAME_SHORTCUT",
         gamePathExtra = "shortcut_game_path",
+        archiveBufferSizeBytes = 64 * 1024,
     )
 }

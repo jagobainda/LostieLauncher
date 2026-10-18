@@ -33,7 +33,7 @@ sealed interface GameInstallationState {
 
     data object VerifyingIntegrity : GameInstallationState
 
-    data object Extracting : GameInstallationState
+    data class Extracting(val percent: Int? = null) : GameInstallationState
 
     data class Finished(val result: GameInstallationResult) : GameInstallationState
 }

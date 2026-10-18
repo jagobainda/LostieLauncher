@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -86,6 +87,7 @@ data class LibraryGameCardState(
     val playtime: String,
     val status: LibraryCardStatus,
     val progress: Float = 0f,
+    val extractionProgress: Float? = null,
     val remainingTime: String? = null,
     val speed: String? = null,
     val waitingForConnection: Boolean = false,
@@ -115,12 +117,6 @@ private enum class CardButtonStyle { ACCENT, SUCCESS, SECONDARY }
 private val PROGRESS_STATUSES = setOf(
     LibraryCardStatus.DOWNLOADING,
     LibraryCardStatus.PAUSED,
-    LibraryCardStatus.VERIFYING_INTEGRITY,
-    LibraryCardStatus.EXTRACTING,
-    LibraryCardStatus.INSTALLATION_PENDING,
-)
-
-private val FINISHING_STATUSES = setOf(
     LibraryCardStatus.VERIFYING_INTEGRITY,
     LibraryCardStatus.EXTRACTING,
     LibraryCardStatus.INSTALLATION_PENDING,
@@ -478,29 +474,48 @@ private fun MetaItem(@DrawableRes icon: Int, text: String, modifier: Modifier = 
 private fun DownloadProgress(state: LibraryGameCardState) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
-    val finishing = state.status in FINISHING_STATUSES
-    val value = if (finishing) FULL_PROGRESS else state.progress.coerceIn(0f, FULL_PROGRESS)
+    val extracting = state.status == LibraryCardStatus.EXTRACTING
+    val indeterminate = state.status == LibraryCardStatus.VERIFYING_INTEGRITY ||
+        state.status == LibraryCardStatus.INSTALLATION_PENDING ||
+        (extracting && state.extractionProgress == null)
+    val value = (if (extracting) state.extractionProgress ?: 0f else state.progress).coerceIn(0f, FULL_PROGRESS)
     val downloading = state.status == LibraryCardStatus.DOWNLOADING
     val barShape = RoundedCornerShape(LauncherRadii.Hair)
     Column(Modifier.padding(top = LauncherSpacing.Medium)) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(LauncherSizes.ProgressBarHeight)
-                .background(colors.overlayLight, barShape),
-        ) {
+        if (indeterminate) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth().height(LauncherSizes.ProgressBarHeight),
+                color = colors.primaryFg,
+                trackColor = colors.overlayLight,
+            )
+        } else {
             Box(
                 Modifier
-                    .fillMaxWidth(value / FULL_PROGRESS)
+                    .fillMaxWidth()
                     .height(LauncherSizes.ProgressBarHeight)
-                    .background(colors.primaryFg, barShape),
-            )
+                    .background(colors.overlayLight, barShape),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(value / FULL_PROGRESS)
+                        .height(LauncherSizes.ProgressBarHeight)
+                        .background(colors.primaryFg, barShape),
+                )
+            }
         }
         Row(Modifier.padding(top = LauncherSpacing.Micro)) {
             Row(Modifier.weight(1f)) {
                 when (state.status) {
-                    LibraryCardStatus.EXTRACTING -> ProgressLabel(strings.statusExtracting)
+                    LibraryCardStatus.EXTRACTING -> ProgressLabel(
+                        if (indeterminate) {
+                            strings.statusExtracting
+                        } else {
+                            "${strings.statusExtracting} ${value.roundToInt()}%"
+                        },
+                    )
+
                     LibraryCardStatus.VERIFYING_INTEGRITY -> ProgressLabel(strings.statusVerifying)
+
                     else -> ProgressLabel("${value.roundToInt()}%")
                 }
                 val remaining = state.remainingTime

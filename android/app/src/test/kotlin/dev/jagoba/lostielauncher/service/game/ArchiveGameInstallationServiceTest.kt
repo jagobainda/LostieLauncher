@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.service.game
 
+import app.cash.turbine.test
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.DownloadedFile
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
@@ -60,6 +61,7 @@ class ArchiveGameInstallationServiceTest {
             "",
             "",
             "",
+            archiveBufferSizeBytes = 64 * 1024,
         ),
         TestDispatcherProvider(dispatcher),
         logger,
@@ -103,6 +105,71 @@ class ArchiveGameInstallationServiceTest {
             sut.observeInstallation("demo").first() shouldBe
                 GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
         }
+
+    @Test
+    fun `reports byte progress within a large entry and finishes after installing every file`() = runTest(dispatcher) {
+        val first = "a".repeat(1024 * 1024)
+        val second = "b".repeat(3 * 1024 * 1024)
+        val hash = writeArchive("Data/first.bin" to first, "Data/second.bin" to second)
+        val sut = createSut()
+
+        sut.observeInstallation("demo").test {
+            awaitItem() shouldBe GameInstallationState.NotStarted
+            sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+            awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+            awaitItem() shouldBe GameInstallationState.Extracting()
+            awaitItem() shouldBe GameInstallationState.Extracting(0)
+            var previous = 0
+            var updates = 0
+            while (previous < 100) {
+                val phase = awaitItem() as GameInstallationState.Extracting
+                val percent = requireNotNull(phase.percent)
+                (percent > previous) shouldBe true
+                if (updates == 0) (percent < 25) shouldBe true
+                previous = percent
+                updates++
+            }
+            (updates <= 100) shouldBe true
+            awaitItem() shouldBe GameInstallationState.Extracting()
+            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
+        }
+        File(gameDirectory, "Data/first.bin").readText() shouldBe first
+        File(gameDirectory, "Data/second.bin").readText() shouldBe second
+    }
+
+    @Test
+    fun `keeps extraction indeterminate for an archive containing only empty files`() = runTest(dispatcher) {
+        val hash = writeArchive("Data/empty.bin" to "")
+        val sut = createSut()
+
+        sut.observeInstallation("demo").test {
+            awaitItem() shouldBe GameInstallationState.NotStarted
+            sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+            awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+            awaitItem() shouldBe GameInstallationState.Extracting()
+            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
+        }
+        File(gameDirectory, "Data/empty.bin").length() shouldBe 0L
+    }
+
+    @Test
+    fun `stops progress on an unsafe entry without replacing an existing installation`() = runTest(dispatcher) {
+        File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+        val hash = writeArchive("Game.exe" to "new", "../escaped.txt" to "bad")
+        val sut = createSut()
+
+        sut.observeInstallation("demo").test {
+            awaitItem() shouldBe GameInstallationState.NotStarted
+            sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+            awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+            awaitItem() shouldBe GameInstallationState.Extracting()
+            awaitItem() shouldBe GameInstallationState.Extracting(0)
+            awaitItem() shouldBe GameInstallationState.Extracting(50)
+            awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.ExtractionFailed)
+        }
+        File(gameDirectory, "Game.exe").readText() shouldBe "old"
+        File("${gameDirectory.path}.tmp").exists() shouldBe false
+    }
 
     @Test
     fun `hides the games root from the media scanner when installing`() = runTest(dispatcher) {

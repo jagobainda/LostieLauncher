@@ -356,6 +356,29 @@ class LibraryViewModelTest {
     }
 
     @Test
+    fun `extraction progress updates the completed download card without enabling another download`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            val phase = MutableStateFlow<GameInstallationState>(GameInstallationState.Extracting(0))
+            installation.installation = phase
+            downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+            val sut = createSut(backgroundScope)
+            runCurrent()
+
+            sut.state.value.games.single().status shouldBe LibraryCardStatus.EXTRACTING
+            phase.value = GameInstallationState.Extracting(42)
+            runCurrent()
+
+            val row = sut.state.value.games.single()
+            row.status shouldBe LibraryCardStatus.EXTRACTING
+            row.installation shouldBe GameInstallationState.Extracting(42)
+            row.canStart shouldBe false
+            row.canCancel shouldBe false
+            sut.state.value.notice shouldBe null
+        }
+
+    @Test
     fun `an installation that turns into a failure raises its notice`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)

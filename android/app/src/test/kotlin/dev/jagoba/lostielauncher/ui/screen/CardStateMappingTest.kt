@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.ui.screen
 
 import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
@@ -54,6 +55,15 @@ class CardStateMappingTest {
         card.speed shouldBe null
         card.playtime shouldBe ""
         card.canCancel shouldBe false
+    }
+
+    @Test
+    fun `extracting library row carries installation progress separately from the completed download`() {
+        val row = libraryRow(DownloadStatus.COMPLETED, LibraryCardStatus.EXTRACTING)
+            .copy(installation = GameInstallationState.Extracting(37))
+
+        row.toCardState().extractionProgress shouldBe 37f
+        row.copy(installation = GameInstallationState.Extracting()).toCardState().extractionProgress shouldBe null
     }
 
     @Test
