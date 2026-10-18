@@ -4,10 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dev.jagoba.lostielauncher.service.game.ArchiveGameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
-import dev.jagoba.lostielauncher.service.game.PendingGameInstallationService
 import dev.jagoba.lostielauncher.service.game.PendingGameLaunchService
 import dev.jagoba.lostielauncher.service.game.PendingGameLocationService
 import dev.jagoba.lostielauncher.service.game.PendingPlaySessionService
@@ -19,7 +19,7 @@ import javax.inject.Singleton
 internal abstract class GameOperationsModule {
     @Binds
     @Singleton
-    internal abstract fun bindInstallation(impl: PendingGameInstallationService): GameInstallationService
+    internal abstract fun bindInstallation(impl: ArchiveGameInstallationService): GameInstallationService
 
     @Binds
     @Singleton

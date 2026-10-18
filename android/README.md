@@ -240,8 +240,10 @@ files for removed games and durable rows whose artifacts are gone. Only one
 transfer may be active. A transfer the system stops, such as on a dropped
 connection, goes back to the queue and the card says it is waiting for a
 connection until WorkManager resumes it. A completed archive crosses the
-`DownloadedFileHandoff` seam; extraction and installation are deliberately
-absent (see [docs/game-runtime-options.md](docs/game-runtime-options.md)). The debug build exposes a smallest-game download harness so
+`DownloadedFileHandoff` seam, which verifies it, extracts it into
+`/storage/emulated/0/LostieLauncher/<slug>` and registers the game in Kirin and
+the local library; launching is still pending (see
+[docs/game-runtime-options.md](docs/game-runtime-options.md)). The debug build exposes a smallest-game download harness so
 progress, pause, resume, cancellation, rotation and background behavior can be
 exercised without shipping test UI in the release APK.
 

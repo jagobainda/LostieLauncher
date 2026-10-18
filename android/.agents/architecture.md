@@ -272,11 +272,13 @@ the ones a device cannot reach today (the offline banner, a My Games list).
   exists, then calls `consumeLibraryGame`. `LibraryViewModel` consumes the
   action half first, because it reacts to the state as it is emitted and the
   screen only after the next frame.
-- **Download notifications.** On Android 13 and later, confirming a download
-  and starting an update ask for `POST_NOTIFICATIONS` if it is not granted
-  (`rememberNotificationPermissionRequest`). The transfer starts at once
+- **Download permissions.** On Android 13 and later, confirming a download
+  and starting an update ask for `POST_NOTIFICATIONS` if it is not granted,
+  then for shared-storage access, which installation needs: all-files access
+  on Android 11 and later, `WRITE_EXTERNAL_STORAGE` before
+  (`rememberDownloadPermissionsRequest`). The transfer starts at once
   whatever the answer, and the progress notification appears once it is
-  granted. A resume never asks, because it follows a start. An update started
+  granted; without storage access the installation fails. A resume never asks, because it follows a start. An update started
   from My Games or by auto-update does not ask either.
 - **"Not supported yet" is a state here too.** While `installedGames` is
   `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
@@ -391,8 +393,14 @@ Already in place:
   Android worker types. `GameDownloadWorker` is only the adapter for foreground
   notification and WorkManager progress callbacks.
 - `DownloadedFileHandoff` — completion ends at a downloaded archive and calls
-  `GameInstallationService.install`. The pending implementation reports
-  `NotSupportedYet` and leaves the archive untouched.
+  `GameInstallationService.install`, resolving the catalogue GUID and SHA-256
+  (or the special version's hash and type) at that moment.
+  `ArchiveGameInstallationService` verifies the hash, extracts into
+  `KirinOptions.gamesRoot/<slug>` through `.tmp` and `.old` as the desktop
+  does, deletes the archive, then registers the game in Kirin's shared
+  `game-library.json` (`KirinGameLibrary`, merged by path) and in
+  `LocalLibraryStore`. Uninstall and lookup still delegate to the pending
+  adapter.
 - `GameInstallationService` — installation, uninstall, per-game lookup and an
   observable installed-game list. `observeInstallation(gameId)` exposes
   verification, extraction and terminal outcomes to presentation, including a

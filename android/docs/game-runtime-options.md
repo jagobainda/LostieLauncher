@@ -7,6 +7,13 @@ artifact has not been identified. A completed download currently stays an archiv
 in the app's download directory, and its Room download row remains `COMPLETED`.
 That state means the transfer finished, not that the game is playable.
 
+Installation is now implemented for Kirin: `ArchiveGameInstallationService`
+verifies the archive, extracts it into `/storage/emulated/0/LostieLauncher/<slug>`,
+and registers the directory in `/storage/emulated/0/Kirin/game-library.json` and
+the local Room registry (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
+A missing library file is created; one that is not a JSON array is left alone
+and reported as `RegistryFailed`. Launch, uninstall and lookup remain pending.
+
 The searchable marker `TODO-ANDROID-GAME-RUNTIME` has exactly eleven numbered
 questions. Each marker occurs once in code, beside the deferred method or handoff.
 The contracts live in `service/game/`, their result types in
@@ -89,7 +96,8 @@ its latest phase and terminal result after process recreation.
 8. **TODO-ANDROID-GAME-RUNTIME-08 — durable handoff metadata.** The download
    table currently stores the slug, display name, version, key and archive path,
    but not the catalogue GUID, expected SHA-256 or special-version label. The
-   handoff therefore passes these three inputs as `null` to the pending installer.
+   handoff resolves them when the download completes, from the loaded or a
+   freshly fetched catalogue and the special version's `game.config`.
    Decide how to persist a verified immutable snapshot before enqueuing, recover
    it after process death, and retry an installation failure without treating a
    completed download as an installed game. Any future Room schema change needs
