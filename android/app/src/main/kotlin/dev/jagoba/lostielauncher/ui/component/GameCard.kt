@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -56,7 +55,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import coil3.compose.AsyncImage
@@ -112,7 +110,6 @@ data class InstalledGameCardState(
     val canOpenFolder: Boolean = true,
     val canUninstall: Boolean = true,
     val isUninstalling: Boolean = false,
-    val runtimeSupported: Boolean = true,
 )
 
 private enum class CardButtonStyle { ACCENT, SUCCESS, SECONDARY }
@@ -237,7 +234,6 @@ fun InstalledGameCard(
 ) {
     val strings = LocalStrings.current
     val colors = LocalLauncherColors.current
-    val unsupported = !state.runtimeSupported
     GameCardFrame(
         logoUrl = state.logoUrl,
         pulsing = false,
@@ -305,7 +301,6 @@ fun InstalledGameCard(
                         icon = R.drawable.ic_card_play,
                         label = strings.btnPlay,
                         enabled = state.canPlay,
-                        unsupported = unsupported,
                         onClick = onPlay,
                     )
                     if (state.updateVersion != null) {
@@ -318,27 +313,24 @@ fun InstalledGameCard(
                         )
                     }
                     if (state.showHelp) {
-                        GameIconButton(R.drawable.ic_card_help, strings.tooltipOpenHelp, true, unsupported, onOpenHelp)
+                        GameIconButton(R.drawable.ic_card_help, strings.tooltipOpenHelp, true, onOpenHelp)
                     }
                     GameIconButton(
                         R.drawable.ic_card_key,
                         strings.tooltipSwitchSpecialVersion,
                         state.canSwitchSpecialVersion,
-                        false,
                         onSwitchSpecialVersion,
                     )
                     GameIconButton(
                         R.drawable.ic_card_folder_open,
                         strings.tooltipOpenFolder,
                         state.canOpenFolder,
-                        unsupported,
                         onOpenFolder,
                     )
                     GameIconButton(
                         R.drawable.ic_card_trash,
                         strings.tooltipUninstall,
                         state.canUninstall,
-                        unsupported,
                         onUninstall,
                     )
                 }
@@ -581,19 +573,12 @@ private fun CancelButton(enabled: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun GameIconButton(
-    @DrawableRes icon: Int,
-    tooltip: String,
-    enabled: Boolean,
-    unsupported: Boolean,
-    onClick: () -> Unit,
-) {
+private fun GameIconButton(@DrawableRes icon: Int, tooltip: String, enabled: Boolean, onClick: () -> Unit) {
     CardButton(
         style = CardButtonStyle.SECONDARY,
         icon = icon,
         tooltip = tooltip,
         enabled = enabled,
-        unsupported = unsupported,
         iconSize = LauncherSizes.CardIconButtonIcon,
         onClick = onClick,
     )
@@ -607,13 +592,11 @@ private fun CardButton(
     label: String? = null,
     tooltip: String? = null,
     enabled: Boolean = true,
-    unsupported: Boolean = false,
     disabledAlpha: Float = LauncherOpacity.CARD_BUTTON_DISABLED,
     iconTint: Color = LocalLauncherColors.current.secondaryFg,
     iconSize: Dp = LauncherSizes.CardButtonIcon,
 ) {
     val colors = LocalLauncherColors.current
-    val notSupported = LocalStrings.current.statusNotSupportedYet
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.collectIsPressedAsState()
     val hovered by interactions.collectIsHoveredAsState()
@@ -641,7 +624,6 @@ private fun CardButton(
     }
     val labelled = label != null
     val description = label ?: tooltip
-    val tooltipText = if (unsupported) listOfNotNull(tooltip ?: label, notSupported).joinToString("\n") else tooltip
     val secondary = style == CardButtonStyle.SECONDARY
     val minWidth = if (secondary) LauncherSizes.CardIconButtonMinWidth else LauncherSizes.CardButtonMinWidth
     val fontWeight = if (secondary) LauncherType.Normal else LauncherType.SemiBold
@@ -652,10 +634,7 @@ private fun CardButton(
                 .height(LauncherSizes.CardButtonHeight)
                 .defaultMinSize(minWidth = minWidth)
                 .background(background, RoundedCornerShape(LauncherRadii.Small))
-                .semantics {
-                    description?.let { contentDescription = it }
-                    if (unsupported) stateDescription = notSupported
-                }
+                .semantics { description?.let { contentDescription = it } }
                 .clickable(
                     interactionSource = interactions,
                     indication = null,
@@ -684,18 +663,9 @@ private fun CardButton(
                     )
                 }
             }
-            if (unsupported) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = LauncherSpacing.Micro)
-                        .size(LauncherSizes.NotSupportedMarker)
-                        .background(FixedColors.Warning, CircleShape),
-                )
-            }
         }
     }
-    if (tooltipText != null) LauncherTooltip(text = tooltipText, content = button) else button()
+    if (tooltip != null) LauncherTooltip(text = tooltip, content = button) else button()
 }
 
 @Composable

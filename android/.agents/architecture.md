@@ -111,11 +111,9 @@ a `src/release/` counterpart for the symbol `main` calls — not behind a
 - **"Not supported yet" is a state, never a dead button.** The Library card
   renders `INSTALLATION_UNSUPPORTED` as the disabled "Downloaded" chip plus an
   amber `StatusNotSupportedYet` line: the archive is downloaded, the game is
-  not installed. On a My Games card, `runtimeSupported = false` marks Play,
-  Help, Open folder and Uninstall (the four that go through `service/game/`)
-  with an amber dot and adds the text to their long-press tooltip. They stay
-  tappable, so the seam's `NotSupportedYet` reaches the ViewModel as a notice
-  rather than the tap doing nothing.
+  not installed. My Games card actions carry no marker: they stay tappable,
+  so the seam's `NotSupportedYet` reaches the ViewModel as a notice rather
+  than the tap doing nothing.
 - **Links are gesture-driven text.** `LinkText` renders `RichText.runs`
   (`util/text/`: link detection plus search highlighting). A tap calls
   `onOpenLink` with the canonical HTTPS URL. A long press shows that URL, which
@@ -150,7 +148,7 @@ for value.
 | `INSTALLATION_PENDING` (Android only) | No such state: verification starts as soon as the transfer ends | Progress block at 100 % with "100%", empty action column | The gap between the finished transfer and the installer's first report; the bar stays where the download left it, so nothing jumps |
 | `INSTALLATION_UNSUPPORTED` (Android only) | No such state | Disabled "Downloaded" chip plus an amber `StatusNotSupportedYet` line | The archive is downloaded and the game is not installed; see "Not supported yet" above |
 | `INSTALLATION_FAILED` (Android only) | Failure shows a `DownloadError` or `HashMismatch` dialog and resets the card to Available | Amber `DownloadErrorTitle` line, empty action column | The card cannot know which failure happened, and `LibraryViewModel` offers no retry yet (R-10-g); step 14 owns the retry path |
-| Unsupported My Games actions (Android only) | Every action works | Amber dot, tooltip line, still tappable | The seam answers `NotSupportedYet`; see above |
+| Unsupported My Games actions (Android only) | Every action works | No marker, still tappable | The seam answers `NotSupportedYet`; see above |
 | Card bottom margin | 10 px inside each card | Not in the component; the list spaces cards 10 dp apart | Compose components do not carry outer margins |
 | Touch target | 32 px buttons | 32 dp buttons, below Android's 48 dp recommendation | Kept for fidelity; they meet WCAG 2.2's 24 px minimum |
 | Scrollbar | Custom 8 px trough and thumb on every list | Not ported | A permanent trough on a touch list fights the platform's own scroll indicator |
@@ -268,8 +266,7 @@ and back, as the desktop's persistent views keep theirs.
 - **"Not supported yet" is a state here too.** While `installedGames` is
   `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
   `NotSupportedYetMessage` with the Library button, not an empty list and not a
-  blank screen. `GamesUiState.runtimeSupported` follows
-  `GameLaunchService.activeSessions` and marks the card actions. A help folder
+  blank screen. A help folder
   whose availability is `NOT_SUPPORTED_YET` stays visible and tappable, so the
   tap answers with the notice.
 - **Settings** keeps games auto-update, the version string, language and theme.

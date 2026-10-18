@@ -1,7 +1,6 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.model.DownloadStatus
-import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameHelpAvailability
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameRunningSignal
@@ -324,16 +323,6 @@ class GamesViewModelTest {
         sut.refresh()
         runCurrent()
         sut.state.value.games.single().canOpenHelpLocation shouldBe false
-    }
-
-    @Test
-    fun `runtime support follows the launch seam`() = runTest(dispatcher) {
-        val sut = createSut()
-        runCurrent()
-        sut.state.value.runtimeSupported shouldBe false
-        launch.current.value = GameActivityState.Active(emptySet())
-        runCurrent()
-        sut.state.value.runtimeSupported shouldBe true
     }
 
     private fun createSut() = GamesViewModel(

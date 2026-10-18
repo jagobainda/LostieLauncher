@@ -91,8 +91,7 @@ as test data, to prove no FAQ answer names that setting.
 `StatusNotSupportedYet` ("Not available on Android yet") is the text the game
 card shows for anything that goes through the unimplemented install and launch
 seam (`docs/game-runtime-options.md`): the Library card's
-`INSTALLATION_UNSUPPORTED` line and the tooltip of every marked My Games
-action. `NotSupportedYetMessage` is the body of the message box that answers a
+`INSTALLATION_UNSUPPORTED` line. `NotSupportedYetMessage` is the body of the message box that answers a
 tap on one of those actions, with `StatusNotSupportedYet` as its title, and
 the pair is also My Games' state while installed games cannot be known. It
 names every game action, opening a game's folders included. The

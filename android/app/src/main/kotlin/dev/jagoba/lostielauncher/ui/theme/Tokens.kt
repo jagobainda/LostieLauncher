@@ -71,7 +71,6 @@ object LauncherSizes {
     val CardMetaIcon: Dp = 12.dp
     val CardUpdateArrow: Dp = 10.dp
     val CardHeaderIcon: Dp = 16.dp
-    val NotSupportedMarker: Dp = 6.dp
     val ProgressBarHeight: Dp = 4.dp
     val NotificationStripeWidth: Dp = 4.dp
     val SkeletonTitleHeight: Dp = 18.dp

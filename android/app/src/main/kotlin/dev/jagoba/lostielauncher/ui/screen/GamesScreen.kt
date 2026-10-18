@@ -68,7 +68,7 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
             items(state.games, key = { it.game.name }) { row ->
                 val name = row.game.name
                 InstalledGameCard(
-                    state = row.toCardState(state.runtimeSupported),
+                    state = row.toCardState(),
                     onPlay = { actions.play(name) },
                     onUpdate = { actions.update(name) },
                     onOpenHelp = { actions.openHelp(name) },
@@ -121,7 +121,7 @@ internal fun GameCardSkeletons(count: Int, modifier: Modifier = Modifier) {
     }
 }
 
-internal fun InstalledGameUiState.toCardState(runtimeSupported: Boolean) = InstalledGameCardState(
+internal fun InstalledGameUiState.toCardState() = InstalledGameCardState(
     title = game.name,
     logoUrl = remote?.logoUrl,
     installedVersion = game.version,
@@ -135,5 +135,4 @@ internal fun InstalledGameUiState.toCardState(runtimeSupported: Boolean) = Insta
     canOpenFolder = canOpenGameLocation,
     canUninstall = canUninstall,
     isUninstalling = isUninstalling,
-    runtimeSupported = runtimeSupported,
 )

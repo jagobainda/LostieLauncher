@@ -59,15 +59,15 @@ class CardStateMappingTest {
 
     @Test
     fun `installed row shows the catalogue version only when it is an update`() {
-        installedRow(hasUpdate = true).toCardState(runtimeSupported = true).updateVersion shouldBe "v2.0"
-        installedRow(hasUpdate = false).toCardState(runtimeSupported = true).updateVersion shouldBe null
+        installedRow(hasUpdate = true).toCardState().updateVersion shouldBe "v2.0"
+        installedRow(hasUpdate = false).toCardState().updateVersion shouldBe null
     }
 
     @Test
-    fun `installed row maps guards help and runtime support`() {
+    fun `installed row maps guards and help`() {
         val card = installedRow(hasUpdate = false, help = GameHelpAvailability.NOT_SUPPORTED_YET)
             .copy(isUpdating = true)
-            .toCardState(runtimeSupported = false)
+            .toCardState()
         card.title shouldBe "Local Name"
         card.installedVersion shouldBe "v1.0"
         card.specialType shouldBe "NUZLOCKE"
@@ -76,9 +76,8 @@ class CardStateMappingTest {
         card.canOpenFolder shouldBe false
         card.canSwitchSpecialVersion shouldBe false
         card.canUninstall shouldBe true
-        card.runtimeSupported shouldBe false
         installedRow(hasUpdate = false, help = GameHelpAvailability.NOT_FOUND)
-            .toCardState(runtimeSupported = true).showHelp shouldBe false
+            .toCardState().showHelp shouldBe false
     }
 
     private fun libraryRow(status: DownloadStatus?, cardStatus: LibraryCardStatus) = LibraryGameUiState(
