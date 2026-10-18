@@ -228,7 +228,7 @@ them; the pending one answers `NotSupportedYet`.
 | Keyboard | Enter confirms, Escape cancels, Y and N answer | Back cancels; the key fields confirm on the keyboard's Done | No hardware keyboard is assumed |
 | Scrim | None: the dialog is a separate window over its owner | The platform's dim behind the dialog | On touch, a modal with no scrim reads as part of the page underneath |
 | Owner and topmost | Topmost when the main window is hidden in the tray | The state waits in the ViewModel and shows when the activity is visible | There is no window to raise over others; nothing is lost |
-| Download path | The game's install directory | `gamesRoot/downloads`, where the archive lands | Where a game gets installed is `TODO-ANDROID-GAME-RUNTIME-07`; the label already says "download path" |
+| Download path | The game's install directory | `downloadsRoot/downloads`, where the archive lands | Where a game gets installed is `TODO-ANDROID-GAME-RUNTIME-07`; the label already says "download path" |
 | Free space | The path's drive, em dash when it cannot be read | `usableSpace` of the nearest existing ancestor, em dash when unreadable, same formatting (`FreeSpaceFormatter`) | App-specific storage has a queryable volume |
 | Download logo | The image as soon as the URL is valid | The Pokéball until it loads, as on the cards | See the cards' table |
 | Path tooltip | Hover | Long press | Step 11 decision 4 |
@@ -366,8 +366,9 @@ Already in place:
   — the Room-backed registry and playtime seam. Its two concerns have separate
   concurrency gates and playtime increments are transactional.
 - [`StorageLocations`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/storage/StorageLocations.kt)
-  — the injected roots for game files and logs. Game files use app-specific
+  — the injected roots for downloads and logs. Downloads use app-specific
   external storage with an internal fallback; logs use `noBackupFilesDir`.
+  Installed games live elsewhere, in `KirinOptions.gamesRoot`.
 - [`DownloadManager`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/download/DownloadManager.kt)
   — the command and observable-state boundary for one active download. Room is
   the durable source of truth, so activity recreation does not own the transfer.

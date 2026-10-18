@@ -32,7 +32,7 @@ internal class DefaultDownloadFileStore @Inject constructor(
     storageLocations: StorageLocations,
     private val options: DownloadTransferOptions,
 ) : DownloadFileStore {
-    private val downloadsDirectory = File(storageLocations.gamesRoot, options.cacheDirectoryName)
+    private val downloadsDirectory = File(storageLocations.downloadsRoot, options.cacheDirectoryName)
 
     override fun destinationFor(args: GameDownloadArgs): File =
         File(downloadsDirectory, DownloadPathUtils.getZipFileName(args))

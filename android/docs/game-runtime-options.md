@@ -128,14 +128,15 @@ its latest phase and terminal result after process recreation.
 | Approach | Permissions and platform limits | Storage and distribution consequences |
 | --- | --- | --- |
 | Publish each game as an Android package | A launcher that requests APK installation needs the platform's installation flow and, for applicable intents, `REQUEST_INSTALL_PACKAGES`; user consent is required. Querying installed packages requires declared visibility. Launch uses an activity intent, not `Process.Start`. | The archive format, package identity, signing, version mapping, update ownership and uninstall flow all change. Google Play restricts the install permission to qualifying core functionality and prohibits downloading executable dex/JAR/native code outside Play. Store eligibility must be established before choosing this. |
-| Bundle an Android-capable game runtime; download data only | The runtime is part of the app; downloaded data is not executable code. No package-install permission is implied. Session tracking can be inside the app, though lifecycle and process death still matter. | Games must be ported or expressed as data the bundled runtime understands. The existing app-specific external `gamesRoot` needs no storage permission but is deleted on launcher uninstall and may be unavailable when external storage is unmounted. Play distribution of the runtime and downloaded content needs review against the actual payload. |
+| Bundle an Android-capable game runtime; download data only | The runtime is part of the app; downloaded data is not executable code. No package-install permission is implied. Session tracking can be inside the app, though lifecycle and process death still matter. | Games must be ported or expressed as data the bundled runtime understands. The existing app-specific external `downloadsRoot` needs no storage permission but is deleted on launcher uninstall and may be unavailable when external storage is unmounted. Play distribution of the runtime and downloaded content needs review against the actual payload. |
 | Use another store, website, or companion app | A user-driven HTTPS link or intent can transfer control without package-install permission. Detecting whether the companion is installed may need package visibility. | The launcher cannot claim that a CDN ZIP is installed. Updates, uninstall and playtime may belong to the other app or store; local download could be unnecessary. Association between catalogue entries and package/listing IDs must be defined. |
 | Keep downloads as archives only | No new permissions or Android execution mechanism. | Step 08 continues to provide a real transfer, but Play, installed status, game uninstall, running detection and automatic playtime remain unsupported. The UI must say the archive is downloaded only. |
 
-The current step 07 storage decision remains in force until intentionally changed:
-`StorageLocations.gamesRoot` is app-specific external storage with an internal
+The step 07 storage decision still governs downloads:
+`StorageLocations.downloadsRoot` is app-specific external storage with an internal
 fallback; there is no picker. App-specific files are removed when the launcher is
-uninstalled. Shared documents selected with the Storage Access Framework can
+uninstalled. Installed games are not app-specific: the Kirin installation
+extracts them into `/storage/emulated/0/LostieLauncher`, which survives uninstall. Shared documents selected with the Storage Access Framework can
 survive uninstall, but that would be a separate storage migration rather than
 an incidental consequence of installation.
 

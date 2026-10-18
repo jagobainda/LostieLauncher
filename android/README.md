@@ -218,11 +218,13 @@ playtime increment atomic. Storage errors are logged and degrade to empty data,
 matching the desktop behavior without exposing database details to later
 ViewModels.
 
-The game-library root is fixed. It uses the app-specific external files area
-when that volume is mounted and falls back to internal files otherwise. It
-needs no storage permission and is removed with the app on uninstall. There is
-no download-directory setting or folder picker on Android. Archives, partials
-and resume metadata live under the injected root's `downloads/` directory.
+The downloads root (`StorageLocations.downloadsRoot`) is fixed. It uses the
+app-specific external files area when that volume is mounted and falls back to
+internal files otherwise. It needs no storage permission and is removed with
+the app on uninstall. There is no download-directory setting or folder picker on
+Android. Archives, partials and resume metadata live under its `downloads/`
+directory. Installed games do not: they are extracted into shared storage (see
+below) and survive the launcher's uninstall.
 
 Downloads are durable WorkManager jobs backed by a Room row exposed as a
 `Flow`. The foreground notification keeps a large transfer visible outside the

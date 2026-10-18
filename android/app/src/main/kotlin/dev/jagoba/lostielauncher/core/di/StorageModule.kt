@@ -23,9 +23,9 @@ internal object StorageModule {
     fun provideStorageLocations(@ApplicationContext context: Context): StorageLocations {
         val external = context.getExternalFilesDir(null)
             ?.takeIf { Environment.getExternalStorageState(it) == Environment.MEDIA_MOUNTED }
-        val gameStorage = external ?: context.filesDir
+        val appStorage = external ?: context.filesDir
         return FixedStorageLocations(
-            gamesRoot = File(gameStorage, GAMES_DIRECTORY),
+            downloadsRoot = File(appStorage, GAMES_DIRECTORY),
             logsDirectory = File(context.noBackupFilesDir, LOGS_DIRECTORY),
         )
     }
