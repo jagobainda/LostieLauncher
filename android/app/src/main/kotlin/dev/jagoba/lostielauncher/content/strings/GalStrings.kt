@@ -63,6 +63,7 @@ internal object GalStrings : Strings {
     override val btnClose = "Pechar"
     override val cancelDownloadConfirmTitle = "Cancelar descarga"
     override val cancelDownloadConfirmMessage = "Seguro que queres cancelar a descarga? Os ficheiros parcialmente descargados serán eliminados."
+    override val statusDownloading = "Descargando..."
     override val statusExtracting = "Descomprimindo..."
     override val statusVerifying = "Comprobando integridade..."
     override val statusUninstalling = "Desinstalando..."

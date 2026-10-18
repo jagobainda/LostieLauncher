@@ -63,6 +63,7 @@ internal object FraStrings : Strings {
     override val btnClose = "Fermer"
     override val cancelDownloadConfirmTitle = "Annuler le téléchargement"
     override val cancelDownloadConfirmMessage = "Êtes-vous sûr de vouloir annuler le téléchargement ? Les fichiers partiellement téléchargés seront supprimés."
+    override val statusDownloading = "Téléchargement en cours..."
     override val statusExtracting = "Extraction en cours..."
     override val statusVerifying = "Vérification de l'intégrité..."
     override val statusUninstalling = "Désinstallation en cours..."

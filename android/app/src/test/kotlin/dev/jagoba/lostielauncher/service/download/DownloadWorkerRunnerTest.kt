@@ -4,15 +4,21 @@ import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
+import dev.jagoba.lostielauncher.model.GameInstallationResult
+import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -26,6 +32,7 @@ class DownloadWorkerRunnerTest {
     private val transfer = mockk<DownloadTransfer>()
     private val handoff = mockk<DownloadedFileHandoff>()
     private val fileStore = mockk<DownloadFileStore>()
+    private val installer = mockk<GameInstallationService>()
     private val runtime = mockk<DownloadWorkerRuntime>()
     private val logger = mockk<Logger>(relaxed = true)
 
@@ -40,6 +47,7 @@ class DownloadWorkerRunnerTest {
         every { fileStore.deleteArtifacts(any()) } returns 2
         coEvery { runtime.setForeground(any(), any()) } returns Unit
         coEvery { runtime.reportProgress(any(), any()) } returns Unit
+        every { installer.observeInstallation(any()) } returns emptyFlow()
     }
 
     @Test
@@ -71,6 +79,42 @@ class DownloadWorkerRunnerTest {
             dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.COMPLETED.name)
         }
         coVerify(exactly = 1) { handoff.deliver(match { it.gameId == GAME_ID && it.path == DESTINATION }) }
+    }
+
+    @Test
+    fun `keeps the notification on the installation phases until the handoff returns`() = runTest {
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        every { installer.observeInstallation(GAME_ID) } returns flowOf(
+            GameInstallationState.Extracting(90),
+            GameInstallationState.VerifyingIntegrity,
+            GameInstallationState.Extracting(40),
+            GameInstallationState.Extracting(),
+            GameInstallationState.Finished(GameInstallationResult.ExtractionFailed),
+        )
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerifyOrder {
+            runtime.setForeground("Demo", DownloadNotificationPhase.Verifying)
+            runtime.setForeground("Demo", DownloadNotificationPhase.Verifying)
+            runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(40))
+            runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(null))
+            handoff.deliver(any())
+        }
+        coVerify(exactly = 0) { runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(90)) }
+    }
+
+    @Test
+    fun `still hands off the downloaded file when the notification cannot be updated`() = runTest {
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        coEvery { runtime.setForeground(any(), DownloadNotificationPhase.Verifying) } throws IllegalStateException("fg")
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerify(exactly = 1) { handoff.deliver(any()) }
+        verify(exactly = 1) { logger.error("Download notification could not be updated for demo.", any()) }
     }
 
     @Test
@@ -205,6 +249,7 @@ class DownloadWorkerRunnerTest {
         dao = dao,
         transfer = transfer,
         handoff = handoff,
+        installer = installer,
         fileStore = fileStore,
         dispatchers = TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
         logger = logger,

@@ -63,6 +63,7 @@ internal object EusStrings : Strings {
     override val btnClose = "Itxi"
     override val cancelDownloadConfirmTitle = "Deskarga utzi"
     override val cancelDownloadConfirmMessage = "Ziur zaude deskarga utzi nahi duzula? Partzialki deskargatutako fitxategiak ezabatuko dira."
+    override val statusDownloading = "Deskargatzen..."
     override val statusExtracting = "Deskonprimatzen..."
     override val statusVerifying = "Osotasuna egiaztatzen..."
     override val statusUninstalling = "Desinstalatzen..."

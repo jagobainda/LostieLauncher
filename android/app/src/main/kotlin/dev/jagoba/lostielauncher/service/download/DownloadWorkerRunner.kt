@@ -5,15 +5,20 @@ import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.model.DownloadedFile
+import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 internal interface DownloadWorkerRuntime {
-    suspend fun setForeground(displayName: String, progress: DownloadProgress)
+    suspend fun setForeground(displayName: String, phase: DownloadNotificationPhase)
 
     suspend fun reportProgress(displayName: String, progress: DownloadProgress)
 }
@@ -28,6 +33,7 @@ internal class DownloadWorkerRunner @Inject constructor(
     private val dao: DownloadDao,
     private val transfer: DownloadTransfer,
     private val handoff: DownloadedFileHandoff,
+    private val installer: GameInstallationService,
     private val fileStore: DownloadFileStore,
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
@@ -50,13 +56,13 @@ internal class DownloadWorkerRunner @Inject constructor(
             totalBytes = entity.totalBytes,
         )
         return try {
-            runtime.setForeground(entity.displayName, initialProgress)
+            runtime.setForeground(entity.displayName, DownloadNotificationPhase.Downloading(initialProgress))
             when (
                 val result = transfer.download(
                     DownloadTransferRequest(entity.url, entity.destinationPath),
                 ) { progress -> updateProgress(entity, workId, progress, runtime) }
             ) {
-                DownloadTransferResult.Success -> complete(entity, workId)
+                DownloadTransferResult.Success -> complete(entity, workId, runtime)
 
                 DownloadTransferResult.PermissionDenied -> {
                     deleteArtifacts(entity)
@@ -109,7 +115,11 @@ internal class DownloadWorkerRunner @Inject constructor(
         if (changed != 0) runtime.reportProgress(entity.displayName, progress)
     }
 
-    private suspend fun complete(entity: DownloadEntity, workId: String): DownloadWorkerOutcome {
+    private suspend fun complete(
+        entity: DownloadEntity,
+        workId: String,
+        runtime: DownloadWorkerRuntime,
+    ): DownloadWorkerOutcome {
         val changed = dao.complete(
             gameId = entity.gameId,
             workId = workId,
@@ -118,6 +128,21 @@ internal class DownloadWorkerRunner @Inject constructor(
         )
         if (changed == 0) return DownloadWorkerOutcome.SUCCESS
         logger.info("Download complete: ${entity.gameId}.")
+        showPhase(entity, DownloadNotificationPhase.Verifying, runtime)
+        try {
+            deliver(entity, runtime)
+        } catch (error: Exception) {
+            logger.error("Downloaded file handoff failed for ${entity.gameId}.", error)
+        }
+        return DownloadWorkerOutcome.SUCCESS
+    }
+
+    private suspend fun deliver(entity: DownloadEntity, runtime: DownloadWorkerRuntime) = coroutineScope {
+        val phases = launch(start = CoroutineStart.UNDISPATCHED) {
+            installer.observeInstallation(entity.gameId).drop(1).collect { state ->
+                state.notificationPhase()?.let { showPhase(entity, it, runtime) }
+            }
+        }
         try {
             handoff.deliver(
                 DownloadedFile(
@@ -128,10 +153,23 @@ internal class DownloadWorkerRunner @Inject constructor(
                     path = entity.destinationPath,
                 ),
             )
-        } catch (error: Exception) {
-            logger.error("Downloaded file handoff failed for ${entity.gameId}.", error)
+        } finally {
+            phases.cancel()
         }
-        return DownloadWorkerOutcome.SUCCESS
+    }
+
+    private suspend fun showPhase(
+        entity: DownloadEntity,
+        phase: DownloadNotificationPhase,
+        runtime: DownloadWorkerRuntime,
+    ) {
+        try {
+            runtime.setForeground(entity.displayName, phase)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("Download notification could not be updated for ${entity.gameId}.", error)
+        }
     }
 
     private suspend fun finish(

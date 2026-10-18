@@ -29,9 +29,9 @@ internal class GameDownloadWorker(appContext: Context, parameters: WorkerParamet
         DownloadWorkerRuntime {
         private var strings: Strings? = null
 
-        override suspend fun setForeground(displayName: String, progress: DownloadProgress) {
+        override suspend fun setForeground(displayName: String, phase: DownloadNotificationPhase) {
             this@GameDownloadWorker.setForeground(
-                dependencies.foregroundInfoFactory().create(id, displayName, progress, strings()),
+                dependencies.foregroundInfoFactory().create(id, displayName, phase, strings()),
             )
         }
 
@@ -43,7 +43,7 @@ internal class GameDownloadWorker(appContext: Context, parameters: WorkerParamet
                     PROGRESS_TOTAL_BYTES to (progress.totalBytes ?: UNKNOWN_TOTAL_BYTES),
                 ),
             )
-            setForeground(displayName, progress)
+            setForeground(displayName, DownloadNotificationPhase.Downloading(progress))
         }
 
         private suspend fun strings(): Strings = strings ?: stringsFor(

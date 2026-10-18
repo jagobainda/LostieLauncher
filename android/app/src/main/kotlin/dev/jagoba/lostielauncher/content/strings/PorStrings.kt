@@ -63,6 +63,7 @@ internal object PorStrings : Strings {
     override val btnClose = "Fechar"
     override val cancelDownloadConfirmTitle = "Cancelar download"
     override val cancelDownloadConfirmMessage = "Tem certeza que deseja cancelar o download? Os arquivos parcialmente baixados serão excluídos."
+    override val statusDownloading = "Baixando..."
     override val statusExtracting = "Descomprimindo..."
     override val statusVerifying = "Verificando integridade..."
     override val statusUninstalling = "Desinstalando..."

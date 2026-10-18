@@ -63,6 +63,7 @@ internal object EngStrings : Strings {
     override val btnClose = "Close"
     override val cancelDownloadConfirmTitle = "Cancel download"
     override val cancelDownloadConfirmMessage = "Are you sure you want to cancel the download? Partially downloaded files will be deleted."
+    override val statusDownloading = "Downloading..."
     override val statusExtracting = "Extracting..."
     override val statusVerifying = "Verifying integrity..."
     override val statusUninstalling = "Uninstalling..."

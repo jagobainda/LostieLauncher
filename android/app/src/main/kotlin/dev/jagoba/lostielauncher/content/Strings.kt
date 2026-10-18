@@ -69,6 +69,7 @@ interface Strings {
     val btnClose: String
     val cancelDownloadConfirmTitle: String
     val cancelDownloadConfirmMessage: String
+    val statusDownloading: String
     val statusExtracting: String
     val statusVerifying: String
     val statusUninstalling: String

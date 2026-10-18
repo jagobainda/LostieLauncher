@@ -63,6 +63,7 @@ internal object EspStrings : Strings {
     override val btnClose = "Cerrar"
     override val cancelDownloadConfirmTitle = "Cancelar descarga"
     override val cancelDownloadConfirmMessage = "¿Seguro que quieres cancelar la descarga? Se eliminarán los archivos parcialmente descargados."
+    override val statusDownloading = "Descargando..."
     override val statusExtracting = "Descomprimiendo..."
     override val statusVerifying = "Comprobando integridad..."
     override val statusUninstalling = "Desinstalando..."

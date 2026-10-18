@@ -380,7 +380,16 @@ Already in place:
   the second owns ranged I/O, retry, inactivity timeout and atomic finalization.
 - `DownloadWorkerRunner` — the worker's compare-and-set state machine is free of
   Android worker types. `GameDownloadWorker` is only the adapter for foreground
-  notification and WorkManager progress callbacks.
+  notification and WorkManager progress callbacks. The handoff runs inside the
+  worker, so the foreground notification stays up through installation: the
+  runner follows `observeInstallation` while it delivers the file and shows
+  verification (indeterminate) and extraction (with its percent). The first
+  value is skipped, because it is the previous install's. A notification that
+  cannot be updated is logged and never aborts the installation. What the
+  notification says is `downloadNotificationContent` (JVM-tested): the game as
+  title, the phase as subtext, percent, speed and remaining time as text. It
+  opens the launcher on tap and uses Volcarona's accent, the default theme's,
+  because system UI cannot follow the selected palette.
 - `DownloadedFileHandoff` — completion ends at a downloaded archive and calls
   `GameInstallationService.install`, resolving the catalogue GUID and SHA-256
   (or the special version's hash and type) at that moment.

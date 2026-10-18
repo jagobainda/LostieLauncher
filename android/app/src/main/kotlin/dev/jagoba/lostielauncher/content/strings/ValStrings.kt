@@ -63,6 +63,7 @@ internal object ValStrings : Strings {
     override val btnClose = "Tancar"
     override val cancelDownloadConfirmTitle = "Cancel·lar descàrrega"
     override val cancelDownloadConfirmMessage = "Estàs segur que vols cancel·lar la descàrrega? Els fitxers descarregats parcialment seran eliminats."
+    override val statusDownloading = "Descarregant..."
     override val statusExtracting = "Descomprimint..."
     override val statusVerifying = "Comprovant integritat..."
     override val statusUninstalling = "Desinstal·lant..."
