@@ -36,7 +36,7 @@ internal class AndroidDownloadForegroundInfoFactory @Inject constructor(
         )
         val percent = progress.percent.roundToInt()
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(strings.btnDownload)
             .setContentText(displayName)
             .setOnlyAlertOnce(true)

@@ -64,6 +64,12 @@ desktop does.
 its window icon. It is bundled here so the title bar does not depend on the
 network.
 
+`mipmap-*/ic_launcher_foreground.png` and `drawable-*/ic_notification.png` are
+the desktop's own `Assets/app.ico` (its 256 px frame), resized for each density.
+The launcher foreground keeps the sprite inside the 66 dp adaptive-icon safe
+zone; the notification icon is the same sprite with its colour stripped, because
+the status bar only reads the alpha channel.
+
 ## Lucide licence (ISC)
 
 Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part

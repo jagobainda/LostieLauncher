@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="volcarona_primary_bg">#FF4D4949</color>
+    <color name="volcarona_tertiary_bg">#FF2E2C2C</color>
 </resources>
