@@ -47,7 +47,16 @@ class ArchiveGameInstallationServiceTest {
         PendingGameInstallationService(logger),
         library,
         kirin,
-        KirinOptions(gamesRoot, directory.resolve("Kirin/game-library.json").toFile(), "Game.exe", "auto"),
+        KirinOptions(
+            gamesRoot,
+            directory.resolve("Kirin/game-library.json").toFile(),
+            "Game.exe",
+            "auto",
+            "",
+            "",
+            "",
+            "",
+        ),
         TestDispatcherProvider(dispatcher),
         logger,
     )

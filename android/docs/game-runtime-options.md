@@ -12,7 +12,11 @@ verifies the archive, extracts it into `/storage/emulated/0/LostieLauncher/<slug
 and registers the directory in `/storage/emulated/0/Kirin/game-library.json` and
 the local Room registry (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
 A missing library file is created; one that is not a JSON array is left alone
-and reported as `RegistryFailed`. Launch, uninstall and lookup remain pending.
+and reported as `RegistryFailed`. Launch is implemented by `KirinGameLaunchService`:
+Play resolves `LostieLauncher/<slug>` and sends Kirin's explicit
+`LAUNCH_GAME_SHORTCUT` intent with that directory; a missing directory reports
+`GameNotFound` and an intent Android cannot deliver reports `LaunchFailed`.
+Running-state detection, playtime, uninstall and lookup remain pending.
 
 The searchable marker `TODO-ANDROID-GAME-RUNTIME` has exactly eleven numbered
 questions. Each marker occurs once in code, beside the deferred method or handoff.

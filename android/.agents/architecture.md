@@ -406,7 +406,10 @@ Already in place:
   verification, extraction and terminal outcomes to presentation, including a
   recoverable terminal state when an installer is eventually implemented.
 - `GameLaunchService` and `PlaySessionService` — launching, running signals,
-  observable active sessions and playtime accounting. Pending implementations
+  observable active sessions and playtime accounting. `KirinGameLaunchService`
+  launches `KirinOptions.gamesRoot/<slug>` through `KirinShortcut`, the thin
+  adapter that sends Kirin's explicit intent; running signals and active
+  sessions still delegate to the pending adapter. Pending implementations
   report unsupported rather than claiming a game is stopped or a session ended.
 - `GameLocationService` — help availability, opening game/help files, and
   returning an opaque partial-uninstall location to its owning adapter.

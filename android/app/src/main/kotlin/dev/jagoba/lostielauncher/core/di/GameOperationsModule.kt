@@ -8,7 +8,7 @@ import dev.jagoba.lostielauncher.service.game.ArchiveGameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
-import dev.jagoba.lostielauncher.service.game.PendingGameLaunchService
+import dev.jagoba.lostielauncher.service.game.KirinGameLaunchService
 import dev.jagoba.lostielauncher.service.game.PendingGameLocationService
 import dev.jagoba.lostielauncher.service.game.PendingPlaySessionService
 import dev.jagoba.lostielauncher.service.game.PlaySessionService
@@ -23,7 +23,7 @@ internal abstract class GameOperationsModule {
 
     @Binds
     @Singleton
-    internal abstract fun bindLaunch(impl: PendingGameLaunchService): GameLaunchService
+    internal abstract fun bindLaunch(impl: KirinGameLaunchService): GameLaunchService
 
     @Binds
     @Singleton

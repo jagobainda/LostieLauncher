@@ -15,7 +15,7 @@ data class GameInfo(
     val sha256: String,
 ) {
     val gameId: String
-        get() = SLUG_SEPARATORS.replace(name.lowercase(Locale.ROOT), "-").trim('-')
+        get() = gameSlug(name)
 
     val formattedSize: String
         get() = if (sizeGb >= 1) {
@@ -25,10 +25,12 @@ data class GameInfo(
         }
 
     private companion object {
-        val SLUG_SEPARATORS = Regex("[^a-z0-9]+")
-
         const val BYTES_PER_KIB = 1024
 
         fun trimTrailingZero(value: String) = value.removeSuffix(".0")
     }
 }
+
+private val SLUG_SEPARATORS = Regex("[^a-z0-9]+")
+
+fun gameSlug(name: String): String = SLUG_SEPARATORS.replace(name.lowercase(Locale.ROOT), "-").trim('-')

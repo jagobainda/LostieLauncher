@@ -28,7 +28,7 @@ class KirinGameLibraryTest {
     private val gameDirectory get() = directory.resolve("LostieLauncher/demo").toFile()
 
     private fun createSut() = KirinGameLibrary(
-        KirinOptions(directory.toFile(), libraryFile, "Game.exe", "auto"),
+        KirinOptions(directory.toFile(), libraryFile, "Game.exe", "auto", "", "", "", ""),
         TestDispatcherProvider(dispatcher),
     )
 

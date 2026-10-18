@@ -7,4 +7,8 @@ data class KirinOptions(
     val libraryFile: File,
     val executableName: String,
     val runtimeMode: String,
+    val packageName: String,
+    val launchActivity: String,
+    val launchAction: String,
+    val gamePathExtra: String,
 )
