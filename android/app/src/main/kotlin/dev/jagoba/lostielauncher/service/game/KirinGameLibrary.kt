@@ -2,10 +2,9 @@ package dev.jagoba.lostielauncher.service.game
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.KirinOptions
+import dev.jagoba.lostielauncher.util.file.AtomicFileWriter
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.withContext
@@ -57,14 +56,8 @@ internal class KirinGameLibrary @Inject constructor(
 
     private val JsonElement.path: String? get() = ((this as? JsonObject)?.get(PATH) as? JsonPrimitive)?.content
 
-    private fun write(file: File, entries: List<JsonElement>) {
-        val content = json.encodeToString(JsonArray.serializer(), JsonArray(entries))
-        val directory = file.absoluteFile.parentFile ?: throw IOException("Kirin library '$file' has no directory.")
-        if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Could not create '$directory'.")
-        val temp = File(directory, "${file.name}.tmp")
-        temp.writeText(content)
-        Files.move(temp.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    }
+    private fun write(file: File, entries: List<JsonElement>) =
+        AtomicFileWriter.writeText(file, json.encodeToString(JsonArray.serializer(), JsonArray(entries)))
 
     private companion object {
         const val TITLE = "title"

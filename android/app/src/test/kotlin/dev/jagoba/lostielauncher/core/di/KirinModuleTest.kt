@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource
 class KirinModuleTest {
     @ParameterizedTest
     @ValueSource(ints = [0, 10, 11])
-    fun `uses the current user's shared storage for games and the Kirin library`(userId: Int) {
+    fun `uses the current user's shared storage for games, the local registry and the Kirin library`(userId: Int) {
         val storage = File("/storage/emulated/$userId")
         mockkStatic(Environment::class) {
             every { Environment.getExternalStorageDirectory() } returns storage
@@ -22,6 +22,8 @@ class KirinModuleTest {
 
             options.gamesRoot shouldBe File(storage, "LostieLauncher")
             options.libraryFile shouldBe File(storage, "Kirin/game-library.json")
+            KirinModule.provideLocalLibraryOptions(options).registryFile shouldBe
+                File(storage, "LostieLauncher/local_games.json")
         }
     }
 }

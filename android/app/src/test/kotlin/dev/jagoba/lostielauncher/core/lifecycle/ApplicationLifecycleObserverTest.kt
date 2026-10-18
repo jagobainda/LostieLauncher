@@ -3,6 +3,7 @@ package dev.jagoba.lostielauncher.core.lifecycle
 import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
+import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
@@ -29,6 +30,7 @@ class ApplicationLifecycleObserverTest {
     private val owner = mockk<LifecycleOwner>()
     private val coordinator = mockk<LauncherDataCoordinator>(relaxed = true)
     private val gameAutoUpdates = mockk<GameAutoUpdateCoordinator>(relaxed = true)
+    private val installation = mockk<GameInstallationService>(relaxed = true)
     private val logger = mockk<Logger>(relaxed = true)
 
     @Test
@@ -54,6 +56,18 @@ class ApplicationLifecycleObserverTest {
 
         verify(exactly = 1) { coordinator.start(any(), settingsStore, any()) }
         verify(exactly = 1) { gameAutoUpdates.start(any()) }
+    }
+
+    @Test
+    fun `refreshes the installed games every time the process becomes visible`() = runTest {
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.onStart(owner)
+        sut.onStop(owner)
+        sut.onStart(owner)
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { installation.refreshInstalled() }
     }
 
     @Test
@@ -87,6 +101,7 @@ class ApplicationLifecycleObserverTest {
         coordinator = coordinator,
         homeRefreshOptions = HomeRefreshOptions(2.minutes),
         gameAutoUpdates = gameAutoUpdates,
+        installation = installation,
         logger = logger,
         dispatchers = TestDispatcherProvider(dispatcher),
     )

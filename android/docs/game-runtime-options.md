@@ -10,7 +10,7 @@ That state means the transfer finished, not that the game is playable.
 Installation is now implemented for Kirin: `ArchiveGameInstallationService`
 verifies the archive, extracts it into `<shared-storage>/LostieLauncher/<slug>`,
 and registers the directory in `<shared-storage>/Kirin/game-library.json` and
-the local Room registry (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
+the local registry, `<shared-storage>/LostieLauncher/local_games.json` (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
 The shared-storage root is resolved for the current Android user with
 `Environment.getExternalStorageDirectory()` rather than assuming user 0.
 A missing library file is created; one that is not a JSON array is left alone
@@ -71,13 +71,13 @@ its latest phase and terminal result after process recreation.
    defined cleanup policy. If games are APKs, package installation is a system
    transaction with user participation; it is not a folder swap.
 2. **TODO-ANDROID-GAME-RUNTIME-02 — uninstall.** For app-owned game data,
-   decide whether to remove files and the Room record together, and what to
+   decide whether to remove files and the registry record together, and what to
    report after partial deletion. For a separately installed package, decide
    whether the launcher requests system uninstall or simply removes its own
    association. Package removal can require the user's action and may be denied.
 3. **TODO-ANDROID-GAME-RUNTIME-03 — installed identity and version.** Decide
-   whether the Room record, files, Android `PackageManager`, or a combination is
-   authoritative. A stale Room entry cannot prove an APK or files still exist.
+   whether the registry record, files, Android `PackageManager`, or a combination is
+   authoritative. A stale registry entry cannot prove an APK or files still exist.
    The catalogue GUID/name and Android package name/version need an explicit
    mapping. Package queries are filtered on Android 11+ unless appropriate
    visibility is declared.

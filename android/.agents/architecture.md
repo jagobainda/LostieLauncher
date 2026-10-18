@@ -368,7 +368,9 @@ Already in place:
   debounce coalesces persistence writes. Activity and process stop events flush
   any pending snapshot from an application-owned I/O scope.
 - [`LocalLibraryStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/library/LocalLibraryStore.kt)
-  — the Room-backed installed-game registry seam, behind one concurrency gate.
+  — the installed-game registry seam, a JSON file in `KirinOptions.gamesRoot`
+  (`LocalLibraryOptions`) so it survives reinstalling the app, behind one
+  concurrency gate.
   There is no playtime ledger; see `GameLaunchService` below.
 - [`StorageLocations`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/storage/StorageLocations.kt)
   — the injected roots for downloads and logs. Downloads use app-specific

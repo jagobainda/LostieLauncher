@@ -26,7 +26,7 @@ authority on what the app must do is the desktop side, under
 | Text catalogue                        | done — 91 keys and 6 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
-| Local game registry                   | done — Room and concurrency-safe                         |
+| Local game registry                   | done — JSON in the games root, survives a reinstall      |
 | File logs                             | done — monthly files, 10 MB roll and six-month retention |
 | Pure decision utilities               | done — ported with their desktop test cases             |
 | Download engine                       | done — resumable, observable and lifecycle-resilient    |
@@ -51,7 +51,7 @@ this table is the reasoning, not the source of truth.
 | DI | Hilt (KSP) | compile-time verified graph, everything a singleton — the desktop's centralized container, constructor injection included |
 | HTTP | OkHttp + Retrofit + kotlinx.serialization | the desktop runs three HTTP clients with three different timeouts for three reasons; three `OkHttpClient`s sharing a pool is the direct equivalent, and raw OkHttp handles the resumable, ranged download |
 | Images | Coil 3 (OkHttp fetcher) | the game logos are remote PNGs on the CDN; Coil is the Compose-native loader, and only an HTTPS URL is ever handed to it |
-| Persistence | DataStore (settings) + Room (local library) | settings are a small typed record; the installed-game list is queried and joined |
+| Persistence | DataStore (settings) + Room (downloads) + JSON file (local library) | settings are a small typed record; the installed-game registry lives beside the games in shared storage, as `local_games.json` does on the desktop, so it survives reinstalling the app |
 | Navigation | `NavigationStore` (one section value) + `BackHandler`, no navigation library | the launcher has five top-level sections and no back stack, like the desktop; a `NavController` would be a second source of truth beside the store the ViewModels already navigate through |
 | Tests | JUnit 5, MockK, Kotest assertions, Turbine | the closest mapping of the desktop's xUnit + NSubstitute + Shouldly |
 | Format gate | Spotless + ktlint | this side's `dotnet format --verify-no-changes` |
@@ -212,7 +212,13 @@ desktop values, and what the end-of-port review decided for each.
 
 ## Local persistence
 
-Room stores the installed-game registry behind a single concurrency gate.
+`FileLocalLibraryStore` keeps the installed-game registry in
+`<shared-storage>/LostieLauncher/local_games.json`, beside the games, behind a
+single concurrency gate and with atomic `.tmp` writes. App-private storage is
+wiped on uninstall while the games are not, so this is what lets a reinstalled
+launcher still see them; it is reloaded each time the launcher comes to the
+foreground, because the all-files-access permission must be granted again
+first. Migration 3 → 4 drops the Room table that held it before.
 Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on, so there is no playtime table: migration 2 → 3 drops the one earlier
 versions created. Storage errors are logged and degrade to empty data,
 matching the desktop behavior without exposing database details to later

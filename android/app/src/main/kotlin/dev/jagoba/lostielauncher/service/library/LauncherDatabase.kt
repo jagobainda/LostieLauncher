@@ -6,12 +6,10 @@ import dev.jagoba.lostielauncher.service.download.DownloadDao
 import dev.jagoba.lostielauncher.service.download.DownloadEntity
 
 @Database(
-    entities = [InstalledGameEntity::class, DownloadEntity::class],
-    version = 3,
+    entities = [DownloadEntity::class],
+    version = 4,
     exportSchema = true,
 )
 internal abstract class LauncherDatabase : RoomDatabase() {
-    abstract fun localLibraryDao(): LocalLibraryDao
-
     abstract fun downloadDao(): DownloadDao
 }

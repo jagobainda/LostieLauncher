@@ -61,7 +61,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
     init {
         background.launch {
             hideGamesFromMediaScanner()
-            reloadInstalled()
+            refreshInstalled()
         }
     }
 
@@ -119,7 +119,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
             return GameInstallationResult.RegistryFailed
         }
         library.registerGame(game)
-        reloadInstalled()
+        refreshInstalled()
         logger.info("Game installed: ${file.gameId} ${file.version}${request.variant?.let { " ($it)" }.orEmpty()}.")
         return GameInstallationResult.Installed(game)
     }
@@ -155,7 +155,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
             logger.error("Kirin unregistration failed for ${game.name}.", error)
         }
         library.removeGame(game.name)
-        reloadInstalled()
+        refreshInstalled()
         when {
             location != null -> {
                 logger.error("Uninstall could not delete every file of ${game.name}. Blocked at: ${location.token}.")
@@ -315,7 +315,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         if (!archive.delete()) logger.error("Downloaded archive could not be deleted: ${archive.path}.")
     }
 
-    private suspend fun reloadInstalled() {
+    override suspend fun refreshInstalled() {
         installed.value = InstalledGamesState.Available(library.getGames())
     }
 

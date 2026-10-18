@@ -236,20 +236,19 @@ the rest have no Android input.
 Port plan step 07 moved settings, the installed-game registry and file logging
 onto Android-native storage. Playtime was ported too and later removed: Android
 does not track it, so `PlaytimeFormatterTests` and the playtime cases have no
-counterpart. These tests stay on the JVM: DataStore and
-Room sit behind interfaces, repository behavior uses fakes, and file logging is
-exercised only under `@TempDir`.
+counterpart. These tests stay on the JVM: DataStore sits behind an interface,
+and the registry file and file logging are exercised only under `@TempDir`.
 
 | Desktop class or subset | Decl. | Android | Outcome |
 | --- | ---: | --- | --- |
 | `SettingsServiceTests` | 17 | `model/AppearanceSettingsTest`, `service/settings/DataStoreSettingsStoreTest` | 8 behaviors ported; 9 path cases dropped with configurable storage |
-| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/RoomLocalLibraryStoreTest` | Registry behaviors ported; playtime cases dropped with playtime; legacy-file cases became Room constraints |
+| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/FileLocalLibraryStoreTest` | Registry behaviors ported; playtime cases dropped with playtime |
 | `LogsMaintenanceTests` | 15 | `util/log/LogFilesTest` | all 15 ported |
 | `LogsTests` | 5 | `util/log/LogFilesTest`, `util/log/FileLoggerTest` | all 5 ported |
 
 Android-only coverage pins corrupt and failed DataStore operations, debounced
 last-write-wins behavior, concurrent changes to different settings, invalid
-database UUIDs, database degradation, concurrent Room repository calls, file
+registry UUIDs, unreadable registry degradation, concurrent registry calls, file
 logger concurrency and filesystem failure swallowing.
 
 Eight of the nine dropped settings cases inspect `DownloadDirectory`: blank
@@ -260,15 +259,11 @@ the desktop's read cache, which DataStore replaces.
 `StorageModule` chooses the app-specific external files area when mounted and
 falls back to internal files, so none of those inputs exists.
 
-Duplicate non-empty game IDs remain representable because renamed catalogue
-entries have different normalized name keys. The repository therefore mirrors
-the desktop's read-time rule: first occurrence wins by ID, while Room enforces
-name uniqueness for legacy ID-less entries. The three declarations that no
-longer translate are duplicate ID-less names, a null legacy name and atomic
-`.tmp` replacement; Room schema constraints cover the first two and its
-transactions replace the file protocol. Empty data, replacement by
-case-insensitive name, removal, accumulation, concurrency and graceful failure
-remain covered.
+The store mirrors the desktop's `local_games.json` and its read-time rule:
+first occurrence wins by ID, by case-insensitive name for ID-less entries.
+Empty data, replacement by case-insensitive name, removal, accumulation,
+concurrency, reading a previous installation's file and graceful failure are
+covered.
 
 ## Desktop test parity: downloads
 

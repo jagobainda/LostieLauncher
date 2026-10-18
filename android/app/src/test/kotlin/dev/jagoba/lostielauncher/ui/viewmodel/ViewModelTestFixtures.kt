@@ -155,6 +155,8 @@ internal class TestInstallation : GameInstallationService {
     }
 
     override suspend fun findInstalled(game: GameTarget): InstalledGameResult = InstalledGameResult.NotSupportedYet
+
+    override suspend fun refreshInstalled() = Unit
 }
 
 internal class TestLaunch : GameLaunchService {

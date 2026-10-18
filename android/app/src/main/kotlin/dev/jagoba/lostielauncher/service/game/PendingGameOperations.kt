@@ -47,6 +47,8 @@ internal class PendingGameInstallationService @Inject constructor(private val lo
         logger.info("Installed-version lookup requested for ${game.name}; Android lookup is not supported yet.")
         return InstalledGameResult.NotSupportedYet
     }
+
+    override suspend fun refreshInstalled() = Unit
 }
 
 @Singleton

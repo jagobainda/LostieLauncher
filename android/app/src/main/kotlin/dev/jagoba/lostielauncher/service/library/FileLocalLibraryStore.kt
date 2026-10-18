@@ -2,7 +2,9 @@ package dev.jagoba.lostielauncher.service.library
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.LocalLibraryOptions
 import dev.jagoba.lostielauncher.model.MissingGameId
+import dev.jagoba.lostielauncher.util.file.AtomicFileWriter
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.util.Locale
 import java.util.UUID
@@ -12,10 +14,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Singleton
-internal class RoomLocalLibraryStore @Inject constructor(
-    private val dao: LocalLibraryDao,
+internal class FileLocalLibraryStore @Inject constructor(
+    private val options: LocalLibraryOptions,
+    private val json: Json,
     private val logger: Logger,
     private val dispatchers: DispatcherProvider,
 ) : LocalLibraryStore {
@@ -24,7 +29,7 @@ internal class RoomLocalLibraryStore @Inject constructor(
     override suspend fun getGames(): List<LocalGame> = withContext(dispatchers.io) {
         gamesGate.withLock {
             try {
-                deduplicateGames(dao.getGames().mapNotNull(::toLocalGame))
+                deduplicateGames(readEntries().mapNotNull(::toLocalGame))
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Exception) {
@@ -37,7 +42,7 @@ internal class RoomLocalLibraryStore @Inject constructor(
     override suspend fun registerGame(game: LocalGame) = withContext(dispatchers.io) {
         gamesGate.withLock {
             try {
-                dao.insertGame(game.toEntity())
+                writeEntries(readEntries().filterNot { it.name.toNameKey() == game.name.toNameKey() } + game.toEntry())
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Exception) {
@@ -49,7 +54,9 @@ internal class RoomLocalLibraryStore @Inject constructor(
     override suspend fun removeGame(gameName: String) = withContext(dispatchers.io) {
         gamesGate.withLock {
             try {
-                dao.deleteGame(gameName.toNameKey())
+                if (options.registryFile.exists()) {
+                    writeEntries(readEntries().filterNot { it.name.toNameKey() == gameName.toNameKey() })
+                }
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Exception) {
@@ -58,15 +65,21 @@ internal class RoomLocalLibraryStore @Inject constructor(
         }
     }
 
-    private fun toLocalGame(entity: InstalledGameEntity): LocalGame? = runCatching {
+    private fun readEntries(): List<LocalGameEntry> =
+        if (options.registryFile.exists()) json.decodeFromString(options.registryFile.readText()) else emptyList()
+
+    private fun writeEntries(entries: List<LocalGameEntry>) =
+        AtomicFileWriter.writeText(options.registryFile, json.encodeToString(entries))
+
+    private fun toLocalGame(entry: LocalGameEntry): LocalGame? = runCatching {
         LocalGame(
-            id = UUID.fromString(entity.gameId),
-            name = entity.name,
-            version = entity.version,
-            type = entity.variant,
+            id = UUID.fromString(entry.id),
+            name = entry.name,
+            version = entry.version,
+            type = entry.variant,
         )
     }.onFailure {
-        logger.error("Ignoring an invalid local game id '${entity.gameId}'", it)
+        logger.error("Ignoring an invalid local game id '${entry.id}'", it)
     }.getOrNull()
 
     private fun deduplicateGames(games: List<LocalGame>): List<LocalGame> {
@@ -79,9 +92,8 @@ internal class RoomLocalLibraryStore @Inject constructor(
         }
     }
 
-    private fun LocalGame.toEntity() = InstalledGameEntity(
-        nameKey = name.toNameKey(),
-        gameId = id.toString(),
+    private fun LocalGame.toEntry() = LocalGameEntry(
+        id = id.toString(),
         name = name,
         version = version,
         variant = type,
@@ -89,3 +101,6 @@ internal class RoomLocalLibraryStore @Inject constructor(
 
     private fun String.toNameKey(): String = lowercase(Locale.ROOT)
 }
+
+@Serializable
+private data class LocalGameEntry(val id: String, val name: String, val version: String, val variant: String? = null)

@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -12,9 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.service.download.DownloadDao
 import dev.jagoba.lostielauncher.service.library.LauncherDatabase
-import dev.jagoba.lostielauncher.service.library.LocalLibraryDao
-import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
-import dev.jagoba.lostielauncher.service.library.RoomLocalLibraryStore
 import javax.inject.Singleton
 
 @Module
@@ -54,26 +50,20 @@ internal object DatabaseModule {
         }
     }
 
+    private val migration3To4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS installed_games")
+        }
+    }
+
     @Provides
     @Singleton
     internal fun provideDatabase(@ApplicationContext context: Context): LauncherDatabase =
         Room.databaseBuilder(context, LauncherDatabase::class.java, DATABASE_NAME)
-            .addMigrations(migration1To2, migration2To3)
+            .addMigrations(migration1To2, migration2To3, migration3To4)
             .build()
 
     @Provides
     @Singleton
-    internal fun provideLocalLibraryDao(database: LauncherDatabase): LocalLibraryDao = database.localLibraryDao()
-
-    @Provides
-    @Singleton
     internal fun provideDownloadDao(database: LauncherDatabase): DownloadDao = database.downloadDao()
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-internal abstract class DatabaseBindingsModule {
-    @Binds
-    @Singleton
-    internal abstract fun bindLocalLibraryStore(impl: RoomLocalLibraryStore): LocalLibraryStore
 }

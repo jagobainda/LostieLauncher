@@ -20,4 +20,6 @@ interface GameInstallationService {
     suspend fun uninstall(game: GameTarget): GameUninstallResult
 
     suspend fun findInstalled(game: GameTarget): InstalledGameResult
+
+    suspend fun refreshInstalled()
 }

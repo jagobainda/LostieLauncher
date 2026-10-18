@@ -4,6 +4,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
+import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
@@ -22,6 +23,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     private val coordinator: LauncherDataCoordinator,
     private val homeRefreshOptions: HomeRefreshOptions,
     private val gameAutoUpdates: GameAutoUpdateCoordinator,
+    private val installation: GameInstallationService,
     private val logger: Logger,
     dispatchers: DispatcherProvider,
 ) : DefaultLifecycleObserver {
@@ -37,6 +39,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
 
     override fun onStart(owner: LifecycleOwner) {
         coordinator.setVisible(true)
+        scope.launch { installation.refreshInstalled() }
         if (startupStarted) return
         startupStarted = true
         coordinator.start(scope, settingsStore, homeRefreshOptions)
