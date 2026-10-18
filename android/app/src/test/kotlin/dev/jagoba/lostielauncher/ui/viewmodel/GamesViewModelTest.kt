@@ -32,7 +32,6 @@ class GamesViewModelTest {
     private val installation = TestInstallation()
     private val launch = TestLaunch()
     private val locations = TestLocations()
-    private val library = TestLibraryStore()
     private val navigation = NavigationStore()
     private val downloads = TestDownloads()
     private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
@@ -54,17 +53,15 @@ class GamesViewModelTest {
     }
 
     @Test
-    fun `installed game receives remote update and playtime`() = runTest(dispatcher) {
+    fun `installed game receives remote update`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
         installation.current.value =
             InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
-        library.times = mapOf(remote.id to 42)
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().hasUpdate shouldBe true
-        sut.state.value.games.single().playtimeMinutes shouldBe 42
         sut.state.value.games.single().canPlay shouldBe false
         sut.update(remote.name)
         navigation.state.value.section shouldBe LauncherSection.LIBRARY
@@ -72,7 +69,7 @@ class GamesViewModelTest {
     }
 
     @Test
-    fun `matching version has no update and missing playtime starts at zero`() = runTest(dispatcher) {
+    fun `matching version has no update`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
@@ -82,7 +79,6 @@ class GamesViewModelTest {
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().hasUpdate shouldBe false
-        sut.state.value.games.single().playtimeMinutes shouldBe 0
         sut.navigateToLibrary()
         navigation.state.value.section shouldBe LauncherSection.LIBRARY
     }
@@ -269,7 +265,6 @@ class GamesViewModelTest {
         installation,
         launch,
         locations,
-        library,
         coordinator,
         navigation,
         downloads,

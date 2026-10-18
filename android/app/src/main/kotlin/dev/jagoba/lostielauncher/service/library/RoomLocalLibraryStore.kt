@@ -20,7 +20,6 @@ internal class RoomLocalLibraryStore @Inject constructor(
     private val dispatchers: DispatcherProvider,
 ) : LocalLibraryStore {
     private val gamesGate = Mutex()
-    private val playtimeGate = Mutex()
 
     override suspend fun getGames(): List<LocalGame> = withContext(dispatchers.io) {
         gamesGate.withLock {
@@ -55,37 +54,6 @@ internal class RoomLocalLibraryStore @Inject constructor(
                 throw cause
             } catch (cause: Exception) {
                 logger.error("Could not remove local game '$gameName'", cause)
-            }
-        }
-    }
-
-    override suspend fun addPlaytime(gameId: UUID, minutes: Int) = withContext(dispatchers.io) {
-        if (gameId == MissingGameId) return@withContext
-        playtimeGate.withLock {
-            try {
-                dao.addPlaytime(gameId.toString(), minutes)
-            } catch (cause: CancellationException) {
-                throw cause
-            } catch (cause: Exception) {
-                logger.error("Could not add playtime for game '$gameId'", cause)
-            }
-        }
-    }
-
-    override suspend fun getPlaytimes(): Map<UUID, Int> = withContext(dispatchers.io) {
-        playtimeGate.withLock {
-            try {
-                dao.getPlaytimes().mapNotNull { entity ->
-                    runCatching { UUID.fromString(entity.gameId) }
-                        .onFailure { logger.error("Ignoring an invalid playtime game id '${entity.gameId}'", it) }
-                        .getOrNull()
-                        ?.let { it to entity.minutes }
-                }.toMap()
-            } catch (cause: CancellationException) {
-                throw cause
-            } catch (cause: Exception) {
-                logger.error("Could not read playtimes", cause)
-                emptyMap()
             }
         }
     }

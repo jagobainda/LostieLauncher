@@ -25,7 +25,7 @@ internal object EngStrings : Strings {
     override val tooltipUninstall = "Uninstall game"
     override val tooltipRefresh = "Refresh"
     override val uninstallConfirmTitle = "Uninstall game"
-    override val uninstallConfirmMessage = "Are you sure you want to uninstall {0}? Your saved games and playtime record will not be lost."
+    override val uninstallConfirmMessage = "Are you sure you want to uninstall {0}? Your saved games will not be lost."
     override val uninstallNotFoundTitle = "Files not found"
     override val uninstallNotFoundMessage = "The game files were not found, but the entry has been cleaned up from the list."
     override val uninstallErrorTitle = "Uninstall error"

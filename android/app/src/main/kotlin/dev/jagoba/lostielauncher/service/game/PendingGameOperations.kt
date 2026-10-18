@@ -6,7 +6,6 @@ import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameLocationReference
-import dev.jagoba.lostielauncher.model.GamePlaySession
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameTarget
 import dev.jagoba.lostielauncher.model.GameUninstallOutcome
@@ -14,7 +13,6 @@ import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGameResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
-import dev.jagoba.lostielauncher.model.PlaySessionResult
 import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -63,14 +61,6 @@ internal class PendingGameLaunchService @Inject constructor(private val logger: 
     override suspend fun runningSignal(game: GameTarget): GameRunningSignal {
         logger.info("Running-state lookup requested for ${game.name}; Android detection is not supported yet.")
         return GameRunningSignal.NOT_SUPPORTED_YET
-    }
-}
-
-@Singleton
-internal class PendingPlaySessionService @Inject constructor(private val logger: Logger) : PlaySessionService {
-    override suspend fun recordCompletedSession(session: GamePlaySession): PlaySessionResult {
-        logger.info("Play-session accounting requested for ${session.gameId}; Android tracking is not supported yet.")
-        return PlaySessionResult.NotSupportedYet
     }
 }
 

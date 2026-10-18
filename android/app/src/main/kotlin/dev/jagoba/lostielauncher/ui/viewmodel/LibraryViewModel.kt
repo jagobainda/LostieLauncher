@@ -21,7 +21,6 @@ import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
-import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
@@ -31,7 +30,6 @@ import dev.jagoba.lostielauncher.util.format.RemainingTimeFormatter
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.GameIdentityMatcher
 import dev.jagoba.lostielauncher.util.version.VersionUtils
-import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +47,6 @@ data class LibraryGameUiState(
     val installed: LocalGame?,
     val installedStateKnown: Boolean,
     val hasUpdate: Boolean,
-    val playtimeMinutes: Int,
     val download: DownloadSnapshot?,
     val installation: GameInstallationState?,
     val status: LibraryCardStatus,
@@ -133,7 +130,6 @@ class LibraryViewModel @Inject constructor(
     private val coordinator: LauncherDataCoordinator,
     private val downloads: DownloadManager,
     private val installation: GameInstallationService,
-    private val library: LocalLibraryStore,
     private val content: ContentService,
     private val specialVersions: SpecialVersionService,
     private val navigation: NavigationStore,
@@ -141,7 +137,6 @@ class LibraryViewModel @Inject constructor(
     private val logger: Logger,
 ) : ViewModel() {
     private val transient = MutableStateFlow(LibraryUiState())
-    private val playtimes = MutableStateFlow<Map<UUID, Int>>(emptyMap())
     private var maintenanceNoticeShown = false
 
     private val installationStates = downloads.downloads.flatMapLatest { rows ->
@@ -162,8 +157,7 @@ class LibraryViewModel @Inject constructor(
         downloads.downloads,
         installation.installedGames,
         installationStates,
-        playtimes,
-    ) { catalogue, downloadRows, installedState, phases, times ->
+    ) { catalogue, downloadRows, installedState, phases ->
         val installed = (installedState as? InstalledGamesState.Available)?.games.orEmpty()
         val active = downloadRows.hasActiveDownload
         LibraryUiState(
@@ -180,7 +174,6 @@ class LibraryViewModel @Inject constructor(
                     installed = local,
                     installedStateKnown = installedState is InstalledGamesState.Available,
                     hasUpdate = hasUpdate,
-                    playtimeMinutes = game.id?.let(times::get) ?: 0,
                     download = download,
                     installation = phase,
                     status = status,
@@ -226,11 +219,6 @@ class LibraryViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            coordinator.gamesRevision.collect {
-                playtimes.value = library.getPlaytimes()
-            }
-        }
-        viewModelScope.launch {
             combine(navigation.state, state) { target, current -> target to current }.collect { (target, current) ->
                 val gameId = target.pendingLibraryGameId ?: return@collect
                 if (current.games.none { it.game.gameId == gameId }) return@collect
@@ -247,7 +235,6 @@ class LibraryViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             coordinator.refreshCatalogue()
-            playtimes.value = library.getPlaytimes()
         }
     }
 

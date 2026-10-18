@@ -27,7 +27,6 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesViewModel
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
-import dev.jagoba.lostielauncher.util.format.PlaytimeFormatter
 
 private const val GAMES_SKELETON_COUNT = 5
 
@@ -123,7 +122,6 @@ internal fun InstalledGameUiState.toCardState() = InstalledGameCardState(
     installedVersion = game.version,
     specialType = game.type,
     updateVersion = remote?.version?.takeIf { hasUpdate },
-    playtime = PlaytimeFormatter.format(playtimeMinutes),
     canPlay = canPlay,
     canUpdate = canUpdate,
     canSwitchSpecialVersion = canSwitchSpecialVersion,

@@ -26,7 +26,7 @@ authority on what the app must do is the desktop side, under
 | Text catalogue                        | done — 91 keys and 6 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
-| Local game registry and playtime      | done — Room, transactional and concurrency-safe          |
+| Local game registry                   | done — Room and concurrency-safe                         |
 | File logs                             | done — monthly files, 10 MB roll and six-month retention |
 | Pure decision utilities               | done — ported with their desktop test cases             |
 | Download engine                       | done — resumable, observable and lifecycle-resilient    |
@@ -137,7 +137,7 @@ the four game seams in `service/game/`. The rules, including what
 each layer may depend on: [.agents/architecture.md](.agents/architecture.md).
 
 `util/` is where that pays off. It holds the desktop's decision functions and
-nothing else — version comparison, playtime formatting, accent-insensitive
+nothing else — version comparison, accent-insensitive
 search, link detection in CDN text, the HTTPS-only guard every outbound link
 passes, download cache naming and expiry, and the small exit and crash
 policies. Every one takes values and returns a value, so all of it is tested
@@ -212,9 +212,9 @@ desktop values, and what the end-of-port review decided for each.
 
 ## Local persistence
 
-Room stores the installed-game registry and playtime in separate tables. Their
-service keeps independent concurrency gates, and Room transactions make a
-playtime increment atomic. Storage errors are logged and degrade to empty data,
+Room stores the installed-game registry behind a single concurrency gate.
+Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on, so there is no playtime table: migration 2 → 3 drops the one earlier
+versions created. Storage errors are logged and degrade to empty data,
 matching the desktop behavior without exposing database details to later
 ViewModels.
 

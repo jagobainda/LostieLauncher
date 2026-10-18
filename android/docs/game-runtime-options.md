@@ -16,15 +16,15 @@ and reported as `RegistryFailed`. Launch is implemented by `KirinGameLaunchServi
 Play resolves `LostieLauncher/<slug>` and sends Kirin's explicit
 `LAUNCH_GAME_SHORTCUT` intent with that directory; a missing directory reports
 `GameNotFound` and an intent Android cannot deliver reports `LaunchFailed`.
-Running-state detection, playtime, uninstall and lookup remain pending.
+Running-state detection, uninstall and lookup remain pending. Playtime is not
+tracked on Android (item 6).
 
 The searchable marker `TODO-ANDROID-GAME-RUNTIME` has exactly eleven numbered
 questions. Each marker occurs once in code, beside the deferred method or handoff.
 The contracts live in `service/game/`, their result types in
 `model/GameOperations.kt`, and Hilt binds the pending implementations in
 `core/di/GameOperationsModule.kt`. Every pending operation logs its invocation
-and returns `NotSupportedYet`; none touches the archive, registry, packages, or
-playtime. `InstallDownloadedFileHandoff` is the only completed-download entry
+and returns `NotSupportedYet`; none touches the archive, registry or packages. `InstallDownloadedFileHandoff` is the only completed-download entry
 point. Future presentation code must call these services for game lifecycle
 operations and handle `NotSupportedYet` explicitly.
 
@@ -36,7 +36,7 @@ operations and handle `NotSupportedYet` explicitly.
 | Installed lookup | `ContentService.GetLocalGamesAsync` reads the local registry, deduplicates by GUID or case-insensitive name and returns the stored version. `GamesViewModel` joins it to the catalogue to mark updates, including games no longer in the catalogue. | `GameInstallationService.findInstalled(GameTarget)` returns a single installed record with version, absent, or unsupported. `installedGames` exposes the full observable list, including off-catalogue games; the pending adapter emits `NotSupportedYet`. |
 | Uninstall | `GamesViewModel.GetRunningSignal` blocks a tracked live process and warns on a locked executable. `UninstallCoreAsync` retries folder deletion. If nothing was deleted, registration remains; if deletion was partial, registration is removed and the blocking path is reported; a missing folder has its own outcome. | `GameInstallationService.uninstall` retains the five desktop outcomes plus unsupported and an optional opaque blocking location that can be passed to `GameLocationService.openBlockingLocation`. |
 | Launch and running state | `GamesViewModel.Play` checks `Game.exe`, starts it in its own working directory and minimizes the launcher. It tracks the `Process`; a file-lock probe gives a weaker maybe-running signal after the tracked process is gone. | `GameLaunchService.launch` distinguishes launched, missing, failed and unsupported. `runningSignal` preserves stopped, tracked, possible and unsupported as separate values. `activeSessions` exposes a flow for global state; the pending adapter emits `NotSupportedYet` rather than an empty set. |
-| Playtime | On process exit the desktop computes whole elapsed UTC minutes, ignores nonpositive durations and empty GUIDs, records positive minutes through `ContentService.AddPlaytimeAsync`, updates both cards and restores the window. | `PlaySessionService.recordCompletedSession` takes typed GUID and endpoints and returns recorded minutes, ignored or unsupported. The existing `LocalLibraryStore` is the eventual ledger; no direct caller writes it for game sessions yet. |
+| Playtime | On process exit the desktop computes whole elapsed UTC minutes, ignores nonpositive durations and empty GUIDs, records positive minutes through `ContentService.AddPlaytimeAsync`, updates both cards and restores the window. | None. Android does not track playtime (item 6): there is no session service, no Room table and nothing on the cards. |
 | Locations | `GamesViewModel.OpenFolderAsync` opens the game directory, offering a download if it is absent. `OpenHelpFolder` looks for a case-insensitive `ayuda` child; its availability controls the help button. `FolderLauncher` refuses missing directories before asking Explorer to open them. | My Games has no folder or help buttons, so `GameLocationService` only keeps `openBlockingLocation`, which handles an opaque uninstall location. |
 
 The desktop implementation is the authority for these details:
@@ -86,11 +86,13 @@ its latest phase and terminal result after process recreation.
    launcher-tracked session is sufficient, if an optional usage-access grant is
    warranted for a weaker cross-app signal, or if the middle signal disappears.
    Never report `NOT_RUNNING` simply because visibility or permission is absent.
-6. **TODO-ANDROID-GAME-RUNTIME-06 — playtime.** Decide what marks session start
-   and end when Android can kill the launcher while another app is foreground.
-   Activity callbacks alone do not prove the game exited. Usage events require
-   user-granted access and only have a limited retention window. If there is no
-   reliable signal, do not write invented minutes into `LocalLibraryStore`.
+6. **TODO-ANDROID-GAME-RUNTIME-06 — playtime.** Decided: Android does not track
+   playtime, and the session contract, the Room table and the card item were
+   removed. Games run inside Kirin, so nothing reliably marks a session's end:
+   Android can kill the launcher while Kirin is foreground, activity callbacks do
+   not prove the game exited, usage events need user-granted access, and any
+   Kirin-specific signal could break with a Kirin update. Reopening this needs a
+   signal Kirin itself guarantees.
 7. **TODO-ANDROID-GAME-RUNTIME-07 — game and help locations.** Decided for
    My Games: the open-folder and help buttons disappear. The original question
    was whether they expose app-owned files through a scoped `content://` URI

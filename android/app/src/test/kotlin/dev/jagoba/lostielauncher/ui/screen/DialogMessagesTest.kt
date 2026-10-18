@@ -135,7 +135,6 @@ class DialogMessagesTest {
             installed = null,
             installedStateKnown = false,
             hasUpdate = false,
-            playtimeMinutes = 0,
             download = null,
             installation = null,
             status = LibraryCardStatus.AVAILABLE,

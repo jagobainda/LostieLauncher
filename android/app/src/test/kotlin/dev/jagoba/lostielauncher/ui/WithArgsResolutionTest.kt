@@ -20,7 +20,7 @@ class WithArgsResolutionTest {
         rendered shouldNotContain "{0}"
         rendered shouldBe
             "Are you sure you want to uninstall Lostie? " +
-            "Your saved games and playtime record will not be lost."
+            "Your saved games will not be lost."
     }
 
     @Test

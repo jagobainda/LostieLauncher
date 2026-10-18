@@ -17,7 +17,7 @@ screens). This document summarises and does not repeat them.
 | --- | --- |
 | **Ported and working** | Catalogue, home news and notifications, resumable downloads, special-version keys, maintenance flag and offline behavior, FAQs with search, settings, first-run welcome, social links, ten themes, eight languages, file logging, every dialog and notice |
 | **Ported partially** | My Games, games auto-update and the Library card after a download: all built against the install seam and rendered as "not available on Android yet" |
-| **Pending by design** | Installing, uninstalling, launching, running detection, playtime: the eleven `TODO-ANDROID-GAME-RUNTIME` questions below |
+| **Pending by design** | Installing, uninstalling, launching, running detection: the eleven `TODO-ANDROID-GAME-RUNTIME` questions below |
 | **Not ported** | Everything that exists only because the desktop is a Windows program: tray, autostart, self-update, window chrome, single instance, keyboard shortcuts, the download-folder picker, OneDrive, `Saved Games`, the exit warning |
 
 The gates, run from `android/`: `spotlessCheck`, `assembleDebug`,
@@ -69,7 +69,7 @@ code, and answering one removes the marker and its section together.
 | `-03` | Which source is authoritative for installed identity and version | Open |
 | `-04` | How Play launches a game | Open |
 | `-05` | Whether a running signal is possible without another app's process or lock | Open |
-| `-06` | What marks a session's start and end for playtime | Open |
+| `-06` | What marks a session's start and end for playtime | Decided: Android does not track playtime; the contract, table and card item were removed |
 | `-07` | How game and help files are exposed (URI, in-app viewer, nothing) | Decided for My Games: nothing, both buttons removed |
 | `-08` | How to persist the catalogue id, expected hash and variant with the download, and how a failed install is retried | Open. Engineering work once `-01` is answered, not a platform question |
 | `-09` | Where installation phases and results are stored so they survive process death | Open |

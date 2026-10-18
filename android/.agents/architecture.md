@@ -152,6 +152,7 @@ for value.
 | Hover and tooltips | Mouse hover colours; tooltips on hover; link hover recolours and shows the URL | A mouse still gets the hover colours; a press shows the desktop's pressed colour, or the hover colour for links, which have no pressed state; tooltips and link URLs open on long press | The touch equivalent of each mouse interaction, as the step 11 shell established; no ripple, because the desktop has no press animation |
 | Missing or failed logo | Empty well (the Pokéball shows only when there is no URL) | Pokéball until the image loads, and again if it fails | An empty well reads as broken on a slow mobile connection |
 | Text metrics | Segoe UI, no letter spacing, font-derived line height | Material's default body style neutralised theme-wide (`Typography(bodyLarge = TextStyle.Default)` in `Theme.kt`), so text has no extra letter spacing or 24 sp line height | Material's defaults made wrapped card text visibly looser and wider than the desktop's. It also tightens the step 11 shell's labels, towards the desktop |
+| Playtime | A clock item with the recorded minutes on both cards | Not shown | Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on (`TODO-ANDROID-GAME-RUNTIME-06`) |
 | Running game | The card has no running state; running is a global signal (`GlobalViewModel`) | No running state either | Faithful. The prompt lists "en ejecución" generically, but the desktop card has none, and inventing one would be a divergence |
 | `INSTALLATION_PENDING` (Android only) | No such state: verification starts as soon as the transfer ends | Progress block at 100 % with "100%", empty action column | The gap between the finished transfer and the installer's first report; the bar stays where the download left it, so nothing jumps |
 | `INSTALLATION_UNSUPPORTED` (Android only) | No such state | Disabled "Downloaded" chip plus an amber `StatusNotSupportedYet` line | The archive is downloaded and the game is not installed; see "Not supported yet" above |
@@ -254,7 +255,7 @@ and back, as the desktop's persistent views keep theirs.
 
 - **Pure mappings, no decisions.** `LibraryGameUiState.toCardState()` and
   `InstalledGameUiState.toCardState()` turn ViewModel state into the card
-  contracts, and only format: `PlaytimeFormatter` and `DownloadSpeedFormatter`
+  contracts, and only format: `DownloadSpeedFormatter`
   (the desktop's `DownloadSpeedText`, invariant culture). `CardStateMappingTest`
   pins them. Every guard and every state (empty, list, "installed state not
   supported") comes from the ViewModel.
@@ -301,6 +302,7 @@ and back, as the desktop's persistent views keep theirs.
 | Scrollbar | 8 px custom scrollbar on every list | None | See the cards' table |
 | Auto-update row | A plain switch | The same switch, plus the amber `StatusNotSupportedYet` line while installed games cannot be known | Updating installed games depends on the pending seam; a switch that silently does nothing is what the port must avoid |
 | FAQ "where are games installed" | Games go to the configured download directory, changeable in Settings | Games live in the launcher's own storage, the folder cannot be changed, and uninstalling the launcher removes them, in all eight languages | The download-directory setting does not exist on Android (step 07 decision 3); `FaqsTest` fails if an answer names it again |
+| Uninstall confirmation and saves FAQ | Saved games and the playtime record are kept | Only saved games are mentioned, in all eight languages | Android has no playtime record (see the cards' table) |
 | `INSTALLATION_FAILED` retry | The card resets to Available after the dialog | No start action yet | Unreachable while the installer is pending; how a failed installation is retried is `TODO-ANDROID-GAME-RUNTIME-08` |
 
 ## Dependency injection
@@ -366,8 +368,8 @@ Already in place:
   debounce coalesces persistence writes. Activity and process stop events flush
   any pending snapshot from an application-owned I/O scope.
 - [`LocalLibraryStore`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/library/LocalLibraryStore.kt)
-  — the Room-backed registry and playtime seam. Its two concerns have separate
-  concurrency gates and playtime increments are transactional.
+  — the Room-backed installed-game registry seam, behind one concurrency gate.
+  There is no playtime ledger; see `GameLaunchService` below.
 - [`StorageLocations`](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/storage/StorageLocations.kt)
   — the injected roots for downloads and logs. Downloads use app-specific
   external storage with an internal fallback; logs use `noBackupFilesDir`.
@@ -404,12 +406,13 @@ Already in place:
   observable installed-game list. `observeInstallation(gameId)` exposes
   verification, extraction and terminal outcomes to presentation, including a
   recoverable terminal state when an installer is eventually implemented.
-- `GameLaunchService` and `PlaySessionService` — launching, running signals,
-  observable active sessions and playtime accounting. `KirinGameLaunchService`
+- `GameLaunchService` — launching, running signals and observable active
+  sessions. There is no playtime accounting: Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on
+  (`TODO-ANDROID-GAME-RUNTIME-06`). `KirinGameLaunchService`
   launches `KirinOptions.gamesRoot/<slug>` through `KirinShortcut`, the thin
   adapter that sends Kirin's explicit intent; running signals and active
   sessions still delegate to the pending adapter. Pending implementations
-  report unsupported rather than claiming a game is stopped or a session ended.
+  report unsupported rather than claiming a game is stopped.
 - `GameLocationService` — help availability, opening game/help files, and
   returning an opaque partial-uninstall location to its owning adapter.
 - `LauncherDataCoordinator` — the shared Home and catalogue snapshots and the
@@ -441,7 +444,7 @@ activity and the Settings screen observe the same `SettingsStore`. The process l
 requiring Home, Library or Games ViewModels to exist.
 
 Game lifecycle operations always go through `service/game/`. ViewModels must
-not call `LocalLibraryStore.registerGame`, `removeGame` or `addPlaytime`; those
+not call `LocalLibraryStore.registerGame` or `removeGame`; those
 writes belong behind the game seam after the Android runtime decision. A
 completed download is only a finished transfer, never proof of installation.
 While the adapter is pending, presentation must show its

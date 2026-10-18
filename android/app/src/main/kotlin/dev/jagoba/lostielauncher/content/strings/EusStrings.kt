@@ -25,7 +25,7 @@ internal object EusStrings : Strings {
     override val tooltipUninstall = "Jokoa desinstalatu"
     override val tooltipRefresh = "Freskatu"
     override val uninstallConfirmTitle = "Jokoa desinstalatu"
-    override val uninstallConfirmMessage = "{0} desinstalatu nahi duzu? Gordetako partidak eta jolasdenbora ez dira galduko."
+    override val uninstallConfirmMessage = "{0} desinstalatu nahi duzu? Gordetako partidak ez dira galduko."
     override val uninstallNotFoundTitle = "Fitxategiak ez dira aurkitu"
     override val uninstallNotFoundMessage = "Jokoaren fitxategiak ez dira aurkitu, baina zerrenda garbi utzi da."
     override val uninstallErrorTitle = "Desinstalazio errorea"

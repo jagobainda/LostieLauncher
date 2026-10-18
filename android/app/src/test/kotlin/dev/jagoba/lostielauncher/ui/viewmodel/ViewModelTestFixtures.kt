@@ -23,7 +23,6 @@ import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.InstalledGameResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
-import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
@@ -32,7 +31,6 @@ import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
-import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
@@ -178,20 +176,6 @@ internal class TestLocations : GameLocationService {
     var openResult: OpenGameLocationResult = OpenGameLocationResult.NotSupportedYet
 
     override suspend fun openBlockingLocation(location: GameLocationReference): OpenGameLocationResult = openResult
-}
-
-internal class TestLibraryStore : LocalLibraryStore {
-    var times = emptyMap<UUID, Int>()
-
-    override suspend fun getGames(): List<LocalGame> = emptyList()
-
-    override suspend fun registerGame(game: LocalGame) = Unit
-
-    override suspend fun removeGame(gameName: String) = Unit
-
-    override suspend fun addPlaytime(gameId: UUID, minutes: Int) = Unit
-
-    override suspend fun getPlaytimes(): Map<UUID, Int> = times
 }
 
 internal class TestSpecialVersionService : SpecialVersionService {

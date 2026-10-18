@@ -24,7 +24,6 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryViewModel
 import dev.jagoba.lostielauncher.util.format.DownloadSpeedFormatter
-import dev.jagoba.lostielauncher.util.format.PlaytimeFormatter
 
 private const val LIBRARY_SKELETON_COUNT = 6
 
@@ -84,7 +83,6 @@ internal fun LibraryGameUiState.toCardState() = LibraryGameCardState(
     logoUrl = game.logoUrl,
     size = game.formattedSize,
     version = game.version,
-    playtime = PlaytimeFormatter.format(playtimeMinutes),
     status = status,
     progress = download?.percent?.toFloat() ?: 0f,
     extractionProgress = (installation as? GameInstallationState.Extracting)?.percent?.toFloat(),

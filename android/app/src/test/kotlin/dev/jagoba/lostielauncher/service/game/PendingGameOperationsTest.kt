@@ -8,7 +8,6 @@ import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameLocationReference
-import dev.jagoba.lostielauncher.model.GamePlaySession
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameTarget
 import dev.jagoba.lostielauncher.model.GameUninstallOutcome
@@ -16,12 +15,10 @@ import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGameResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
-import dev.jagoba.lostielauncher.model.PlaySessionResult
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
-import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
@@ -94,15 +91,6 @@ class PendingGameOperationsTest {
         sut.activeSessions.value shouldBe GameActivityState.NotSupportedYet
         sut.runningSignal(game) shouldBe GameRunningSignal.NOT_SUPPORTED_YET
         verify(exactly = 1) { logger.info(match { it.contains("Running-state lookup requested for Demo") }) }
-    }
-
-    @Test
-    fun `play session is not recorded while game tracking is unsupported`() = runTest {
-        val session = GamePlaySession(game.id ?: UUID(0, 0), Instant.EPOCH, Instant.EPOCH.plusSeconds(120))
-        val sut = PendingPlaySessionService(logger)
-
-        sut.recordCompletedSession(session) shouldBe PlaySessionResult.NotSupportedYet
-        verify(exactly = 1) { logger.info(match { it.contains("Play-session accounting requested") }) }
     }
 
     @Test

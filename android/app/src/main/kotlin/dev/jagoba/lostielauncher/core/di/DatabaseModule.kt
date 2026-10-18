@@ -48,11 +48,17 @@ internal object DatabaseModule {
         }
     }
 
+    private val migration2To3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS playtime")
+        }
+    }
+
     @Provides
     @Singleton
     internal fun provideDatabase(@ApplicationContext context: Context): LauncherDatabase =
         Room.databaseBuilder(context, LauncherDatabase::class.java, DATABASE_NAME)
-            .addMigrations(migration1To2)
+            .addMigrations(migration1To2, migration2To3)
             .build()
 
     @Provides

@@ -25,7 +25,7 @@ internal object ValStrings : Strings {
     override val tooltipUninstall = "Desinstal·lar joc"
     override val tooltipRefresh = "Actualitzar"
     override val uninstallConfirmTitle = "Desinstal·lar joc"
-    override val uninstallConfirmMessage = "Estàs segur que vols desinstal·lar {0}? Les teues partides guardades i el registre de temps jugat no es perdran."
+    override val uninstallConfirmMessage = "Estàs segur que vols desinstal·lar {0}? Les teues partides guardades no es perdran."
     override val uninstallNotFoundTitle = "Fitxers no trobats"
     override val uninstallNotFoundMessage = "No s'han trobat els fitxers del joc, però s'ha netejat el registre de la llista."
     override val uninstallErrorTitle = "Error en desinstal·lar"

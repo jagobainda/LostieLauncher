@@ -18,14 +18,12 @@ import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
-import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.GameIdentityMatcher
 import dev.jagoba.lostielauncher.util.version.VersionUtils
-import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,7 +36,6 @@ data class InstalledGameUiState(
     val game: LocalGame,
     val remote: GameInfo?,
     val hasUpdate: Boolean,
-    val playtimeMinutes: Int,
     val isUpdating: Boolean,
     val isUninstalling: Boolean,
 ) {
@@ -79,7 +76,6 @@ class GamesViewModel @Inject constructor(
     private val installation: GameInstallationService,
     private val launch: GameLaunchService,
     private val locations: GameLocationService,
-    private val library: LocalLibraryStore,
     private val coordinator: LauncherDataCoordinator,
     private val navigation: NavigationStore,
     private val downloads: DownloadManager,
@@ -105,9 +101,8 @@ class GamesViewModel @Inject constructor(
                 try {
                     if (catalogue.isLoading) return@collectLatest
                     val known = installed as? InstalledGamesState.Available
-                    val playtimes = if (known == null) emptyMap() else library.getPlaytimes()
                     val games = known?.games.orEmpty().map { local ->
-                        toUiState(local, catalogue.games, playtimes, activity.first, activity.second)
+                        toUiState(local, catalogue.games, activity.first, activity.second)
                     }
                     mutableState.value = mutableState.value.copy(
                         isLoading = false,
@@ -244,7 +239,6 @@ class GamesViewModel @Inject constructor(
     private fun toUiState(
         local: LocalGame,
         catalogue: List<GameInfo>,
-        playtimes: Map<UUID, Int>,
         downloadRows: List<dev.jagoba.lostielauncher.model.DownloadSnapshot>,
         uninstallingNames: Set<String>,
     ): InstalledGameUiState {
@@ -253,7 +247,6 @@ class GamesViewModel @Inject constructor(
             game = local,
             remote = remote,
             hasUpdate = remote != null && VersionUtils.isNewerVersion(remote.version, local.version),
-            playtimeMinutes = playtimes[local.id] ?: 0,
             isUpdating = remote != null && downloadRows.any {
                 it.gameId == remote.gameId && it.status.isActive
             },

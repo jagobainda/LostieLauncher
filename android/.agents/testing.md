@@ -104,7 +104,7 @@ steps 04, 07, 08 and 10, which each carry their own table.
 
 Counts are `[Fact]` + `[Theory]` **declarations**, not executed cases: a theory
 with five rows is one declaration on both sides. The desktop's 24 classes
-declare 163 of them, of which 62 are here, beside 37 that are this side's own.
+declare 163 of them, of which 58 are here, beside 37 that are this side's own.
 
 ### Ported
 
@@ -116,7 +116,6 @@ declare 163 of them, of which 62 are here, beside 37 that are this side's own.
 | `DownloadCachePolicyTests` | 7 | `util/download/DownloadCachePolicyTest` | 7 | 2 |
 | `SearchMatcherTests` | 7 | `util/text/SearchMatcherTest` | 7 | 18 |
 | `FileFinalizerTests` | 6 | `util/file/FileMoveRetryPolicyTest` | 2 | 2 |
-| `PlaytimeFormatterTests` | 4 | `util/format/PlaytimeFormatterTest` | 4 | — |
 | `ShutdownWarningPolicyTests` | 4 | `util/policy/ShutdownWarningPolicyTest` | 4 | — |
 | `UrlLauncherTests` | 3 | `util/net/HttpsUrlsTest` | 3 | 9 |
 | `UnhandledExceptionPolicyTests` | 2 | `util/policy/UnhandledExceptionPolicyTest` | 2 | — |
@@ -234,15 +233,17 @@ the rest have no Android input.
 
 ## Desktop test parity: local persistence
 
-Port plan step 07 moved settings, the installed-game registry, playtime and file
-logging onto Android-native storage. These tests stay on the JVM: DataStore and
+Port plan step 07 moved settings, the installed-game registry and file logging
+onto Android-native storage. Playtime was ported too and later removed: Android
+does not track it, so `PlaytimeFormatterTests` and the playtime cases have no
+counterpart. These tests stay on the JVM: DataStore and
 Room sit behind interfaces, repository behavior uses fakes, and file logging is
 exercised only under `@TempDir`.
 
 | Desktop class or subset | Decl. | Android | Outcome |
 | --- | ---: | --- | --- |
 | `SettingsServiceTests` | 17 | `model/AppearanceSettingsTest`, `service/settings/DataStoreSettingsStoreTest` | 8 behaviors ported; 9 path cases dropped with configurable storage |
-| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/RoomLocalLibraryStoreTest` | 13 behaviors ported; three legacy-file cases became Room constraints and transactions |
+| `ContentServiceTests` local registry/playtime subset | 16 | `service/library/RoomLocalLibraryStoreTest` | Registry behaviors ported; playtime cases dropped with playtime; legacy-file cases became Room constraints |
 | `LogsMaintenanceTests` | 15 | `util/log/LogFilesTest` | all 15 ported |
 | `LogsTests` | 5 | `util/log/LogFilesTest`, `util/log/FileLoggerTest` | all 5 ported |
 
@@ -306,18 +307,19 @@ JVM suite must be rerun after each change rather than relying on a fixed total.
 | `MainViewModelTests` | 8 | `MainViewModelTest`, `NavigationStoreTest`, `LauncherDataCoordinatorTest`, `ExternalLinkOptionsModuleTest` | Section/title, refresh guard and ordering, and validated social links are covered. WPF active-property notifications become one section value. |
 | `GlobalViewModelTests` | 10 | `GlobalViewModelTest` | Busy state follows download and refresh flows. The play-session counter becomes `GameLaunchService.activeSessions`; unsupported is unknown, not zero. |
 | `HomeViewModelTests` | 14 | `HomeViewModelTest`, `LauncherDataCoordinatorTest`, `ContentServiceTest` | Initial, language, periodic, stale and maintenance cases remain. Process startup now owns loading and polling; cache failure and recovery belong to `ContentServiceTest`. |
-| `GamesViewModelTests` | 29 | `GamesViewModelTest`, `GameIdentityMatcherTest`, `PendingGameOperationsTest` | Update, zero and recorded playtime, navigation, busy guards, missing-folder offer and unsupported results are covered. Process tracking, file locks, folder deletion and window restoration remain behind the pending game seam or are Windows-only. |
-| `LibraryViewModelTests` | 33 | `LibraryViewModelTest`, download service tests, `SpecialVersionServiceTest`, `SpecialVersionPolicyTest` | Catalogue statuses, playtime, update, download commands, maintenance, cache purge and key outcomes are covered. Worker transfer remains in step 08; integrity and extraction wait behind step 09's installation seam. |
+| `GamesViewModelTests` | 29 | `GamesViewModelTest`, `GameIdentityMatcherTest`, `PendingGameOperationsTest` | Update, navigation, busy guards, missing-folder offer and unsupported results are covered. Process tracking, file locks, folder deletion and window restoration remain behind the pending game seam or are Windows-only. |
+| `LibraryViewModelTests` | 33 | `LibraryViewModelTest`, download service tests, `SpecialVersionServiceTest`, `SpecialVersionPolicyTest` | Catalogue statuses, update, download commands, maintenance, cache purge and key outcomes are covered. Worker transfer remains in step 08; integrity and extraction wait behind step 09's installation seam. |
 | `FaqsViewModelTests` | 6 | `FaqsViewModelTest`, `FaqsTest`, `SearchMatcherTest` | Search, manual expansion, reset, language changes and language-wide count remain. |
 | `SettingsViewModelTests` | 30 | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | Appearance, welcome, installed app version and games auto-update remain. Registry startup, window state, folder picker, OneDrive and launcher self-update cases have no Android counterpart. |
 
 | Desktop case or group | Android owner | Outcome |
 | --- | --- | --- |
 | `LibraryViewModelTests.LoadGames_WhenLocalVersionMatchesRemote_FlagsItAsDownloaded`, `LoadGames_WhenGameNotInstalledLocally_LeavesStatusAsAvailable`, older-version case | `LibraryViewModelTest` | Explicit `LibraryCardStatus`; a current installed game cannot start again from its card. |
-| `LoadGames_AppliesPlaytimesFromContentService`, `RefreshAsync_RequestsGamesAgain_FromContentService` | `LibraryViewModelTest`, `LauncherDataCoordinatorTest` | Initial and global-refresh playtime projection, catalogue reload. |
+| `RefreshAsync_RequestsGamesAgain_FromContentService` | `LauncherDataCoordinatorTest` | Catalogue reload. |
+| `LoadGames_AppliesPlaytimesFromContentService`, `GamesViewModelTests.BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero` | — | Dropped: Android does not track playtime. |
 | `ResumingPausedGame_ContinuesItsOwnDownload_NotAnotherPausedGame`, `StartDownloadCommand_WhenAlreadyDownloading_ReturnsImmediatelyAndDoesNothing` | `LibraryViewModelTest` | Per-game resume and global transfer guard. |
 | `GetSpecialVersionConfigErrorMessage_WhenNotFound/WhenNetworkError/WhenInvalidResponse` | `LibraryViewModelTest`, `SpecialVersionServiceTest` | Missing/invalid parsed config gives key-not-found; unparseable response, server or transport failure gives download-error. Cancelled lookup is represented by coroutine cancellation, with no notice; success proceeds to download. |
-| `GamesViewModelTests.LoadInstalledGames_WhenRemoteAndLocalVersionsMatch_DoesNotFlagUpdate`, `BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero`, `NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested` | `GamesViewModelTest` | Ported. |
+| `GamesViewModelTests.LoadInstalledGames_WhenRemoteAndLocalVersionsMatch_DoesNotFlagUpdate`, `NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested` | `GamesViewModelTest` | Ported. |
 | Desktop game session, file-lock, uninstall filesystem and Help-folder enumeration cases | `PendingGameOperationsTest` and future game adapter | Android game runtime is unresolved in step 09. The pending seam reports unsupported without claiming desktop file or process behavior. |
 | Desktop `LibraryViewModelTests` hash verification, extraction and directory finalization cases | Step 08 transfer tests and future step 09 installer | Transfer finalization is covered; installation and hash verification remain pending. |
 | `SettingsViewModelTests.FormatVersion_*` | `SettingsViewModelTest`, `VersionUtilsTest` | Android publishes its `BuildConfig.VERSION_NAME` with one `v` prefix. Assembly-specific four/two-component and null cases do not apply to a packaged Android version name. |

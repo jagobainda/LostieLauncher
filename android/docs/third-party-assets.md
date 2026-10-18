@@ -17,7 +17,6 @@ is unchanged; only the container format differs.
 | `ic_card_pokeball` | `pokeball` | Material Design Icons | Apache-2.0 |
 | `ic_card_harddisk` | `harddisk` | Material Design Icons | Apache-2.0 |
 | `ic_card_tag` | `tag-outline` | Material Design Icons | Apache-2.0 |
-| `ic_card_clock` | `clock-outline` | Material Design Icons | Apache-2.0 |
 | `ic_card_arrow_right` | `arrow-right` | Material Design Icons | Apache-2.0 |
 | `ic_card_download` | `download` | Material Design Icons | Apache-2.0 |
 | `ic_card_pause` | `pause` | Material Design Icons | Apache-2.0 |

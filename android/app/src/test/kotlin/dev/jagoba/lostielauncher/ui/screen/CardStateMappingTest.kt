@@ -21,7 +21,6 @@ class CardStateMappingTest {
         card.title shouldBe game.name
         card.size shouldBe game.formattedSize
         card.version shouldBe "v2.0"
-        card.playtime shouldBe "2 h 5 min"
         card.progress shouldBe 50f
         card.speed shouldBe "0.0 KB/s"
         card.remainingTime shouldBe "10s"
@@ -50,10 +49,9 @@ class CardStateMappingTest {
     @Test
     fun `library row without transfer starts at zero`() {
         val row = libraryRow(null, LibraryCardStatus.AVAILABLE)
-        val card = row.copy(download = null, playtimeMinutes = 0).toCardState()
+        val card = row.copy(download = null).toCardState()
         card.progress shouldBe 0f
         card.speed shouldBe null
-        card.playtime shouldBe ""
         card.canCancel shouldBe false
     }
 
@@ -89,7 +87,6 @@ class CardStateMappingTest {
         installed = null,
         installedStateKnown = false,
         hasUpdate = false,
-        playtimeMinutes = 125,
         download = testDownload(game, status ?: DownloadStatus.PAUSED),
         installation = null,
         status = cardStatus,
@@ -103,7 +100,6 @@ class CardStateMappingTest {
         game = LocalGame(UUID.randomUUID(), "Local Name", "v1.0", "NUZLOCKE"),
         remote = game,
         hasUpdate = hasUpdate,
-        playtimeMinutes = 0,
         isUpdating = false,
         isUninstalling = false,
     )

@@ -84,61 +84,12 @@ class RoomLocalLibraryStoreTest {
     }
 
     @Test
-    fun `returns empty playtimes before any session is recorded`() = runTest {
-        val sut = createSut(FakeLocalLibraryDao())
-
-        sut.getPlaytimes() shouldBe emptyMap()
-    }
-
-    @Test
-    fun `ignores playtime for the empty id`() = runTest {
-        val sut = createSut(FakeLocalLibraryDao())
-
-        sut.addPlaytime(UUID(0, 0), 30)
-
-        sut.getPlaytimes() shouldBe emptyMap()
-    }
-
-    @Test
-    fun `accumulates playtime for one game`() = runTest {
-        val sut = createSut(FakeLocalLibraryDao())
-        val id = UUID.randomUUID()
-
-        sut.addPlaytime(id, 30)
-        sut.addPlaytime(id, 15)
-
-        sut.getPlaytimes() shouldBe mapOf(id to 45)
-    }
-
-    @Test
-    fun `does not lose concurrent playtime updates`() = runTest {
-        val sut = createSut(FakeLocalLibraryDao())
-        val id = UUID.randomUUID()
-
-        List(100) { async { sut.addPlaytime(id, 1) } }.awaitAll()
-
-        sut.getPlaytimes() shouldBe mapOf(id to 100)
-    }
-
-    @Test
     fun `persists every concurrent game registration`() = runTest {
         val sut = createSut(FakeLocalLibraryDao())
 
         List(100) { index -> async { sut.registerGame(game("Game $index")) } }.awaitAll()
 
         sut.getGames() shouldHaveSize 100
-    }
-
-    @Test
-    fun `allows reads to interleave with writes without losing playtime`() = runTest {
-        val sut = createSut(FakeLocalLibraryDao())
-        val id = UUID.randomUUID()
-
-        val writes = List(100) { async { sut.addPlaytime(id, 1) } }
-        val reads = List(25) { async { sut.getPlaytimes() } }
-        (writes + reads).awaitAll()
-
-        sut.getPlaytimes() shouldBe mapOf(id to 100)
     }
 
     @Test
@@ -203,7 +154,6 @@ class RoomLocalLibraryStoreTest {
     private class FakeLocalLibraryDao(initialGames: List<InstalledGameEntity> = emptyList()) : LocalLibraryDao() {
         private val gate = Mutex()
         private val games = initialGames.associateByTo(linkedMapOf()) { it.nameKey }
-        private val playtimes = linkedMapOf<String, Int>()
         private var nextRowId = (initialGames.maxOfOrNull { it.rowId } ?: 0) + 1
 
         override suspend fun getGames(): List<InstalledGameEntity> = gate.withLock {
@@ -219,22 +169,6 @@ class RoomLocalLibraryStoreTest {
         override suspend fun deleteGame(nameKey: String) {
             gate.withLock { games.remove(nameKey) }
         }
-
-        override suspend fun getPlaytimes(): List<PlaytimeEntity> = gate.withLock {
-            playtimes.map { PlaytimeEntity(it.key, it.value) }
-        }
-
-        override suspend fun incrementPlaytime(gameId: String, minutes: Int): Int = gate.withLock {
-            val current = playtimes[gameId] ?: return@withLock 0
-            playtimes[gameId] = current + minutes
-            1
-        }
-
-        override suspend fun insertPlaytime(playtime: PlaytimeEntity): Long = gate.withLock {
-            if (playtime.gameId in playtimes) return@withLock -1
-            playtimes[playtime.gameId] = playtime.minutes
-            1
-        }
     }
 
     private class FailingLocalLibraryDao : LocalLibraryDao() {
@@ -243,12 +177,5 @@ class RoomLocalLibraryStoreTest {
         override suspend fun insertGame(game: InstalledGameEntity): Unit = throw IOException("database unavailable")
 
         override suspend fun deleteGame(nameKey: String): Unit = throw IOException("database unavailable")
-
-        override suspend fun getPlaytimes(): List<PlaytimeEntity> = throw IOException("database unavailable")
-
-        override suspend fun incrementPlaytime(gameId: String, minutes: Int): Int =
-            throw IOException("database unavailable")
-
-        override suspend fun insertPlaytime(playtime: PlaytimeEntity): Long = throw IOException("database unavailable")
     }
 }

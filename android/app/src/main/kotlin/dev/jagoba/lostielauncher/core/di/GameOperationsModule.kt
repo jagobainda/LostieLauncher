@@ -10,8 +10,6 @@ import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
 import dev.jagoba.lostielauncher.service.game.KirinGameLaunchService
 import dev.jagoba.lostielauncher.service.game.PendingGameLocationService
-import dev.jagoba.lostielauncher.service.game.PendingPlaySessionService
-import dev.jagoba.lostielauncher.service.game.PlaySessionService
 import javax.inject.Singleton
 
 @Module
@@ -24,10 +22,6 @@ internal abstract class GameOperationsModule {
     @Binds
     @Singleton
     internal abstract fun bindLaunch(impl: KirinGameLaunchService): GameLaunchService
-
-    @Binds
-    @Singleton
-    internal abstract fun bindPlaySession(impl: PendingPlaySessionService): PlaySessionService
 
     @Binds
     @Singleton

@@ -1,6 +1,5 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
-import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
@@ -38,7 +37,6 @@ class LibraryViewModelTest {
     private val content = TestContentService()
     private val downloads = TestDownloads()
     private val installation = TestInstallation()
-    private val library = TestLibraryStore()
     private val special = TestSpecialVersionService()
     private val navigation = NavigationStore()
     private val settings = TestSettingsStore()
@@ -158,20 +156,6 @@ class LibraryViewModelTest {
         runCurrent()
         sut.state.value.pendingDownloadGameId shouldBe null
         downloads.starts.size shouldBe 0
-    }
-
-    @Test
-    fun `catalogue card uses stored playtime and global refresh reloads it`() = runTest(dispatcher) {
-        val remote = testGame()
-        content.games = listOf(remote)
-        library.times = mapOf(remote.id!! to 12)
-        val sut = createSut(backgroundScope)
-        runCurrent()
-        sut.state.value.games.single().playtimeMinutes shouldBe 12
-        library.times = mapOf(remote.id to 28)
-        coordinator.refreshAll(AppLanguage.ESP)
-        runCurrent()
-        sut.state.value.games.single().playtimeMinutes shouldBe 28
     }
 
     @Test
@@ -424,7 +408,6 @@ class LibraryViewModelTest {
             coordinator,
             downloads,
             installation,
-            library,
             content,
             special,
             navigation,

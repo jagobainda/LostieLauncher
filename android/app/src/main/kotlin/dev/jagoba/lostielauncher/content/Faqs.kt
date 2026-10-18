@@ -26,7 +26,7 @@ private val EspFaqs = listOf(
     ),
     FaqEntry(
         "¿Perderé mis partidas guardadas al actualizar o desinstalar un juego?",
-        "No. Las partidas guardadas y el registro de tiempo jugado se conservan siempre, tanto al actualizar como al desinstalar un juego.",
+        "No. Las partidas guardadas se conservan siempre, tanto al actualizar como al desinstalar un juego.",
     ),
     FaqEntry(
         "¿Qué es una versión especial y cómo la activo?",
@@ -53,7 +53,7 @@ private val EngFaqs = listOf(
     ),
     FaqEntry(
         "Will I lose my saved games when updating or uninstalling a game?",
-        "No. Saved games and the playtime record are always kept, both when updating and when uninstalling a game.",
+        "No. Saved games are always kept, both when updating and when uninstalling a game.",
     ),
     FaqEntry(
         "What is a special version and how do I activate it?",
@@ -80,7 +80,7 @@ private val CatFaqs = listOf(
     ),
     FaqEntry(
         "Perdré les meves partides desades en actualitzar o desinstal·lar un joc?",
-        "No. Les partides desades i el registre de temps jugat es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
+        "No. Les partides desades es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
     ),
     FaqEntry(
         "Què és una versió especial i com l'activo?",
@@ -107,7 +107,7 @@ private val EusFaqs = listOf(
     ),
     FaqEntry(
         "Gordetako partidak galduko ditut joko bat eguneratzean edo desinstalatzean?",
-        "Ez. Gordetako partidak eta jolasdenboraren erregistroa beti mantentzen dira, bai eguneratzean bai desinstalatzean.",
+        "Ez. Gordetako partidak beti mantentzen dira, bai eguneratzean bai desinstalatzean.",
     ),
     FaqEntry(
         "Zer da bertsio berezi bat eta nola aktibatzen dut?",
@@ -134,7 +134,7 @@ private val GalFaqs = listOf(
     ),
     FaqEntry(
         "Perderei as miñas partidas gardadas ao actualizar ou desinstalar un xogo?",
-        "Non. As partidas gardadas e o rexistro de tempo xogado consérvanse sempre, tanto ao actualizar como ao desinstalar un xogo.",
+        "Non. As partidas gardadas consérvanse sempre, tanto ao actualizar como ao desinstalar un xogo.",
     ),
     FaqEntry(
         "Que é unha versión especial e como a activo?",
@@ -161,7 +161,7 @@ private val PorFaqs = listOf(
     ),
     FaqEntry(
         "Vou perder meus saves ao atualizar ou desinstalar um jogo?",
-        "Não. Os saves e o registro de tempo de jogo são sempre mantidos, tanto ao atualizar quanto ao desinstalar um jogo.",
+        "Não. Os saves são sempre mantidos, tanto ao atualizar quanto ao desinstalar um jogo.",
     ),
     FaqEntry(
         "O que é uma versão especial e como a ativo?",
@@ -188,7 +188,7 @@ private val ValFaqs = listOf(
     ),
     FaqEntry(
         "Perdré les meues partides guardades en actualitzar o desinstal·lar un joc?",
-        "No. Les partides guardades i el registre de temps jugat es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
+        "No. Les partides guardades es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
     ),
     FaqEntry(
         "Què és una versió especial i com l'active?",
@@ -215,7 +215,7 @@ private val FraFaqs = listOf(
     ),
     FaqEntry(
         "Vais-je perdre mes sauvegardes en mettant à jour ou en désinstallant un jeu ?",
-        "Non. Les sauvegardes et le registre de temps de jeu sont toujours conservés, aussi bien lors d'une mise à jour que d'une désinstallation.",
+        "Non. Les sauvegardes sont toujours conservées, aussi bien lors d'une mise à jour que d'une désinstallation.",
     ),
     FaqEntry(
         "Qu'est-ce qu'une version spéciale et comment l'activer ?",

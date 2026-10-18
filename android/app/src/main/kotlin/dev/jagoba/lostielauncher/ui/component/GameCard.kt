@@ -83,7 +83,6 @@ data class LibraryGameCardState(
     val logoUrl: String?,
     val size: String,
     val version: String,
-    val playtime: String,
     val status: LibraryCardStatus,
     val progress: Float = 0f,
     val extractionProgress: Float? = null,
@@ -103,7 +102,6 @@ data class InstalledGameCardState(
     val installedVersion: String,
     val specialType: String?,
     val updateVersion: String?,
-    val playtime: String,
     val canPlay: Boolean = true,
     val canUpdate: Boolean = true,
     val canSwitchSpecialVersion: Boolean = true,
@@ -154,7 +152,6 @@ fun LibraryGameCard(
             ) {
                 MetaItem(R.drawable.ic_card_harddisk, state.size)
                 MetaItem(R.drawable.ic_card_tag, state.version)
-                if (state.playtime.isNotEmpty()) MetaItem(R.drawable.ic_card_clock, state.playtime)
             }
         },
         status = {
@@ -276,13 +273,6 @@ fun InstalledGameCard(
                         )
                     }
                 }
-            }
-            if (state.playtime.isNotEmpty()) {
-                MetaItem(
-                    R.drawable.ic_card_clock,
-                    state.playtime,
-                    Modifier.padding(top = LauncherSpacing.ExtraSmall),
-                )
             }
         },
         status = {},

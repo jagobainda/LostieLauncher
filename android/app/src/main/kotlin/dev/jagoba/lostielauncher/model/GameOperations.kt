@@ -1,6 +1,5 @@
 package dev.jagoba.lostielauncher.model
 
-import java.time.Instant
 import java.util.UUID
 
 data class GameTarget(val id: UUID?, val name: String)
@@ -86,16 +85,6 @@ sealed interface GameActivityState {
     data class Active(val games: Set<GameTarget>) : GameActivityState
 
     data object NotSupportedYet : GameActivityState
-}
-
-data class GamePlaySession(val gameId: UUID, val startedAt: Instant, val endedAt: Instant)
-
-sealed interface PlaySessionResult {
-    data class Recorded(val minutes: Int) : PlaySessionResult
-
-    data object Ignored : PlaySessionResult
-
-    data object NotSupportedYet : PlaySessionResult
 }
 
 sealed interface OpenGameLocationResult {
