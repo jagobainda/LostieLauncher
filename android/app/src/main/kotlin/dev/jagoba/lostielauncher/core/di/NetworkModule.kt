@@ -61,7 +61,7 @@ object NetworkModule {
     fun provideUserAgentInterceptor(): Interceptor = Interceptor { chain ->
         chain.proceed(
             chain.request().newBuilder()
-                .header("User-Agent", "LostieLauncher/${BuildConfig.VERSION_NAME}")
+                .header("User-Agent", "LostieLauncher/${BuildConfig.VERSION_NAME} (Android)")
                 .build(),
         )
     }

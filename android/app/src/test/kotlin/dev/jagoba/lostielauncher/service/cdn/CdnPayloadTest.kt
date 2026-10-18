@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.service.cdn
 
+import dev.jagoba.lostielauncher.BuildConfig
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.core.di.NetworkModule
 import dev.jagoba.lostielauncher.model.AppLanguage
@@ -211,12 +212,14 @@ class CdnPayloadTest {
     }
 
     @Test
-    fun `sends the launcher user agent on every request`() = runTest {
+    fun `identifies Android and the app version on every catalogue request`() = runTest {
         enqueueCatalogue(readResource("cdn/listado.json"))
 
         createSut().getGames()
 
-        server.takeRequest().headers["User-Agent"] shouldStartWith "LostieLauncher/"
+        repeat(2) {
+            server.takeRequest().headers["User-Agent"] shouldBe "LostieLauncher/${BuildConfig.VERSION_NAME} (Android)"
+        }
     }
 
     private fun enqueueCatalogue(body: String) {
