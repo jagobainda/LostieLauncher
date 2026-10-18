@@ -8,9 +8,11 @@ in the app's download directory, and its Room download row remains `COMPLETED`.
 That state means the transfer finished, not that the game is playable.
 
 Installation is now implemented for Kirin: `ArchiveGameInstallationService`
-verifies the archive, extracts it into `/storage/emulated/0/LostieLauncher/<slug>`,
-and registers the directory in `/storage/emulated/0/Kirin/game-library.json` and
+verifies the archive, extracts it into `<shared-storage>/LostieLauncher/<slug>`,
+and registers the directory in `<shared-storage>/Kirin/game-library.json` and
 the local Room registry (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
+The shared-storage root is resolved for the current Android user with
+`Environment.getExternalStorageDirectory()` rather than assuming user 0.
 A missing library file is created; one that is not a JSON array is left alone
 and reported as `RegistryFailed`. Launch is implemented by `KirinGameLaunchService`:
 Play resolves `LostieLauncher/<slug>` and sends Kirin's explicit
@@ -136,7 +138,8 @@ The step 07 storage decision still governs downloads:
 `StorageLocations.downloadsRoot` is app-specific external storage with an internal
 fallback; there is no picker. App-specific files are removed when the launcher is
 uninstalled. Installed games are not app-specific: the Kirin installation
-extracts them into `/storage/emulated/0/LostieLauncher`, which survives uninstall. Shared documents selected with the Storage Access Framework can
+extracts them into `<shared-storage>/LostieLauncher` for the current Android user,
+which survives uninstall. Shared documents selected with the Storage Access Framework can
 survive uninstall, but that would be a separate storage migration rather than
 an incidental consequence of installation.
 

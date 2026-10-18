@@ -238,8 +238,9 @@ transfer may be active. A transfer the system stops, such as on a dropped
 connection, goes back to the queue and the card says it is waiting for a
 connection until WorkManager resumes it. A completed archive crosses the
 `DownloadedFileHandoff` seam, which verifies it, extracts it into
-`/storage/emulated/0/LostieLauncher/<slug>` and registers the game in Kirin and
-the local library. That root is shared storage, so it carries a `.nomedia`
+`<shared-storage>/LostieLauncher/<slug>` and registers the game in Kirin and
+the local library. The shared-storage root is resolved for the current Android
+user with `Environment.getExternalStorageDirectory()`. It carries a `.nomedia`
 marker, created before the first extraction and on startup, which keeps the
 games' images out of the gallery. Play launches it through Kirin's shortcut
 intent (see

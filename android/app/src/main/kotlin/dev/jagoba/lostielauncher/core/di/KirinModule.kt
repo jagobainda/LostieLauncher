@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.core.di
 
+import android.os.Environment
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -22,21 +23,22 @@ internal abstract class KirinBindingsModule {
 @Module
 @InstallIn(SingletonComponent::class)
 internal object KirinModule {
-    private const val SHARED_STORAGE_ROOT = "/storage/emulated/0"
-
     @Provides
     @Singleton
-    fun provideKirinOptions(): KirinOptions = KirinOptions(
-        gamesRoot = File(SHARED_STORAGE_ROOT, "LostieLauncher"),
-        libraryFile = File(SHARED_STORAGE_ROOT, "Kirin/game-library.json"),
-        executableName = "Game.exe",
-        runtimeMode = "auto",
-        packageName = "com.gmax.kirin",
-        launchActivity = "com.gmax.kirin.LibraryActivity",
-        launchAction = "com.gmax.kirin.action.LAUNCH_GAME_SHORTCUT",
-        gamePathExtra = "shortcut_game_path",
-        archiveBufferSizeBytes = 64 * 1024,
-        archiveExtractionWorkers = 4,
-        archiveEntryCostBytes = 64 * 1024,
-    )
+    fun provideKirinOptions(): KirinOptions {
+        val sharedStorageRoot = Environment.getExternalStorageDirectory()
+        return KirinOptions(
+            gamesRoot = File(sharedStorageRoot, "LostieLauncher"),
+            libraryFile = File(sharedStorageRoot, "Kirin/game-library.json"),
+            executableName = "Game.exe",
+            runtimeMode = "auto",
+            packageName = "com.gmax.kirin",
+            launchActivity = "com.gmax.kirin.LibraryActivity",
+            launchAction = "com.gmax.kirin.action.LAUNCH_GAME_SHORTCUT",
+            gamePathExtra = "shortcut_game_path",
+            archiveBufferSizeBytes = 64 * 1024,
+            archiveExtractionWorkers = 4,
+            archiveEntryCostBytes = 64 * 1024,
+        )
+    }
 }
