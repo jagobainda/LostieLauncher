@@ -22,7 +22,7 @@ private val EspFaqs = listOf(
     ),
     FaqEntry(
         "¿Dónde se instalan los juegos y cómo cambio la carpeta?",
-        "En Android, los juegos se guardan en el almacenamiento propio del launcher y esa carpeta no se puede cambiar. Si desinstalas el launcher, los juegos descargados se borran con él.",
+        "En Android, los juegos se instalan en la carpeta LostieLauncher del almacenamiento interno y esa carpeta no se puede cambiar. Si desinstalas el launcher, los juegos instalados no se borran: puedes eliminarlos a mano desde esa carpeta.",
     ),
     FaqEntry(
         "¿Perderé mis partidas guardadas al actualizar o desinstalar un juego?",
@@ -49,7 +49,7 @@ private val EngFaqs = listOf(
     ),
     FaqEntry(
         "Where are games installed and how do I change the folder?",
-        "On Android, games are stored in the launcher's own storage, and that folder cannot be changed. If you uninstall the launcher, the downloaded games are removed with it.",
+        "On Android, games are installed in the LostieLauncher folder of the internal storage, and that folder cannot be changed. If you uninstall the launcher, the installed games are not removed: you can delete them manually from that folder.",
     ),
     FaqEntry(
         "Will I lose my saved games when updating or uninstalling a game?",
@@ -76,7 +76,7 @@ private val CatFaqs = listOf(
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvio la carpeta?",
-        "A Android, els jocs es guarden a l'emmagatzematge propi del launcher i aquesta carpeta no es pot canviar. Si desinstal·les el launcher, els jocs descarregats s'esborren amb ell.",
+        "A Android, els jocs s'instal·len a la carpeta LostieLauncher de l'emmagatzematge intern i aquesta carpeta no es pot canviar. Si desinstal·les el launcher, els jocs instal·lats no s'esborren: pots eliminar-los a mà des d'aquesta carpeta.",
     ),
     FaqEntry(
         "Perdré les meves partides desades en actualitzar o desinstal·lar un joc?",
@@ -103,7 +103,7 @@ private val EusFaqs = listOf(
     ),
     FaqEntry(
         "Non instalatzen dira jokoak eta nola aldatzen dut karpeta?",
-        "Android-en, jokoak launcher-aren biltegiratze propioan gordetzen dira, eta karpeta hori ezin da aldatu. Launcher-a desinstalatzen baduzu, deskargatutako jokoak ere ezabatu egiten dira.",
+        "Android-en, jokoak barneko biltegiratzeko LostieLauncher karpetan instalatzen dira, eta karpeta hori ezin da aldatu. Launcher-a desinstalatzen baduzu, instalatutako jokoak ez dira ezabatzen: karpeta horretatik eskuz ezaba ditzakezu.",
     ),
     FaqEntry(
         "Gordetako partidak galduko ditut joko bat eguneratzean edo desinstalatzean?",
@@ -130,7 +130,7 @@ private val GalFaqs = listOf(
     ),
     FaqEntry(
         "Onde se instalan os xogos e como cambio o cartafol?",
-        "En Android, os xogos gárdanse no almacenamento propio do launcher e ese cartafol non se pode cambiar. Se desinstalas o launcher, os xogos descargados bórranse con el.",
+        "En Android, os xogos instálanse no cartafol LostieLauncher do almacenamento interno e ese cartafol non se pode cambiar. Se desinstalas o launcher, os xogos instalados non se borran: podes eliminalos a man desde ese cartafol.",
     ),
     FaqEntry(
         "Perderei as miñas partidas gardadas ao actualizar ou desinstalar un xogo?",
@@ -157,7 +157,7 @@ private val PorFaqs = listOf(
     ),
     FaqEntry(
         "Onde os jogos são instalados e como mudo a pasta?",
-        "No Android, os jogos são salvos no armazenamento próprio do launcher e essa pasta não pode ser alterada. Se você desinstalar o launcher, os jogos baixados são removidos junto com ele.",
+        "No Android, os jogos são instalados na pasta LostieLauncher do armazenamento interno e essa pasta não pode ser alterada. Se você desinstalar o launcher, os jogos instalados não são removidos: você pode excluí-los manualmente nessa pasta.",
     ),
     FaqEntry(
         "Vou perder meus saves ao atualizar ou desinstalar um jogo?",
@@ -184,7 +184,7 @@ private val ValFaqs = listOf(
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvie la carpeta?",
-        "En Android, els jocs es guarden en l'emmagatzematge propi del launcher i eixa carpeta no es pot canviar. Si desinstal·les el launcher, els jocs descarregats s'esborren amb ell.",
+        "En Android, els jocs s'instal·len en la carpeta LostieLauncher de l'emmagatzematge intern i eixa carpeta no es pot canviar. Si desinstal·les el launcher, els jocs instal·lats no s'esborren: pots eliminar-los a mà des d'eixa carpeta.",
     ),
     FaqEntry(
         "Perdré les meues partides guardades en actualitzar o desinstal·lar un joc?",
@@ -211,7 +211,7 @@ private val FraFaqs = listOf(
     ),
     FaqEntry(
         "Où les jeux sont-ils installés et comment changer de dossier ?",
-        "Sur Android, les jeux sont enregistrés dans le stockage propre du launcher et ce dossier ne peut pas être modifié. Si vous désinstallez le launcher, les jeux téléchargés sont supprimés avec lui.",
+        "Sur Android, les jeux sont installés dans le dossier LostieLauncher du stockage interne et ce dossier ne peut pas être modifié. Si vous désinstallez le launcher, les jeux installés ne sont pas supprimés : vous pouvez les effacer manuellement depuis ce dossier.",
     ),
     FaqEntry(
         "Vais-je perdre mes sauvegardes en mettant à jour ou en désinstallant un jeu ?",
