@@ -227,6 +227,17 @@ class ArchiveGameInstallationServiceTest {
     }
 
     @Test
+    fun `deletes leftover previous installations on startup`() = runTest(dispatcher) {
+        File(gamesRoot, "demo.old-leftover/Game.exe").apply { parentFile?.mkdirs() }.writeText("exe")
+        gameDirectory.mkdirs()
+
+        createSut()
+        advanceUntilIdle()
+
+        gamesRoot.list().orEmpty().sorted() shouldBe listOf(".nomedia", "demo")
+    }
+
+    @Test
     fun `does not create the games root on startup when nothing is installed`() = runTest(dispatcher) {
         createSut()
         advanceUntilIdle()
@@ -310,8 +321,9 @@ class ArchiveGameInstallationServiceTest {
         val sut = createSut()
 
         sut.uninstall(GameTarget(gameId, "Demo")) shouldBe GameUninstallResult(GameUninstallOutcome.COMPLETED)
+        advanceUntilIdle()
 
-        gameDirectory.exists() shouldBe false
+        gamesRoot.list().orEmpty().sorted() shouldBe listOf(".nomedia")
         coVerify(exactly = 1) { kirin.unregister(gameDirectory) }
         coVerify(exactly = 1) { library.removeGame("Demo") }
         sut.installedGames.value shouldBe InstalledGamesState.Available(emptyList())

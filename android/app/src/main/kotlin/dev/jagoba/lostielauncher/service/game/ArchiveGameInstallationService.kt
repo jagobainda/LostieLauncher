@@ -62,6 +62,9 @@ internal class ArchiveGameInstallationService @Inject constructor(
         background.launch {
             hideGamesFromMediaScanner()
             refreshInstalled()
+            deleteInBackground(
+                options.gamesRoot.listFiles { file -> PREVIOUS_INSTALLATION_SUFFIX in file.name }.orEmpty().toList(),
+            )
         }
     }
 
@@ -133,7 +136,10 @@ internal class ArchiveGameInstallationService @Inject constructor(
         val existed = directory.exists()
         var deleted = 0
         var blocking: File? = null
-        if (existed) {
+        val backup = previousInstallation(directory)
+        if (existed && directory.renameTo(backup)) {
+            deleteInBackground(listOf(backup))
+        } else if (existed) {
             for (entry in directory.walkBottomUp()) {
                 if (entry.delete()) {
                     deleted++
@@ -263,7 +269,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
     }
 
     private fun swap(temp: File, directory: File) {
-        val backup = File("${directory.path}$PREVIOUS_INSTALLATION_SUFFIX${UUID.randomUUID()}")
+        val backup = previousInstallation(directory)
         val hadExisting = directory.exists()
         if (hadExisting && !directory.renameTo(backup)) throw IOException("Could not move '$directory' aside.")
         if (!temp.renameTo(directory)) {
@@ -271,6 +277,9 @@ internal class ArchiveGameInstallationService @Inject constructor(
             throw IOException("Could not move '$temp' into place.")
         }
     }
+
+    private fun previousInstallation(directory: File) =
+        File("${directory.path}$PREVIOUS_INSTALLATION_SUFFIX${UUID.randomUUID()}")
 
     private fun previousInstallations(directory: File): List<File> = directory.parentFile
         ?.listFiles { file -> file.name.startsWith("${directory.name}$PREVIOUS_INSTALLATION_SUFFIX") }
