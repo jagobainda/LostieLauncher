@@ -1,6 +1,6 @@
 package dev.jagoba.lostielauncher.ui.screen
 
-import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,10 +11,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -31,18 +35,14 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesViewModel
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
+import kotlinx.coroutines.delay
 
 private const val GAMES_SKELETON_COUNT = 5
 
-private val EjectMillis = LauncherMotion.EjectLoop.inWholeMilliseconds.toInt()
-private val TakeoverFadeMillis = LauncherMotion.TakeoverFade.inWholeMilliseconds.toInt()
-
-private val UninstalledCardExit = keyframes {
-    durationMillis = EjectMillis + TakeoverFadeMillis
-    1f at EjectMillis
-}
-
-private val UninstalledCardCollapse = tween<IntOffset>(TakeoverFadeMillis, delayMillis = EjectMillis)
+private val UninstalledCardFade = tween<Float>(
+    LauncherMotion.TakeoverFade.inWholeMilliseconds.toInt(),
+    delayMillis = LauncherMotion.EjectLoop.inWholeMilliseconds.toInt(),
+)
 
 internal class GamesActions(
     val play: (String) -> Unit,
@@ -71,13 +71,20 @@ fun GamesScreen(modifier: Modifier = Modifier, viewModel: GamesViewModel = hiltV
 @Composable
 internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: Modifier = Modifier) {
     val strings = LocalStrings.current
+    val games = rememberGamesWithDepartures(state.games)
+    val present = remember(state.games) { state.games.mapTo(HashSet()) { it.game.name } }
     when {
-        state.isListVisible -> LazyColumn(
+        state.isListVisible || games.size > state.games.size -> LazyColumn(
             modifier.fillMaxSize(),
             contentPadding = PaddingValues(LauncherSpacing.Screen),
         ) {
-            items(state.games, key = { it.game.name }) { row ->
+            items(games, key = { it.game.name }) { row ->
                 val name = row.game.name
+                val alpha by animateFloatAsState(
+                    if (name in present) 1f else 0f,
+                    UninstalledCardFade,
+                    label = "uninstalled-card",
+                )
                 InstalledGameCard(
                     state = row.toCardState(),
                     onPlay = { actions.play(name) },
@@ -85,7 +92,8 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
                     onSwitchSpecialVersion = { actions.switchSpecialVersion(name) },
                     onUninstall = { actions.uninstall(name) },
                     modifier = Modifier
-                        .animateItem(fadeOutSpec = UninstalledCardExit, placementSpec = UninstalledCardCollapse)
+                        .animateItem()
+                        .graphicsLayer { this.alpha = alpha }
                         .padding(bottom = LauncherSpacing.MediumLarge),
                 )
             }
@@ -118,6 +126,31 @@ private fun GoToLibraryButton(onClick: () -> Unit) {
         onClick = onClick,
         horizontalPadding = LauncherSpacing.Screen,
     )
+}
+
+@Composable
+private fun rememberGamesWithDepartures(games: List<InstalledGameUiState>): List<InstalledGameUiState> {
+    var shown by remember { mutableStateOf(games) }
+    LaunchedEffect(games) {
+        shown = withDepartingGames(shown, games)
+        if (shown.size > games.size) {
+            delay(LauncherMotion.EjectLoop + LauncherMotion.TakeoverFade)
+            shown = games
+        }
+    }
+    return shown
+}
+
+internal fun withDepartingGames(
+    shown: List<InstalledGameUiState>,
+    games: List<InstalledGameUiState>,
+): List<InstalledGameUiState> {
+    val names = games.mapTo(HashSet()) { it.game.name }
+    val result = games.toMutableList()
+    shown.forEachIndexed { index, row ->
+        if (row.isUninstalling && row.game.name !in names) result.add(minOf(index, result.size), row)
+    }
+    return result
 }
 
 @Composable
