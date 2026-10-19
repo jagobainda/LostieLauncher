@@ -51,7 +51,7 @@ object LauncherSizes {
     val TitleBarIcon: Dp = 22.dp
     val TitleBarButton: Dp = 50.dp
     val TitleBarButtonIcon: Dp = 14.dp
-    val NavigationIcon: Dp = 22.dp
+    val NavigationIcon: Dp = 27.dp
     val NavigationIndicator: Dp = 3.dp
     val OfflinePillHeight: Dp = 22.dp
     val OfflinePillIcon: Dp = 12.dp
