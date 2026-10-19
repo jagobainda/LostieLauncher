@@ -137,6 +137,7 @@ fun LibraryGameCard(
         pulsing = state.status == LibraryCardStatus.DOWNLOADING,
         takeover = rememberLibraryCardTakeover(state.status),
         actionsReserve = LibraryCardActionsReserve,
+        fillStackedActions = false,
         modifier = modifier,
         text = {
             CardTitle(state.title)
@@ -230,6 +231,7 @@ fun InstalledGameCard(
         pulsing = false,
         takeover = CardTakeover.UNINSTALLING.takeIf { state.isUninstalling },
         actionsReserve = InstalledCardActionsReserve,
+        fillStackedActions = true,
         modifier = modifier,
         text = {
             CardTitle(state.title)
@@ -272,34 +274,37 @@ fun InstalledGameCard(
         },
         status = {},
         actions = {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small, Alignment.End),
-                verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-            ) {
-                CardButton(
-                    style = CardButtonStyle.ACCENT,
-                    icon = R.drawable.ic_card_play,
-                    label = strings.btnPlay,
-                    enabled = state.canPlay,
-                    onClick = onPlay,
-                )
-                if (state.updateVersion != null) {
+            CardActions(
+                labelled = {
                     CardButton(
-                        style = CardButtonStyle.SUCCESS,
-                        icon = R.drawable.ic_card_update,
-                        label = strings.btnUpdate,
-                        enabled = state.canUpdate,
-                        onClick = onUpdate,
+                        style = CardButtonStyle.ACCENT,
+                        icon = R.drawable.ic_card_play,
+                        label = strings.btnPlay,
+                        enabled = state.canPlay,
+                        minWidth = Dp.Unspecified,
+                        onClick = onPlay,
                     )
-                }
-                GameIconButton(
-                    R.drawable.ic_card_key,
-                    strings.tooltipSwitchSpecialVersion,
-                    state.canSwitchSpecialVersion,
-                    onSwitchSpecialVersion,
-                )
-                GameIconButton(R.drawable.ic_card_trash, strings.tooltipUninstall, state.canUninstall, onUninstall)
-            }
+                    if (state.updateVersion != null) {
+                        CardButton(
+                            style = CardButtonStyle.SUCCESS,
+                            icon = R.drawable.ic_card_update,
+                            label = strings.btnUpdate,
+                            enabled = state.canUpdate,
+                            minWidth = Dp.Unspecified,
+                            onClick = onUpdate,
+                        )
+                    }
+                },
+                icons = {
+                    GameIconButton(
+                        R.drawable.ic_card_key,
+                        strings.tooltipSwitchSpecialVersion,
+                        state.canSwitchSpecialVersion,
+                        onSwitchSpecialVersion,
+                    )
+                    GameIconButton(R.drawable.ic_card_trash, strings.tooltipUninstall, state.canUninstall, onUninstall)
+                },
+            )
         },
     )
 }
@@ -310,6 +315,7 @@ private fun GameCardFrame(
     pulsing: Boolean,
     takeover: CardTakeover?,
     actionsReserve: Dp,
+    fillStackedActions: Boolean,
     modifier: Modifier,
     text: @Composable ColumnScope.() -> Unit,
     status: @Composable () -> Unit,
@@ -342,6 +348,7 @@ private fun GameCardFrame(
             status = status,
             actions = actions,
             actionsReserve = actionsReserve,
+            fillStackedActions = fillStackedActions,
             modifier = Modifier
                 .graphicsLayer { alpha = contentAlpha }
                 .padding(LauncherSpacing.Card),
@@ -547,6 +554,7 @@ private fun CardButton(
     disabledAlpha: Float = LauncherOpacity.CARD_BUTTON_DISABLED,
     iconTint: Color = LocalLauncherColors.current.secondaryFg,
     iconSize: Dp = LauncherSizes.CardButtonIcon,
+    minWidth: Dp = if (label != null) LauncherSizes.CardButtonMinWidth else LauncherSizes.CardIconButtonSize,
 ) {
     val colors = LocalLauncherColors.current
     val interactions = remember { MutableInteractionSource() }
@@ -577,7 +585,6 @@ private fun CardButton(
     val labelled = label != null
     val description = label ?: tooltip
     val secondary = style == CardButtonStyle.SECONDARY
-    val minWidth = if (labelled) LauncherSizes.CardButtonMinWidth else LauncherSizes.CardIconButtonSize
     val fontWeight = if (secondary) LauncherType.Normal else LauncherType.SemiBold
     val button: @Composable () -> Unit = {
         Box(
