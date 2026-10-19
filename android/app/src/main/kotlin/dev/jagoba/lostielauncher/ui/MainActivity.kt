@@ -83,13 +83,20 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun animateSplashScreenExit(provider: SplashScreenViewProvider) {
+        val iconAnimationRemaining = (
+            provider.iconAnimationStartMillis +
+                provider.iconAnimationDurationMillis -
+                System.currentTimeMillis()
+            ).coerceAtLeast(0L)
         provider.iconView.animate()
             .translationY(-provider.iconView.bottom.toFloat())
             .setInterpolator(AnticipateInterpolator())
+            .setStartDelay(iconAnimationRemaining)
             .setDuration(SPLASH_EXIT_DURATION_MILLISECONDS)
             .start()
         provider.view.animate()
             .alpha(0f)
+            .setStartDelay(iconAnimationRemaining)
             .setDuration(SPLASH_EXIT_DURATION_MILLISECONDS)
             .withEndAction(provider::remove)
             .start()
