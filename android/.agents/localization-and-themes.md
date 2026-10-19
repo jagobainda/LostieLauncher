@@ -151,6 +151,13 @@ What binds:
   `dp` — and **font sizes are `sp`**, which is the one deliberate divergence:
   Android scales text by the user's accessibility setting and a launcher that
   ignores it is broken in a way the desktop cannot be.
+- **The splash screen is drawn before Kotlin runs**, so each palette's
+  `primaryBg` is repeated in `res/values/colors.xml` as `<theme>_primary_bg`,
+  with a `Theme.LostieLauncher.Splash.<Theme>` style that `splashThemeFor`
+  resolves. `MainActivity` hands it to the system for the next launch, which
+  only Android 13+ honours; older versions always show Volcarona.
+  `SplashThemesTest` keeps the colours equal to the palettes. A new theme adds
+  both.
 - `PalettesTest` is the parity guard: it compares all 140 values against
   `DesktopPalettes`, a table of the desktop's own hex strings, which it parses
   itself so a bug in the production conversion cannot hide behind it.

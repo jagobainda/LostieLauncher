@@ -2,5 +2,14 @@
 <resources>
     <color name="volcarona_primary_bg">#FF4D4949</color>
     <color name="volcarona_tertiary_bg">#FF2E2C2C</color>
+    <color name="zoroark_primary_bg">#FF2C2933</color>
+    <color name="infernape_primary_bg">#FF4A3535</color>
+    <color name="torterra_primary_bg">#FF3A3020</color>
+    <color name="empoleon_primary_bg">#FF252E38</color>
+    <color name="mewtwo_primary_bg">#FF342E4A</color>
+    <color name="cefireon_primary_bg">#FFFFEFD3</color>
+    <color name="sylveon_primary_bg">#FFFDE8F0</color>
+    <color name="astrem_primary_bg">#FFEEF3FF</color>
+    <color name="auretoskos_primary_bg">#FF3B3838</color>
     <color name="volcarona_primary_fg">#FFF08058</color>
 </resources>
