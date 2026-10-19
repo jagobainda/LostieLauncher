@@ -1,5 +1,7 @@
 package dev.jagoba.lostielauncher.ui.screen
 
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -23,12 +26,23 @@ import dev.jagoba.lostielauncher.ui.component.InstalledGameCard
 import dev.jagoba.lostielauncher.ui.component.InstalledGameCardState
 import dev.jagoba.lostielauncher.ui.dialog.DialogButton
 import dev.jagoba.lostielauncher.ui.dialog.DialogButtonStyle
+import dev.jagoba.lostielauncher.ui.theme.LauncherMotion
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesViewModel
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
 
 private const val GAMES_SKELETON_COUNT = 5
+
+private val EjectMillis = LauncherMotion.EjectLoop.inWholeMilliseconds.toInt()
+private val TakeoverFadeMillis = LauncherMotion.TakeoverFade.inWholeMilliseconds.toInt()
+
+private val UninstalledCardExit = keyframes {
+    durationMillis = EjectMillis + TakeoverFadeMillis
+    1f at EjectMillis
+}
+
+private val UninstalledCardCollapse = tween<IntOffset>(TakeoverFadeMillis, delayMillis = EjectMillis)
 
 internal class GamesActions(
     val play: (String) -> Unit,
@@ -70,7 +84,9 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
                     onUpdate = { actions.update(name) },
                     onSwitchSpecialVersion = { actions.switchSpecialVersion(name) },
                     onUninstall = { actions.uninstall(name) },
-                    modifier = Modifier.padding(bottom = LauncherSpacing.MediumLarge),
+                    modifier = Modifier
+                        .animateItem(fadeOutSpec = UninstalledCardExit, placementSpec = UninstalledCardCollapse)
+                        .padding(bottom = LauncherSpacing.MediumLarge),
                 )
             }
         }

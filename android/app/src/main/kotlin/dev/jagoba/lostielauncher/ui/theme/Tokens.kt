@@ -48,8 +48,6 @@ object LauncherSizes {
     val NavigationItemSize: Dp = 60.dp
     val DialogFooterHeight: Dp = 60.dp
     val ScrollbarWidth: Dp = 8.dp
-    val SpinnerSize: Dp = 13.dp
-    val SpinnerStrokeWidth: Dp = 2.dp
     val TitleBarIcon: Dp = 22.dp
     val TitleBarButton: Dp = 50.dp
     val TitleBarButtonIcon: Dp = 14.dp
@@ -70,6 +68,8 @@ object LauncherSizes {
     val CardIconButtonIcon: Dp = 14.dp
     val CardMetaIcon: Dp = 12.dp
     val CardUpdateArrow: Dp = 10.dp
+    val CardTakeoverGlyph: Dp = 36.dp
+    val CardTakeoverTravel: Dp = 16.dp
     val CardHeaderIcon: Dp = 16.dp
     val ProgressBarHeight: Dp = 4.dp
     val NotificationStripeWidth: Dp = 4.dp
@@ -127,8 +127,6 @@ object LauncherSizes {
     val ToggleTrackWidth: Dp = 44.dp
     val ToggleTrackHeight: Dp = 24.dp
     val ToggleThumb: Dp = 18.dp
-    const val SPINNER_DASH = 13f
-    const val SPINNER_GAP = 7f
 }
 
 object LauncherRadii {
@@ -162,7 +160,9 @@ object LauncherOpacity {
 
 object LauncherMotion {
     val Shimmer: Duration = 1_200.milliseconds
-    val SpinnerTurn: Duration = 900.milliseconds
+    val TakeoverFade: Duration = 250.milliseconds
+    val TakeoverHold: Duration = 1_200.milliseconds
+    val EjectLoop: Duration = 900.milliseconds
     val Pulse: Duration = 800.milliseconds
     val PulseTotal: Duration = 3_000.milliseconds
     const val PULSE_MIN_ALPHA = 0.3f

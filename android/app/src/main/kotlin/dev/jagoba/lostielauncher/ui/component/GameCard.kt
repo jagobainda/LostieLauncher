@@ -1,15 +1,11 @@
 package dev.jagoba.lostielauncher.ui.component
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,9 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -111,7 +104,7 @@ data class InstalledGameCardState(
 
 private enum class CardButtonStyle { ACCENT, SUCCESS, SECONDARY }
 
-private val PROGRESS_STATUSES = setOf(
+internal val PROGRESS_STATUSES = setOf(
     LibraryCardStatus.DOWNLOADING,
     LibraryCardStatus.PAUSED,
     LibraryCardStatus.VERIFYING_INTEGRITY,
@@ -142,6 +135,7 @@ fun LibraryGameCard(
     GameCardFrame(
         logoUrl = state.logoUrl,
         pulsing = state.status == LibraryCardStatus.DOWNLOADING,
+        takeover = rememberLibraryCardTakeover(state.status),
         actionsReserve = LibraryCardActionsReserve,
         modifier = modifier,
         text = {
@@ -234,6 +228,7 @@ fun InstalledGameCard(
     GameCardFrame(
         logoUrl = state.logoUrl,
         pulsing = false,
+        takeover = CardTakeover.UNINSTALLING.takeIf { state.isUninstalling },
         actionsReserve = InstalledCardActionsReserve,
         modifier = modifier,
         text = {
@@ -277,41 +272,33 @@ fun InstalledGameCard(
         },
         status = {},
         actions = {
-            if (state.isUninstalling) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    UninstallSpinner()
-                    Spacer(Modifier.width(LauncherSpacing.Small))
-                    Text(strings.statusUninstalling, color = colors.secondaryFgDim, fontSize = LauncherType.LabelSize)
-                }
-            } else {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
-                ) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Small, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Small),
+            ) {
+                CardButton(
+                    style = CardButtonStyle.ACCENT,
+                    icon = R.drawable.ic_card_play,
+                    label = strings.btnPlay,
+                    enabled = state.canPlay,
+                    onClick = onPlay,
+                )
+                if (state.updateVersion != null) {
                     CardButton(
-                        style = CardButtonStyle.ACCENT,
-                        icon = R.drawable.ic_card_play,
-                        label = strings.btnPlay,
-                        enabled = state.canPlay,
-                        onClick = onPlay,
+                        style = CardButtonStyle.SUCCESS,
+                        icon = R.drawable.ic_card_update,
+                        label = strings.btnUpdate,
+                        enabled = state.canUpdate,
+                        onClick = onUpdate,
                     )
-                    if (state.updateVersion != null) {
-                        CardButton(
-                            style = CardButtonStyle.SUCCESS,
-                            icon = R.drawable.ic_card_update,
-                            label = strings.btnUpdate,
-                            enabled = state.canUpdate,
-                            onClick = onUpdate,
-                        )
-                    }
-                    GameIconButton(
-                        R.drawable.ic_card_key,
-                        strings.tooltipSwitchSpecialVersion,
-                        state.canSwitchSpecialVersion,
-                        onSwitchSpecialVersion,
-                    )
-                    GameIconButton(R.drawable.ic_card_trash, strings.tooltipUninstall, state.canUninstall, onUninstall)
                 }
+                GameIconButton(
+                    R.drawable.ic_card_key,
+                    strings.tooltipSwitchSpecialVersion,
+                    state.canSwitchSpecialVersion,
+                    onSwitchSpecialVersion,
+                )
+                GameIconButton(R.drawable.ic_card_trash, strings.tooltipUninstall, state.canUninstall, onUninstall)
             }
         },
     )
@@ -321,6 +308,7 @@ fun InstalledGameCard(
 private fun GameCardFrame(
     logoUrl: String?,
     pulsing: Boolean,
+    takeover: CardTakeover?,
     actionsReserve: Dp,
     modifier: Modifier,
     text: @Composable ColumnScope.() -> Unit,
@@ -345,7 +333,9 @@ private fun GameCardFrame(
         }
         pulse.snapTo(0f)
     }
-    Box(modifier.fillMaxWidth()) {
+    val fade = tween<Float>(LauncherMotion.TakeoverFade.inWholeMilliseconds.toInt())
+    val contentAlpha by animateFloatAsState(if (takeover == null) 1f else 0f, fade, label = "card-content")
+    Box(modifier.fillMaxWidth().background(colors.secondaryBg, shape)) {
         GameCardColumns(
             logo = { GameLogo(logoUrl) },
             text = { Column(content = text) },
@@ -353,9 +343,12 @@ private fun GameCardFrame(
             actions = actions,
             actionsReserve = actionsReserve,
             modifier = Modifier
-                .background(colors.secondaryBg, shape)
+                .graphicsLayer { alpha = contentAlpha }
                 .padding(LauncherSpacing.Card),
         )
+        Crossfade(takeover, Modifier.matchParentSize(), fade, label = "card-takeover") {
+            if (it != null) CardTakeoverGlyph(it, Modifier.fillMaxSize())
+        }
         Box(
             Modifier
                 .matchParentSize()
@@ -634,33 +627,3 @@ private fun CardButton(
     }
     if (tooltip != null) LauncherTooltip(text = tooltip, content = button) else button()
 }
-
-@Composable
-private fun UninstallSpinner() {
-    val color = LocalLauncherColors.current.secondaryFgDim
-    val angle = rememberInfiniteTransition(label = "uninstall-spinner").animateFloat(
-        initialValue = 0f,
-        targetValue = FULL_TURN,
-        animationSpec = infiniteRepeatable(
-            tween(LauncherMotion.SpinnerTurn.inWholeMilliseconds.toInt(), easing = LinearEasing),
-            RepeatMode.Restart,
-        ),
-        label = "uninstall-spinner-angle",
-    )
-    Canvas(Modifier.size(LauncherSizes.SpinnerSize).graphicsLayer { rotationZ = angle.value }) {
-        val stroke = LauncherSizes.SpinnerStrokeWidth.toPx()
-        drawCircle(
-            color = color,
-            radius = (size.minDimension - stroke) / 2f,
-            style = Stroke(
-                width = stroke,
-                cap = StrokeCap.Round,
-                pathEffect = PathEffect.dashPathEffect(
-                    floatArrayOf(LauncherSizes.SPINNER_DASH * stroke, LauncherSizes.SPINNER_GAP * stroke),
-                ),
-            ),
-        )
-    }
-}
-
-private const val FULL_TURN = 360f

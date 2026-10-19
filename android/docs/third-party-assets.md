@@ -26,6 +26,7 @@ is unchanged; only the container format differs.
 | `ic_card_key` | `key-variant` | Material Design Icons | Apache-2.0 |
 | `ic_card_trash` | `trash-can-outline` | Material Design Icons | Apache-2.0 |
 | `ic_card_not_supported` (Android only) | `alert-circle-outline` | Material Design Icons | Apache-2.0 |
+| `ic_card_eject` (Android only) | `eject` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_information` | `information` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_alert` | `alert` | Material Design Icons | Apache-2.0 |
 | `ic_dialog_key` | `key` | Material Design Icons | Apache-2.0 |
