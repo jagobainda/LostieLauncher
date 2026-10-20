@@ -105,4 +105,7 @@ internal object EngStrings : Strings {
     override val kirinUpdateRecommended = "Kirin update recommended"
     override val kirinUpdateRecommendedMessage = "You have Kirin {0} and Kirin {1} is recommended. Tap to update."
     override val kirinThanks = "Thanks to Max for helping with the integration and for creating Kirin, the emulator that lets us play these games on Android. More information at https://playkirin.com/"
+    override val storageAccessTitle = "File access"
+    override val storageAccessMessage = "To install games, the launcher needs access to the files on this device, because games are stored in a shared folder that Kirin can read. Do you want to grant it now?"
+    override val storageAccessDeniedMessage = "The game can't be installed without access to the files on this device. Grant it and try again."
 }

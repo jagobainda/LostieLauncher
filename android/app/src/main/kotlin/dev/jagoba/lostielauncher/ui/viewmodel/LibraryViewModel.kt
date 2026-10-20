@@ -26,6 +26,7 @@ import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
+import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.download.SpecialVersionPolicy
 import dev.jagoba.lostielauncher.util.format.RemainingTimeFormatter
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -72,6 +73,7 @@ enum class LibraryNotice {
     DOWNLOAD_NOT_FOUND,
     DOWNLOAD_FAILED,
     DOWNLOAD_PERMISSION_DENIED,
+    STORAGE_ACCESS_DENIED,
     INSTALLATION_HASH_MISMATCH,
     INSTALLATION_FAILED,
     SPECIAL_KEY_INVALID,
@@ -118,6 +120,7 @@ data class LibraryUiState(
     val downloadDestination: DownloadDestination? = null,
     val pendingCancelGameId: String? = null,
     val pendingSpecialGameId: String? = null,
+    val isStorageAccessPromptVisible: Boolean = false,
     val notice: LibraryNotice? = null,
 ) {
     val pendingDownloadGame: GameInfo?
@@ -137,10 +140,12 @@ class LibraryViewModel @Inject constructor(
     private val specialVersions: SpecialVersionService,
     private val navigation: NavigationStore,
     private val externalLinks: ExternalLinkService,
+    private val storageAccess: StorageAccess,
     private val logger: Logger,
 ) : ViewModel() {
     private val transient = MutableStateFlow(LibraryUiState())
     private var maintenanceNoticeShown = false
+    private var afterStorageAccess: (() -> Unit)? = null
 
     private val installationStates = downloads.downloads.flatMapLatest { rows ->
         val completed = rows.filter { it.status == DownloadStatus.COMPLETED }
@@ -265,13 +270,15 @@ class LibraryViewModel @Inject constructor(
         val gameId = transient.value.pendingDownloadGameId ?: return
         transient.value = transient.value.copy(pendingDownloadGameId = null, downloadDestination = null)
         val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
-        viewModelScope.launch {
-            if (!serverActionsAvailable()) return@launch
-            val trimmedKey = key?.trim().orEmpty()
-            if (trimmedKey.isEmpty()) {
-                start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
-            } else {
-                startSpecialVersion(game, trimmedKey)
+        withStorageAccess {
+            viewModelScope.launch {
+                if (!serverActionsAvailable()) return@launch
+                val trimmedKey = key?.trim().orEmpty()
+                if (trimmedKey.isEmpty()) {
+                    start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
+                } else {
+                    startSpecialVersion(game, trimmedKey)
+                }
             }
         }
     }
@@ -286,10 +293,28 @@ class LibraryViewModel @Inject constructor(
             logger.debug("Update request ignored for $gameId: its card is ${row.status}.")
             return
         }
-        viewModelScope.launch {
-            if (!serverActionsAvailable()) return@launch
-            logger.debug("Starting update session for $gameId.")
-            start(row.game, GameDownloadArgs(row.game.gameId, row.game.version, row.game.relativePath))
+        withStorageAccess {
+            viewModelScope.launch {
+                if (!serverActionsAvailable()) return@launch
+                logger.debug("Starting update session for $gameId.")
+                start(row.game, GameDownloadArgs(row.game.gameId, row.game.version, row.game.relativePath))
+            }
+        }
+    }
+
+    fun requestStorageAccess() {
+        transient.value = transient.value.copy(isStorageAccessPromptVisible = false)
+    }
+
+    fun onStorageAccessResult() {
+        val action = afterStorageAccess ?: return
+        afterStorageAccess = null
+        if (storageAccess.isGranted()) {
+            logger.info("Shared storage access granted.")
+            action()
+        } else {
+            logger.info("Shared storage access denied; the download was not started.")
+            transient.value = transient.value.copy(notice = LibraryNotice.STORAGE_ACCESS_DENIED)
         }
     }
 
@@ -369,11 +394,22 @@ class LibraryViewModel @Inject constructor(
 
     fun dismissPrompt() {
         transient.value.pendingCancelGameId?.let { logger.debug("Cancel download aborted by user for $it.") }
+        afterStorageAccess = null
         transient.value = LibraryUiState(notice = transient.value.notice)
     }
 
     fun clearNotice() {
         transient.value = transient.value.copy(notice = null)
+    }
+
+    private fun withStorageAccess(action: () -> Unit) {
+        if (storageAccess.isGranted()) {
+            action()
+            return
+        }
+        logger.info("Shared storage access is missing; asking before the download starts.")
+        afterStorageAccess = action
+        transient.value = transient.value.copy(isStorageAccessPromptVisible = true, notice = null)
     }
 
     private suspend fun start(game: GameInfo, args: GameDownloadArgs) {

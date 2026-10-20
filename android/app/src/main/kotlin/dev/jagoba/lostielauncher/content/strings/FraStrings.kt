@@ -105,4 +105,7 @@ internal object FraStrings : Strings {
     override val kirinUpdateRecommended = "Mise à jour de Kirin recommandée"
     override val kirinUpdateRecommendedMessage = "Vous avez Kirin {0} et Kirin {1} est recommandé. Appuyez pour mettre à jour."
     override val kirinThanks = "Merci à Max pour son aide avec l'intégration et pour avoir créé Kirin, l'émulateur qui nous permet de jouer à ces jeux sur Android. Plus d'informations sur https://playkirin.com/"
+    override val storageAccessTitle = "Accès aux fichiers"
+    override val storageAccessMessage = "Pour installer des jeux, le launcher a besoin d'accéder aux fichiers de l'appareil, car les jeux sont enregistrés dans un dossier partagé que Kirin peut lire. Voulez-vous l'autoriser maintenant ?"
+    override val storageAccessDeniedMessage = "Sans accès aux fichiers de l'appareil, le jeu ne peut pas être installé. Autorisez-le et réessayez."
 }

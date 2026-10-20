@@ -105,4 +105,7 @@ internal object EusStrings : Strings {
     override val kirinUpdateRecommended = "Kirin eguneratzea gomendatua"
     override val kirinUpdateRecommendedMessage = "Kirin {0} duzu eta Kirin {1} gomendatzen da. Sakatu eguneratzeko."
     override val kirinThanks = "Eskerrik asko Max-i integrazioan emandako laguntzagatik eta Kirin sortzeagatik, Android-en joko hauetara jolasteko aukera ematen digun emulatzailea. Informazio gehiago: https://playkirin.com/"
+    override val storageAccessTitle = "Fitxategietarako sarbidea"
+    override val storageAccessMessage = "Jokoak instalatzeko, launcher-ak gailuko fitxategietarako sarbidea behar du, jokoak Kirin-ek irakur dezakeen karpeta partekatu batean gordetzen direlako. Orain eman nahi duzu?"
+    override val storageAccessDeniedMessage = "Gailuko fitxategietarako sarbiderik gabe ezin da jokoa instalatu. Eman sarbidea eta saiatu berriro."
 }

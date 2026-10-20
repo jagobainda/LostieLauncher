@@ -272,13 +272,21 @@ and back, as the desktop's persistent views keep theirs.
   action half first, because it reacts to the state as it is emitted and the
   screen only after the next frame.
 - **Download permissions.** On Android 13 and later, confirming a download
-  and starting an update ask for `POST_NOTIFICATIONS` if it is not granted,
-  then for shared-storage access, which installation needs: all-files access
-  on Android 11 and later, `WRITE_EXTERNAL_STORAGE` before
-  (`rememberDownloadPermissionsRequest`). The transfer starts at once
-  whatever the answer, and the progress notification appears once it is
-  granted; without storage access the installation fails. A resume never asks, because it follows a start. An update started
-  from My Games or by auto-update does not ask either.
+  and starting an update from the Library card ask for `POST_NOTIFICATIONS`
+  if it is not granted (`rememberNotificationPermissionRequest`); the answer
+  only decides whether the progress notification shows. Shared-storage
+  access, which installation needs, gates the start instead: all-files access
+  on Android 11 and later, `WRITE_EXTERNAL_STORAGE` before, read through the
+  `StorageAccess` seam. Without it `LibraryViewModel` keeps the start pending
+  and raises `isStorageAccessPromptVisible`, a yes/no box (`StorageAccess*`)
+  saying why. Yes opens the system screen (`rememberStorageAccessRequest`),
+  and on return `onStorageAccessResult` checks again: granted runs the
+  pending start, anything else starts nothing and raises
+  `STORAGE_ACCESS_DENIED`. No drops the pending start. Asking at the first
+  install rather than at first launch keeps it out of the welcome and ties it
+  to the action that needs it. An update started from My Games goes through
+  the same gate, since it lands on `startUpdate`. A resume never asks,
+  because it follows a start, and auto-update does not ask either.
 - **Kirin gates the whole launcher.** `KirinRequirement` wraps the shell's
   layout and reads `KirinViewModel`: while `KirinSetupService.status` is
   `Missing` or `Outdated`, the screen says which, offers the download when the

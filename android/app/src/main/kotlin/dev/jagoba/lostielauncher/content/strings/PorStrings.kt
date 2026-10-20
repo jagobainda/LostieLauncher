@@ -105,4 +105,7 @@ internal object PorStrings : Strings {
     override val kirinUpdateRecommended = "Atualização do Kirin recomendada"
     override val kirinUpdateRecommendedMessage = "Você tem o Kirin {0} e o Kirin {1} é recomendado. Toque para atualizar."
     override val kirinThanks = "Obrigado ao Max pela ajuda com a integração e por criar o Kirin, o emulador que nos permite jogar estes jogos no Android. Mais informações em https://playkirin.com/"
+    override val storageAccessTitle = "Acesso aos arquivos"
+    override val storageAccessMessage = "Para instalar jogos, o launcher precisa de acesso aos arquivos do dispositivo, porque os jogos são salvos em uma pasta compartilhada que o Kirin consegue ler. Deseja conceder agora?"
+    override val storageAccessDeniedMessage = "Sem acesso aos arquivos do dispositivo não é possível instalar o jogo. Conceda o acesso e tente novamente."
 }

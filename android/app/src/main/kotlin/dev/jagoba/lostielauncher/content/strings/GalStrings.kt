@@ -105,4 +105,7 @@ internal object GalStrings : Strings {
     override val kirinUpdateRecommended = "Actualización de Kirin recomendada"
     override val kirinUpdateRecommendedMessage = "Tes Kirin {0} e recoméndase Kirin {1}. Preme para actualizar."
     override val kirinThanks = "Grazas a Max pola súa axuda coa integración e por crear Kirin, o emulador que nos permite xogar a estes xogos en Android. Máis información en https://playkirin.com/"
+    override val storageAccessTitle = "Acceso aos ficheiros"
+    override val storageAccessMessage = "Para instalar xogos, o launcher necesita acceso aos ficheiros do dispositivo, porque os xogos gárdanse nun cartafol compartido que Kirin poida ler. Queres concedelo agora?"
+    override val storageAccessDeniedMessage = "Sen acceso aos ficheiros do dispositivo non se pode instalar o xogo. Concédeo e téntao de novo."
 }

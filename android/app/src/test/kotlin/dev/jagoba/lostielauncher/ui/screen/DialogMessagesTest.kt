@@ -45,6 +45,8 @@ class DialogMessagesTest {
             strings.downloadPermissionDeniedTitle,
             strings.downloadPermissionDeniedMessage,
         )
+        LibraryNotice.STORAGE_ACCESS_DENIED.messageBox(strings) shouldBe
+            error(strings.storageAccessTitle, strings.storageAccessDeniedMessage)
         LibraryNotice.INSTALLATION_HASH_MISMATCH.messageBox(strings) shouldBe
             error(strings.hashMismatchTitle, strings.hashMismatchMessage)
         LibraryNotice.SPECIAL_KEY_MISMATCH.messageBox(strings) shouldBe
@@ -62,6 +64,16 @@ class DialogMessagesTest {
     @Test
     fun `cancelling a download asks yes or no`() {
         cancelDownloadMessageBox(strings).buttons shouldBe MessageBoxButtons.YES_NO
+    }
+
+    @Test
+    fun `storage access explains itself and asks yes or no`() {
+        storageAccessMessageBox(strings) shouldBe MessageBoxSpec(
+            strings.storageAccessTitle,
+            strings.storageAccessMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+        )
     }
 
     @Test
@@ -118,6 +130,7 @@ class DialogMessagesTest {
     fun `no produced message leaves a placeholder behind`(language: AppLanguage) {
         val localized = stringsFor(language)
         val specs = LibraryNotice.entries.map { it.messageBox(localized) } +
+            storageAccessMessageBox(localized) +
             GamesNotice.entries.mapNotNull { notice ->
                 gamesMessage(
                     GamesUiState(notice = notice, noticeGameName = "Test Game", blockingLocation = location),

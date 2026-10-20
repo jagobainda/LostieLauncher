@@ -2,15 +2,26 @@ package dev.jagoba.lostielauncher.core.di
 
 import android.content.Context
 import android.os.Environment
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.jagoba.lostielauncher.service.storage.AndroidStorageAccess
 import dev.jagoba.lostielauncher.service.storage.FixedStorageLocations
+import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.service.storage.StorageLocations
 import java.io.File
 import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal abstract class StorageBindingsModule {
+    @Binds
+    @Singleton
+    internal abstract fun bindStorageAccess(impl: AndroidStorageAccess): StorageAccess
+}
 
 @Module
 @InstallIn(SingletonComponent::class)

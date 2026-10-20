@@ -42,6 +42,7 @@ class LibraryViewModelTest {
     private val settings = TestSettingsStore()
     private val externalLinks = TestExternalLinkService()
     private val network = TestNetworkMonitor()
+    private val storageAccess = TestStorageAccess()
     private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -112,6 +113,89 @@ class LibraryViewModelTest {
         sut.state.value.pendingDownloadGameId shouldBe remote.gameId
         downloads.starts.size shouldBe 0
         sut.confirmDownload()
+        runCurrent()
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+    }
+
+    @Test
+    fun `missing storage access is explained before the download starts`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        runCurrent()
+        sut.state.value.isStorageAccessPromptVisible shouldBe true
+        sut.state.value.pendingDownloadGameId shouldBe null
+        downloads.starts.size shouldBe 0
+        sut.requestStorageAccess()
+        runCurrent()
+        sut.state.value.isStorageAccessPromptVisible shouldBe false
+        storageAccess.granted = true
+        sut.onStorageAccessResult()
+        runCurrent()
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+        sut.state.value.notice shouldBe null
+    }
+
+    @Test
+    fun `denied storage access starts nothing and says why`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestStorageAccess()
+        sut.onStorageAccessResult()
+        runCurrent()
+        downloads.starts.size shouldBe 0
+        sut.state.value.notice shouldBe LibraryNotice.STORAGE_ACCESS_DENIED
+        sut.onStorageAccessResult()
+        runCurrent()
+        downloads.starts.size shouldBe 0
+    }
+
+    @Test
+    fun `declining the storage explanation drops the pending download`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.dismissPrompt()
+        runCurrent()
+        sut.state.value.isStorageAccessPromptVisible shouldBe false
+        storageAccess.granted = true
+        sut.onStorageAccessResult()
+        runCurrent()
+        downloads.starts.size shouldBe 0
+        sut.state.value.notice shouldBe null
+    }
+
+    @Test
+    fun `an update asks for storage access too`() = runTest(dispatcher) {
+        val remote = testGame(version = "v2.0")
+        content.games = listOf(remote)
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.startUpdate(remote.gameId)
+        runCurrent()
+        sut.state.value.isStorageAccessPromptVisible shouldBe true
+        downloads.starts.size shouldBe 0
+        storageAccess.granted = true
+        sut.onStorageAccessResult()
         runCurrent()
         downloads.starts.single().args.gameId shouldBe remote.gameId
     }
@@ -430,6 +514,7 @@ class LibraryViewModelTest {
             special,
             navigation,
             externalLinks,
+            storageAccess,
             mockk<Logger>(relaxed = true),
         )
     }

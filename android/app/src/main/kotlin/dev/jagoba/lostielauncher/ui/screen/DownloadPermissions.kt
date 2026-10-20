@@ -1,51 +1,63 @@
 package dev.jagoba.lostielauncher.ui.screen
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 
 @Composable
-internal fun rememberDownloadPermissionsRequest(): () -> Unit {
+internal fun rememberNotificationPermissionRequest(): () -> Unit {
     val context = LocalContext.current
-    val storage = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    val requestStorage = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                        Uri.fromParts("package", context.packageName, null),
-                    ),
-                )
-            }
-        } else if (!context.isGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            storage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-    }
-    val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        requestStorage()
-    }
+    val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     return {
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            !context.isGranted(Manifest.permission.POST_NOTIFICATIONS)
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
         ) {
             notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            requestStorage()
         }
     }
 }
 
-private fun Context.isGranted(permission: String): Boolean =
-    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+@Composable
+internal fun rememberStorageAccessRequest(onResult: () -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val allFilesAccess = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        onResult()
+    }
+    val writeStorage = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        onResult()
+    }
+    return {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val opened = context.allFilesAccessIntents().any { intent ->
+                try {
+                    allFilesAccess.launch(intent)
+                    true
+                } catch (_: ActivityNotFoundException) {
+                    false
+                }
+            }
+            if (!opened) onResult()
+        } else {
+            writeStorage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+private fun Context.allFilesAccessIntents(): Sequence<Intent> = sequenceOf(
+    Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.fromParts("package", packageName, null)),
+    Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
+)

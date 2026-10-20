@@ -35,6 +35,7 @@ import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
+import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +46,10 @@ import kotlinx.coroutines.flow.map
 
 internal class TestNetworkMonitor(online: Boolean = true) : NetworkMonitor {
     override val isOnline = MutableStateFlow(online)
+}
+
+internal class TestStorageAccess(var granted: Boolean = true) : StorageAccess {
+    override fun isGranted(): Boolean = granted
 }
 
 internal class TestSettingsStore : SettingsStore {

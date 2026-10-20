@@ -105,4 +105,7 @@ internal object CatStrings : Strings {
     override val kirinUpdateRecommended = "Actualització de Kirin recomanada"
     override val kirinUpdateRecommendedMessage = "Tens Kirin {0} i es recomana Kirin {1}. Prem per actualitzar."
     override val kirinThanks = "Gràcies a Max per la seva ajuda amb la integració i per crear Kirin, l'emulador que ens permet jugar a aquests jocs a Android. Més informació a https://playkirin.com/"
+    override val storageAccessTitle = "Accés als fitxers"
+    override val storageAccessMessage = "Per instal·lar jocs, el launcher necessita accés als fitxers del dispositiu, perquè els jocs es desen en una carpeta compartida que Kirin pugui llegir. Vols concedir-lo ara?"
+    override val storageAccessDeniedMessage = "Sense accés als fitxers del dispositiu no es pot instal·lar el joc. Concedeix-lo i torna-ho a provar."
 }

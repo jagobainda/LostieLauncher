@@ -24,7 +24,8 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
     val strings = LocalStrings.current
     val notice = state.notice
     val download = downloadConfirmState(state)
-    val requestPermissions = rememberDownloadPermissionsRequest()
+    val requestNotifications = rememberNotificationPermissionRequest()
+    val requestStorageAccess = rememberStorageAccessRequest(viewModel::onStorageAccessResult)
     when {
         notice != null -> LauncherMessageBox(
             spec = notice.messageBox(strings),
@@ -36,8 +37,17 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
             state = download,
             onViewPage = viewModel::openPendingGamePage,
             onConfirm = { key ->
-                requestPermissions()
+                requestNotifications()
                 viewModel.confirmDownload(key)
+            },
+            onDismiss = viewModel::dismissPrompt,
+        )
+
+        state.isStorageAccessPromptVisible -> LauncherMessageBox(
+            spec = storageAccessMessageBox(strings),
+            onConfirm = {
+                viewModel.requestStorageAccess()
+                requestStorageAccess()
             },
             onDismiss = viewModel::dismissPrompt,
         )
@@ -76,6 +86,13 @@ internal fun cancelDownloadMessageBox(strings: Strings) = MessageBoxSpec(
     MessageBoxIcon.INFORMATION,
 )
 
+internal fun storageAccessMessageBox(strings: Strings) = MessageBoxSpec(
+    strings.storageAccessTitle,
+    strings.storageAccessMessage,
+    MessageBoxButtons.YES_NO,
+    MessageBoxIcon.INFORMATION,
+)
+
 internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (this) {
     LibraryNotice.SERVER_ACTIONS_UNAVAILABLE -> MessageBoxSpec(
         strings.serverActionsUnavailableTitle,
@@ -99,6 +116,9 @@ internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (
 
     LibraryNotice.DOWNLOAD_PERMISSION_DENIED ->
         errorMessageBox(strings.downloadPermissionDeniedTitle, strings.downloadPermissionDeniedMessage)
+
+    LibraryNotice.STORAGE_ACCESS_DENIED ->
+        errorMessageBox(strings.storageAccessTitle, strings.storageAccessDeniedMessage)
 
     LibraryNotice.INSTALLATION_HASH_MISMATCH -> errorMessageBox(strings.hashMismatchTitle, strings.hashMismatchMessage)
 

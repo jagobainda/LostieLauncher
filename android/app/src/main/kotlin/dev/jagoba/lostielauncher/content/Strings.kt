@@ -111,6 +111,9 @@ interface Strings {
     val kirinUpdateRecommended: String
     val kirinUpdateRecommendedMessage: String
     val kirinThanks: String
+    val storageAccessTitle: String
+    val storageAccessMessage: String
+    val storageAccessDeniedMessage: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {
