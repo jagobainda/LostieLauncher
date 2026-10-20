@@ -7,7 +7,7 @@ import dev.jagoba.lostielauncher.service.download.DownloadEntity
 
 @Database(
     entities = [DownloadEntity::class],
-    version = 4,
+    version = 1,
     exportSchema = true,
 )
 internal abstract class LauncherDatabase : RoomDatabase() {

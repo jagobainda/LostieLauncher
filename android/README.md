@@ -218,9 +218,8 @@ single concurrency gate and with atomic `.tmp` writes. App-private storage is
 wiped on uninstall while the games are not, so this is what lets a reinstalled
 launcher still see them; it is reloaded each time the launcher comes to the
 foreground, because the all-files-access permission must be granted again
-first. Migration 3 → 4 drops the Room table that held it before.
-Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on, so there is no playtime table: migration 2 → 3 drops the one earlier
-versions created. Storage errors are logged and degrade to empty data,
+first.
+Android does not track playtime: nothing reliably tells the launcher when a game launched through Kirin ends, and a Kirin update could break any signal it relied on, so there is no playtime table. Storage errors are logged and degrade to empty data,
 matching the desktop behavior without exposing database details to later
 ViewModels.
 

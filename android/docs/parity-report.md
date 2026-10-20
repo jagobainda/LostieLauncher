@@ -86,7 +86,7 @@ not rediscovered:
   row's version.
 - `StatusNotSupportedYet`, `NotSupportedYetMessage` and the Settings row notice
   go away in all eight languages at once.
-- The DAO SQL, the 1 → 2 migration and any installer would be the first things
+- The DAO SQL and any installer would be the first things
   worth an instrumented test; this side has none by rule.
 
 ## Not ported, and why

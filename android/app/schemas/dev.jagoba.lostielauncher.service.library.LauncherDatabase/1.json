@@ -2,24 +2,12 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "fff0be4e684dd23a797c5f8eb3e0042b",
+    "identityHash": "7e67fc253f22ad368a04a2548772b405",
     "entities": [
       {
-        "tableName": "installed_games",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`row_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name_key` TEXT NOT NULL, `game_id` TEXT NOT NULL, `name` TEXT NOT NULL, `version` TEXT NOT NULL, `variant` TEXT)",
+        "tableName": "downloads",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`game_id` TEXT NOT NULL, `display_name` TEXT NOT NULL, `version` TEXT NOT NULL, `key` TEXT, `url` TEXT NOT NULL, `destination_path` TEXT NOT NULL, `work_id` TEXT NOT NULL, `status` TEXT NOT NULL, `percent` REAL NOT NULL, `bytes_per_second` REAL NOT NULL, `downloaded_bytes` INTEGER NOT NULL, `total_bytes` INTEGER, `error_message` TEXT, `created_at_epoch_millis` INTEGER NOT NULL, PRIMARY KEY(`game_id`))",
         "fields": [
-          {
-            "fieldPath": "rowId",
-            "columnName": "row_id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "nameKey",
-            "columnName": "name_key",
-            "affinity": "TEXT",
-            "notNull": true
-          },
           {
             "fieldPath": "gameId",
             "columnName": "game_id",
@@ -27,8 +15,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "name",
-            "columnName": "name",
+            "fieldPath": "displayName",
+            "columnName": "display_name",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -39,42 +27,65 @@
             "notNull": true
           },
           {
-            "fieldPath": "variant",
-            "columnName": "variant",
+            "fieldPath": "key",
+            "columnName": "key",
             "affinity": "TEXT"
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "row_id"
-          ]
-        },
-        "indices": [
+          },
           {
-            "name": "index_installed_games_name_key",
-            "unique": true,
-            "columnNames": [
-              "name_key"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_installed_games_name_key` ON `${TABLE_NAME}` (`name_key`)"
-          }
-        ]
-      },
-      {
-        "tableName": "playtime",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`game_id` TEXT NOT NULL, `minutes` INTEGER NOT NULL, PRIMARY KEY(`game_id`))",
-        "fields": [
-          {
-            "fieldPath": "gameId",
-            "columnName": "game_id",
+            "fieldPath": "url",
+            "columnName": "url",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "minutes",
-            "columnName": "minutes",
+            "fieldPath": "destinationPath",
+            "columnName": "destination_path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workId",
+            "columnName": "work_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "percent",
+            "columnName": "percent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bytesPerSecond",
+            "columnName": "bytes_per_second",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "downloadedBytes",
+            "columnName": "downloaded_bytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalBytes",
+            "columnName": "total_bytes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "errorMessage",
+            "columnName": "error_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "created_at_epoch_millis",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -89,7 +100,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fff0be4e684dd23a797c5f8eb3e0042b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7e67fc253f22ad368a04a2548772b405')"
     ]
   }
 }
