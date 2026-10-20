@@ -5,6 +5,7 @@ import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
+import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
@@ -26,6 +27,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     private val homeRefreshOptions: HomeRefreshOptions,
     private val gameAutoUpdates: GameAutoUpdateCoordinator,
     private val installation: GameInstallationService,
+    private val kirin: KirinSetupService,
     private val logger: Logger,
     dispatchers: DispatcherProvider,
 ) : DefaultLifecycleObserver {
@@ -46,6 +48,10 @@ internal class ApplicationLifecycleObserver @Inject constructor(
         startupStarted = true
         coordinator.start(scope, settingsStore, network, homeRefreshOptions)
         gameAutoUpdates.start(scope)
+    }
+
+    override fun onResume(owner: LifecycleOwner) {
+        scope.launch { kirin.refresh() }
     }
 
     override fun onStop(owner: LifecycleOwner) {

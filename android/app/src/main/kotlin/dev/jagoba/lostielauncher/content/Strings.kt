@@ -103,6 +103,13 @@ interface Strings {
     val homeContentUnavailable: String
     val contentOutOfDateLabel: String
     val contentOutOfDateMessage: String
+    val kirinMissingTitle: String
+    val kirinOutdatedTitle: String
+    val kirinMissingMessage: String
+    val kirinOutdatedMessage: String
+    val kirinDownloadUnavailable: String
+    val kirinUpdateRecommended: String
+    val kirinUpdateRecommendedMessage: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {

@@ -97,4 +97,11 @@ internal object GalStrings : Strings {
     override val homeContentUnavailable = "Non se puido cargar o contido"
     override val contentOutOfDateLabel = "Contido desactualizado"
     override val contentOutOfDateMessage = "Non se puido conectar co servidor. Amósase o último contido coñecido, que pode estar desactualizado."
+    override val kirinMissingTitle = "Instala Kirin para continuar"
+    override val kirinOutdatedTitle = "Actualiza Kirin para continuar"
+    override val kirinMissingMessage = "Lostie Launcher abre os xogos con Kirin, que non está instalado neste dispositivo. Instala Kirin {0} ou superior."
+    override val kirinOutdatedMessage = "Tes Kirin {0}, pero Lostie Launcher necesita Kirin {1} ou superior para instalar e abrir os xogos."
+    override val kirinDownloadUnavailable = "A versión necesaria de Kirin aínda non se pode descargar desde o launcher."
+    override val kirinUpdateRecommended = "Actualización de Kirin recomendada"
+    override val kirinUpdateRecommendedMessage = "Tes Kirin {0} e recoméndase Kirin {1}. Preme para actualizar."
 }

@@ -31,15 +31,16 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.content.Strings
+import dev.jagoba.lostielauncher.content.withArgs
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.ui.LocalAppLanguage
 import dev.jagoba.lostielauncher.ui.LocalStrings
-import dev.jagoba.lostielauncher.ui.component.OfflinePillContent
 import dev.jagoba.lostielauncher.ui.component.ShellNavigationBar
 import dev.jagoba.lostielauncher.ui.component.ShellNavigationEntry
 import dev.jagoba.lostielauncher.ui.component.ShellNavigationRail
+import dev.jagoba.lostielauncher.ui.component.ShellPillContent
 import dev.jagoba.lostielauncher.ui.component.ShellTopBar
 import dev.jagoba.lostielauncher.ui.component.ShellTopBarAction
 import dev.jagoba.lostielauncher.ui.dialog.WelcomeDialog
@@ -59,20 +60,23 @@ fun LauncherShell(
 
     BackHandler(enabled = state.canNavigateBack, onBack = viewModel::navigateBack)
 
-    LauncherShellLayout(
-        state = state,
-        onNavigate = viewModel::navigate,
-        onRefresh = viewModel::refresh,
-        onOpenLink = viewModel::openExternalLink,
-        modifier = modifier,
-    ) {
-        sections.SaveableStateProvider(state.section.name) {
-            when (state.section) {
-                LauncherSection.HOME -> HomeScreen()
-                LauncherSection.GAMES -> GamesScreen()
-                LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
-                LauncherSection.FAQS -> FaqsScreen()
-                LauncherSection.SETTINGS -> SettingsScreen()
+    KirinRequirement(modifier) {
+        LauncherShellLayout(
+            state = state,
+            onNavigate = viewModel::navigate,
+            onRefresh = viewModel::refresh,
+            onOpenLink = viewModel::openExternalLink,
+            onUpdateKirin = viewModel::updateKirin,
+            modifier = modifier,
+        ) {
+            sections.SaveableStateProvider(state.section.name) {
+                when (state.section) {
+                    LauncherSection.HOME -> HomeScreen()
+                    LauncherSection.GAMES -> GamesScreen()
+                    LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
+                    LauncherSection.FAQS -> FaqsScreen()
+                    LauncherSection.SETTINGS -> SettingsScreen()
+                }
             }
         }
     }
@@ -95,6 +99,7 @@ fun LauncherShellLayout(
     onNavigate: (LauncherSection) -> Unit,
     onRefresh: () -> Unit,
     onOpenLink: (ExternalLink) -> Unit,
+    onUpdateKirin: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -107,13 +112,25 @@ fun LauncherShellLayout(
         ShellTopBarAction(link.name, link.brandName, painterResource(link.iconRes()), onClick = { onOpenLink(link) })
     }
     val offline = if (state.isOffline) {
-        OfflinePillContent(
+        ShellPillContent(
             label = strings.offlineModeLabel,
             tooltip = strings.serverMaintenanceNotificationTitle,
             icon = painterResource(R.drawable.ic_offline),
         )
     } else {
         null
+    }
+    val kirinUpdate = state.kirinUpdate?.let { update ->
+        ShellPillContent(
+            label =
+            update.downloadPercent?.let { "${strings.statusDownloading} $it%" } ?: strings.kirinUpdateRecommended,
+            tooltip = strings.kirinUpdateRecommendedMessage.withArgs(
+                update.installedVersion,
+                update.latestVersion,
+            ),
+            icon = painterResource(R.drawable.ic_card_update),
+            onClick = onUpdateKirin,
+        )
     }
 
     BoxWithConstraints(modifier.fillMaxSize().background(colors.primaryBg)) {
@@ -124,7 +141,7 @@ fun LauncherShellLayout(
             ShellTopBar(
                 title = state.title,
                 logo = painterResource(R.drawable.launcher_logo),
-                offlinePill = offline,
+                pills = listOfNotNull(offline, kirinUpdate),
                 actions = actions,
                 modifier = Modifier.windowInsetsPadding(
                     insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),

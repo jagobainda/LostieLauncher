@@ -97,4 +97,11 @@ internal object EspStrings : Strings {
     override val homeContentUnavailable = "No se ha podido cargar el contenido"
     override val contentOutOfDateLabel = "Contenido desactualizado"
     override val contentOutOfDateMessage = "No se ha podido conectar con el servidor. Se muestra el último contenido conocido, que puede estar desactualizado."
+    override val kirinMissingTitle = "Instala Kirin para continuar"
+    override val kirinOutdatedTitle = "Actualiza Kirin para continuar"
+    override val kirinMissingMessage = "Lostie Launcher abre los juegos con Kirin, que no está instalado en este dispositivo. Instala Kirin {0} o superior."
+    override val kirinOutdatedMessage = "Tienes Kirin {0}, pero Lostie Launcher necesita Kirin {1} o superior para instalar y abrir los juegos."
+    override val kirinDownloadUnavailable = "La versión necesaria de Kirin aún no se puede descargar desde el launcher."
+    override val kirinUpdateRecommended = "Actualización de Kirin recomendada"
+    override val kirinUpdateRecommendedMessage = "Tienes Kirin {0} y se recomienda Kirin {1}. Pulsa para actualizar."
 }

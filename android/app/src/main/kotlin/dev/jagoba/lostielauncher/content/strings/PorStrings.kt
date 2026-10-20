@@ -97,4 +97,11 @@ internal object PorStrings : Strings {
     override val homeContentUnavailable = "Não foi possível carregar o conteúdo"
     override val contentOutOfDateLabel = "Conteúdo desatualizado"
     override val contentOutOfDateMessage = "Não foi possível ligar ao servidor. A mostrar o último conteúdo conhecido, que pode estar desatualizado."
+    override val kirinMissingTitle = "Instale o Kirin para continuar"
+    override val kirinOutdatedTitle = "Atualize o Kirin para continuar"
+    override val kirinMissingMessage = "O Lostie Launcher abre os jogos com o Kirin, que não está instalado neste dispositivo. Instale o Kirin {0} ou superior."
+    override val kirinOutdatedMessage = "Você tem o Kirin {0}, mas o Lostie Launcher precisa do Kirin {1} ou superior para instalar e abrir os jogos."
+    override val kirinDownloadUnavailable = "A versão necessária do Kirin ainda não pode ser baixada pelo launcher."
+    override val kirinUpdateRecommended = "Atualização do Kirin recomendada"
+    override val kirinUpdateRecommendedMessage = "Você tem o Kirin {0} e o Kirin {1} é recomendado. Toque para atualizar."
 }

@@ -12,13 +12,13 @@ import org.junit.jupiter.params.provider.EnumSource
 class FaqsTest {
     @ParameterizedTest(name = "{0}")
     @EnumSource(AppLanguage::class)
-    @DisplayName("has the desktop's six entries, all filled in")
-    fun `every language has six complete entries`(language: AppLanguage) {
+    @DisplayName("has the desktop's six entries and the Kirin one, all filled in")
+    fun `every language has seven complete entries`(language: AppLanguage) {
         val entries = faqsFor(language)
 
         val incomplete = entries.filter { it.question.isBlank() || it.answer.isBlank() }
 
-        entries.size shouldBe 6
+        entries.size shouldBe 7
         incomplete.shouldBeEmpty()
     }
 
@@ -39,8 +39,19 @@ class FaqsTest {
         val english = faqsFor(AppLanguage.ENG)
 
         english[0].question shouldBe "How do I download a game?"
-        english[4].question shouldBe "What does offline mode mean?"
-        english[5].question shouldBe "I found a bug, where do I report it?"
+        english[1].question shouldBe "Why do I need Kirin?"
+        english[5].question shouldBe "What does offline mode mean?"
+        english[6].question shouldBe "I found a bug, where do I report it?"
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(AppLanguage::class)
+    @DisplayName("resolves the Kirin entry the requirement screen links to")
+    fun `the Kirin entry is about Kirin in every language`(language: AppLanguage) {
+        val entry = kirinFaqFor(language)
+
+        entry.question.contains("Kirin") shouldBe true
+        entry.answer.contains("0.4.0") shouldBe true
     }
 
     @ParameterizedTest(name = "{0}")

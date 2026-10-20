@@ -4,16 +4,22 @@ import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
+import dev.jagoba.lostielauncher.model.KirinDownloadState
+import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.model.LauncherSection
+import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -32,6 +38,12 @@ class MainViewModelTest {
     private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
     private val navigation = NavigationStore()
     private val externalLinks = TestExternalLinkService()
+    private val kirinStatus = MutableStateFlow<KirinStatus?>(KirinStatus.Ready)
+    private val kirinDownload = MutableStateFlow<KirinDownloadState>(KirinDownloadState.Unavailable)
+    private val kirin = mockk<KirinSetupService>(relaxed = true) {
+        every { status } returns kirinStatus
+        every { download } returns kirinDownload
+    }
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -191,12 +203,54 @@ class MainViewModelTest {
         sut.state.value.section shouldBe LauncherSection.HOME
     }
 
+    @Test
+    fun `offers the recommended Kirin update only on My Games while a release is available`() = runTest(dispatcher) {
+        kirinStatus.value = KirinStatus.UpdateRecommended("0.4.0", "0.4.2")
+        kirinDownload.value = KirinDownloadState.Available
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe null
+
+        sut.navigate(LauncherSection.GAMES)
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe KirinUpdateUiState("0.4.0", "0.4.2")
+
+        kirinDownload.value = KirinDownloadState.Downloading(42)
+        runCurrent()
+        sut.state.value.kirinUpdate?.downloadPercent shouldBe 42
+
+        kirinDownload.value = KirinDownloadState.Unavailable
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe null
+    }
+
+    @Test
+    fun `does not offer a Kirin update when none is recommended`() = runTest(dispatcher) {
+        kirinDownload.value = KirinDownloadState.Available
+        val sut = createSut()
+        sut.navigate(LauncherSection.GAMES)
+        runCurrent()
+
+        sut.state.value.kirinUpdate shouldBe null
+    }
+
+    @Test
+    fun `updates Kirin through the setup service`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.updateKirin()
+        runCurrent()
+
+        coVerify(exactly = 1) { kirin.install() }
+    }
+
     private fun createSut() = MainViewModel(
         navigation,
         coordinator,
         settings,
         downloads,
         externalLinks,
+        kirin,
         mockk<Logger>(relaxed = true),
     )
 }

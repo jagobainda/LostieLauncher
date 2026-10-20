@@ -44,7 +44,7 @@ data class ShellTopBarAction(val key: String, val label: String, val icon: Paint
 fun ShellTopBar(
     title: String,
     logo: Painter,
-    offlinePill: OfflinePillContent?,
+    pills: List<ShellPillContent>,
     actions: List<ShellTopBarAction>,
     modifier: Modifier = Modifier,
 ) {
@@ -66,27 +66,42 @@ fun ShellTopBar(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false).semantics { heading() },
             )
-            if (offlinePill != null) {
+            pills.forEach { pill ->
                 Spacer(Modifier.width(LauncherSpacing.MediumLarge))
-                OfflinePill(offlinePill)
+                ShellPill(pill)
             }
         }
         actions.forEach { ShellTopBarButton(it) }
     }
 }
 
-data class OfflinePillContent(val label: String, val tooltip: String, val icon: Painter)
+data class ShellPillContent(
+    val label: String,
+    val tooltip: String,
+    val icon: Painter,
+    val onClick: (() -> Unit)? = null,
+)
 
 @Composable
-fun OfflinePill(content: OfflinePillContent, modifier: Modifier = Modifier) {
+fun ShellPill(content: ShellPillContent, modifier: Modifier = Modifier) {
     val colors = LocalLauncherColors.current
     val shape = RoundedCornerShape(LauncherRadii.Small)
     LauncherTooltip(text = content.tooltip, modifier = modifier) {
         Row(
             Modifier
-                .heightIn(min = LauncherSizes.OfflinePillHeight)
+                .heightIn(min = LauncherSizes.ShellPillHeight)
                 .background(colors.overlaySubtle, shape)
                 .border(LauncherBorders.Thin, FixedColors.Warning, shape)
+                .then(
+                    content.onClick?.let {
+                        Modifier.clickable(
+                            indication = null,
+                            interactionSource = null,
+                            role = Role.Button,
+                            onClick = it,
+                        )
+                    } ?: Modifier,
+                )
                 .padding(horizontal = LauncherSpacing.Medium)
                 .semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
@@ -95,7 +110,7 @@ fun OfflinePill(content: OfflinePillContent, modifier: Modifier = Modifier) {
                 painter = content.icon,
                 contentDescription = null,
                 tint = FixedColors.Warning,
-                modifier = Modifier.size(LauncherSizes.OfflinePillIcon),
+                modifier = Modifier.size(LauncherSizes.ShellPillIcon),
             )
             Spacer(Modifier.width(LauncherSpacing.Snug))
             Text(

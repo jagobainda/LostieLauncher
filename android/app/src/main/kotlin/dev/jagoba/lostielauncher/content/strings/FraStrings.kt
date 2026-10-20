@@ -97,4 +97,11 @@ internal object FraStrings : Strings {
     override val homeContentUnavailable = "Le contenu n'a pas pu être chargé"
     override val contentOutOfDateLabel = "Contenu peut-être obsolète"
     override val contentOutOfDateMessage = "Le serveur est injoignable. Le dernier contenu connu est affiché ; il peut être obsolète."
+    override val kirinMissingTitle = "Installez Kirin pour continuer"
+    override val kirinOutdatedTitle = "Mettez à jour Kirin pour continuer"
+    override val kirinMissingMessage = "Lostie Launcher ouvre les jeux avec Kirin, qui n'est pas installé sur cet appareil. Installez Kirin {0} ou une version ultérieure."
+    override val kirinOutdatedMessage = "Vous avez Kirin {0}, mais Lostie Launcher a besoin de Kirin {1} ou d'une version ultérieure pour installer et ouvrir les jeux."
+    override val kirinDownloadUnavailable = "La version requise de Kirin ne peut pas encore être téléchargée depuis le launcher."
+    override val kirinUpdateRecommended = "Mise à jour de Kirin recommandée"
+    override val kirinUpdateRecommendedMessage = "Vous avez Kirin {0} et Kirin {1} est recommandé. Appuyez pour mettre à jour."
 }

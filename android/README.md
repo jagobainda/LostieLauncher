@@ -23,7 +23,7 @@ authority on what the app must do is the desktop side, under
 | CI jobs                               | done — format, build, tests, lint and release build     |
 | Dependency injection graph            | done — one Hilt module per area in `core/di/`           |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 91 keys and 6 FAQs, in eight languages           |
+| Text catalogue                        | done — 99 keys and 7 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry                   | done — JSON in the games root, survives a reinstall      |
@@ -190,8 +190,8 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 95
-string keys and six FAQ entries each. Read text with `LocalStrings.current`, and
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 99
+string keys and seven FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.
 A key missing from a language is a compile error, which is the guarantee the
@@ -251,6 +251,35 @@ marker, created before the first extraction and on startup, which keeps the
 games' images out of the gallery. Play launches it through Kirin's shortcut
 intent (see
 [docs/game-runtime-options.md](docs/game-runtime-options.md)).
+
+Which Kirin the launcher needs comes from the server, in
+`public/config/kirin-setup-options.json`:
+
+```json
+{
+    "minimumVersion": "0.4.0",
+    "releaseFeedUrl": "https://raw.githubusercontent.com/shogun-drei/kirin-updates/main/latest.json"
+}
+```
+
+Below `minimumVersion`, `KirinRequirement` replaces the whole shell with a
+screen that tells a missing Kirin from an outdated one and links to the FAQ
+entry explaining why. When the release in `releaseFeedUrl` is newer than the
+installed Kirin, nothing is blocked: My Games shows a "Kirin update
+recommended" pill in the title bar, which downloads and installs it when
+tapped. The feed is meant to be Kirin's stable one, not `latest-early-access`.
+Until the file is read, as when the launcher starts offline, the minimum is
+`KirinSetupOptions.fallbackMinimumVersion` (0.4.0, the first Kirin with the
+contract) and nothing is recommended or offered. A failed read is retried on
+the next return to the foreground; a successful one lasts for the process.
+
+The installed version is read from `versionName`, because `versionCode` is 23
+in both 0.3.5 and the 0.4.0 beta, and compared without its pre-release suffix,
+so `0.4.0-beta8` passes 0.4.0. It is checked again every time the launcher
+returns to the foreground. The feed has the shape of Kirin's own `latest.json`
+(`versionName`, `downloadUrl`). Its release is offered only when it is at the
+minimum or later, newer than the installed Kirin and served over HTTPS, and the downloaded APK must be `com.gmax.kirin` at that version or later
+before the system installer is opened.
 
 Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
 format matches the desktop, files are named by month, roll at 10 MB and are

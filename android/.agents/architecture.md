@@ -52,7 +52,7 @@ a `src/release/` counterpart for the symbol `main` calls — not behind a
 
 `ui/screen/LauncherShell.kt` is the only screen root that reads
 `MainViewModel`. It maps `MainUiState` onto stateless pieces in
-`ui/component/` (`ShellTopBar`, `OfflinePill`, `ShellNavigationRail`,
+`ui/component/` (`ShellTopBar`, `ShellPill`, `ShellNavigationRail`,
 `ShellNavigationBar`, `LauncherTooltip`) and hosts the active section.
 
 - **Navigation has one source of truth, `NavigationStore`.** There is no
@@ -273,6 +273,15 @@ and back, as the desktop's persistent views keep theirs.
   whatever the answer, and the progress notification appears once it is
   granted; without storage access the installation fails. A resume never asks, because it follows a start. An update started
   from My Games or by auto-update does not ask either.
+- **Kirin gates the whole launcher.** `KirinRequirement` wraps the shell's
+  layout and reads `KirinViewModel`: while `KirinSetupService.status` is
+  `Missing` or `Outdated`, the screen says which, offers the download when the
+  release feed has a supported version, and opens the Kirin FAQ entry in a
+  message box. The welcome and the dialog hosts stay composed above it, so a
+  first run can still pick its language. `UpdateRecommended` does not block:
+  `MainUiState.kirinUpdate` puts a tappable pill beside the offline one on My
+  Games. The download state lives in the service, so the gate and the pill
+  share one transfer, and `KirinRequirement` shows its failure either way.
 - **"Not supported yet" is a state here too.** While `installedGames` is
   `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
   `NotSupportedYetMessage` with the Library button, not an empty list and not a
@@ -421,6 +430,11 @@ Already in place:
   adapter that sends Kirin's explicit intent; running signals and active
   sessions still delegate to the pending adapter. Pending implementations
   report unsupported rather than claiming a game is stopped.
+- `KirinSetupService` — the installed Kirin's status (`KirinVersionPolicy`,
+  JVM-tested) against the server's minimum version and the release feed's
+  latest version, refreshed on every process resume, plus the APK download, which reuses `DownloadTransfer`. `KirinPackages` is
+  the thin adapter for the package manager and the system installer, which
+  receives the APK through the `FileProvider` declared in the manifest.
 - `GameLocationService` — help availability, opening game/help files, and
   returning an opaque partial-uninstall location to its owning adapter.
 - `LauncherDataCoordinator` — the shared Home and catalogue snapshots and the

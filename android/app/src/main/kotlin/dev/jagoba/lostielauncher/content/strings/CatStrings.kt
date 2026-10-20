@@ -97,4 +97,11 @@ internal object CatStrings : Strings {
     override val homeContentUnavailable = "No s'ha pogut carregar el contingut"
     override val contentOutOfDateLabel = "Contingut desactualitzat"
     override val contentOutOfDateMessage = "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat."
+    override val kirinMissingTitle = "Instal·la Kirin per continuar"
+    override val kirinOutdatedTitle = "Actualitza Kirin per continuar"
+    override val kirinMissingMessage = "Lostie Launcher obre els jocs amb Kirin, que no està instal·lat en aquest dispositiu. Instal·la Kirin {0} o superior."
+    override val kirinOutdatedMessage = "Tens Kirin {0}, però Lostie Launcher necessita Kirin {1} o superior per instal·lar i obrir els jocs."
+    override val kirinDownloadUnavailable = "La versió necessària de Kirin encara no es pot descarregar des del launcher."
+    override val kirinUpdateRecommended = "Actualització de Kirin recomanada"
+    override val kirinUpdateRecommendedMessage = "Tens Kirin {0} i es recomana Kirin {1}. Prem per actualitzar."
 }

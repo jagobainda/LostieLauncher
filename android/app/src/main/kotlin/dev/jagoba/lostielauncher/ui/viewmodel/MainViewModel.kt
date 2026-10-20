@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.content.stringsFor
 import dev.jagoba.lostielauncher.model.ExternalLink
+import dev.jagoba.lostielauncher.model.KirinDownloadState
+import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.hasActiveDownload
 import dev.jagoba.lostielauncher.service.download.DownloadManager
+import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
@@ -22,6 +25,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+data class KirinUpdateUiState(
+    val installedVersion: String,
+    val latestVersion: String,
+    val downloadPercent: Int? = null,
+)
+
 data class MainUiState(
     val section: LauncherSection = LauncherSection.HOME,
     val title: String = "",
@@ -30,6 +39,7 @@ data class MainUiState(
     val canRefresh: Boolean = false,
     val pendingLibraryGameId: String? = null,
     val isWelcomeVisible: Boolean = false,
+    val kirinUpdate: KirinUpdateUiState? = null,
 ) {
     val contextLinks: List<ExternalLink> get() = contextLinksFor(section)
     val canNavigateBack: Boolean get() = section != LauncherSection.HOME
@@ -48,9 +58,20 @@ class MainViewModel @Inject constructor(
     private val settings: SettingsStore,
     downloads: DownloadManager,
     private val externalLinks: ExternalLinkService,
+    private val kirin: KirinSetupService,
     private val logger: Logger,
 ) : ViewModel() {
     private val welcome = MutableStateFlow(false)
+    private val kirinUpdate = combine(kirin.status, kirin.download) { status, download ->
+        val offered = download != KirinDownloadState.Checking && download != KirinDownloadState.Unavailable
+        (status as? KirinStatus.UpdateRecommended)?.takeIf { offered }?.let {
+            KirinUpdateUiState(
+                it.installedVersion,
+                it.latestVersion,
+                (download as? KirinDownloadState.Downloading)?.percent,
+            )
+        }
+    }
     private val shell = combine(
         navigation.state,
         settings.settings,
@@ -79,12 +100,14 @@ class MainViewModel @Inject constructor(
         coordinator.isRefreshing,
         downloads.downloads,
         welcome,
-    ) { shell, refreshing, rows, welcomeVisible ->
+        kirinUpdate,
+    ) { shell, refreshing, rows, welcomeVisible, kirinUpdate ->
         val downloading = rows.hasActiveDownload
         shell.copy(
             isRefreshing = refreshing,
             canRefresh = shell.canRefresh && !refreshing && !downloading,
             isWelcomeVisible = welcomeVisible,
+            kirinUpdate = kirinUpdate.takeIf { shell.section == LauncherSection.GAMES },
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MainUiState())
 
@@ -122,6 +145,11 @@ class MainViewModel @Inject constructor(
             coordinator.refreshAll(settings.settings.first().language)
             logger.debug("Data refresh completed.")
         }
+    }
+
+    fun updateKirin() {
+        logger.info("Kirin update requested from My Games.")
+        viewModelScope.launch { kirin.install() }
     }
 
     fun openExternalLink(link: ExternalLink) {

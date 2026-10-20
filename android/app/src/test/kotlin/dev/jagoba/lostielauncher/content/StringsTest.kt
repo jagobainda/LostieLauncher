@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 84 keys kept from the desktop and the eight Android-only keys")
+    @DisplayName("declares the 84 keys kept from the desktop and the 15 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 92
+        keys.size shouldBe 99
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -29,6 +29,13 @@ class StringsTest {
                 "faqsClearSearch",
                 "statusWaitingForConnection",
                 "statusDownloading",
+                "kirinMissingTitle",
+                "kirinOutdatedTitle",
+                "kirinMissingMessage",
+                "kirinOutdatedMessage",
+                "kirinDownloadUnavailable",
+                "kirinUpdateRecommended",
+                "kirinUpdateRecommendedMessage",
             ),
         ) shouldBe true
     }
@@ -113,7 +120,7 @@ class StringsTest {
     }
 
     @Test
-    @DisplayName("carries a placeholder in exactly the five uninstall messages")
+    @DisplayName("carries a placeholder in exactly the five uninstall messages and the three Kirin messages")
     fun `the keys with placeholders are the expected ones`() {
         val withPlaceholders = KEY_GETTERS
             .filter { placeholdersOf(it.valueIn(stringsFor(AppLanguage.Default))).isNotEmpty() }
@@ -126,6 +133,9 @@ class StringsTest {
             "uninstallBlockedMessage",
             "uninstallGameRunningMessage",
             "uninstallMaybeRunningMessage",
+            "kirinMissingMessage",
+            "kirinOutdatedMessage",
+            "kirinUpdateRecommendedMessage",
         )
     }
 

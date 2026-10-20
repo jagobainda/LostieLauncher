@@ -53,8 +53,8 @@ object LauncherSizes {
     val TitleBarButtonIcon: Dp = 14.dp
     val NavigationIcon: Dp = 27.dp
     val NavigationIndicator: Dp = 3.dp
-    val OfflinePillHeight: Dp = 22.dp
-    val OfflinePillIcon: Dp = 12.dp
+    val ShellPillHeight: Dp = 22.dp
+    val ShellPillIcon: Dp = 12.dp
     val NavigationRailBreakpoint: Dp = 600.dp
     val MinimumTouchTarget: Dp = 48.dp
     val GameCardLogoWidth: Dp = 110.dp

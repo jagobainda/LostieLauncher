@@ -4,6 +4,7 @@ import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
+import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
@@ -33,6 +34,7 @@ class ApplicationLifecycleObserverTest {
     private val coordinator = mockk<LauncherDataCoordinator>(relaxed = true)
     private val gameAutoUpdates = mockk<GameAutoUpdateCoordinator>(relaxed = true)
     private val installation = mockk<GameInstallationService>(relaxed = true)
+    private val kirin = mockk<KirinSetupService>(relaxed = true)
     private val logger = mockk<Logger>(relaxed = true)
 
     @Test
@@ -73,6 +75,17 @@ class ApplicationLifecycleObserverTest {
     }
 
     @Test
+    fun `checks Kirin again every time the launcher returns to the foreground`() = runTest {
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.onResume(owner)
+        sut.onResume(owner)
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { kirin.refresh() }
+    }
+
+    @Test
     fun `flushes pending settings when the process enters the background`() = runTest {
         val sut = createSut(StandardTestDispatcher(testScheduler))
 
@@ -105,6 +118,7 @@ class ApplicationLifecycleObserverTest {
         homeRefreshOptions = HomeRefreshOptions(2.minutes),
         gameAutoUpdates = gameAutoUpdates,
         installation = installation,
+        kirin = kirin,
         logger = logger,
         dispatchers = TestDispatcherProvider(dispatcher),
     )
