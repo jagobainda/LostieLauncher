@@ -54,7 +54,7 @@ private val EspFaqs = listOf(
     ),
     FaqEntry(
         "He encontrado un error, ¿dónde lo reporto?",
-        "Escribe en el canal #testeo-launcher del Discord de la comunidad contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.",
+        "Abre un issue en el repositorio de GitHub del launcher contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.",
     ),
 )
 
@@ -85,7 +85,7 @@ private val EngFaqs = listOf(
     ),
     FaqEntry(
         "I found a bug, where do I report it?",
-        "Write in the #testeo-launcher channel of the community Discord explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.",
+        "Open an issue in the launcher's GitHub repository explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.",
     ),
 )
 
@@ -116,7 +116,7 @@ private val CatFaqs = listOf(
     ),
     FaqEntry(
         "He trobat un error, on el reporto?",
-        "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.",
+        "Obre un issue al repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.",
     ),
 )
 
@@ -147,7 +147,7 @@ private val EusFaqs = listOf(
     ),
     FaqEntry(
         "Errore bat aurkitu dut, non jakinarazten dut?",
-        "Idatzi komunitatearen Discord-eko #testeo-launcher kanalean, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.",
+        "Ireki issue bat launcher-aren GitHub biltegian, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.",
     ),
 )
 
@@ -178,7 +178,7 @@ private val GalFaqs = listOf(
     ),
     FaqEntry(
         "Atopei un erro, onde o reporto?",
-        "Escribe na canle #testeo-launcher do Discord da comunidade contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.",
+        "Abre unha issue no repositorio de GitHub do launcher contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.",
     ),
 )
 
@@ -209,7 +209,7 @@ private val PorFaqs = listOf(
     ),
     FaqEntry(
         "Encontrei um erro, onde o reporto?",
-        "Escreva no canal #testeo-launcher do Discord da comunidade contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.",
+        "Abra uma issue no repositório do launcher no GitHub contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.",
     ),
 )
 
@@ -240,7 +240,7 @@ private val ValFaqs = listOf(
     ),
     FaqEntry(
         "He trobat un error, on el reporte?",
-        "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.",
+        "Obri un issue en el repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.",
     ),
 )
 
@@ -271,6 +271,6 @@ private val FraFaqs = listOf(
     ),
     FaqEntry(
         "J'ai trouvé un bug, où le signaler ?",
-        "Écrivez dans le canal #testeo-launcher du Discord de la communauté en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.",
+        "Ouvrez une issue sur le dépôt GitHub du launcher en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.",
     ),
 )
