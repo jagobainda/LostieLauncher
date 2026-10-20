@@ -110,6 +110,7 @@ interface Strings {
     val kirinDownloadUnavailable: String
     val kirinUpdateRecommended: String
     val kirinUpdateRecommendedMessage: String
+    val kirinThanks: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {

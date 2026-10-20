@@ -52,6 +52,7 @@ class FaqsTest {
 
         entry.question.contains("Kirin") shouldBe true
         entry.answer.contains("0.4.0") shouldBe true
+        entry.answer.endsWith(stringsFor(language).kirinThanks) shouldBe true
     }
 
     @ParameterizedTest(name = "{0}")

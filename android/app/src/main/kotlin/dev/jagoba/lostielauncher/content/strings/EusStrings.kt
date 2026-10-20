@@ -104,4 +104,5 @@ internal object EusStrings : Strings {
     override val kirinDownloadUnavailable = "Kirin-en beharrezko bertsioa ezin da oraindik launcher-etik deskargatu."
     override val kirinUpdateRecommended = "Kirin eguneratzea gomendatua"
     override val kirinUpdateRecommendedMessage = "Kirin {0} duzu eta Kirin {1} gomendatzen da. Sakatu eguneratzeko."
+    override val kirinThanks = "Eskerrik asko Max-i integrazioan emandako laguntzagatik eta Kirin sortzeagatik, Android-en joko hauetara jolasteko aukera ematen digun emulatzailea. Informazio gehiago: https://playkirin.com/"
 }

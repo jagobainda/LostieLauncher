@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -25,6 +26,7 @@ import dev.jagoba.lostielauncher.model.KirinDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.EmptyState
+import dev.jagoba.lostielauncher.ui.component.LinkText
 import dev.jagoba.lostielauncher.ui.component.StatusNotice
 import dev.jagoba.lostielauncher.ui.dialog.DialogButton
 import dev.jagoba.lostielauncher.ui.dialog.DialogButtonStyle
@@ -34,6 +36,7 @@ import dev.jagoba.lostielauncher.ui.dialog.MessageBoxIcon
 import dev.jagoba.lostielauncher.ui.dialog.MessageBoxSpec
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
+import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 import dev.jagoba.lostielauncher.ui.viewmodel.KirinUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.KirinViewModel
@@ -48,7 +51,14 @@ fun KirinRequirement(
     val strings = LocalStrings.current
     when {
         state.status == null -> Box(modifier.fillMaxSize().background(LocalLauncherColors.current.primaryBg))
-        state.isBlocking -> KirinRequiredScreen(state, onInstall = viewModel::install, modifier = modifier)
+
+        state.isBlocking -> KirinRequiredScreen(
+            state = state,
+            onInstall = viewModel::install,
+            onOpenLink = viewModel::openLink,
+            modifier = modifier,
+        )
+
         else -> content()
     }
     if (state.download == KirinDownloadState.Failed) {
@@ -65,7 +75,12 @@ fun KirinRequirement(
 }
 
 @Composable
-private fun KirinRequiredScreen(state: KirinUiState, onInstall: () -> Unit, modifier: Modifier = Modifier) {
+private fun KirinRequiredScreen(
+    state: KirinUiState,
+    onInstall: () -> Unit,
+    onOpenLink: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val strings = LocalStrings.current
     val status = state.status
     var isFaqVisible by rememberSaveable { mutableStateOf(false) }
@@ -117,6 +132,14 @@ private fun KirinRequiredScreen(state: KirinUiState, onInstall: () -> Unit, modi
                         modifier = Modifier.padding(top = LauncherSpacing.Large),
                     )
                 }
+                LinkText(
+                    text = strings.kirinThanks,
+                    color = LocalLauncherColors.current.secondaryFgDim,
+                    fontSize = LauncherType.CaptionSize,
+                    onOpenLink = onOpenLink,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = LauncherSpacing.Section),
+                )
             }
         },
     )

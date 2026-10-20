@@ -2,6 +2,14 @@
 
 package dev.jagoba.lostielauncher.content
 
+import dev.jagoba.lostielauncher.content.strings.CatStrings
+import dev.jagoba.lostielauncher.content.strings.EngStrings
+import dev.jagoba.lostielauncher.content.strings.EspStrings
+import dev.jagoba.lostielauncher.content.strings.EusStrings
+import dev.jagoba.lostielauncher.content.strings.FraStrings
+import dev.jagoba.lostielauncher.content.strings.GalStrings
+import dev.jagoba.lostielauncher.content.strings.PorStrings
+import dev.jagoba.lostielauncher.content.strings.ValStrings
 import dev.jagoba.lostielauncher.model.AppLanguage
 
 private const val KIRIN_FAQ_INDEX = 1
@@ -26,7 +34,7 @@ private val EspFaqs = listOf(
     ),
     FaqEntry(
         "¿Por qué necesito Kirin?",
-        "Los juegos están hechos para Windows y Android no puede ejecutarlos por sí solo. Kirin es la aplicación que los abre en Android: el launcher descarga, instala y actualiza los juegos y los añade a la biblioteca de Kirin, que es quien los ejecuta al pulsar Jugar. Hace falta Kirin 0.4.0 o superior, la primera versión que permite a otras aplicaciones añadir juegos a su biblioteca y abrirlos.",
+        "Los juegos están hechos para Windows y Android no puede ejecutarlos por sí solo. Kirin es la aplicación que los abre en Android: el launcher descarga, instala y actualiza los juegos y los añade a la biblioteca de Kirin, que es quien los ejecuta al pulsar Jugar. Hace falta Kirin 0.4.0 o superior, la primera versión que permite a otras aplicaciones añadir juegos a su biblioteca y abrirlos. ${EspStrings.kirinThanks}",
     ),
     FaqEntry(
         "¿Dónde se instalan los juegos y cómo cambio la carpeta?",
@@ -57,7 +65,7 @@ private val EngFaqs = listOf(
     ),
     FaqEntry(
         "Why do I need Kirin?",
-        "The games are made for Windows, and Android cannot run them on its own. Kirin is the app that runs them on Android: the launcher downloads, installs and updates the games and adds them to Kirin's library, and Kirin runs them when you press Play. Kirin 0.4.0 or later is required, as it is the first version that lets other apps add games to its library and open them.",
+        "The games are made for Windows, and Android cannot run them on its own. Kirin is the app that runs them on Android: the launcher downloads, installs and updates the games and adds them to Kirin's library, and Kirin runs them when you press Play. Kirin 0.4.0 or later is required, as it is the first version that lets other apps add games to its library and open them. ${EngStrings.kirinThanks}",
     ),
     FaqEntry(
         "Where are games installed and how do I change the folder?",
@@ -88,7 +96,7 @@ private val CatFaqs = listOf(
     ),
     FaqEntry(
         "Per què necessito Kirin?",
-        "Els jocs estan fets per a Windows i Android no els pot executar per si sol. Kirin és l'aplicació que els obre a Android: el launcher descarrega, instal·la i actualitza els jocs i els afegeix a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seva biblioteca i obrir-los.",
+        "Els jocs estan fets per a Windows i Android no els pot executar per si sol. Kirin és l'aplicació que els obre a Android: el launcher descarrega, instal·la i actualitza els jocs i els afegeix a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seva biblioteca i obrir-los. ${CatStrings.kirinThanks}",
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvio la carpeta?",
@@ -119,7 +127,7 @@ private val EusFaqs = listOf(
     ),
     FaqEntry(
         "Zergatik behar dut Kirin?",
-        "Jokoak Windows-erako eginda daude, eta Android-ek ezin ditu bere kabuz exekutatu. Kirin da Android-en jokoak irekitzen dituen aplikazioa: launcher-ak jokoak deskargatu, instalatu eta eguneratzen ditu eta Kirin-en liburutegira gehitzen ditu, eta Kirin-ek exekutatzen ditu Jolastu sakatzean. Kirin 0.4.0 edo berriagoa behar da, beste aplikazioei bere liburutegira jokoak gehitzen eta irekitzen uzten dien lehen bertsioa baita.",
+        "Jokoak Windows-erako eginda daude, eta Android-ek ezin ditu bere kabuz exekutatu. Kirin da Android-en jokoak irekitzen dituen aplikazioa: launcher-ak jokoak deskargatu, instalatu eta eguneratzen ditu eta Kirin-en liburutegira gehitzen ditu, eta Kirin-ek exekutatzen ditu Jolastu sakatzean. Kirin 0.4.0 edo berriagoa behar da, beste aplikazioei bere liburutegira jokoak gehitzen eta irekitzen uzten dien lehen bertsioa baita. ${EusStrings.kirinThanks}",
     ),
     FaqEntry(
         "Non instalatzen dira jokoak eta nola aldatzen dut karpeta?",
@@ -150,7 +158,7 @@ private val GalFaqs = listOf(
     ),
     FaqEntry(
         "Por que necesito Kirin?",
-        "Os xogos están feitos para Windows e Android non pode executalos por si só. Kirin é a aplicación que os abre en Android: o launcher descarga, instala e actualiza os xogos e engádeos á biblioteca de Kirin, que é quen os executa ao premer Xogar. Cómpre Kirin 0.4.0 ou superior, a primeira versión que permite que outras aplicacións engadan xogos á súa biblioteca e os abran.",
+        "Os xogos están feitos para Windows e Android non pode executalos por si só. Kirin é a aplicación que os abre en Android: o launcher descarga, instala e actualiza os xogos e engádeos á biblioteca de Kirin, que é quen os executa ao premer Xogar. Cómpre Kirin 0.4.0 ou superior, a primeira versión que permite que outras aplicacións engadan xogos á súa biblioteca e os abran. ${GalStrings.kirinThanks}",
     ),
     FaqEntry(
         "Onde se instalan os xogos e como cambio o cartafol?",
@@ -181,7 +189,7 @@ private val PorFaqs = listOf(
     ),
     FaqEntry(
         "Por que preciso do Kirin?",
-        "Os jogos são feitos para Windows e o Android não consegue executá-los sozinho. O Kirin é o aplicativo que os abre no Android: o launcher baixa, instala e atualiza os jogos e os adiciona à biblioteca do Kirin, que é quem os executa quando você pressiona Jogar. É necessário o Kirin 0.4.0 ou superior, a primeira versão que permite que outros aplicativos adicionem jogos à sua biblioteca e os abram.",
+        "Os jogos são feitos para Windows e o Android não consegue executá-los sozinho. O Kirin é o aplicativo que os abre no Android: o launcher baixa, instala e atualiza os jogos e os adiciona à biblioteca do Kirin, que é quem os executa quando você pressiona Jogar. É necessário o Kirin 0.4.0 ou superior, a primeira versão que permite que outros aplicativos adicionem jogos à sua biblioteca e os abram. ${PorStrings.kirinThanks}",
     ),
     FaqEntry(
         "Onde os jogos são instalados e como mudo a pasta?",
@@ -212,7 +220,7 @@ private val ValFaqs = listOf(
     ),
     FaqEntry(
         "Per què necessite Kirin?",
-        "Els jocs estan fets per a Windows i Android no els pot executar per si mateix. Kirin és l'aplicació que els obri en Android: el launcher descarrega, instal·la i actualitza els jocs i els afig a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seua biblioteca i obrir-los.",
+        "Els jocs estan fets per a Windows i Android no els pot executar per si mateix. Kirin és l'aplicació que els obri en Android: el launcher descarrega, instal·la i actualitza els jocs i els afig a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seua biblioteca i obrir-los. ${ValStrings.kirinThanks}",
     ),
     FaqEntry(
         "On s'instal·len els jocs i com canvie la carpeta?",
@@ -243,7 +251,7 @@ private val FraFaqs = listOf(
     ),
     FaqEntry(
         "Pourquoi ai-je besoin de Kirin ?",
-        "Les jeux sont conçus pour Windows et Android ne peut pas les exécuter seul. Kirin est l'application qui les ouvre sur Android : le launcher télécharge, installe et met à jour les jeux et les ajoute à la bibliothèque de Kirin, qui les lance quand vous appuyez sur Jouer. Kirin 0.4.0 ou une version ultérieure est nécessaire, car c'est la première version qui permet à d'autres applications d'ajouter des jeux à sa bibliothèque et de les ouvrir.",
+        "Les jeux sont conçus pour Windows et Android ne peut pas les exécuter seul. Kirin est l'application qui les ouvre sur Android : le launcher télécharge, installe et met à jour les jeux et les ajoute à la bibliothèque de Kirin, qui les lance quand vous appuyez sur Jouer. Kirin 0.4.0 ou une version ultérieure est nécessaire, car c'est la première version qui permet à d'autres applications d'ajouter des jeux à sa bibliothèque et de les ouvrir. ${FraStrings.kirinThanks}",
     ),
     FaqEntry(
         "Où les jeux sont-ils installés et comment changer de dossier ?",

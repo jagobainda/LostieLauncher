@@ -23,7 +23,7 @@ itself reads before any Kotlin runs, and says so.
 
 | Thing | Where |
 | --- | --- |
-| The 99 keys | `content/Strings.kt` — the `Strings` interface |
+| The 100 keys | `content/Strings.kt` — the `Strings` interface |
 | The eight implementations | `content/strings/<Lang>Strings.kt`, one `object` each |
 | Resolving one | `stringsFor(language)`, exhaustive over `AppLanguage` |
 | The 7 FAQ entries × 8 | `content/Faqs.kt`, resolved with `faqsFor(language)` |
@@ -40,14 +40,14 @@ What binds:
   `ExternalLink.brandName`, not in a composable.
 - **A new string means the key and all eight translations.** English left in
   the other seven is a review rejection. It is also a compile error: `Strings`
-  is an interface with 99 abstract properties and eight `object`s implementing
+  is an interface with 100 abstract properties and eight `object`s implementing
   it, which is exactly the desktop's guarantee and the reason the catalogue is
   900 lines of `override val` rather than a map.
 - **Placeholders keep the same count and order in all eight languages.** Eight
   keys carry one (the five uninstall messages and the three Kirin messages), they use the desktop's `{0}` syntax, and the arguments are
   positional — a translation that swapped `{0}` and `{1}` would put a filesystem
   path where a game name belongs, in one language only. `StringsTest` asserts
-  no drift across all 99 × 8.
+  no drift across all 100 × 8.
 - **Substitution is `String.withArgs`, and the name is load-bearing.**
   `kotlin.text` declares `String.format(vararg Any?)` and is default-imported,
   so an extension called `format` here would not shadow it — it would *lose* to
@@ -86,7 +86,7 @@ that only exist for Windows reasons (see
 all thirty stay gone; `FaqsTest` keeps the desktop's download-directory labels
 as test data, to prove no FAQ answer names that setting.
 
-### Fifteen keys this side has and the desktop does not
+### Sixteen keys this side has and the desktop does not
 
 `StatusNotSupportedYet` ("Not available on Android yet") is the text the game
 card shows for anything that goes through the unimplemented install and launch
@@ -115,9 +115,11 @@ shows during installation; the desktop has no notification.
 screen, which the desktop does not need. The two messages take the minimum
 version, and the outdated one the installed version first.
 `KirinUpdateRecommended` and `KirinUpdateRecommendedMessage` are My Games'
-title-bar pill and its tooltip, with the installed and the latest version. The screen links to
+title-bar pill and its tooltip, with the installed and the latest version.
+`KirinThanks` thanks Kirin's creator under the requirement screen and closes
+the Kirin FAQ answer, which appends it rather than repeating it. The screen links to
 the FAQ entry at `kirinFaqFor`, the second entry in every language, which has
-no desktop counterpart either. `StringsTest` asserts all fifteen keys by name.
+no desktop counterpart either. `StringsTest` asserts all sixteen keys by name.
 
 ## Themes — 10 palettes, identical key sets
 

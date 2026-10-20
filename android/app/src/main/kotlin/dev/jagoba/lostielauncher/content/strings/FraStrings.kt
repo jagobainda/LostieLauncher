@@ -104,4 +104,5 @@ internal object FraStrings : Strings {
     override val kirinDownloadUnavailable = "La version requise de Kirin ne peut pas encore être téléchargée depuis le launcher."
     override val kirinUpdateRecommended = "Mise à jour de Kirin recommandée"
     override val kirinUpdateRecommendedMessage = "Vous avez Kirin {0} et Kirin {1} est recommandé. Appuyez pour mettre à jour."
+    override val kirinThanks = "Merci à Max pour son aide avec l'intégration et pour avoir créé Kirin, l'émulateur qui nous permet de jouer à ces jeux sur Android. Plus d'informations sur https://playkirin.com/"
 }

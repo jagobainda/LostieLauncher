@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.content.kirinFaqFor
 import dev.jagoba.lostielauncher.model.KirinDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
+import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,8 +26,11 @@ data class KirinUiState(
 }
 
 @HiltViewModel
-class KirinViewModel @Inject constructor(private val kirin: KirinSetupService, settings: SettingsStore) :
-    ViewModel() {
+class KirinViewModel @Inject constructor(
+    private val kirin: KirinSetupService,
+    settings: SettingsStore,
+    private val externalLinks: ExternalLinkService,
+) : ViewModel() {
     val state: StateFlow<KirinUiState> = combine(kirin.status, kirin.download, settings.settings) {
             status,
             download,
@@ -41,5 +45,9 @@ class KirinViewModel @Inject constructor(private val kirin: KirinSetupService, s
 
     fun dismissDownloadFailure() {
         kirin.acknowledgeFailure()
+    }
+
+    fun openLink(url: String) {
+        externalLinks.openUrl(url)
     }
 }

@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource
 class KirinViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val settings = TestSettingsStore()
+    private val links = TestExternalLinkService()
     private val status = MutableStateFlow<KirinStatus?>(null)
     private val download = MutableStateFlow<KirinDownloadState>(KirinDownloadState.Checking)
     private val kirin = mockk<KirinSetupService>(relaxed = true) {
@@ -43,7 +44,7 @@ class KirinViewModelTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun createSut() = KirinViewModel(kirin, settings)
+    private fun createSut() = KirinViewModel(kirin, settings, links)
 
     @ParameterizedTest(name = "{0} -> {1}")
     @MethodSource("statuses")
@@ -77,6 +78,15 @@ class KirinViewModelTest {
 
         coVerify(exactly = 1) { kirin.install() }
         verify(exactly = 1) { kirin.acknowledgeFailure() }
+    }
+
+    @Test
+    fun `opens a link from the thanks to Kirin's creator`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.openLink("https://playkirin.com/")
+
+        links.openedUrls shouldBe listOf("https://playkirin.com/")
     }
 
     @Test

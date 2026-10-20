@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 84 keys kept from the desktop and the 15 Android-only keys")
+    @DisplayName("declares the 84 keys kept from the desktop and the 16 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 99
+        keys.size shouldBe 100
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -36,6 +36,7 @@ class StringsTest {
                 "kirinDownloadUnavailable",
                 "kirinUpdateRecommended",
                 "kirinUpdateRecommendedMessage",
+                "kirinThanks",
             ),
         ) shouldBe true
     }
@@ -137,6 +138,16 @@ class StringsTest {
             "kirinOutdatedMessage",
             "kirinUpdateRecommendedMessage",
         )
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(AppLanguage::class)
+    @DisplayName("thanks Kirin's creator and links to Kirin's website in every language")
+    fun `the Kirin thanks names Max and links to Kirin`(language: AppLanguage) {
+        val thanks = stringsFor(language).kirinThanks
+
+        thanks.contains("Max") shouldBe true
+        thanks.endsWith("https://playkirin.com/") shouldBe true
     }
 
     @ParameterizedTest(name = "{0}")

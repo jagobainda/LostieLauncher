@@ -104,4 +104,5 @@ internal object GalStrings : Strings {
     override val kirinDownloadUnavailable = "A versión necesaria de Kirin aínda non se pode descargar desde o launcher."
     override val kirinUpdateRecommended = "Actualización de Kirin recomendada"
     override val kirinUpdateRecommendedMessage = "Tes Kirin {0} e recoméndase Kirin {1}. Preme para actualizar."
+    override val kirinThanks = "Grazas a Max pola súa axuda coa integración e por crear Kirin, o emulador que nos permite xogar a estes xogos en Android. Máis información en https://playkirin.com/"
 }

@@ -23,7 +23,7 @@ authority on what the app must do is the desktop side, under
 | CI jobs                               | done — format, build, tests, lint and release build     |
 | Dependency injection graph            | done — one Hilt module per area in `core/di/`           |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 99 keys and 7 FAQs, in eight languages           |
+| Text catalogue                        | done — 100 keys and 7 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry                   | done — JSON in the games root, survives a reinstall      |
@@ -190,7 +190,7 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 99
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 100
 string keys and seven FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.

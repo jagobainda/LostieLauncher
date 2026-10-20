@@ -23,6 +23,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
@@ -44,6 +45,7 @@ fun LinkText(
     fontWeight: FontWeight? = null,
     highlight: String = "",
     detectLinks: Boolean = true,
+    textAlign: TextAlign? = null,
 ) {
     val colors = LocalLauncherColors.current
     val runs = remember(text, highlight, detectLinks) { RichText.runs(text, highlight, detectLinks) }
@@ -121,6 +123,7 @@ fun LinkText(
                 color = color,
                 fontSize = fontSize,
                 fontWeight = fontWeight,
+                textAlign = textAlign,
                 onTextLayout = { layout = it },
                 modifier = interaction,
             )
