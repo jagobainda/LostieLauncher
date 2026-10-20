@@ -17,12 +17,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -56,7 +61,6 @@ fun LauncherShell(
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sections = rememberSaveableStateHolder()
 
     BackHandler(enabled = state.canNavigateBack, onBack = viewModel::navigateBack)
 
@@ -68,15 +72,13 @@ fun LauncherShell(
             onOpenLink = viewModel::openExternalLink,
             onUpdateKirin = viewModel::updateKirin,
             modifier = modifier,
-        ) {
-            sections.SaveableStateProvider(state.section.name) {
-                when (state.section) {
-                    LauncherSection.HOME -> HomeScreen()
-                    LauncherSection.GAMES -> GamesScreen()
-                    LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
-                    LauncherSection.FAQS -> FaqsScreen()
-                    LauncherSection.SETTINGS -> SettingsScreen()
-                }
+        ) { section ->
+            when (section) {
+                LauncherSection.HOME -> HomeScreen()
+                LauncherSection.GAMES -> GamesScreen()
+                LauncherSection.LIBRARY -> LibraryScreen(state.pendingLibraryGameId, viewModel::consumeLibraryGame)
+                LauncherSection.FAQS -> FaqsScreen()
+                LauncherSection.SETTINGS -> SettingsScreen()
             }
         }
     }
@@ -101,7 +103,7 @@ fun LauncherShellLayout(
     onOpenLink: (ExternalLink) -> Unit,
     onUpdateKirin: () -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable (LauncherSection) -> Unit,
 ) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
@@ -137,6 +139,8 @@ fun LauncherShellLayout(
         val verticalInsets = with(LocalDensity.current) { (insets.getTop(this) + insets.getBottom(this)).toDp() }
         val availableHeight = maxHeight - verticalInsets - LauncherSizes.TitleBarHeight
         val layout = shellNavigationLayout(maxWidth, availableHeight, top.size + bottom.size)
+        val pagerState = rememberPagerState(SECTIONS.indexOf(state.section)) { SECTIONS.size }
+        val selection = { pagerState.currentPage + pagerState.currentPageOffsetFraction }
         Column(Modifier.fillMaxSize()) {
             ShellTopBar(
                 title = state.title,
@@ -158,6 +162,7 @@ fun LauncherShellLayout(
                         top = top,
                         bottom = bottom,
                         itemHeight = layout.itemHeight,
+                        selection = selection,
                         modifier = Modifier.padding(
                             horizontal = LauncherSizes.ShellInset,
                             vertical = layout.verticalInset,
@@ -172,7 +177,7 @@ fun LauncherShellLayout(
                                 end = LauncherSizes.ShellInset,
                                 bottom = layout.verticalInset,
                             ),
-                    ) { SectionContent(state, onRefresh, content) }
+                    ) { SectionPager(pagerState, state, onNavigate, onRefresh, content) }
                 }
             } else {
                 Box(
@@ -181,9 +186,10 @@ fun LauncherShellLayout(
                         .fillMaxWidth()
                         .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal))
                         .padding(LauncherSizes.ShellInset),
-                ) { SectionContent(state, onRefresh, content) }
+                ) { SectionPager(pagerState, state, onNavigate, onRefresh, content) }
                 ShellNavigationBar(
                     entries = top + bottom,
+                    selection = selection,
                     modifier = Modifier
                         .background(colors.secondaryBg)
                         .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)),
@@ -195,10 +201,35 @@ fun LauncherShellLayout(
 
 private val TOP_SECTIONS = listOf(LauncherSection.HOME, LauncherSection.GAMES, LauncherSection.LIBRARY)
 private val BOTTOM_SECTIONS = listOf(LauncherSection.FAQS, LauncherSection.SETTINGS)
+private val SECTIONS = TOP_SECTIONS + BOTTOM_SECTIONS
 
 @Composable
-private fun SectionContent(state: MainUiState, onRefresh: () -> Unit, content: @Composable () -> Unit) {
-    if (state.section !in TOP_SECTIONS) {
+private fun SectionPager(
+    pagerState: PagerState,
+    state: MainUiState,
+    onNavigate: (LauncherSection) -> Unit,
+    onRefresh: () -> Unit,
+    content: @Composable (LauncherSection) -> Unit,
+) {
+    val section by rememberUpdatedState(state.section)
+    val navigate by rememberUpdatedState(onNavigate)
+    LaunchedEffect(state.section) { pagerState.animateScrollToPage(SECTIONS.indexOf(state.section)) }
+    LaunchedEffect(pagerState) {
+        snapshotFlow { SECTIONS[pagerState.settledPage] }.collect { if (it != section) navigate(it) }
+    }
+    HorizontalPager(pagerState) { page ->
+        SectionContent(SECTIONS[page], state, onRefresh) { content(SECTIONS[page]) }
+    }
+}
+
+@Composable
+private fun SectionContent(
+    section: LauncherSection,
+    state: MainUiState,
+    onRefresh: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    if (section !in TOP_SECTIONS) {
         content()
         return
     }
