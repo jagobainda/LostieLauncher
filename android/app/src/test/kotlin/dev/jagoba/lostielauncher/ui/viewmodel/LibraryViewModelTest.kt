@@ -42,7 +42,7 @@ class LibraryViewModelTest {
     private val settings = TestSettingsStore()
     private val externalLinks = TestExternalLinkService()
     private val network = TestNetworkMonitor()
-    private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)

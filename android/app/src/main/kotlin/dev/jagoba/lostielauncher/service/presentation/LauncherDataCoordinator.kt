@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
+import dev.jagoba.lostielauncher.service.link.TwitchLiveService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -32,6 +33,7 @@ data class HomeData(
     val isLoading: Boolean = true,
     val content: HomeContent = HomeContent(),
     val isOffline: Boolean = false,
+    val isTwitchLive: Boolean = false,
 )
 
 data class CatalogueData(val isLoading: Boolean = true, val games: List<GameInfo> = emptyList())
@@ -40,6 +42,7 @@ data class CatalogueData(val isLoading: Boolean = true, val games: List<GameInfo
 class LauncherDataCoordinator @Inject constructor(
     private val content: ContentService,
     private val downloads: DownloadManager,
+    private val twitch: TwitchLiveService,
     private val logger: Logger,
 ) {
     private val homeGate = Mutex()
@@ -94,13 +97,21 @@ class LauncherDataCoordinator @Inject constructor(
         homeGate.withLock {
             if (showLoading) mutableHome.value = mutableHome.value.copy(isLoading = true)
             try {
-                val offline = content.isServerActionBlocked(force)
-                val feed = content.getHomeContent(language, force)
-                mutableHome.value = HomeData(content = feed, isOffline = offline, isLoading = false)
-                logger.debug(
-                    "Home content loaded: ${feed.news.size} news, ${feed.notifications.size} notifications. " +
-                        "Offline mode: $offline. Stale: ${feed.isStale}.",
-                )
+                coroutineScope {
+                    val live = async { twitch.isLive() }
+                    val offline = content.isServerActionBlocked(force)
+                    val feed = content.getHomeContent(language, force)
+                    mutableHome.value = HomeData(
+                        content = feed,
+                        isOffline = offline,
+                        isTwitchLive = live.await(),
+                        isLoading = false,
+                    )
+                    logger.debug(
+                        "Home content loaded: ${feed.news.size} news, ${feed.notifications.size} notifications. " +
+                            "Offline mode: $offline. Stale: ${feed.isStale}.",
+                    )
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {

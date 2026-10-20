@@ -13,3 +13,7 @@ internal annotation class SecurityFlagClient
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 internal annotation class DownloadClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+internal annotation class TwitchPreviewClient

@@ -34,7 +34,7 @@ class GamesViewModelTest {
     private val locations = TestLocations()
     private val navigation = NavigationStore()
     private val downloads = TestDownloads()
-    private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)

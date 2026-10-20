@@ -35,6 +35,7 @@ data class MainUiState(
     val section: LauncherSection = LauncherSection.HOME,
     val title: String = "",
     val isOffline: Boolean = false,
+    val isTwitchLive: Boolean = false,
     val isRefreshing: Boolean = false,
     val canRefresh: Boolean = false,
     val pendingLibraryGameId: String? = null,
@@ -90,6 +91,7 @@ class MainViewModel @Inject constructor(
                 LauncherSection.SETTINGS -> strings.titleSettings
             },
             isOffline = home.isOffline,
+            isTwitchLive = home.isTwitchLive,
             canRefresh = !home.isLoading && !catalogue.isLoading && !gamesLoading,
             pendingLibraryGameId = navigation.pendingLibraryGameId,
         )

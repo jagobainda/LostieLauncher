@@ -35,7 +35,8 @@ class MainViewModelTest {
     private val content = TestContentService()
     private val downloads = TestDownloads()
     private val settings = TestSettingsStore().apply { current.value = AppSettings(hasSeenWelcome = true) }
-    private val coordinator = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
+    private var twitchLive = false
+    private val coordinator = LauncherDataCoordinator(content, downloads, { twitchLive }, mockk<Logger>(relaxed = true))
     private val navigation = NavigationStore()
     private val externalLinks = TestExternalLinkService()
     private val kirinStatus = MutableStateFlow<KirinStatus?>(KirinStatus.Ready)
@@ -129,6 +130,17 @@ class MainViewModelTest {
         runCurrent()
         sut.state.value.isOffline shouldBe true
         sut.state.value.canRefresh shouldBe true
+    }
+
+    @Test
+    fun `Twitch live status reaches the shell`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.isTwitchLive shouldBe false
+        twitchLive = true
+        coordinator.refreshHome(AppLanguage.ESP)
+        runCurrent()
+        sut.state.value.isTwitchLive shouldBe true
     }
 
     @Test

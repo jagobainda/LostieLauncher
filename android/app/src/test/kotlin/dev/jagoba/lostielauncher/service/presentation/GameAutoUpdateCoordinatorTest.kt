@@ -24,7 +24,7 @@ class GameAutoUpdateCoordinatorTest {
     private val installation = TestInstallation()
     private val settings = TestSettingsStore()
     private val logger = mockk<Logger>(relaxed = true)
-    private val launcher = LauncherDataCoordinator(content, downloads, logger)
+    private val launcher = LauncherDataCoordinator(content, downloads, { false }, logger)
     private val sut = GameAutoUpdateCoordinator(settings, launcher, installation, downloads, content, logger)
 
     @Test

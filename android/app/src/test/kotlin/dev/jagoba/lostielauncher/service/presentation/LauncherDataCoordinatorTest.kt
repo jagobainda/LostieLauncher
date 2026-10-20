@@ -28,7 +28,7 @@ class LauncherDataCoordinatorTest {
     @Test
     fun `process startup loads home and catalogue without screen ViewModels`() = runTest {
         val content = TestContentService()
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
         val settings = TestSettingsStore()
         coordinator.start(backgroundScope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         runCurrent()
@@ -56,7 +56,7 @@ class LauncherDataCoordinatorTest {
 
             override suspend fun isServerActionBlocked(forceRefresh: Boolean): Boolean = false
         }
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
         val refresh = async { coordinator.refreshAll(AppLanguage.ESP) }
         runCurrent()
         coordinator.isRefreshing.value shouldBe true
@@ -81,7 +81,7 @@ class LauncherDataCoordinatorTest {
 
             override suspend fun isServerActionBlocked(forceRefresh: Boolean): Boolean = false
         }
-        LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true)).refreshCatalogue()
+        LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true)).refreshCatalogue()
         downloads.purged shouldBe emptyList()
     }
 
@@ -91,7 +91,7 @@ class LauncherDataCoordinatorTest {
         val content = TestContentService().apply {
             games = listOf(testGame(name = "Game 2"), testGame(name = "Game: 2"), testGame(name = "Other"))
         }
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), logger)
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, logger)
 
         coordinator.refreshCatalogue()
 
@@ -100,9 +100,27 @@ class LauncherDataCoordinatorTest {
     }
 
     @Test
+    fun `home carries whether the Twitch channel is live`() = runTest {
+        var live = true
+        val coordinator = LauncherDataCoordinator(
+            TestContentService(),
+            TestDownloads(),
+            { live },
+            mockk<Logger>(relaxed = true),
+        )
+
+        coordinator.refreshHome(AppLanguage.ESP)
+        coordinator.home.value.isTwitchLive shouldBe true
+
+        live = false
+        coordinator.refreshHome(AppLanguage.ESP)
+        coordinator.home.value.isTwitchLive shouldBe false
+    }
+
+    @Test
     fun `home timer waits while nothing is visible and refreshes on return`() = runTest {
         val content = TestContentService()
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
         coordinator.start(backgroundScope, TestSettingsStore(), TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
         runCurrent()
         coordinator.setVisible(false)
@@ -120,7 +138,7 @@ class LauncherDataCoordinatorTest {
     fun `losing the connection enters offline mode without refetching anything`() = runTest {
         val content = TestContentService()
         val network = TestNetworkMonitor()
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
         coordinator.start(backgroundScope, TestSettingsStore(), network, HomeRefreshOptions(2.minutes))
         runCurrent()
         content.blocked = true
@@ -137,7 +155,7 @@ class LauncherDataCoordinatorTest {
     fun `regaining the connection reloads home and catalogue without a manual refresh`() = runTest {
         val content = TestContentService().apply { blocked = true }
         val network = TestNetworkMonitor(online = false)
-        val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+        val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
         coordinator.start(backgroundScope, TestSettingsStore(), network, HomeRefreshOptions(2.minutes))
         runCurrent()
         coordinator.home.value.isOffline shouldBe true

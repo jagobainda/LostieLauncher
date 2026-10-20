@@ -111,7 +111,13 @@ fun LauncherShellLayout(
     val top = shellDestinations(TOP_SECTIONS, state, strings, onNavigate)
     val bottom = shellDestinations(BOTTOM_SECTIONS, state, strings, onNavigate)
     val actions = state.contextLinks.map { link ->
-        ShellTopBarAction(link.name, link.brandName, painterResource(link.iconRes()), onClick = { onOpenLink(link) })
+        ShellTopBarAction(
+            link.name,
+            link.brandName,
+            painterResource(link.iconRes()),
+            isLive = link == ExternalLink.TWITCH && state.isTwitchLive,
+            onClick = { onOpenLink(link) },
+        )
     }
     val offline = if (state.isOffline) {
         ShellPillContent(

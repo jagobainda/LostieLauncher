@@ -90,6 +90,12 @@ a `src/release/` counterpart for the symbol `main` calls — not behind a
 - **Title-bar social buttons come from state** (`MainUiState.contextLinks`),
   and their tooltips are `ExternalLink.brandName`: brand names, not copy, kept
   in the model as `AppLanguage.displayName` is.
+- **The Twitch button carries a red dot while Eric is live**
+  (`MainUiState.isTwitchLive`). `TwitchLiveService` checks with every Home
+  refresh, so it follows the same timer: a HEAD on the channel's preview
+  thumbnail answers 200 while live and redirects to a placeholder otherwise,
+  with no Twitch credentials. A failed check is not live. The desktop tracks
+  the same feature in issue #53.
 
 ### Components
 

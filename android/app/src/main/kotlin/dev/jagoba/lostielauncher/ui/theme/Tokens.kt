@@ -51,6 +51,7 @@ object LauncherSizes {
     val TitleBarIcon: Dp = 22.dp
     val TitleBarButton: Dp = 50.dp
     val TitleBarButtonIcon: Dp = 14.dp
+    val LiveDot: Dp = 6.dp
     val NavigationIcon: Dp = 27.dp
     val NavigationIndicator: Dp = 3.dp
     val ShellPillHeight: Dp = 22.dp
@@ -172,6 +173,7 @@ object LauncherMotion {
 object FixedColors {
     val Warning = Color(0xFFFFC107)
     val WindowsClose = Color(0xFFE81123)
+    val Live = Color(0xFFEB0400)
     val NotificationInfo = Color(0xFF4CAF50)
     val NotificationWarning = Color(0xFFFFC107)
     val NotificationExclamation = Color(0xFFF44336)

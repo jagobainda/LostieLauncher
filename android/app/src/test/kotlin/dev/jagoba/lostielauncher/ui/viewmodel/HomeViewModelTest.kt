@@ -31,7 +31,8 @@ class HomeViewModelTest {
     private val content = TestContentService()
     private val settings = TestSettingsStore()
     private val links = TestExternalLinkService()
-    private val coordinator = LauncherDataCoordinator(content, TestDownloads(), mockk<Logger>(relaxed = true))
+    private val coordinator =
+        LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)

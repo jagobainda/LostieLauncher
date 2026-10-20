@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,7 +40,13 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 
-data class ShellTopBarAction(val key: String, val label: String, val icon: Painter, val onClick: () -> Unit)
+data class ShellTopBarAction(
+    val key: String,
+    val label: String,
+    val icon: Painter,
+    val isLive: Boolean = false,
+    val onClick: () -> Unit,
+)
 
 @Composable
 fun ShellTopBar(
@@ -144,12 +152,23 @@ private fun ShellTopBarButton(action: ShellTopBarAction) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                painter = action.icon,
-                contentDescription = null,
-                tint = colors.secondaryFg,
-                modifier = Modifier.size(LauncherSizes.TitleBarButtonIcon),
-            )
+            Box {
+                Icon(
+                    painter = action.icon,
+                    contentDescription = null,
+                    tint = colors.secondaryFg,
+                    modifier = Modifier.size(LauncherSizes.TitleBarButtonIcon),
+                )
+                if (action.isLive) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = LauncherSizes.LiveDot / 2, y = -LauncherSizes.LiveDot / 2)
+                            .size(LauncherSizes.LiveDot)
+                            .background(FixedColors.Live, CircleShape),
+                    )
+                }
+            }
         }
     }
 }

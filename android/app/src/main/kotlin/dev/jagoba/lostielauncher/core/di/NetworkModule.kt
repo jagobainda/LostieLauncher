@@ -15,6 +15,7 @@ import dev.jagoba.lostielauncher.service.cdn.DownloadClient
 import dev.jagoba.lostielauncher.service.cdn.MaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.OkHttpMaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.SecurityFlagClient
+import dev.jagoba.lostielauncher.service.cdn.TwitchPreviewClient
 import dev.jagoba.lostielauncher.service.network.ConnectivityNetworkMonitor
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import java.util.concurrent.TimeUnit
@@ -40,6 +41,7 @@ object NetworkModule {
 
     private const val CONTENT_TIMEOUT_SECONDS = 10L
     private const val SECURITY_FLAG_TIMEOUT_SECONDS = 3L
+    private const val TWITCH_PREVIEW_TIMEOUT_SECONDS = 5L
     private const val DOWNLOAD_CONNECT_TIMEOUT_SECONDS = 20L
 
     private const val NO_TIMEOUT_SECONDS = 0L
@@ -87,6 +89,14 @@ object NetworkModule {
     @SecurityFlagClient
     fun provideSecurityFlagClient(@BaseHttpClient base: OkHttpClient): OkHttpClient = base.newBuilder()
         .callTimeout(SECURITY_FLAG_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    @TwitchPreviewClient
+    fun provideTwitchPreviewClient(@BaseHttpClient base: OkHttpClient): OkHttpClient = base.newBuilder()
+        .callTimeout(TWITCH_PREVIEW_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .followRedirects(false)
         .build()
 
     @Provides

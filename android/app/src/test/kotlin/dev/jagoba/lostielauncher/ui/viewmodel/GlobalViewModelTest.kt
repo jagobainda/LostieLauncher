@@ -25,7 +25,8 @@ import org.junit.jupiter.api.Test
 class GlobalViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val downloads = TestDownloads()
-    private val coordinator = LauncherDataCoordinator(TestContentService(), downloads, mockk<Logger>(relaxed = true))
+    private val coordinator =
+        LauncherDataCoordinator(TestContentService(), downloads, { false }, mockk<Logger>(relaxed = true))
     private val launch = TestLaunch()
 
     @BeforeEach
@@ -76,7 +77,7 @@ class GlobalViewModelTest {
         val content = TestContentService()
         val blocked = CompletableDeferred<Unit>()
         content.gameBarrier = blocked
-        val refreshing = LauncherDataCoordinator(content, downloads, mockk<Logger>(relaxed = true))
+        val refreshing = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
         val other = GlobalViewModel(downloads, refreshing, launch)
         val refresh = async { refreshing.refreshAll(dev.jagoba.lostielauncher.model.AppLanguage.ESP) }
         runCurrent()
