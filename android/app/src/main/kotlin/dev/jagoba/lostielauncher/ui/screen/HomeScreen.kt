@@ -115,13 +115,13 @@ private fun HomeSingleColumn(state: HomeUiState, onOpenLink: (String) -> Unit) {
         item { HomeHeader(strings.homeNews) }
         when {
             state.isLoading -> items(SKELETON_COUNT) { NewsCardSkeleton(CardSpacing) }
-            state.isNewsEmpty -> item { HomeColumnEmpty(R.drawable.ic_home_newspaper) }
+            state.isNewsEmpty -> item { HomeColumnEmpty(R.drawable.ic_home_newspaper, scrollable = false) }
             else -> newsItems(state.news, onOpenLink)
         }
         item { HomeHeader(strings.homeNotifications, Modifier.padding(top = LauncherSpacing.MediumLarge)) }
         when {
             state.isLoading -> items(SKELETON_COUNT) { NotificationCardSkeleton(CardSpacing) }
-            state.isNotificationsEmpty -> item { HomeColumnEmpty(R.drawable.ic_home_bell_off) }
+            state.isNotificationsEmpty -> item { HomeColumnEmpty(R.drawable.ic_home_bell_off, scrollable = false) }
             else -> notificationItems(state.notifications)
         }
     }
@@ -177,8 +177,8 @@ private fun HomeHeader(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HomeColumnEmpty(@DrawableRes icon: Int) {
-    EmptyState(icon = icon, message = LocalStrings.current.homeNoContent, compact = true)
+private fun HomeColumnEmpty(@DrawableRes icon: Int, scrollable: Boolean = true) {
+    EmptyState(icon = icon, message = LocalStrings.current.homeNoContent, compact = true, scrollable = scrollable)
 }
 
 @Composable

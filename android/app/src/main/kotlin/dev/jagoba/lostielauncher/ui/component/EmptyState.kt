@@ -26,11 +26,13 @@ fun EmptyState(
     message: String,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    scrollable: Boolean = true,
     detail: String? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
     val color = LocalLauncherColors.current.secondaryFgDim
-    Box(modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+    val scroll = if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier
+    Box(modifier.fillMaxSize().then(scroll), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier.padding(horizontal = LauncherSpacing.Screen),
             horizontalAlignment = Alignment.CenterHorizontally,
