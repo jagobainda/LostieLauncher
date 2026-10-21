@@ -32,16 +32,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
+import dev.jagoba.lostielauncher.content.Strings
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.ui.component.LauncherComboBox
 import dev.jagoba.lostielauncher.ui.component.StatusNotice
+import dev.jagoba.lostielauncher.ui.dialog.DialogButton
+import dev.jagoba.lostielauncher.ui.dialog.DialogButtonStyle
+import dev.jagoba.lostielauncher.ui.dialog.LauncherMessageBox
+import dev.jagoba.lostielauncher.ui.dialog.MessageBoxIcon
+import dev.jagoba.lostielauncher.ui.dialog.MessageBoxSpec
 import dev.jagoba.lostielauncher.ui.theme.LauncherBorders
 import dev.jagoba.lostielauncher.ui.theme.LauncherRadii
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.viewmodel.SettingsNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsViewModel
 
 @Composable
@@ -75,7 +82,15 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                 ),
             ) { ToggleSwitch(state.autoUpdate) }
             SettingsDivider()
-            SettingsRow(icon = R.drawable.ic_settings_refresh, label = state.version)
+            SettingsRow(icon = R.drawable.ic_settings_refresh, label = state.version) {
+                DialogButton(
+                    label = strings.settingsCheckForUpdates,
+                    style = DialogButtonStyle.SECONDARY,
+                    onClick = viewModel::checkForUpdates,
+                    horizontalPadding = LauncherSpacing.Large,
+                    enabled = !state.isCheckingForUpdates,
+                )
+            }
         }
         SettingsSection(strings.settingsAppearance) {
             SettingsRow(icon = R.drawable.ic_dialog_translate, label = strings.settingsLanguage) {
@@ -97,6 +112,32 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
             }
         }
     }
+    state.notice?.let { notice ->
+        LauncherMessageBox(
+            spec = notice.messageBox(strings),
+            onConfirm = viewModel::dismissNotice,
+            onDismiss = viewModel::dismissNotice,
+        )
+    }
+}
+
+internal fun SettingsNotice.messageBox(strings: Strings): MessageBoxSpec = when (this) {
+    SettingsNotice.UPDATE_CHECK_BUSY -> MessageBoxSpec(
+        strings.updateCheckBusyTitle,
+        strings.updateCheckBusyMessage,
+        icon = MessageBoxIcon.INFORMATION,
+    )
+
+    SettingsNotice.UP_TO_DATE -> MessageBoxSpec(
+        strings.upToDateTitle,
+        strings.upToDateMessage,
+        icon = MessageBoxIcon.INFORMATION,
+    )
+
+    SettingsNotice.UPDATE_CHECK_FAILED -> errorMessageBox(
+        strings.updateCheckFailedTitle,
+        strings.updateCheckFailedMessage,
+    )
 }
 
 @Composable

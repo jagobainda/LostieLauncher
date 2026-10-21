@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 84 keys kept from the desktop and the 19 Android-only keys")
+    @DisplayName("declares the 93 keys kept from the desktop and the 19 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 103
+        keys.size shouldBe 112
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -45,6 +45,26 @@ class StringsTest {
     }
 
     @Test
+    @DisplayName("keeps the launcher self-update keys")
+    fun `the launcher self-update keys exist`() {
+        val keys = KEYS
+
+        keys.containsAll(
+            setOf(
+                "updateAvailableTitle",
+                "updateAvailableMessage",
+                "settingsCheckForUpdates",
+                "upToDateTitle",
+                "upToDateMessage",
+                "updateCheckBusyTitle",
+                "updateCheckBusyMessage",
+                "updateCheckFailedTitle",
+                "updateCheckFailedMessage",
+            ),
+        ) shouldBe true
+    }
+
+    @Test
     @DisplayName("has dropped the keys whose surfaces do not exist on Android")
     fun `the Windows-only keys are gone from every language`() {
         val dropped = setOf(
@@ -52,17 +72,8 @@ class StringsTest {
             "settingsStartMinimized",
             "trayOpen",
             "trayExit",
-            "updateAvailableTitle",
-            "updateAvailableMessage",
             "settingsDownloadDir",
             "btnBrowse",
-            "settingsCheckForUpdates",
-            "upToDateTitle",
-            "upToDateMessage",
-            "updateCheckBusyTitle",
-            "updateCheckBusyMessage",
-            "updateCheckFailedTitle",
-            "updateCheckFailedMessage",
             "changeDownloadDirTitle",
             "changeDownloadDirMessage",
             "exitWarningTitle",
@@ -124,7 +135,7 @@ class StringsTest {
     }
 
     @Test
-    @DisplayName("carries a placeholder in exactly the five uninstall messages and the three Kirin messages")
+    @DisplayName("carries a placeholder in exactly the five uninstall, the update and the three Kirin messages")
     fun `the keys with placeholders are the expected ones`() {
         val withPlaceholders = KEY_GETTERS
             .filter { placeholdersOf(it.valueIn(stringsFor(AppLanguage.Default))).isNotEmpty() }
@@ -137,6 +148,7 @@ class StringsTest {
             "uninstallBlockedMessage",
             "uninstallGameRunningMessage",
             "uninstallMaybeRunningMessage",
+            "updateAvailableMessage",
             "kirinMissingMessage",
             "kirinOutdatedMessage",
             "kirinUpdateRecommendedMessage",

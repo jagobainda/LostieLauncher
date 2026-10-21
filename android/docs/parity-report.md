@@ -15,10 +15,10 @@ screens). This document summarises and does not repeat them.
 
 | State | What it covers |
 | --- | --- |
-| **Ported and working** | Catalogue, home news and notifications, resumable downloads, special-version keys, maintenance flag and offline behavior, FAQs with search, settings, first-run welcome, social links, ten themes, eight languages, file logging, every dialog and notice |
+| **Ported and working** | Catalogue, home news and notifications, resumable downloads, special-version keys, maintenance flag and offline behavior, FAQs with search, settings, first-run welcome, social links, ten themes, eight languages, file logging, launcher self-update, every dialog and notice |
 | **Ported partially** | My Games, games auto-update and the Library card after a download: all built against the install seam and rendered as "not available on Android yet" |
 | **Pending by design** | Installing, uninstalling, launching, running detection: the eleven `TODO-ANDROID-GAME-RUNTIME` questions below |
-| **Not ported** | Everything that exists only because the desktop is a Windows program: tray, autostart, self-update, window chrome, single instance, keyboard shortcuts, the download-folder picker, OneDrive, `Saved Games`, the exit warning |
+| **Not ported** | Everything that exists only because the desktop is a Windows program: tray, autostart, window chrome, single instance, keyboard shortcuts, the download-folder picker, OneDrive, `Saved Games`, the exit warning |
 
 The gates, run from `android/`: `spotlessCheck`, `assembleDebug`,
 `testDebugUnitTest` (758 JVM tests), `lintDebug` and `assembleRelease`, all
@@ -34,11 +34,12 @@ green. CI runs the same five.
 | Special versions | key field in the download dialog, the switch dialog | `SpecialVersionService`, `SpecialVersionPolicy`, both dialogs | Every desktop outcome keeps its own message |
 | Maintenance and offline | maintenance flag, offline pill and banners | the same, plus `NetworkMonitor`: no validated internet connection also means offline mode | The flag fails open; a blocked action explains itself once per blocked streak, as maintenance or as offline. When the connection returns, Home and the catalogue reload by themselves, with no manual refresh. The desktop only knows the flag |
 | FAQs | `FaqsViewModel`, collation search | `FaqsViewModel`, `SearchMatcher` | Search matches .NET over the shipped corpus (0 of 328,051 pairs differ). One answer is Android content, because the desktop's is false here |
-| Settings | theme, language, auto-update, version | same four rows | Persisted in DataStore under the names in `architecture.md` |
+| Settings | theme, language, auto-update, version with "check for updates" | same four rows | Persisted in DataStore under the names in `architecture.md` |
 | First run | welcome dialog after navigating to Library | same order | Shown once |
 | Social links | title-bar buttons, HTTPS guard | same | A failed link stays silent, as on the desktop |
-| Themes and text | 10 palettes, 118 keys × 8 languages | 10 palettes, 91 keys × 8 languages | 84 desktop keys kept, 7 Android-only. Hot switching, no activity recreation |
+| Themes and text | 10 palettes, 118 keys × 8 languages | 10 palettes, 112 keys × 8 languages | 93 desktop keys kept, 19 Android-only. Hot switching, no activity recreation |
 | Dialogs and notices | `CustomMessageBox` and the three dialogs | `LauncherDialog` and friends | Every kept message box is pinned by `DialogMessagesTest` |
+| Launcher self-update | Velopack (`UpdateService`, `IUpdateGateway`): checks at startup, downloads, then asks to restart | `LauncherUpdateService` on the APK engine Kirin uses, fed by `public/android/latest.json` | The launcher is an APK outside any store, so it updates itself. It asks **before** downloading, because the download may be on mobile data, and opens the system installer instead of applying and restarting. It never asks while a game download is active, since installing the APK ends the process. "No" holds until the next process start or a manual check. No deltas, no silent install, no mandatory updates. A failed download shows `DownloadError*`, where the desktop shows `UpdateCheckFailed*` |
 | Logging | `Logs` in `%LOCALAPPDATA%` | `FileLogger` in `noBackupFilesDir/logs` | Same line format, monthly files, 10 MiB roll, six months. The same events are logged at the same levels: navigation and loads at debug, user decisions and download lifecycle at info, failures at error, plus every uncaught exception |
 
 ## Ported partially
@@ -95,7 +96,6 @@ not rediscovered:
 | --- | --- | --- |
 | Start with Windows, start minimized, the system tray | Android has no user-controlled autostart and no tray; keys and settings removed | `WindowsStartupService.cs`, `App.xaml.cs` |
 | Single-instance mutex | The Android task model already gives one instance | `App.xaml.cs` |
-| Launcher self-update (Velopack), its four dialogs and the "check for updates" row | Updates come from the distribution channel | `IUpdateGateway.cs` |
 | Window chrome: minimize, close, drag region, 1 px border | There is no window | `MainWindow.xaml` |
 | Download-folder picker, its probe and its dialogs | Games live in app-specific storage, no permission needed | step 07 decision 3, `DownloadDirectoryProbe.cs` |
 | OneDrive detection and warning | No OneDrive-synced folder can be the games root | `OneDrivePathPolicy.cs` |
@@ -110,7 +110,8 @@ not rediscovered:
 | Collation equivalence of 152 letters with no canonical decomposition (`ł` as `l`, `ø` as `o`) | None occurs in any shipped string or payload; matching them would restore a quirk, not a feature | step 06 |
 
 The 26 catalogue keys of the dropped dialogs and Settings rows were removed from
-all eight languages in this step; `StringsTest` asserts they stay gone.
+all eight languages in this step. The nine of launcher self-update came back
+with it; `StringsTest` asserts the other 17 stay gone.
 
 ## Polish done in this step
 

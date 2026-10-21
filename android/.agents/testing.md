@@ -305,7 +305,7 @@ JVM suite must be rerun after each change rather than relying on a fixed total.
 | `GamesViewModelTests` | 29 | `GamesViewModelTest`, `GameIdentityMatcherTest`, `PendingGameOperationsTest` | Update, navigation, busy guards, missing-folder offer and unsupported results are covered. Process tracking, file locks, folder deletion and window restoration remain behind the pending game seam or are Windows-only. |
 | `LibraryViewModelTests` | 33 | `LibraryViewModelTest`, download service tests, `SpecialVersionServiceTest`, `SpecialVersionPolicyTest` | Catalogue statuses, update, download commands, maintenance, cache purge and key outcomes are covered. Worker transfer remains in step 08; integrity and extraction wait behind step 09's installation seam. |
 | `FaqsViewModelTests` | 6 | `FaqsViewModelTest`, `FaqsTest`, `SearchMatcherTest` | Search, manual expansion, reset, language changes and language-wide count remain. |
-| `SettingsViewModelTests` | 30 | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | Appearance, welcome, installed app version and games auto-update remain. Registry startup, window state, folder picker, OneDrive and launcher self-update cases have no Android counterpart. |
+| `SettingsViewModelTests` | 30 | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | Appearance, welcome, installed app version, games auto-update and the manual update check remain. Registry startup, window state, folder picker and OneDrive cases have no Android counterpart. |
 
 | Desktop case or group | Android owner | Outcome |
 | --- | --- | --- |
@@ -318,7 +318,8 @@ JVM suite must be rerun after each change rather than relying on a fixed total.
 | Desktop game session, file-lock, uninstall filesystem and Help-folder enumeration cases | `PendingGameOperationsTest` and future game adapter | Android game runtime is unresolved in step 09. The pending seam reports unsupported without claiming desktop file or process behavior. |
 | Desktop `LibraryViewModelTests` hash verification, extraction and directory finalization cases | Step 08 transfer tests and future step 09 installer | Transfer finalization is covered; installation and hash verification remain pending. |
 | `SettingsViewModelTests.FormatVersion_*` | `SettingsViewModelTest`, `VersionUtilsTest` | Android publishes its `BuildConfig.VERSION_NAME` with one `v` prefix. Assembly-specific four/two-component and null cases do not apply to a packaged Android version name. |
-| `SettingsViewModelTests.AutoUpdate_WhenChanged_PersistsSettings` and `GamesViewModel` initial auto-update | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | The maintainer chose the spec behavior: games auto-update is persisted, defaults off, and runs sequentially at process startup for regular outdated installations. Launcher self-update remains excluded. |
+| `SettingsViewModelTests.AutoUpdate_WhenChanged_PersistsSettings` and `GamesViewModel` initial auto-update | `SettingsViewModelTest`, `DataStoreSettingsStoreTest`, `GameAutoUpdateCoordinatorTest` | The maintainer chose the spec behavior: games auto-update is persisted, defaults off, and runs sequentially at process startup for regular outdated installations. Launcher self-update is a separate service; see [its parity](#desktop-test-parity-launcher-self-update). |
+| `SettingsViewModelTests.CheckForUpdates_WhenDownloadInProgress_NotifiesUserAndDoesNotCheck`, `CheckForUpdates_WhenNotDownloading_DelegatesToUpdateServiceNotifyingWhenUpToDate` | `SettingsViewModelTest` | Ported: the busy notice without a check, and each check result turned into its notice, none when an update is found. |
 | `GameInfoTests.DownloadSpeedText_*` (4) | `DownloadSpeedFormatterTest` | Ported with the same four values (0, 2048, exactly 1 MiB, 5 MiB). The desktop formats in the current culture and its tests read the separator from it; Android pins the invariant `.` (step 02 decision 8), and a test sets a Spanish default locale to prove it. The formatter feeds the Library card through `CardStateMappingTest`. |
 
 The Games and Library screens now share one identity rule: match non-empty IDs
@@ -335,10 +336,33 @@ theme or language flash.
 
 The desktop's Saved Games folder action is omitted because it names a Windows
 profile folder with no Android counterpart. Window minimize and tray behavior,
-Windows startup, OneDrive detection, the directory picker and launcher
-self-update are likewise absent under the decisions already recorded for step
-07 and in the [parity report](../docs/parity-report.md). Library maintenance
+Windows startup, OneDrive detection and the directory picker are likewise
+absent under the decisions already recorded for step 07 and in the
+[parity report](../docs/parity-report.md). Library maintenance
 actions remain enabled and explain a blocked request once per blocked streak.
 The first foreground process `onStart` starts Home and catalogue loading, so
 headless process starts do not trigger launcher requests, and navigation
 scoping cannot strand either screen.
+
+## Desktop test parity: launcher self-update
+
+The desktop's `UpdateServiceTests` declares 10 cases against Velopack, behind
+`IUpdateGateway` and `IUpdateNotifier`. Android has neither: the feed, the
+download and the installer are the shared `ApkReleaseInstaller`, and notices
+are ViewModel state, so each case lands where its decision now lives.
+`ApkReleaseInstallerTest` holds the engine's generic cases, moved from
+`KirinSetupServiceTest`, which keeps the Kirin-specific ones and one end-to-end
+install. `RemoteJsonTest`, `ApkVersionPolicyTest` and `UpdateModuleTest` are
+Android-only coverage.
+
+| Desktop case or group | Android owner | Outcome |
+| --- | --- | --- |
+| `Constructor_NullGateway_Throws`, `Constructor_NullNotifier_Throws` | — | Dropped: Kotlin's non-null parameters cannot be given null. |
+| `CheckForUpdates_WhenUpToDateAndNotifyRequested_NotifiesUpToDate` | `LauncherUpdateServiceTest`, `SettingsViewModelTest` | `check()` answers `UpToDate`, and Settings raises `UP_TO_DATE`. |
+| `CheckForUpdates_WhenUpToDateAndNotifyNotRequested_StaysSilent` | `LauncherUpdateServiceTest` | The automatic `refresh()` has no notice to raise, and offers nothing when the feed is not newer. |
+| `CheckForUpdates_WhenCheckThrowsAndNotifyRequested_NotifiesFailure` | `LauncherUpdateServiceTest`, `SettingsViewModelTest` | `check()` answers `Failed`, and Settings raises `UPDATE_CHECK_FAILED`. |
+| `CheckForUpdates_WhenCheckThrowsAndNotifyNotRequested_StaysSilent` | `LauncherUpdateServiceTest` | A failed automatic read offers nothing and is retried on the next resume. |
+| `CheckForUpdates_WhenDownloadThrowsAndNotifyRequested_NotifiesFailure` | `ApkReleaseInstallerTest`, `LauncherUpdateServiceTest`, `MainViewModelTest` | Changed: the download starts only after Yes, so a failure is `ApkDownloadState.Failed`, shown as `DownloadError*` until acknowledged, which also answers the offer. |
+| `CheckForUpdates_WhenUpdateAvailableAndUserAccepts_DownloadsAndApplies` | `LauncherUpdateServiceTest`, `ApkReleaseInstallerTest` | Yes downloads, verifies and opens the system installer instead of applying and restarting. |
+| `CheckForUpdates_WhenUpdateAvailableAndUserDeclines_DownloadsButDoesNotApply` | `LauncherUpdateServiceTest` | Changed: nothing is downloaded before asking; No hides the offer until the next process start or a manual check. |
+| `NotifyDownloadInProgress_DelegatesToNotifier` | `SettingsViewModelTest` | The busy notice is raised by the ViewModel, without a check. |

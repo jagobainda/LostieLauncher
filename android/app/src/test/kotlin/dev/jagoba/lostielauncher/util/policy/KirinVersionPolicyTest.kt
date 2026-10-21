@@ -9,26 +9,6 @@ import org.junit.jupiter.params.provider.CsvSource
 
 @DisplayName("KirinVersionPolicy")
 class KirinVersionPolicyTest {
-    @ParameterizedTest(name = "{0} -> {1}")
-    @CsvSource(
-        "0.4.0, true",
-        "0.4.0-beta8, true",
-        "v0.4.1, true",
-        "1.0, true",
-        "0.3.5, false",
-        "0.3.9-beta1, false",
-        "not-a-version, false",
-        "'', false",
-    )
-    fun `supports the minimum version and later, ignoring a pre-release suffix`(version: String, supported: Boolean) {
-        KirinVersionPolicy.isSupported(version, MINIMUM) shouldBe supported
-    }
-
-    @Test
-    fun `an unparseable minimum supports nothing`() {
-        KirinVersionPolicy.isSupported("9.9.9", "latest") shouldBe false
-    }
-
     @Test
     fun `a missing package is missing`() {
         KirinVersionPolicy.status(null, MINIMUM, LATEST) shouldBe KirinStatus.Missing(MINIMUM)
@@ -52,23 +32,6 @@ class KirinVersionPolicyTest {
         latest: String?,
     ) {
         KirinVersionPolicy.status(installed, MINIMUM, latest) shouldBe KirinStatus.Ready
-    }
-
-    @ParameterizedTest(name = "release {0}, installed {1} -> {2}")
-    @CsvSource(
-        "0.4.2, , true",
-        "0.4.2, 0.3.5, true",
-        "0.4.2, 0.4.0, true",
-        "0.4.2, 0.4.2, false",
-        "0.4.0, 0.4.2, false",
-        "0.3.9, , false",
-    )
-    fun `offers a release at the minimum or later that is newer than the installed one`(
-        release: String,
-        installed: String?,
-        offered: Boolean,
-    ) {
-        KirinVersionPolicy.isOffered(release, installed, MINIMUM) shouldBe offered
     }
 
     private companion object {

@@ -22,7 +22,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.content.withArgs
-import dev.jagoba.lostielauncher.model.KirinDownloadState
+import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.EmptyState
@@ -61,7 +61,7 @@ fun KirinRequirement(
 
         else -> content()
     }
-    if (state.download == KirinDownloadState.Failed) {
+    if (state.download == ApkDownloadState.Failed) {
         LauncherMessageBox(
             spec = MessageBoxSpec(
                 strings.downloadErrorTitle,
@@ -104,19 +104,19 @@ private fun KirinRequiredScreen(
         action = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 when (val download = state.download) {
-                    KirinDownloadState.Checking -> Unit
+                    ApkDownloadState.Checking -> Unit
 
-                    KirinDownloadState.Unavailable -> StatusNotice(strings.kirinDownloadUnavailable)
+                    ApkDownloadState.Unavailable -> StatusNotice(strings.kirinDownloadUnavailable)
 
-                    KirinDownloadState.Available, KirinDownloadState.Failed -> DialogButton(
+                    ApkDownloadState.Available, ApkDownloadState.Failed -> DialogButton(
                         label = if (status is KirinStatus.Outdated) strings.btnUpdate else strings.btnDownload,
                         style = DialogButtonStyle.ACCENT,
                         onClick = onInstall,
                         horizontalPadding = LauncherSpacing.Screen,
                     )
 
-                    is KirinDownloadState.Downloading -> DialogButton(
-                        label = "${strings.statusDownloading} ${download.percent}%",
+                    is ApkDownloadState.Downloading -> DialogButton(
+                        label = strings.downloadingLabel(download.percent),
                         style = DialogButtonStyle.ACCENT,
                         onClick = {},
                         horizontalPadding = LauncherSpacing.Screen,

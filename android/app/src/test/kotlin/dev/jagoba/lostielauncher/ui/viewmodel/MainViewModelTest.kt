@@ -1,21 +1,23 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
-import dev.jagoba.lostielauncher.model.KirinDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkResult
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
+import dev.jagoba.lostielauncher.service.update.LauncherUpdateService
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,10 +42,16 @@ class MainViewModelTest {
     private val navigation = NavigationStore()
     private val externalLinks = TestExternalLinkService()
     private val kirinStatus = MutableStateFlow<KirinStatus?>(KirinStatus.Ready)
-    private val kirinDownload = MutableStateFlow<KirinDownloadState>(KirinDownloadState.Unavailable)
+    private val kirinDownload = MutableStateFlow<ApkDownloadState>(ApkDownloadState.Unavailable)
     private val kirin = mockk<KirinSetupService>(relaxed = true) {
         every { status } returns kirinStatus
         every { download } returns kirinDownload
+    }
+    private val launcherOffer = MutableStateFlow<String?>(null)
+    private val launcherDownload = MutableStateFlow<ApkDownloadState>(ApkDownloadState.Checking)
+    private val launcherUpdate = mockk<LauncherUpdateService>(relaxed = true) {
+        every { offeredVersion } returns launcherOffer
+        every { download } returns launcherDownload
     }
 
     @BeforeEach
@@ -218,7 +226,7 @@ class MainViewModelTest {
     @Test
     fun `offers the recommended Kirin update only on My Games while a release is available`() = runTest(dispatcher) {
         kirinStatus.value = KirinStatus.UpdateRecommended("0.4.0", "0.4.2")
-        kirinDownload.value = KirinDownloadState.Available
+        kirinDownload.value = ApkDownloadState.Available
         val sut = createSut()
         runCurrent()
         sut.state.value.kirinUpdate shouldBe null
@@ -227,18 +235,18 @@ class MainViewModelTest {
         runCurrent()
         sut.state.value.kirinUpdate shouldBe KirinUpdateUiState("0.4.0", "0.4.2")
 
-        kirinDownload.value = KirinDownloadState.Downloading(42)
+        kirinDownload.value = ApkDownloadState.Downloading(42)
         runCurrent()
         sut.state.value.kirinUpdate?.downloadPercent shouldBe 42
 
-        kirinDownload.value = KirinDownloadState.Unavailable
+        kirinDownload.value = ApkDownloadState.Unavailable
         runCurrent()
         sut.state.value.kirinUpdate shouldBe null
     }
 
     @Test
     fun `does not offer a Kirin update when none is recommended`() = runTest(dispatcher) {
-        kirinDownload.value = KirinDownloadState.Available
+        kirinDownload.value = ApkDownloadState.Available
         val sut = createSut()
         sut.navigate(LauncherSection.GAMES)
         runCurrent()
@@ -256,6 +264,73 @@ class MainViewModelTest {
         coVerify(exactly = 1) { kirin.install() }
     }
 
+    @Test
+    fun `asks about an offered launcher update in every section`() = runTest(dispatcher) {
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.launcherUpdatePrompt shouldBe null
+
+        launcherOffer.value = "1.1.0"
+        launcherDownload.value = ApkDownloadState.Available
+        runCurrent()
+
+        LauncherSection.entries.forEach { section ->
+            sut.navigate(section)
+            runCurrent()
+            sut.state.value.launcherUpdatePrompt shouldBe "1.1.0"
+        }
+    }
+
+    @Test
+    fun `waits for game downloads and the welcome before asking about a launcher update`() = runTest(dispatcher) {
+        settings.current.value = AppSettings(hasSeenWelcome = false)
+        launcherOffer.value = "1.1.0"
+        launcherDownload.value = ApkDownloadState.Available
+        val sut = createSut()
+        runCurrent()
+        sut.state.value.launcherUpdatePrompt shouldBe null
+
+        sut.dismissWelcome()
+        downloads.current.value = listOf(testDownload(testGame(), DownloadStatus.DOWNLOADING))
+        runCurrent()
+        sut.state.value.launcherUpdatePrompt shouldBe null
+
+        downloads.current.value = emptyList()
+        runCurrent()
+        sut.state.value.launcherUpdatePrompt shouldBe "1.1.0"
+    }
+
+    @Test
+    fun `follows the launcher update download in the title bar and reports its failure`() = runTest(dispatcher) {
+        launcherOffer.value = "1.1.0"
+        val sut = createSut()
+
+        launcherDownload.value = ApkDownloadState.Downloading(42)
+        runCurrent()
+        sut.state.value.launcherUpdatePercent shouldBe 42
+        sut.state.value.launcherUpdatePrompt shouldBe null
+
+        launcherDownload.value = ApkDownloadState.Failed
+        runCurrent()
+        sut.state.value.launcherUpdatePercent shouldBe null
+        sut.state.value.launcherUpdateFailed shouldBe true
+        sut.state.value.launcherUpdatePrompt shouldBe null
+    }
+
+    @Test
+    fun `answers the launcher update through the update service`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.acceptLauncherUpdate()
+        sut.declineLauncherUpdate()
+        sut.dismissLauncherUpdateFailure()
+        runCurrent()
+
+        coVerify(exactly = 1) { launcherUpdate.install() }
+        verify(exactly = 1) { launcherUpdate.decline() }
+        verify(exactly = 1) { launcherUpdate.acknowledgeFailure() }
+    }
+
     private fun createSut() = MainViewModel(
         navigation,
         coordinator,
@@ -263,6 +338,7 @@ class MainViewModelTest {
         downloads,
         externalLinks,
         kirin,
+        launcherUpdate,
         mockk<Logger>(relaxed = true),
     )
 }

@@ -182,16 +182,19 @@ and they know no ViewModel. `LauncherComboBox` (`ui/component/`) is the
 desktop's `SettingsComboBoxStyle`; the welcome dialog uses it and Settings will.
 
 - **The notice seam is state, not a callback.** The desktop's services raise
-  dialogs through `IUpdateNotifier` and `IDownloadLocationNotifier`; both exist
-  for Windows-only features and are gone. Here services return outcomes,
-  ViewModels turn them into notice enums and pending prompts in their state,
-  and the hosts in `ui/screen/` (`LibraryDialogs`, `GamesDialogs`) map that
-  state to a dialog through pure functions (`LibraryNotice.messageBox`,
-  `gamesMessage`, `downloadConfirmState`), tested in `DialogMessagesTest`. Each
-  host shows one dialog at a time, a notice before a prompt. The two hosts are
-  independent, so a Library notice and a My Games prompt can stack, as two
-  desktop modals raised by different ViewModels would.
-- **The hosts are always composed.** `LauncherShell` places both, and the
+  dialogs through `IUpdateNotifier` and `IDownloadLocationNotifier`. The
+  second exists for a Windows-only feature; the first is not needed, because
+  self-update returns outcomes like every other service. Both are gone. Here
+  services return outcomes, ViewModels turn them into notice enums and pending
+  prompts in their state, and the hosts in `ui/screen/` (`LibraryDialogs`,
+  `GamesDialogs`, `LauncherUpdateDialogs`) map that state to a dialog through
+  pure functions (`LibraryNotice.messageBox`, `gamesMessage`,
+  `downloadConfirmState`, `launcherUpdateMessageBox`, and
+  `SettingsNotice.messageBox` for the notices Settings shows itself), tested in
+  `DialogMessagesTest`. Each host shows one dialog at a time, a notice before a
+  prompt. The hosts are independent, so a Library notice and a My Games prompt
+  can stack, as two desktop modals raised by different ViewModels would.
+- **The hosts are always composed.** `LauncherShell` places the three, and the
   welcome, beside the section content, so a notice raised while another
   section is on screen (a download that fails while the user is on Home) shows
   wherever the user is, as the desktop's modal does.
@@ -214,11 +217,20 @@ desktop's `SettingsComboBoxStyle`; the welcome dialog uses it and Settings will.
 - **First run.** `MainViewModel` reads the settings once. If the welcome has
   not been seen, it navigates to Library, persists the flag and then shows the
   dialog, in the desktop's order, so the welcome never shows twice.
+- **A launcher update asks before it downloads.** `MainViewModel` shows
+  `LauncherUpdateService.offeredVersion` as `launcherUpdatePrompt`
+  (`UpdateAvailable*`) only while its download state is `Available`, no game
+  download is active (installing the APK ends the process) and the welcome is
+  not visible. Yes downloads the APK and opens the system installer; No, or
+  back, holds for the rest of the process. A failed download shows
+  `DownloadError*`, and dismissing it also counts as an answer. Settings'
+  manual check raises `UpToDate*`, `UpdateCheckFailed*` or `UpdateCheckBusy*`,
+  and nothing when it finds an update, because the prompt then appears by
+  itself, even after an earlier No.
 
-**Dropped, because they exist only for Windows reasons.** Launcher
-self-update (`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`,
-`UpdateAvailable*`), the download folder (`ChangeDownloadDir*`,
-`DownloadDirNotUsable*`, step 07 decision 3), `OneDriveWarning*`, the exit
+**Dropped, because they exist only for Windows reasons.** The download folder
+(`ChangeDownloadDir*`, `DownloadDirNotUsable*`, step 07 decision 3),
+`OneDriveWarning*`, the exit
 warning (`ExitWarning*`: back from Home backgrounds the task and a
 transfer keeps running in WorkManager) and the English pre-startup fatal
 error (the system's crash dialog covers it; the crash itself is logged). Their
@@ -250,6 +262,7 @@ them; the pending one answers `NotSupportedYet`.
 | ✕ accessibility | No name | Spoken as `BtnClose` | Android-only key; an icon-only control needs a label |
 | Title | Clipped at the window edge | Ellipsized | Large font scales make long titles common |
 | Key field and path box on the light themes | `TertiaryBg` equals `PrimaryBg`, so they are invisible | A 1 dp `OverlayStrong` outline (`Modifier.inputSurface`) only where that happens | Contrast review; dark themes are unchanged |
+| Launcher update | Velopack downloads first, then asks to restart (`UpdateAvailableMessage`: "Restart to update?"); a failed download shows `UpdateCheckFailed*` | Asks first ("Download and install?"), then downloads and opens the system installer; a failed download shows `DownloadError*` | Nothing is downloaded on mobile data without consent, and Android installs an APK through the system installer, not by restarting |
 
 ### Screens
 
@@ -296,14 +309,22 @@ and back, as the desktop's persistent views keep theirs.
   `MainUiState.kirinUpdate` puts a tappable pill beside the offline one on My
   Games. The download state lives in the service, so the gate and the pill
   share one transfer, and `KirinRequirement` shows its failure either way.
+- **The launcher's own update shows in every section.** While its APK
+  downloads, `MainUiState.launcherUpdatePercent` puts a pill in the title bar
+  (`StatusDownloading` and the percentage, the update glyph,
+  `UpdateAvailableTitle` as tooltip) whatever the section, with no click
+  action.
 - **"Not supported yet" is a state here too.** While `installedGames` is
   `NotSupportedYet`, My Games shows `StatusNotSupportedYet` and
   `NotSupportedYetMessage` with the Library button, not an empty list and not a
   blank screen.
-- **Settings** keeps games auto-update, the version string, language and theme.
-  Start with Windows and start minimized went in step 07, "Check for updates"
-  with launcher self-update, and the download-directory row with the folder
-  picker, and their keys went with them. Auto-update can only act on installed games,
+- **Settings** keeps games auto-update, the version string with its "Check for
+  updates" button, language and theme. Start with Windows and start minimized
+  went in step 07, and the download-directory row with the folder picker, and
+  their keys went with them. The button follows the desktop's order: with a
+  game download active it raises `UPDATE_CHECK_BUSY` without touching the
+  network, otherwise it runs `LauncherUpdateService.check()`. It is disabled
+  from the tap until either answer, so a double tap checks once. Auto-update can only act on installed games,
   so while `installedGames` is `NotSupportedYet` its row carries the amber
   `StatusNotSupportedYet` line (`SettingsUiState.autoUpdateSupported`). The
   switch still toggles and persists `games.autoUpdate`, so the preference is
@@ -324,6 +345,7 @@ and back, as the desktop's persistent views keep theirs.
 | Headings | None | Home column titles and Settings section titles are TalkBack headings | Screen-reader navigation |
 | FAQ search after process death | Not applicable | The query is kept in `SavedStateHandle`, so it and the filtered list come back together | The text field restores its own saved text |
 | Scrollbar | 8 px custom scrollbar on every list | None | See the cards' table |
+| Launcher update progress | None: Velopack downloads before asking, without a visible progress | A title-bar pill with the percentage, in every section | The download starts after Yes, so its progress has to be visible wherever the user goes |
 | Auto-update row | A plain switch | The same switch, plus the amber `StatusNotSupportedYet` line while installed games cannot be known | Updating installed games depends on the pending seam; a switch that silently does nothing is what the port must avoid |
 | FAQ "where are games installed" | Games go to the configured download directory, changeable in Settings | Games live in the launcher's own storage, the folder cannot be changed, and uninstalling the launcher removes them, in all eight languages | The download-directory setting does not exist on Android (step 07 decision 3); `FaqsTest` fails if an answer names it again |
 | Uninstall confirmation and saves FAQ | Saved games and the playtime record are kept | Only saved games are mentioned, in all eight languages | Android has no playtime record (see the cards' table) |
@@ -444,11 +466,34 @@ Already in place:
   adapter that sends Kirin's explicit intent; running signals and active
   sessions still delegate to the pending adapter. Pending implementations
   report unsupported rather than claiming a game is stopped.
+- `RemoteJson` — the one JSON GET outside Retrofit, through the content
+  client, for Kirin's requirements and both release feeds. A failed read is
+  logged and returns null; a cancellation is rethrown.
+- `ApkReleaseInstaller` — the APK engine Kirin and the launcher share, one
+  instance per `ApkTarget` (package, installer file, log label) from the
+  injectable `ApkReleaseInstallerFactory`. It reads a release feed
+  (`versionName`, `downloadUrl`) once per process unless forced, keeps only an
+  HTTPS download, offers it through `ApkVersionPolicy.isOffered` (JVM-tested),
+  downloads it with `DownloadTransfer` or reuses a verified leftover, checks
+  the package and version, deletes a file that fails, and opens the system
+  installer. Its `ApkDownloadState` follows the transfer and keeps a failure
+  until acknowledged. `ApkPackages` is the thin adapter for the package manager
+  and the system installer, which receives the APK through the `FileProvider`
+  declared in the manifest. Each target keeps its installer in its own folder
+  under `cacheDir/apk/`, because cleanup deletes the parent directory.
 - `KirinSetupService` — the installed Kirin's status (`KirinVersionPolicy`,
   JVM-tested) against the server's minimum version and the release feed's
-  latest version, refreshed on every process resume, plus the APK download, which reuses `DownloadTransfer`. `KirinPackages` is
-  the thin adapter for the package manager and the system installer, which
-  receives the APK through the `FileProvider` declared in the manifest.
+  latest version, refreshed on every process resume. The requirements come
+  through `RemoteJson`; the feed, the offer and the download are its
+  `ApkReleaseInstaller`.
+- `LauncherUpdateService` — the launcher's own update, on its own
+  `ApkReleaseInstaller` and `LauncherUpdateOptions`. `refresh()`, on every
+  process resume, reads the feed once per process (again after a failed read)
+  and offers any newer version; `check()`, the Settings button, always reads it
+  again and clears an earlier No. `offeredVersion` is the offer not yet
+  answered in this process: opening the installer, declining or acknowledging
+  a failed download answers it. A leftover installer is deleted when nothing is
+  offered.
 - `GameLocationService` — help availability, opening game/help files, and
   returning an opaque partial-uninstall location to its owning adapter.
 - `LauncherDataCoordinator` — the shared Home and catalogue snapshots and the
@@ -475,7 +520,8 @@ The seven presentation ViewModels have no ViewModel-to-ViewModel references.
 `MainViewModel` projects shell state from the coordinator, navigation and
 download flows. `GlobalViewModel` derives busy state from download and refresh
 flows and derives game activity from `GameLaunchService.activeSessions`.
-`SettingsViewModel` owns the appearance and app version state; both the
+`SettingsViewModel` owns the appearance and app version state and the manual
+update check; both the
 activity and the Settings screen observe the same `SettingsStore`. The process lifecycle starts shared loading without
 requiring Home, Library or Games ViewModels to exist.
 

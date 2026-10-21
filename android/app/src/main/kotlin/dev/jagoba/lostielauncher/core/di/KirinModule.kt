@@ -11,10 +11,8 @@ import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.LocalLibraryOptions
-import dev.jagoba.lostielauncher.service.game.AndroidKirinPackages
 import dev.jagoba.lostielauncher.service.game.AndroidKirinShortcut
 import dev.jagoba.lostielauncher.service.game.DefaultKirinSetupService
-import dev.jagoba.lostielauncher.service.game.KirinPackages
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.game.KirinShortcut
 import dev.jagoba.lostielauncher.service.library.FileLocalLibraryStore
@@ -28,10 +26,6 @@ internal abstract class KirinBindingsModule {
     @Binds
     @Singleton
     internal abstract fun bindShortcut(impl: AndroidKirinShortcut): KirinShortcut
-
-    @Binds
-    @Singleton
-    internal abstract fun bindPackages(impl: AndroidKirinPackages): KirinPackages
 
     @Binds
     @Singleton
@@ -69,8 +63,7 @@ internal object KirinModule {
     fun provideKirinSetupOptions(@ApplicationContext context: Context): KirinSetupOptions = KirinSetupOptions(
         requirementsUrl = "https://ericlostie-launcher.jagoba.dev/public/config/kirin-setup-options.json",
         fallbackMinimumVersion = "0.4.0",
-        installerFile = File(context.cacheDir, "kirin/Kirin.apk"),
-        fileProviderAuthority = "${context.packageName}.files",
+        installerFile = File(context.cacheDir, "apk/kirin/Kirin.apk"),
     )
 
     @Provides

@@ -1,8 +1,8 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.content.kirinFaqFor
+import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.AppLanguage
-import dev.jagoba.lostielauncher.model.KirinDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import io.kotest.matchers.shouldBe
@@ -32,7 +32,7 @@ class KirinViewModelTest {
     private val settings = TestSettingsStore()
     private val links = TestExternalLinkService()
     private val status = MutableStateFlow<KirinStatus?>(null)
-    private val download = MutableStateFlow<KirinDownloadState>(KirinDownloadState.Checking)
+    private val download = MutableStateFlow<ApkDownloadState>(ApkDownloadState.Checking)
     private val kirin = mockk<KirinSetupService>(relaxed = true) {
         every { status } returns this@KirinViewModelTest.status
         every { download } returns this@KirinViewModelTest.download
@@ -62,10 +62,10 @@ class KirinViewModelTest {
         val sut = createSut()
         runCurrent()
 
-        download.value = KirinDownloadState.Downloading(42)
+        download.value = ApkDownloadState.Downloading(42)
         runCurrent()
 
-        sut.state.value.download shouldBe KirinDownloadState.Downloading(42)
+        sut.state.value.download shouldBe ApkDownloadState.Downloading(42)
     }
 
     @Test

@@ -9,6 +9,7 @@ import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
+import dev.jagoba.lostielauncher.service.update.LauncherUpdateService
 import dev.jagoba.lostielauncher.util.log.LogMaintenance
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.mockk.coVerify
@@ -35,6 +36,7 @@ class ApplicationLifecycleObserverTest {
     private val gameAutoUpdates = mockk<GameAutoUpdateCoordinator>(relaxed = true)
     private val installation = mockk<GameInstallationService>(relaxed = true)
     private val kirin = mockk<KirinSetupService>(relaxed = true)
+    private val launcherUpdate = mockk<LauncherUpdateService>(relaxed = true)
     private val logger = mockk<Logger>(relaxed = true)
 
     @Test
@@ -75,7 +77,7 @@ class ApplicationLifecycleObserverTest {
     }
 
     @Test
-    fun `checks Kirin again every time the launcher returns to the foreground`() = runTest {
+    fun `checks Kirin and the launcher's own update every time the launcher returns to the foreground`() = runTest {
         val sut = createSut(StandardTestDispatcher(testScheduler))
 
         sut.onResume(owner)
@@ -83,6 +85,7 @@ class ApplicationLifecycleObserverTest {
         advanceUntilIdle()
 
         coVerify(exactly = 2) { kirin.refresh() }
+        coVerify(exactly = 2) { launcherUpdate.refresh() }
     }
 
     @Test
@@ -119,6 +122,7 @@ class ApplicationLifecycleObserverTest {
         gameAutoUpdates = gameAutoUpdates,
         installation = installation,
         kirin = kirin,
+        launcherUpdate = launcherUpdate,
         logger = logger,
         dispatchers = TestDispatcherProvider(dispatcher),
     )

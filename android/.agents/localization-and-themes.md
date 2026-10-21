@@ -23,7 +23,7 @@ itself reads before any Kotlin runs, and says so.
 
 | Thing | Where |
 | --- | --- |
-| The 103 keys | `content/Strings.kt` — the `Strings` interface |
+| The 112 keys | `content/Strings.kt` — the `Strings` interface |
 | The eight implementations | `content/strings/<Lang>Strings.kt`, one `object` each |
 | Resolving one | `stringsFor(language)`, exhaustive over `AppLanguage` |
 | The 7 FAQ entries × 8 | `content/Faqs.kt`, resolved with `faqsFor(language)` |
@@ -40,14 +40,14 @@ What binds:
   `ExternalLink.brandName`, not in a composable.
 - **A new string means the key and all eight translations.** English left in
   the other seven is a review rejection. It is also a compile error: `Strings`
-  is an interface with 103 abstract properties and eight `object`s implementing
+  is an interface with 112 abstract properties and eight `object`s implementing
   it, which is exactly the desktop's guarantee and the reason the catalogue is
   900 lines of `override val` rather than a map.
-- **Placeholders keep the same count and order in all eight languages.** Eight
-  keys carry one (the five uninstall messages and the three Kirin messages), they use the desktop's `{0}` syntax, and the arguments are
+- **Placeholders keep the same count and order in all eight languages.** Nine
+  keys carry one (the five uninstall messages, `UpdateAvailableMessage` and the three Kirin messages), they use the desktop's `{0}` syntax, and the arguments are
   positional — a translation that swapped `{0}` and `{1}` would put a filesystem
   path where a game name belongs, in one language only. `StringsTest` asserts
-  no drift across all 103 × 8.
+  no drift across all 112 × 8.
 - **Substitution is `String.withArgs`, and the name is load-bearing.**
   `kotlin.text` declares `String.format(vararg Any?)` and is default-imported,
   so an extension called `format` here would not shadow it — it would *lose* to
@@ -65,7 +65,7 @@ What binds:
   is `es`, Valencian is `val`. They resolve the remote home content and nothing
   else.
 
-### Thirty keys the desktop has and this side does not
+### Twenty-five keys the desktop has and this side does not
 
 `SettingsStartWithWindows`, `SettingsStartMinimized`, `TrayOpen` and `TrayExit`
 are gone from all eight languages. Android has no user-controlled autostart, no
@@ -75,16 +75,23 @@ setting means dropping its Settings row, its key in **all eight** languages and
 its persisted field — half-removing one is the failure mode to avoid, and
 `StringsTest` asserts none of the four came back.
 
-The other 26 went at the end of the port, with the dialogs and Settings rows
+Seventeen went at the end of the port, with the dialogs and Settings rows
 that only exist for Windows reasons (see
-[architecture.md](architecture.md#dialogs)): launcher self-update
-(`UpToDate*`, `UpdateCheckFailed*`, `UpdateCheckBusy*`, `UpdateAvailable*`,
-`SettingsCheckForUpdates`), the download folder (`ChangeDownloadDir*`,
-`DownloadDirNotUsable*`, the three `DownloadDirStep*`, `SettingsDownloadDir`,
-`BtnBrowse`, `SettingsGamesStoredIn`), OneDrive (`OneDriveWarning*`,
-`SettingsOneDriveWarning`) and the four `ExitWarning*`. `StringsTest` asserts
-all thirty stay gone; `FaqsTest` keeps the desktop's download-directory labels
-as test data, to prove no FAQ answer names that setting.
+[architecture.md](architecture.md#dialogs)): the download folder
+(`ChangeDownloadDir*`, `DownloadDirNotUsable*`, the three `DownloadDirStep*`,
+`SettingsDownloadDir`, `BtnBrowse`, `SettingsGamesStoredIn`), OneDrive
+(`OneDriveWarning*`, `SettingsOneDriveWarning`) and the four `ExitWarning*`.
+The remaining four (`TooltipOpenFolder`, `TooltipOpenHelp`,
+`FolderNotFound*`) went with My Games' folder buttons. `StringsTest` asserts
+all twenty-five stay gone; `FaqsTest` keeps the desktop's download-directory
+labels as test data, to prove no FAQ answer names that setting.
+
+The nine launcher self-update keys (`UpdateAvailable*`,
+`SettingsCheckForUpdates`, `UpToDate*`, `UpdateCheckBusy*`,
+`UpdateCheckFailed*`) went with those dialogs and came back with self-update; `StringsTest` asserts they exist. They are the
+desktop's text except `UpdateAvailableMessage`, which differs on purpose: it
+asks "Download and install?" instead of "Restart to update?", because Android
+asks before downloading and hands the APK to the system installer.
 
 ### Nineteen keys this side has and the desktop does not
 

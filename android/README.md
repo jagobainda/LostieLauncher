@@ -23,7 +23,7 @@ authority on what the app must do is the desktop side, under
 | CI jobs                               | done — format, build, tests, lint and release build     |
 | Dependency injection graph            | done — one Hilt module per area in `core/di/`           |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 103 keys and 7 FAQs, in eight languages           |
+| Text catalogue                        | done — 112 keys and 7 FAQs, in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry                   | done — JSON in the games root, survives a reinstall      |
@@ -34,6 +34,7 @@ authority on what the app must do is the desktop side, under
 | Dialogs and notices                   | done — message box, download, special version, welcome   |
 | Product screens                       | done — Home, My Games, Library, FAQs and Settings        |
 | Accessibility, offline and logging    | done — reviewed at the end of the port                  |
+| Launcher self-update                  | done — asks, downloads, opens the system installer      |
 | Installing and launching a game       | pending — eleven open questions, [docs/](docs/game-runtime-options.md) |
 
 What is ported, partial, pending and deliberately not ported, with the reason
@@ -114,6 +115,18 @@ itself and writes `app/build/outputs/apk/release/app-release.apk`. Without it,
 as on CI, the release is built unsigned as `app-release-unsigned.apk`.
 `./gradlew signingReport` shows which key each variant is signed with.
 
+Publishing a release takes four steps, in this order:
+
+1. Bump **both** `versionCode` and `versionName` in `app/build.gradle.kts`, on
+   every release. The [self-update](#launcher-self-update) compares
+   `versionName`, and Android refuses an APK whose `versionCode` is lower than
+   the installed one's.
+2. Build it with `./gradlew assembleRelease`, signed with the same key.
+3. Upload the APK.
+4. Only then point `public/android/latest.json` at it, with the new
+   `versionName` and `downloadUrl`. The other way round, launchers are offered
+   an APK that is not there yet.
+
 ## Architecture
 
 MVVM with a single Hilt object graph, one Gradle module, and a layer contract
@@ -190,7 +203,7 @@ border widths, elevation and the four animation durations — is in
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 103
+**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 112
 string keys and seven FAQ entries each. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.
@@ -278,7 +291,8 @@ so `0.4.0-beta8` passes 0.4.0. It is checked again every time the launcher
 returns to the foreground. The feed has the shape of Kirin's own `latest.json`
 (`versionName`, `downloadUrl`). Its release is offered only when it is at the
 minimum or later, newer than the installed Kirin and served over HTTPS, and the downloaded APK must be `com.gmax.kirin` at that version or later
-before the system installer is opened.
+before the system installer is opened. That engine, in `service/apk/`, is the
+one the [launcher's own update](#launcher-self-update) uses.
 
 Logs continue to go to Logcat and also to `noBackupFilesDir/logs`. The file
 format matches the desktop, files are named by month, roll at 10 MB and are
@@ -286,6 +300,38 @@ retained for six months. Retention maintenance runs on the I/O dispatcher when
 the process starts, and every uncaught exception is written there before the
 process ends. What is logged, and at which level, follows the desktop. Debug builds can inspect them with Android Studio's Device
 Explorer or `adb run-as` without making the directory public.
+
+## Launcher self-update
+
+The launcher is an APK outside any store, so it updates itself. Every time it
+returns to the foreground, `LauncherUpdateService` reads
+`https://ericlostie-launcher.jagoba.dev/public/android/latest.json` (written in
+`core/di/UpdateModule.kt`): once per process when the read succeeds, again on
+the next return when it fails. The feed has the shape of Kirin's:
+
+```json
+{
+    "versionName": "0.2.0",
+    "downloadUrl": "https://…"
+}
+```
+
+Unknown keys are ignored. The release is offered when its `versionName` is
+newer than the installed one, compared as Kirin's is, without its pre-release
+suffix, and its `downloadUrl` is HTTPS. There is no checksum: the download must
+come over HTTPS, the APK must be this package at that version or later, and
+Android itself rejects an APK signed with another key.
+
+The launcher asks before it downloads anything, because the APK may come over
+mobile data, and never while a game download is active, because installing it
+ends the process. Yes downloads it, with a title-bar pill showing its progress,
+and opens the system installer; No holds until the next process start or a
+manual check from Settings, which always reads the feed again. Permission to
+install unknown apps is the system installer's to ask for, as with Kirin.
+
+A debug build is signed with the debug key, so the system installer rejects a
+release offered to it as an update. That is expected, and nothing in the code
+works around it.
 
 ## Contributing
 

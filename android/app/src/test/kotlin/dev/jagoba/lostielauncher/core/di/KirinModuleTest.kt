@@ -1,11 +1,14 @@
 package dev.jagoba.lostielauncher.core.di
 
+import android.content.Context
 import android.os.Environment
 import io.kotest.matchers.shouldBe
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkStatic
 import java.io.File
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
@@ -25,5 +28,12 @@ class KirinModuleTest {
             KirinModule.provideLocalLibraryOptions(options).registryFile shouldBe
                 File(storage, "LostieLauncher/local_games.json")
         }
+    }
+
+    @Test
+    fun `keeps the Kirin installer in its own folder under the shared APK cache`() {
+        val context = mockk<Context> { every { cacheDir } returns File("/cache") }
+
+        KirinModule.provideKirinSetupOptions(context).installerFile shouldBe File("/cache", "apk/kirin/Kirin.apk")
     }
 }

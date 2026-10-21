@@ -12,21 +12,4 @@ sealed interface KirinStatus {
     data class UpdateRecommended(val installedVersion: String, val latestVersion: String) : KirinStatus
 }
 
-sealed interface KirinDownloadState {
-    data object Checking : KirinDownloadState
-
-    data object Unavailable : KirinDownloadState
-
-    data object Available : KirinDownloadState
-
-    data class Downloading(val percent: Int) : KirinDownloadState
-
-    data object Failed : KirinDownloadState
-}
-
-data class KirinSetupOptions(
-    val requirementsUrl: String,
-    val fallbackMinimumVersion: String,
-    val installerFile: File,
-    val fileProviderAuthority: String,
-)
+data class KirinSetupOptions(val requirementsUrl: String, val fallbackMinimumVersion: String, val installerFile: File)

@@ -85,6 +85,12 @@ fun LauncherShell(
 
     LibraryDialogs()
     GamesDialogs()
+    LauncherUpdateDialogs(
+        state = state,
+        onAccept = viewModel::acceptLauncherUpdate,
+        onDecline = viewModel::declineLauncherUpdate,
+        onDismissFailure = viewModel::dismissLauncherUpdateFailure,
+    )
     if (state.isWelcomeVisible) {
         WelcomeDialog(
             language = LocalAppLanguage.current,
@@ -130,14 +136,20 @@ fun LauncherShellLayout(
     }
     val kirinUpdate = state.kirinUpdate?.let { update ->
         ShellPillContent(
-            label =
-            update.downloadPercent?.let { "${strings.statusDownloading} $it%" } ?: strings.kirinUpdateRecommended,
+            label = update.downloadPercent?.let(strings::downloadingLabel) ?: strings.kirinUpdateRecommended,
             tooltip = strings.kirinUpdateRecommendedMessage.withArgs(
                 update.installedVersion,
                 update.latestVersion,
             ),
             icon = painterResource(R.drawable.ic_card_update),
             onClick = onUpdateKirin,
+        )
+    }
+    val launcherUpdate = state.launcherUpdatePercent?.let { percent ->
+        ShellPillContent(
+            label = strings.downloadingLabel(percent),
+            tooltip = strings.updateAvailableTitle,
+            icon = painterResource(R.drawable.ic_card_update),
         )
     }
 
@@ -151,7 +163,7 @@ fun LauncherShellLayout(
             ShellTopBar(
                 title = state.title,
                 logo = painterResource(R.drawable.launcher_logo),
-                pills = listOfNotNull(offline, kirinUpdate),
+                pills = listOfNotNull(offline, kirinUpdate, launcherUpdate),
                 actions = actions,
                 modifier = Modifier.windowInsetsPadding(
                     insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),

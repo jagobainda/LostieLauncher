@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jagoba.lostielauncher.content.FaqEntry
 import dev.jagoba.lostielauncher.content.kirinFaqFor
-import dev.jagoba.lostielauncher.model.KirinDownloadState
+import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 
 data class KirinUiState(
     val status: KirinStatus? = null,
-    val download: KirinDownloadState = KirinDownloadState.Checking,
+    val download: ApkDownloadState = ApkDownloadState.Checking,
     val faq: FaqEntry? = null,
 ) {
     val isBlocking: Boolean get() = status is KirinStatus.Missing || status is KirinStatus.Outdated

@@ -14,6 +14,8 @@ import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryUiState
+import dev.jagoba.lostielauncher.ui.viewmodel.MainUiState
+import dev.jagoba.lostielauncher.ui.viewmodel.SettingsNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -123,6 +125,43 @@ class DialogMessagesTest {
     @Test
     fun `no notice and no prompt shows nothing`() {
         gamesMessage(GamesUiState(), strings) shouldBe null
+        launcherUpdateMessageBox(MainUiState(), strings) shouldBe null
+    }
+
+    @Test
+    fun `a launcher update asks yes or no with the offered version`() {
+        launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), strings) shouldBe MessageBoxSpec(
+            strings.updateAvailableTitle,
+            "New version 1.1.0 available. Download and install?",
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.UPDATE,
+        )
+    }
+
+    @Test
+    fun `a failed launcher update download shows the download error before any prompt`() {
+        launcherUpdateMessageBox(
+            MainUiState(launcherUpdatePrompt = "1.1.0", launcherUpdateFailed = true),
+            strings,
+        ) shouldBe error(strings.downloadErrorTitle, strings.downloadErrorMessage)
+    }
+
+    @Test
+    fun `settings notices map to the desktop update message boxes`() {
+        SettingsNotice.UPDATE_CHECK_BUSY.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.updateCheckBusyTitle,
+            strings.updateCheckBusyMessage,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.INFORMATION,
+        )
+        SettingsNotice.UP_TO_DATE.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.upToDateTitle,
+            strings.upToDateMessage,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.INFORMATION,
+        )
+        SettingsNotice.UPDATE_CHECK_FAILED.messageBox(strings) shouldBe
+            error(strings.updateCheckFailedTitle, strings.updateCheckFailedMessage)
     }
 
     @ParameterizedTest
@@ -141,7 +180,9 @@ class DialogMessagesTest {
             gamesMessage(
                 GamesUiState(pendingUninstall = target, notice = GamesNotice.POSSIBLY_RUNNING),
                 localized,
-            )!!.spec
+            )!!.spec +
+            launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), localized)!! +
+            SettingsNotice.entries.map { it.messageBox(localized) }
 
         specs.forEach { it.message shouldNotContain "{" }
     }

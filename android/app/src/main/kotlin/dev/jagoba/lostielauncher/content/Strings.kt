@@ -41,11 +41,20 @@ interface Strings {
     val uninstallGameRunningTitle: String
     val uninstallGameRunningMessage: String
     val uninstallMaybeRunningMessage: String
+    val updateAvailableTitle: String
+    val updateAvailableMessage: String
     val settingsGeneral: String
     val settingsAppearance: String
     val settingsAutoUpdate: String
     val settingsLanguage: String
     val settingsTheme: String
+    val settingsCheckForUpdates: String
+    val upToDateTitle: String
+    val upToDateMessage: String
+    val updateCheckBusyTitle: String
+    val updateCheckBusyMessage: String
+    val updateCheckFailedTitle: String
+    val updateCheckFailedMessage: String
     val libraryNoContent: String
     val gamesNoContent: String
     val gamesGoToLibrary: String
