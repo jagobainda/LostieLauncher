@@ -43,7 +43,6 @@ they live side by side:
 ├── .editorconfig       # Monorepo baseline only (charset, CRLF, indentation)
 ├── .gitignore          # Covers both sides
 ├── AGENTS.md           # Global agent guidelines → routes to each side
-├── CLAUDE.md           # Pointer: @AGENTS.md
 ├── CONTRIBUTING.md     # Contribution guide
 ├── LICENSE.txt
 ├── README.md           # This file
@@ -51,7 +50,6 @@ they live side by side:
 │   ├── .agents/        #   Desktop-only agent rules
 │   ├── .editorconfig   #   C#, XAML and MSBuild rules
 │   ├── AGENTS.md       #   Desktop agent index
-│   ├── CLAUDE.md       #   Pointer: @AGENTS.md
 │   ├── README.md       #   Architecture, build, configuration, endpoints
 │   ├── global.json     #   Test runner opt-in
 │   ├── LostieLauncher.slnx
@@ -62,7 +60,6 @@ they live side by side:
     ├── .agents/        #   Android-only agent rules (4 topic files)
     ├── .editorconfig   #   Kotlin and Gradle rules
     ├── AGENTS.md       #   Android index
-    ├── CLAUDE.md       #   Pointer: @AGENTS.md
     ├── README.md       #   Android architecture, stack and build
     ├── build.gradle.kts, settings.gradle.kts, gradle.properties
     ├── gradle/         #   Version catalog + the pinned wrapper

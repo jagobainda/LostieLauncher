@@ -158,10 +158,9 @@ the machine-readable version of this guide. It holds the rules that apply across
 the monorepo and routes to the side you are working on —
 [desktop/AGENTS.md](desktop/AGENTS.md) or [android/AGENTS.md](android/AGENTS.md)
 — where the architecture rules, code conventions, testing constraints and the
-exact commands CI runs live. Most agentic tools read it automatically; Claude
-Code picks it up through the `CLAUDE.md` pointer at the repository root.
-Keeping the assistant inside those rules saves you review cycles — but it
-does not transfer responsibility for the result.
+exact commands CI runs live. Most agentic tools, Claude Code included, read it
+automatically. Keeping the assistant inside those rules saves you review
+cycles — but it does not transfer responsibility for the result.
 
 ---
 

@@ -40,7 +40,6 @@ worth fixing.
 ├── .gitattributes      # line endings Git must enforce (gradlew stays LF)
 ├── .gitignore          # covers both sides (patterns match at any depth)
 ├── AGENTS.md           # this file
-├── CLAUDE.md           # pointer: @AGENTS.md
 ├── CONTRIBUTING.md     # human contribution guide
 ├── LICENSE.txt
 ├── README.md           # monorepo overview and product landing page
@@ -48,7 +47,6 @@ worth fixing.
 │   ├── .agents/        #   desktop-only agent rules (4 topic files)
 │   ├── .editorconfig   #   C#, XAML and MSBuild rules
 │   ├── AGENTS.md       #   desktop index
-│   ├── CLAUDE.md       #   pointer: @AGENTS.md
 │   ├── README.md       #   desktop architecture, build and configuration
 │   ├── global.json     #   test runner opt-in — see "Where to run commands"
 │   ├── LostieLauncher.slnx
@@ -59,7 +57,6 @@ worth fixing.
     ├── .agents/        #   Android-only agent rules (4 topic files)
     ├── .editorconfig   #   Kotlin and Gradle rules
     ├── AGENTS.md       #   Android index
-    ├── CLAUDE.md       #   pointer: @AGENTS.md
     ├── README.md       #   Android architecture, stack, build
     ├── build.gradle.kts, settings.gradle.kts, gradle.properties
     ├── gradle/         #   libs.versions.toml + the pinned wrapper
