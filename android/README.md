@@ -75,6 +75,19 @@ Everything runs **from this folder**, not from the repository root.
 ./gradlew assembleRelease               # the R8 path and the release source set
 ```
 
+A debug build installs as its own app, **Lostie Launcher Dev**
+(`dev.jagoba.lostielauncher.debug`), next to the release
+(`dev.jagoba.lostielauncher`). The two are signed with different keys, and
+Android refuses to install a package over one signed with another key: the
+installer only says the app *conflicts with an existing package*. Debug builds
+made before the suffix existed took the release's id, so a device that still
+has one refuses every release until it is gone, including from any secondary
+user, work profile or Xiaomi's Second space and Dual apps:
+
+```bash
+adb shell pm uninstall dev.jagoba.lostielauncher    # every user on the device
+```
+
 Requirements: an Android SDK (the build accepts its licences and downloads what
 it is missing) and a JDK between 17 and 26 for `gradlew` to start with.
 
@@ -330,9 +343,9 @@ and opens the system installer; No holds until the next process start or a
 manual check from Settings, which always reads the feed again. Permission to
 install unknown apps is the system installer's to ask for, as with Kirin.
 
-A debug build is signed with the debug key, so the system installer rejects a
-release offered to it as an update. That is expected, and nothing in the code
-works around it.
+A debug build is a different package, `dev.jagoba.lostielauncher.debug`, so
+the release it downloads is not this package and is rejected before the
+installer opens. That is expected, and nothing in the code works around it.
 
 ## Contributing
 

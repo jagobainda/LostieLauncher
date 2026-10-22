@@ -47,6 +47,11 @@ android {
     }
 
     buildTypes {
+        // A debug build is signed with the debug key, so under the release's id it
+        // would block installing a release over it, and the other way round.
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
