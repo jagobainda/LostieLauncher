@@ -43,7 +43,7 @@ coroutines = "1.11.0"
 kotlinxSerialization = "1.12.0"
 
 # ── Network and images ──────────────────────────────────────────────────────
-okhttp = "5.5.0"
+okhttp = "5.5.1"
 retrofit = "3.0.0"
 coil = "3.6.3"                        # step 12
 
