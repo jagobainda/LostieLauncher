@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.util.Properties
 
 plugins {
@@ -87,6 +88,21 @@ android {
             "/META-INF/LICENSE.md",
             "/META-INF/LICENSE-notice.md",
         )
+    }
+}
+
+// A signed release is also copied to android/release/, named after its version,
+// ready to upload. An unsigned one, as on CI, stays where AGP writes it.
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        if (!keystorePropertiesFile.exists()) return@onVariants
+        val versionName = variant.outputs.single().versionName
+        val export = tasks.register<Copy>("exportReleaseApk") {
+            from(variant.artifacts.get(SingleArtifact.APK)) { include("*.apk") }
+            into(rootProject.layout.projectDirectory.dir("release"))
+            rename { "LostieLauncher-${versionName.get()}.apk" }
+        }
+        tasks.matching { it.name == "assembleRelease" }.configureEach { finalizedBy(export) }
     }
 }
 

@@ -111,8 +111,9 @@ keyPassword=...
 ```
 
 With that file present, `./gradlew assembleRelease` aligns and signs the APK
-itself and writes `app/build/outputs/apk/release/app-release.apk`. Without it,
-as on CI, the release is built unsigned as `app-release-unsigned.apk`.
+itself, writes `app/build/outputs/apk/release/app-release.apk` and copies it to
+`release/LostieLauncher-<versionName>.apk`, which Git ignores. Without it, as on
+CI, the release is built unsigned as `app-release-unsigned.apk` and not copied.
 `./gradlew signingReport` shows which key each variant is signed with.
 
 Publishing a release takes four steps, in this order:
@@ -122,7 +123,7 @@ Publishing a release takes four steps, in this order:
    `versionName`, and Android refuses an APK whose `versionCode` is lower than
    the installed one's.
 2. Build it with `./gradlew assembleRelease`, signed with the same key.
-3. Upload the APK.
+3. Upload the APK from `release/`.
 4. Only then point `public/android/latest.json` at it, with the new
    `versionName` and `downloadUrl`. The other way round, launchers are offered
    an APK that is not there yet.
