@@ -8,6 +8,9 @@ namespace LostieLauncher.Tests.ViewModels;
 public class MainViewModelTests
 {
     private readonly IContentService _contentService = Substitute.For<IContentService>();
+    private readonly ITwitchLiveService _twitchLiveService = Substitute.For<ITwitchLiveService>();
+    private readonly GlobalViewModel _global = new();
+    private HomeViewModel _home = null!;
     private readonly ISettingsService _settingsService = Substitute.For<ISettingsService>();
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
     private readonly IDownloadService _downloadService = Substitute.For<IDownloadService>();
@@ -27,18 +30,24 @@ public class MainViewModelTests
 
     private async Task<MainViewModel> CreateSutAsync()
     {
-        var global = new GlobalViewModel();
-        var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>(),
+        var settings = new SettingsViewModel(_settingsService, _startupService, _global, Substitute.For<IUpdateService>(),
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
-        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions,
+        var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, _global, _downloadOptions,
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         await library.LibraryLoadedTask;
-        var home = new HomeViewModel(_contentService, settings);
-        await home.RefreshAsync();
-        var games = new GamesViewModel(_contentService, library, global);
+        _home = new HomeViewModel(_contentService, _twitchLiveService, settings);
+        await _home.RefreshAsync();
+        var games = new GamesViewModel(_contentService, library, _global);
         await games.RefreshAsync();
         var faqs = new FaqsViewModel(settings);
-        return new MainViewModel(global, home, games, library, faqs, settings);
+        return new MainViewModel(_global, _home, games, library, faqs, settings);
+    }
+
+    private async Task EndMaintenanceAsync()
+    {
+        _contentService.ClearReceivedCalls();
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        await _home.RefreshAsync();
     }
 
     [Fact]
@@ -140,7 +149,7 @@ public class MainViewModelTests
         var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, global, _downloadOptions,
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         await library.LibraryLoadedTask;
-        var home = new HomeViewModel(_contentService, settings);
+        var home = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await home.RefreshAsync();
         var games = new GamesViewModel(_contentService, library, global);
         await games.RefreshAsync();
@@ -152,6 +161,49 @@ public class MainViewModelTests
 
         // Assert
         vm.RefreshDataCommand.CanExecute(null).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task MaintenanceEnding_ReloadsTheCatalogue()
+    {
+        // Arrange
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
+        var vm = await CreateSutAsync();
+
+        // Act
+        await EndMaintenanceAsync();
+
+        // Assert
+        vm.IsOfflineMode.ShouldBeFalse();
+        await _contentService.Received(1).GetGamesAsync();
+    }
+
+    [Fact]
+    public async Task MaintenanceEnding_WhileDownloading_KeepsTheCatalogue()
+    {
+        // Arrange
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
+        await CreateSutAsync();
+        _global.IsDownloading = true;
+
+        // Act
+        await EndMaintenanceAsync();
+
+        // Assert
+        await _contentService.DidNotReceive().GetGamesAsync();
+    }
+
+    [Fact]
+    public async Task HomeRefresh_WithoutMaintenance_DoesNotReloadTheCatalogue()
+    {
+        // Arrange
+        await CreateSutAsync();
+
+        // Act
+        await EndMaintenanceAsync();
+
+        // Assert
+        await _contentService.DidNotReceive().GetGamesAsync();
     }
 
     [Fact]

@@ -13,6 +13,7 @@
     <Color x:Key="SecondaryFgDimColor">#99ede8ff</Color>
 
     <Color x:Key="SuccessColor">#2e7d32</Color>
+    <Color x:Key="LiveIndicatorColor">#eb0400</Color>
 
     <Color x:Key="OverlaySubtleColor">#1AFFFFFF</Color>
     <Color x:Key="OverlayLightColor">#22FFFFFF</Color>
@@ -29,6 +30,7 @@
     <SolidColorBrush x:Key="SecondaryFgBrush"      Color="{StaticResource SecondaryFgColor}" />
     <SolidColorBrush x:Key="SecondaryFgDimBrush"   Color="{StaticResource SecondaryFgDimColor}" />
     <SolidColorBrush x:Key="SuccessBrush"          Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="LiveIndicatorBrush"    Color="{StaticResource LiveIndicatorColor}" />
     <SolidColorBrush x:Key="OverlaySubtleBrush"    Color="{StaticResource OverlaySubtleColor}" />
     <SolidColorBrush x:Key="OverlayLightBrush"     Color="{StaticResource OverlayLightColor}" />
     <SolidColorBrush x:Key="OverlayMutedBrush"     Color="{StaticResource OverlayMutedColor}" />

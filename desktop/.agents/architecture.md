@@ -21,10 +21,11 @@ table are relative to [LostieLauncher/](../LostieLauncher/).
 
 - Register services, ViewModels and `MainWindow` as singletons in
   [DependencyInjection.cs](../LostieLauncher/Core/DependencyInjection.cs).
-- Use the named `IHttpClientFactory` clients: `Content`, `SecurityFlag` and
-  `Download`. Their timeouts and headers are configured in that same file.
-- Options records in `Models/` carry content, download and update endpoints;
-  the shared CDN base is in `Core/Endpoints.cs`.
+- Use the named `IHttpClientFactory` clients: `Content`, `SecurityFlag`,
+  `Download` and `TwitchPreview`. Their timeouts and headers are configured in
+  that same file.
+- Options records in `Models/` carry content, download, update and Twitch
+  preview endpoints; the shared CDN base is in `Core/Endpoints.cs`.
 - `App.Services` is the existing composition-root service locator. Do not
   extend its use. `SettingsViewModel.Instance` is an existing legacy accessor;
   do not add equivalent static accessors.

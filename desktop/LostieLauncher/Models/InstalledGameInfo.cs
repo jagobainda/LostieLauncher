@@ -22,6 +22,9 @@ public partial class InstalledGameInfo : ObservableObject
     public partial bool IsUninstalling { get; set; }
 
     [ObservableProperty]
+    public partial bool IsDeparting { get; set; }
+
+    [ObservableProperty]
     public partial bool HasHelpFolder { get; set; }
 
     [ObservableProperty]

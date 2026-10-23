@@ -37,7 +37,7 @@ public class EspFaqs : IFaqs
         new("¿Qué es una versión especial y cómo la activo?",
             "Es una versión alternativa de un juego que se desbloquea con una clave con formato XXXX-XXXX-XXXX-XXXX-XXXX. Puedes introducir la clave al descargar el juego o cambiar a la versión especial desde Mis Juegos sin perder nada."),
         new("¿Qué significa el modo offline?",
-            "Significa que el launcher no puede conectar con el servidor, ya sea porque no tienes conexión a internet o porque el servidor está en mantenimiento. Puedes seguir jugando a tus juegos instalados; las descargas, actualizaciones y versiones especiales se reactivarán automáticamente cuando vuelva la conexión."),
+            "Significa que el servidor está en mantenimiento. Puedes seguir jugando a tus juegos instalados; las descargas, actualizaciones y versiones especiales se reactivarán automáticamente cuando termine el mantenimiento."),
         new("He encontrado un error, ¿dónde lo reporto?",
             "Escribe en el canal #testeo-launcher del Discord de la comunidad contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.")
     ];
@@ -56,7 +56,7 @@ public class EngFaqs : IFaqs
         new("What is a special version and how do I activate it?",
             "It is an alternative version of a game unlocked with a key in the format XXXX-XXXX-XXXX-XXXX-XXXX. You can enter the key when downloading the game or switch to the special version from My Games without losing anything."),
         new("What does offline mode mean?",
-            "It means the launcher can't reach the server, either because you have no internet connection or because the server is under maintenance. You can keep playing your installed games; downloads, updates and special versions will reactivate automatically when the connection returns."),
+            "It means the server is under maintenance. You can keep playing your installed games; downloads, updates and special versions will reactivate automatically when the maintenance ends."),
         new("I found a bug, where do I report it?",
             "Write in the #testeo-launcher channel of the community Discord explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.")
     ];
@@ -75,7 +75,7 @@ public class CatFaqs : IFaqs
         new("Què és una versió especial i com l'activo?",
             "És una versió alternativa d'un joc que es desbloqueja amb una clau amb format XXXX-XXXX-XXXX-XXXX-XXXX. Pots introduir la clau en descarregar el joc o canviar a la versió especial des d'Els meus jocs sense perdre res."),
         new("Què significa el mode offline?",
-            "Significa que el launcher no pot connectar amb el servidor, ja sigui perquè no tens connexió a internet o perquè el servidor està en manteniment. Pots seguir jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan torni la connexió."),
+            "Significa que el servidor està en manteniment. Pots seguir jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan acabi el manteniment."),
         new("He trobat un error, on el reporto?",
             "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.")
     ];
@@ -94,7 +94,7 @@ public class EusFaqs : IFaqs
         new("Zer da bertsio berezi bat eta nola aktibatzen dut?",
             "Jokoaren bertsio alternatibo bat da, XXXX-XXXX-XXXX-XXXX-XXXX formatuko gako batekin desblokeatzen dena. Gakoa jokoa deskargatzean sar dezakezu, edo bertsio berezira aldatu Nire Jokoak ataletik ezer galdu gabe."),
         new("Zer esan nahi du offline moduak?",
-            "Launcher-a zerbitzariarekin konektatu ezin dela esan nahi du, interneteko konexiorik ez duzulako edo zerbitzaria mantentze-lanetan dagoelako. Instalatutako jokoetan jolasten jarrai dezakezu; deskargak, eguneraketak eta bertsio bereziak automatikoki berraktibatuko dira konexioa itzultzean."),
+            "Zerbitzaria mantentze-lanetan dagoela esan nahi du. Instalatutako jokoetan jolasten jarrai dezakezu; deskargak, eguneraketak eta bertsio bereziak automatikoki berraktibatuko dira mantentze-lanak amaitzean."),
         new("Errore bat aurkitu dut, non jakinarazten dut?",
             "Idatzi komunitatearen Discord-eko #testeo-launcher kanalean, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.")
     ];
@@ -113,7 +113,7 @@ public class GalFaqs : IFaqs
         new("Que é unha versión especial e como a activo?",
             "É unha versión alternativa dun xogo que se desbloquea cunha clave co formato XXXX-XXXX-XXXX-XXXX-XXXX. Podes introducir a clave ao descargar o xogo ou cambiar á versión especial desde Os meus xogos sen perder nada."),
         new("Que significa o modo offline?",
-            "Significa que o launcher non pode conectar co servidor, xa sexa porque non tes conexión a internet ou porque o servidor está en mantemento. Podes seguir xogando aos teus xogos instalados; as descargas, actualizacións e versións especiais reactivaranse automaticamente cando volva a conexión."),
+            "Significa que o servidor está en mantemento. Podes seguir xogando aos teus xogos instalados; as descargas, actualizacións e versións especiais reactivaranse automaticamente cando remate o mantemento."),
         new("Atopei un erro, onde o reporto?",
             "Escribe na canle #testeo-launcher do Discord da comunidade contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.")
     ];
@@ -132,7 +132,7 @@ public class PorFaqs : IFaqs
         new("O que é uma versão especial e como a ativo?",
             "É uma versão alternativa de um jogo desbloqueada com uma chave no formato XXXX-XXXX-XXXX-XXXX-XXXX. Você pode inserir a chave ao baixar o jogo ou mudar para a versão especial em Meus Jogos sem perder nada."),
         new("O que significa o modo offline?",
-            "Significa que o launcher não consegue se conectar ao servidor, seja porque você está sem conexão com a internet ou porque o servidor está em manutenção. Você pode continuar jogando seus jogos instalados; downloads, atualizações e versões especiais serão reativados automaticamente quando a conexão voltar."),
+            "Significa que o servidor está em manutenção. Você pode continuar jogando seus jogos instalados; downloads, atualizações e versões especiais serão reativados automaticamente quando a manutenção terminar."),
         new("Encontrei um erro, onde o reporto?",
             "Escreva no canal #testeo-launcher do Discord da comunidade contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.")
     ];
@@ -151,7 +151,7 @@ public class ValFaqs : IFaqs
         new("Què és una versió especial i com l'active?",
             "És una versió alternativa d'un joc que es desbloqueja amb una clau amb format XXXX-XXXX-XXXX-XXXX-XXXX. Pots introduir la clau en descarregar el joc o canviar a la versió especial des d'Els meus jocs sense perdre res."),
         new("Què significa el mode offline?",
-            "Significa que el launcher no pot connectar amb el servidor, ja siga perquè no tens connexió a internet o perquè el servidor està en manteniment. Pots continuar jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan torne la connexió."),
+            "Significa que el servidor està en manteniment. Pots continuar jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan acabe el manteniment."),
         new("He trobat un error, on el reporte?",
             "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.")
     ];
@@ -170,7 +170,7 @@ public class FraFaqs : IFaqs
         new("Qu'est-ce qu'une version spéciale et comment l'activer ?",
             "C'est une version alternative d'un jeu qui se débloque avec une clé au format XXXX-XXXX-XXXX-XXXX-XXXX. Vous pouvez saisir la clé lors du téléchargement du jeu ou passer à la version spéciale depuis Mes jeux sans rien perdre."),
         new("Que signifie le mode hors ligne ?",
-            "Cela signifie que le launcher ne peut pas se connecter au serveur, soit parce que vous n'avez pas de connexion internet, soit parce que le serveur est en maintenance. Vous pouvez continuer à jouer à vos jeux installés ; les téléchargements, mises à jour et versions spéciales se réactiveront automatiquement au retour de la connexion."),
+            "Cela signifie que le serveur est en maintenance. Vous pouvez continuer à jouer à vos jeux installés ; les téléchargements, mises à jour et versions spéciales se réactiveront automatiquement à la fin de la maintenance."),
         new("J'ai trouvé un bug, où le signaler ?",
             "Écrivez dans le canal #testeo-launcher du Discord de la communauté en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.")
     ];
