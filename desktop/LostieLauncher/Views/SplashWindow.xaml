@@ -1,0 +1,112 @@
+<Window x:Class="LostieLauncher.Views.SplashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="650"
+        Width="1000"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="{DynamicResource PrimaryBgBrush}"
+        BorderBrush="{DynamicResource PrimaryFgBrush}"
+        BorderThickness="1"
+        Title="Lostie Launcher">
+
+    <Viewbox x:Name="SplashIcon"
+             Width="120"
+             Height="120"
+             RenderOptions.EdgeMode="Aliased">
+        <Viewbox.RenderTransform>
+            <TranslateTransform x:Name="SplashIconOffset" />
+        </Viewbox.RenderTransform>
+        <Canvas Width="60" Height="60">
+            <Path Fill="#EC6A42" Data="M5,49h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember1Scale" CenterX="6" CenterY="50" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember1Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Path Fill="#D13831" Data="M53,47h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember2Scale" CenterX="54" CenterY="48" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember2Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Path Fill="#D13831" Data="M1,25h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember3Scale" CenterX="2" CenterY="26" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember3Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Path Fill="#EC6A42" Data="M57,21h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember4Scale" CenterX="58" CenterY="22" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember4Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Path Fill="#EC6A42" Data="M23,5h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember5Scale" CenterX="24" CenterY="6" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember5Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Path Fill="#D13831" Data="M35,7h2v2h-2z">
+                <Path.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform x:Name="Ember6Scale" CenterX="36" CenterY="8" ScaleX="0" ScaleY="0" />
+                        <TranslateTransform x:Name="Ember6Offset" />
+                    </TransformGroup>
+                </Path.RenderTransform>
+            </Path>
+            <Canvas>
+                <Canvas.RenderTransform>
+                    <TranslateTransform x:Name="MothOffset" />
+                </Canvas.RenderTransform>
+                <Canvas>
+                    <Canvas.RenderTransform>
+                        <ScaleTransform x:Name="LeftWingScale" CenterX="19" CenterY="32" />
+                    </Canvas.RenderTransform>
+                    <Path Fill="#101010" Data="M3,8h8v4h-8zM11,10h4v42h-4zM5,12h6v10h-6zM15,12h2v40h-2zM17,14h2v36h-2zM7,22h4v4h-4zM9,26h2v16h-2zM5,30h4v10h-4zM1,32h4v4h-4zM3,36h2v2h-2zM9,48h2v4h-2z" />
+                    <Path Fill="#312F2F" Data="M9,12h2v2h-2zM13,14h2v2h-2zM13,18h2v2h-2zM9,20h2v2h-2zM9,32h2v2h-2zM11,36h2v2h-2zM15,42h2v2h-2zM13,46h2v2h-2z" />
+                    <Path Fill="#471F1D" Data="M3,8h8v2h-8zM3,10h2v2h-2zM11,10h4v2h-4zM15,12h2v2h-2zM17,14h2v2h-2zM17,24h2v2h-2zM13,30h2v2h-2zM17,30h2v2h-2zM11,42h2v6h-2zM9,48h2v2h-2z" />
+                    <Path Fill="#763428" Data="M9,28h2v2h-2zM5,30h4v2h-4zM1,32h4v2h-4z" />
+                    <Path Fill="#D13831" Data="M5,10h6v2h-6zM7,12h2v10h-2zM11,12h4v2h-4zM9,14h4v4h-4zM15,14h2v2h-2zM9,18h2v2h-2zM17,26h2v4h-2zM17,32h2v2h-2zM13,42h2v4h-2zM15,44h2v6h-2zM17,46h2v2h-2zM11,48h4v2h-4z" />
+                    <Path Fill="#EC6A42" Data="M15,16h4v4h-4zM11,18h2v10h-2zM13,20h4v4h-4zM9,22h2v4h-2zM13,24h2v6h-2zM11,30h2v6h-2zM5,32h4v6h-4zM13,32h2v8h-2zM3,34h2v2h-2zM9,34h2v6h-2zM15,34h2v4h-2zM17,36h2v2h-2zM11,38h2v2h-2zM15,40h4v2h-4zM17,42h2v4h-2z" />
+                </Canvas>
+                <Canvas>
+                    <Canvas.RenderTransform>
+                        <ScaleTransform x:Name="RightWingScale" CenterX="41" CenterY="32" ScaleX="{Binding ScaleX, Source={x:Reference LeftWingScale}}" />
+                    </Canvas.RenderTransform>
+                    <Path Fill="#101010" Data="M49,8h8v4h-8zM45,10h4v42h-4zM43,12h2v40h-2zM49,12h6v10h-6zM41,14h2v36h-2zM49,22h4v4h-4zM49,26h2v16h-2zM51,30h4v10h-4zM55,32h4v4h-4zM55,36h2v2h-2zM49,48h2v4h-2z" />
+                    <Path Fill="#312F2F" Data="M49,12h2v2h-2zM45,14h2v2h-2zM45,18h2v2h-2zM49,20h2v2h-2zM49,32h2v2h-2zM47,36h2v2h-2zM43,42h2v2h-2zM45,46h2v2h-2z" />
+                    <Path Fill="#471F1D" Data="M49,8h8v2h-8zM45,10h4v2h-4zM55,10h2v2h-2zM43,12h2v2h-2zM41,14h2v2h-2zM41,24h2v2h-2zM41,30h2v2h-2zM43,38h2v2h-2zM45,40h2v2h-2zM47,42h2v6h-2zM49,48h2v2h-2z" />
+                    <Path Fill="#763428" Data="M49,28h2v2h-2zM45,30h2v2h-2zM51,30h4v2h-4zM55,32h4v2h-4z" />
+                    <Path Fill="#D13831" Data="M49,10h6v2h-6zM45,12h4v2h-4zM51,12h2v10h-2zM43,14h2v2h-2zM47,14h4v4h-4zM49,18h2v2h-2zM41,26h2v4h-2zM41,32h2v2h-2zM45,42h2v4h-2zM43,44h2v6h-2zM41,46h2v2h-2zM45,48h4v2h-4z" />
+                    <Path Fill="#EC6A42" Data="M41,16h4v4h-4zM47,18h2v10h-2zM43,20h4v4h-4zM49,22h2v4h-2zM45,24h2v6h-2zM47,30h2v6h-2zM45,32h2v8h-2zM51,32h4v6h-4zM43,34h2v4h-2zM49,34h2v6h-2zM55,34h2v2h-2zM41,36h2v2h-2zM47,38h2v2h-2zM41,40h4v2h-4zM41,42h2v4h-2z" />
+                </Canvas>
+                <Path Fill="#101010" Data="M21,12h4v36h-4zM35,12h4v36h-4zM25,14h2v36h-2zM33,14h2v36h-2zM19,16h2v34h-2zM39,16h2v34h-2zM27,18h6v32h-6zM29,50h2v2h-2z" />
+                <Path Fill="#312F2F" Data="M25,20h2v2h-2zM33,20h2v2h-2zM23,22h2v2h-2zM35,22h2v2h-2zM21,26h2v6h-2zM37,26h2v6h-2zM23,32h2v2h-2zM27,32h6v4h-6zM35,32h2v2h-2zM29,36h2v2h-2zM25,40h2v2h-2zM33,40h2v2h-2zM29,44h2v6h-2zM27,46h2v2h-2zM31,46h2v2h-2z" />
+                <Path Fill="#471F1D" Data="M19,16h2v2h-2zM39,16h2v2h-2zM21,18h4v2h-4zM35,18h4v2h-4zM19,24h2v8h-2zM39,24h2v8h-2zM21,32h2v4h-2zM37,32h2v4h-2zM23,34h4v2h-4zM33,34h4v2h-4z" />
+                <Path Fill="#4D4A49" Data="M27,20h6v12h-6zM25,22h2v8h-2zM33,22h2v8h-2zM23,24h2v4h-2zM35,24h2v4h-2zM27,40h2v2h-2zM31,40h2v2h-2zM27,44h2v2h-2zM31,44h2v2h-2z" />
+                <Path Fill="#4D7C94" Data="M25,30h2v2h-2zM33,30h2v2h-2z" />
+                <Path Fill="#63B9E3" Data="M23,28h2v4h-2zM35,28h2v4h-2zM25,32h2v2h-2zM33,32h2v2h-2zM23,44h2v2h-2zM35,44h2v2h-2zM25,46h2v2h-2zM33,46h2v2h-2z" />
+                <Path Fill="#7D8095" Data="M19,38h2v2h-2zM39,38h2v2h-2zM23,40h2v4h-2zM35,40h2v4h-2zM21,42h2v2h-2zM25,42h2v2h-2zM33,42h2v2h-2zM37,42h2v2h-2z" />
+                <Path Fill="#D13831" Data="M23,14h2v4h-2zM35,14h2v4h-2zM19,20h4v2h-4zM37,20h4v2h-4zM19,22h2v2h-2zM39,22h2v2h-2zM19,32h2v4h-2zM39,32h2v4h-2zM23,36h4v2h-4zM33,36h4v2h-4z" />
+                <Path Fill="#D6D8DE" Data="M21,38h2v4h-2zM27,38h2v2h-2zM31,38h2v2h-2zM37,38h2v4h-2zM29,40h2v4h-2zM27,42h2v2h-2zM31,42h2v2h-2zM25,44h2v2h-2zM33,44h2v2h-2z" />
+                <Path Fill="#EC6A42" Data="M19,44h2v4h-2zM39,44h2v4h-2z" />
+            </Canvas>
+        </Canvas>
+    </Viewbox>
+</Window>

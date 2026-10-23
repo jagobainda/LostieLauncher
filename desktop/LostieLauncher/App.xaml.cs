@@ -70,30 +70,47 @@ public partial class App : Application
         var updateService = Services.GetRequiredService<IUpdateService>();
         _ = Task.Run(() => updateService.CheckForUpdatesAsync(notifyWhenUpToDate: false));
 
-        var mainWindow = Services.GetRequiredService<MainWindow>();
+        var mainViewModel = Services.GetRequiredService<MainViewModel>();
 
         InitializeTrayIcon();
 
         if (StartupWindowPolicy.ShouldShowOnStartup(SettingsViewModel.Instance.StartMinimized, SettingsViewModel.Instance.HasSeenWelcome))
         {
-            mainWindow.Show();
+            var splash = new SplashWindow(() => ShowMainWindow(mainViewModel));
+            splash.Closed += (_, _) => CompleteStartup();
+            splash.Show();
         }
         else
         {
+            Services.GetRequiredService<MainWindow>();
             Logs.DebugLogManager("Window kept hidden on startup (StartMinimized).");
+            CompleteStartup();
         }
+
+        base.OnStartup(e);
+    }
+
+    private static void ShowMainWindow(MainViewModel mainViewModel)
+    {
+        var mainWindow = Services.GetRequiredService<MainWindow>();
 
         if (!SettingsViewModel.Instance.HasSeenWelcome)
         {
             Logs.InfoLogManager("First launch detected — navigating to library and showing welcome dialog.");
-            var mainViewModel = Services.GetRequiredService<MainViewModel>();
             mainViewModel.NavigateToLibraryCommand.Execute(null);
-            SettingsViewModel.Instance.MarkWelcomeSeen();
-            WelcomeDialog.Show(mainWindow);
-            Logs.InfoLogManager("Welcome dialog shown.");
         }
 
-        base.OnStartup(e);
+        mainWindow.Show();
+    }
+
+    private void CompleteStartup()
+    {
+        if (!SettingsViewModel.Instance.HasSeenWelcome)
+        {
+            SettingsViewModel.Instance.MarkWelcomeSeen();
+            WelcomeDialog.Show(Services.GetRequiredService<MainWindow>());
+            Logs.InfoLogManager("Welcome dialog shown.");
+        }
 
         _startupCompleted = true;
     }

@@ -16,3 +16,10 @@ public enum GameDownloadStatus
     Extracting,
     VerifyingIntegrity
 }
+
+public enum GameCardTakeover
+{
+    InstallStarted,
+    InstallFinished,
+    Uninstalling
+}

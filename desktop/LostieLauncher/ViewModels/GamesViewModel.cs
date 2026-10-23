@@ -21,6 +21,8 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
     private const string HelpFolderName = "ayuda";
     private const string GameExecutableName = "Game.exe";
+    private static readonly TimeSpan DefaultUninstallDeparture = GameCardTakeoverPolicy.EjectLoop + GameCardTakeoverPolicy.TakeoverFade;
+    private readonly TimeSpan _uninstallDeparture;
     private bool _disposed;
 
     public event Action? NavigateToLibraryRequested;
@@ -39,10 +41,16 @@ public partial class GamesViewModel : ObservableObject, IDisposable
     public bool IsListVisible => !IsLoading && InstalledGames.Count > 0;
 
     public GamesViewModel(IContentService contentService, LibraryViewModel libraryViewModel, GlobalViewModel globalViewModel)
+        : this(contentService, libraryViewModel, globalViewModel, DefaultUninstallDeparture)
+    {
+    }
+
+    internal GamesViewModel(IContentService contentService, LibraryViewModel libraryViewModel, GlobalViewModel globalViewModel, TimeSpan uninstallDeparture)
     {
         _contentService = contentService;
         _libraryViewModel = libraryViewModel;
         _globalViewModel = globalViewModel;
+        _uninstallDeparture = uninstallDeparture;
         _libraryViewModel.GameInstalled += OnGameInstalled;
         _ = LoadInstalledGamesAsync(waitForLibrary: true);
     }
@@ -500,6 +508,8 @@ public partial class GamesViewModel : ObservableObject, IDisposable
 
         if (target != null)
         {
+            target.IsDeparting = true;
+            await Task.Delay(_uninstallDeparture);
             target.IsUninstalling = false;
             InstalledGames.Remove(target);
             OnPropertyChanged(nameof(IsEmpty));

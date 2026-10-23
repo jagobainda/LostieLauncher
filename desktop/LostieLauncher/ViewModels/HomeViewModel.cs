@@ -10,6 +10,7 @@ public partial class HomeViewModel : ObservableObject, IDisposable
 {
     private static readonly TimeSpan DefaultBackgroundRefreshInterval = TimeSpan.FromMinutes(2);
     private readonly IContentService _contentService;
+    private readonly ITwitchLiveService _twitchLiveService;
     private readonly SettingsViewModel _settingsViewModel;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly TimeSpan _backgroundRefreshInterval;
@@ -45,6 +46,9 @@ public partial class HomeViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsOutOfDateWarningVisible))]
     public partial bool IsContentStale { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsTwitchLive { get; set; }
+
     public bool IsOutOfDateWarningVisible => IsContentStale && !IsOfflineMode;
 
     public bool IsEmpty => !IsLoading && News.Count == 0 && Notifications.Count == 0;
@@ -52,14 +56,15 @@ public partial class HomeViewModel : ObservableObject, IDisposable
     public bool IsNewsEmpty => !IsLoading && News.Count == 0;
     public bool IsNotificationsEmpty => !IsLoading && Notifications.Count == 0;
 
-    public HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel)
-        : this(contentService, settingsViewModel, DefaultBackgroundRefreshInterval)
+    public HomeViewModel(IContentService contentService, ITwitchLiveService twitchLiveService, SettingsViewModel settingsViewModel)
+        : this(contentService, twitchLiveService, settingsViewModel, DefaultBackgroundRefreshInterval)
     {
     }
 
-    internal HomeViewModel(IContentService contentService, SettingsViewModel settingsViewModel, TimeSpan backgroundRefreshInterval)
+    internal HomeViewModel(IContentService contentService, ITwitchLiveService twitchLiveService, SettingsViewModel settingsViewModel, TimeSpan backgroundRefreshInterval)
     {
         _contentService = contentService;
+        _twitchLiveService = twitchLiveService;
         _settingsViewModel = settingsViewModel;
         _backgroundRefreshInterval = backgroundRefreshInterval;
         _settingsViewModel.PropertyChanged += OnSettingsPropertyChanged;
@@ -92,6 +97,7 @@ public partial class HomeViewModel : ObservableObject, IDisposable
         {
             if (showLoading) IsLoading = true;
 
+            var twitchLive = _twitchLiveService.IsLiveAsync();
             var offlineMode = await _contentService.IsServerActionBlockedAsync(forceRefresh);
             var content = await _contentService.GetHomeContentAsync(forceRefresh);
 
@@ -99,8 +105,9 @@ public partial class HomeViewModel : ObservableObject, IDisposable
             Notifications = new ObservableCollection<NotificationItem>(content.Notifications);
             IsOfflineMode = offlineMode;
             IsContentStale = content.IsStale;
+            IsTwitchLive = await twitchLive;
 
-            Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}. Stale: {content.IsStale}.");
+            Logs.DebugLogManager($"Home content loaded: {content.News.Count} news, {content.Notifications.Count} notifications. Offline mode: {offlineMode}. Stale: {content.IsStale}. Twitch live: {IsTwitchLive}.");
         }
         catch (Exception ex)
         {

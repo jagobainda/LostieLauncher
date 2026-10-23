@@ -28,11 +28,11 @@ public class GamesViewModelTests
     private LibraryViewModel CreateLibrary() => new(_contentService, _settingsService, _downloadService, _globalViewModel, _downloadOptions,
         Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
 
-    private async Task<GamesViewModel> CreateSutAsync()
+    private async Task<GamesViewModel> CreateSutAsync(TimeSpan? uninstallDeparture = null)
     {
         var library = CreateLibrary();
         await library.LibraryLoadedTask;
-        var sut = new GamesViewModel(_contentService, library, _globalViewModel);
+        var sut = new GamesViewModel(_contentService, library, _globalViewModel, uninstallDeparture ?? TimeSpan.Zero);
         // Wait for the constructor's fire-and-forget LoadInstalledGamesAsync to finish.
         await sut.RefreshAsync();
         return sut;
@@ -547,6 +547,23 @@ public class GamesViewModelTests
 
         result.Outcome.ShouldNotBe(UninstallOutcome.GameRunning);
         result.BlockingPath.ShouldBe(exePath);
+    }
+
+    [Fact]
+    public async Task UninstallCoreAsync_KeepsTheDepartingCardListedUntilItsAnimationEnds()
+    {
+        // Arrange
+        _contentService.GetLocalGamesAsync().Returns([TestData.LocalGame(name: "Demo", version: "1.0.0", id: Guid.NewGuid())]);
+        var vm = await CreateSutAsync(uninstallDeparture: Timeout.InfiniteTimeSpan);
+        var game = vm.InstalledGames.Single();
+
+        // Act
+        _ = vm.UninstallCoreAsync("Demo");
+
+        // Assert
+        game.IsDeparting.ShouldBeTrue();
+        game.IsUninstalling.ShouldBeTrue();
+        vm.InstalledGames.ShouldContain(game);
     }
 
     [Fact]

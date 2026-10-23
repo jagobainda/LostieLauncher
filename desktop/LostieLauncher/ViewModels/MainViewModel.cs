@@ -30,6 +30,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsFaqsActive => CurrentViewModel is FaqsViewModel;
     public bool IsSettingsActive => CurrentViewModel is SettingsViewModel;
     public bool IsOfflineMode => _homeViewModel.IsOfflineMode;
+    public bool IsTwitchLive => _homeViewModel.IsTwitchLive;
 
     public MainViewModel(GlobalViewModel globalViewModel, HomeViewModel homeViewModel, GamesViewModel gamesViewModel, LibraryViewModel libraryViewModel, FaqsViewModel faqsViewModel, SettingsViewModel settingsViewModel)
     {
@@ -72,8 +73,22 @@ public partial class MainViewModel : ObservableObject
         _homeViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(HomeViewModel.IsLoading)) RefreshDataCommand.NotifyCanExecuteChanged();
-            if (e.PropertyName == nameof(HomeViewModel.IsOfflineMode)) OnPropertyChanged(nameof(IsOfflineMode));
+            if (e.PropertyName == nameof(HomeViewModel.IsOfflineMode)) OnOfflineModeChanged();
+            if (e.PropertyName == nameof(HomeViewModel.IsTwitchLive)) OnPropertyChanged(nameof(IsTwitchLive));
         };
+    }
+
+    private void OnOfflineModeChanged()
+    {
+        OnPropertyChanged(nameof(IsOfflineMode));
+        if (!IsOfflineMode && !_globalViewModel.IsDownloading) _ = ReloadCatalogueAsync();
+    }
+
+    private async Task ReloadCatalogueAsync()
+    {
+        Logs.InfoLogManager("Maintenance flag cleared. Reloading the catalogue.");
+        await _libraryViewModel.RefreshAsync();
+        await _gamesViewModel.RefreshAsync();
     }
 
     private void UpdateCurrentTitle() => CurrentTitle = CurrentViewModel switch

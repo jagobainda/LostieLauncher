@@ -167,7 +167,15 @@
                     <Button Style="{StaticResource TitleBarButtonStyle}"
                             Command="{Binding OpenTwitchCommand}"
                             ToolTip="Twitch">
-                        <iconPacks:PackIconSimpleIcons Kind="Twitch" Width="14" Height="14" />
+                        <Grid>
+                            <iconPacks:PackIconSimpleIcons Kind="Twitch" Width="14" Height="14" />
+                            <Ellipse Width="6" Height="6"
+                                     Fill="{DynamicResource LiveIndicatorBrush}"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Top"
+                                     Margin="0,-3,-3,0"
+                                     Visibility="{Binding IsTwitchLive, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        </Grid>
                     </Button>
                     <Button Style="{StaticResource TitleBarButtonStyle}"
                             Command="{Binding OpenYouTubeCommand}"

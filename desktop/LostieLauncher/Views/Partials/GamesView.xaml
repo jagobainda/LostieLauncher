@@ -54,6 +54,7 @@
                             UpdateVersion="{Binding UpdateVersion}"
                             IsUpdating="{Binding IsUpdating}"
                             IsUninstalling="{Binding IsUninstalling}"
+                            IsDeparting="{Binding IsDeparting}"
                             PlaytimeText="{Binding PlaytimeText}"
                             HasHelpFolder="{Binding HasHelpFolder}"
                             Tipo="{Binding Tipo}"

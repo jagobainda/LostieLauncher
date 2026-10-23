@@ -14,6 +14,7 @@ public static class DependencyInjection
     private const string FlagEndpoint = "https://cdn.jagoba.dev/ericlostie-launcher/flag.txt";
     private const string DownloadBaseUrl = $"{Endpoints.CdnBaseUrl}/games";
     private const string UpdateFeedUrl = $"{Endpoints.CdnBaseUrl}/public/installer/";
+    private const string TwitchPreviewUrl = "https://static-cdn.jtvnw.net/previews-ttv/live_user_ericlostie-80x45.jpg";
 
     internal static readonly string UserAgent = $"LostieLauncher/{ResolveVersion()}";
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint, FlagEndpoint: FlagEndpoint));
         services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl));
         services.AddSingleton(new UpdateOptions(FeedUrl: UpdateFeedUrl));
+        services.AddSingleton(new TwitchLiveOptions(PreviewUrl: TwitchPreviewUrl));
 
         // Services
         services.AddSingleton<ISettingsService, SettingsService>();
@@ -45,6 +47,7 @@ public static class DependencyInjection
         services.AddSingleton<IUpdateGateway, VelopackUpdateGateway>();
         services.AddSingleton<IUpdateNotifier, WpfUpdateNotifier>();
         services.AddSingleton<IUpdateService, UpdateService>();
+        services.AddSingleton<ITwitchLiveService, TwitchLiveService>();
         services.AddHttpClient("Content", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
@@ -61,6 +64,12 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(20) });
+        services.AddHttpClient("TwitchPreview", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(5);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
+        })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 
         // ViewModels
         services.AddSingleton<GlobalViewModel>();

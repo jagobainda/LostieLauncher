@@ -1,16 +1,115 @@
 using LostieLauncher.Models;
+using MahApps.Metro.IconPacks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace LostieLauncher.Views.Components;
 
 public partial class GameCardComponent : UserControl
 {
+    private static readonly Duration TakeoverEntrance = TimeSpan.FromMilliseconds(600);
+    private static readonly TimeSpan TakeoverHold = TimeSpan.FromMilliseconds(1200);
+    private const double TakeoverTravel = 16;
+
+    private readonly DispatcherTimer _takeoverHoldTimer = new() { Interval = TakeoverHold };
+    private bool _isTakenOver;
+
     public GameCardComponent()
     {
         InitializeComponent();
         UpdateDownloadArgs();
+        _takeoverHoldTimer.Tick += (_, _) =>
+        {
+            _takeoverHoldTimer.Stop();
+            HideTakeover();
+        };
+    }
+
+    private static void OnDownloadStatusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var card = (GameCardComponent)d;
+        if (!card.IsLoaded || GameCardTakeoverPolicy.ForStatusChange((GameDownloadStatus)e.OldValue, (GameDownloadStatus)e.NewValue) is not { } takeover) return;
+
+        card.ShowTakeover(takeover);
+        card._takeoverHoldTimer.Stop();
+        card._takeoverHoldTimer.Start();
+    }
+
+    private static void OnIsUninstallingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var card = (GameCardComponent)d;
+        if ((bool)e.NewValue) card.ShowTakeover(GameCardTakeover.Uninstalling);
+        else card.HideTakeover();
+    }
+
+    private static void OnIsDepartingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if ((bool)e.NewValue) ((GameCardComponent)d).BeginAnimation(OpacityProperty, new DoubleAnimation(0, GameCardTakeoverPolicy.TakeoverFade) { BeginTime = GameCardTakeoverPolicy.EjectLoop });
+    }
+
+    private void ShowTakeover(GameCardTakeover takeover)
+    {
+        _isTakenOver = true;
+        var (kind, brush) = takeover switch
+        {
+            GameCardTakeover.InstallStarted => (PackIconMaterialKind.Download, "PrimaryFgBrush"),
+            GameCardTakeover.InstallFinished => (PackIconMaterialKind.Check, "SuccessBrush"),
+            _ => (PackIconMaterialKind.Eject, "SecondaryFgDimBrush")
+        };
+        TakeoverGlyph.Kind = kind;
+        TakeoverGlyph.SetResourceReference(ForegroundProperty, brush);
+        TakeoverLabel.Visibility = takeover == GameCardTakeover.Uninstalling ? Visibility.Visible : Visibility.Collapsed;
+        CardContent.IsEnabled = false;
+        CardContent.BeginAnimation(OpacityProperty, new DoubleAnimation(0, GameCardTakeoverPolicy.TakeoverFade));
+        TakeoverPanel.BeginAnimation(OpacityProperty, new DoubleAnimation(1, GameCardTakeoverPolicy.TakeoverFade));
+        AnimateGlyph(takeover);
+    }
+
+    private void HideTakeover()
+    {
+        _isTakenOver = false;
+        CardContent.IsEnabled = true;
+        CardContent.BeginAnimation(OpacityProperty, new DoubleAnimation(1, GameCardTakeoverPolicy.TakeoverFade));
+        var fadeOut = new DoubleAnimation(0, GameCardTakeoverPolicy.TakeoverFade);
+        fadeOut.Completed += (_, _) =>
+        {
+            if (!_isTakenOver) ResetGlyph();
+        };
+        TakeoverPanel.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    private void AnimateGlyph(GameCardTakeover takeover)
+    {
+        ResetGlyph();
+        var spring = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 5 };
+
+        switch (takeover)
+        {
+            case GameCardTakeover.InstallStarted:
+                TakeoverGlyphOffset.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-TakeoverTravel, 0, TakeoverEntrance) { EasingFunction = spring });
+                TakeoverGlyph.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, GameCardTakeoverPolicy.TakeoverFade));
+                break;
+            case GameCardTakeover.InstallFinished:
+                var pop = new DoubleAnimation(0, 1, TakeoverEntrance) { EasingFunction = spring };
+                TakeoverGlyphScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+                TakeoverGlyphScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+                break;
+            case GameCardTakeover.Uninstalling:
+                TakeoverGlyphOffset.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, -TakeoverTravel, GameCardTakeoverPolicy.EjectLoop) { RepeatBehavior = RepeatBehavior.Forever });
+                TakeoverGlyph.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, GameCardTakeoverPolicy.EjectLoop) { RepeatBehavior = RepeatBehavior.Forever });
+                break;
+        }
+    }
+
+    private void ResetGlyph()
+    {
+        TakeoverGlyphOffset.BeginAnimation(TranslateTransform.YProperty, null);
+        TakeoverGlyphScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        TakeoverGlyphScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        TakeoverGlyph.BeginAnimation(OpacityProperty, null);
     }
 
     public static readonly DependencyProperty GameLogoProperty = DependencyProperty.Register(nameof(GameLogo), typeof(ImageSource), typeof(GameCardComponent));
@@ -83,7 +182,7 @@ public partial class GameCardComponent : UserControl
 
     private void UpdateDownloadArgs() => DownloadArgs = new GameDownloadArgs(GameId, LatestVersion, RutaRelativa);
 
-    public static readonly DependencyProperty DownloadStatusProperty = DependencyProperty.Register(nameof(DownloadStatus), typeof(GameDownloadStatus), typeof(GameCardComponent), new PropertyMetadata(GameDownloadStatus.Available));
+    public static readonly DependencyProperty DownloadStatusProperty = DependencyProperty.Register(nameof(DownloadStatus), typeof(GameDownloadStatus), typeof(GameCardComponent), new PropertyMetadata(GameDownloadStatus.Available, OnDownloadStatusChanged));
 
     public GameDownloadStatus DownloadStatus
     {
@@ -171,12 +270,20 @@ public partial class GameCardComponent : UserControl
         set => SetValue(IsUpdatingProperty, value);
     }
 
-    public static readonly DependencyProperty IsUninstallingProperty = DependencyProperty.Register(nameof(IsUninstalling), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false));
+    public static readonly DependencyProperty IsUninstallingProperty = DependencyProperty.Register(nameof(IsUninstalling), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false, OnIsUninstallingChanged));
 
     public bool IsUninstalling
     {
         get => (bool)GetValue(IsUninstallingProperty);
         set => SetValue(IsUninstallingProperty, value);
+    }
+
+    public static readonly DependencyProperty IsDepartingProperty = DependencyProperty.Register(nameof(IsDeparting), typeof(bool), typeof(GameCardComponent), new PropertyMetadata(false, OnIsDepartingChanged));
+
+    public bool IsDeparting
+    {
+        get => (bool)GetValue(IsDepartingProperty);
+        set => SetValue(IsDepartingProperty, value);
     }
 
     public static readonly DependencyProperty PlayCommandProperty = DependencyProperty.Register(nameof(PlayCommand), typeof(ICommand), typeof(GameCardComponent));

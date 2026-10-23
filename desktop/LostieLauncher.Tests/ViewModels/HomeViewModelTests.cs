@@ -9,6 +9,7 @@ namespace LostieLauncher.Tests.ViewModels;
 public class HomeViewModelTests
 {
     private readonly IContentService _contentService = Substitute.For<IContentService>();
+    private readonly ITwitchLiveService _twitchLiveService = Substitute.For<ITwitchLiveService>();
     private readonly ISettingsService _settingsService = Substitute.For<ISettingsService>();
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
 
@@ -32,13 +33,31 @@ public class HomeViewModelTests
         var settings = CreateSettings();
 
         // Act
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync(); // serialised via the same gate, so the initial load completes first.
 
         // Assert
         vm.News.Count.ShouldBe(1);
         vm.Notifications.Count.ShouldBe(1);
         vm.IsLoading.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RefreshAsync_PropagatesTwitchLiveStatus(bool isLive)
+    {
+        // Arrange
+        _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
+        _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
+        _twitchLiveService.IsLiveAsync().Returns(isLive);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, CreateSettings());
+
+        // Act
+        await vm.RefreshAsync();
+
+        // Assert
+        vm.IsTwitchLive.ShouldBe(isLive);
     }
 
     [Fact]
@@ -50,7 +69,7 @@ public class HomeViewModelTests
         var settings = CreateSettings();
 
         // Act
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
         // Assert
@@ -64,7 +83,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
         _contentService.ClearReceivedCalls();
 
@@ -82,7 +101,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
         var before = _contentService.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IContentService.GetHomeContentAsync));
 
@@ -102,7 +121,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
         // Act
@@ -120,7 +139,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
         // Act & Assert
@@ -135,7 +154,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         using var recorder = new PropertyChangedRecorder(vm);
 
         // Act
@@ -158,7 +177,7 @@ public class HomeViewModelTests
         // Intervalo por defecto (2 min): el bucle queda esperando el primer tick, así que solo puede
         // terminar por la cancelación de Dispose — nunca por agotar el intervalo. Es la regresión exacta
         // de BUG-019 (antes el bucle era imparable y el `using` del timer nunca disponía).
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
 
         // Act
         vm.Dispose();
@@ -178,7 +197,7 @@ public class HomeViewModelTests
         // El bucle de fondo es el único que pide GetHomeContentAsync(true); la carga inicial usa forceRefresh=false.
         _contentService.When(c => c.GetHomeContentAsync(true)).Do(_ => ticked.TrySetResult());
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings, TimeSpan.FromMilliseconds(20));
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings, TimeSpan.FromMilliseconds(20));
 
         // Act & Assert — el bucle sigue refrescando periódicamente tras añadir la cancelación...
         await ticked.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -196,7 +215,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
         vm.Dispose();
         _contentService.ClearReceivedCalls();
@@ -223,7 +242,7 @@ public class HomeViewModelTests
         var settings = CreateSettings();
 
         // Act
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
         // Assert — the content stays on screen, with a warning that it may be out of date.
@@ -244,7 +263,7 @@ public class HomeViewModelTests
         var settings = CreateSettings();
 
         // Act
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
         // Assert
@@ -262,7 +281,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
         vm.IsContentStale.ShouldBeTrue();
 
@@ -282,7 +301,7 @@ public class HomeViewModelTests
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        var vm = new HomeViewModel(_contentService, settings);
+        var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         vm.Dispose();
 
         // Act
