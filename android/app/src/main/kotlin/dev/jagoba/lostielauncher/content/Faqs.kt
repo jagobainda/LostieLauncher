@@ -1,0 +1,276 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
+package dev.jagoba.lostielauncher.content
+
+import dev.jagoba.lostielauncher.content.strings.CatStrings
+import dev.jagoba.lostielauncher.content.strings.EngStrings
+import dev.jagoba.lostielauncher.content.strings.EspStrings
+import dev.jagoba.lostielauncher.content.strings.EusStrings
+import dev.jagoba.lostielauncher.content.strings.FraStrings
+import dev.jagoba.lostielauncher.content.strings.GalStrings
+import dev.jagoba.lostielauncher.content.strings.PorStrings
+import dev.jagoba.lostielauncher.content.strings.ValStrings
+import dev.jagoba.lostielauncher.model.AppLanguage
+
+private const val KIRIN_FAQ_INDEX = 1
+
+fun faqsFor(language: AppLanguage): List<FaqEntry> = when (language) {
+    AppLanguage.ESP -> EspFaqs
+    AppLanguage.ENG -> EngFaqs
+    AppLanguage.CAT -> CatFaqs
+    AppLanguage.EUS -> EusFaqs
+    AppLanguage.GAL -> GalFaqs
+    AppLanguage.POR -> PorFaqs
+    AppLanguage.VAL -> ValFaqs
+    AppLanguage.FRA -> FraFaqs
+}
+
+fun kirinFaqFor(language: AppLanguage): FaqEntry = faqsFor(language)[KIRIN_FAQ_INDEX]
+
+private val EspFaqs = listOf(
+    FaqEntry(
+        "¿Cómo descargo un juego?",
+        "Ve a la Biblioteca, elige el juego que quieras y pulsa Descargar. Cuando termine la instalación, aparecerá en Mis Juegos listo para jugar.",
+    ),
+    FaqEntry(
+        "¿Por qué necesito Kirin?",
+        "Los juegos están hechos para Windows y Android no puede ejecutarlos por sí solo. Kirin es la aplicación que los abre en Android: el launcher descarga, instala y actualiza los juegos y los añade a la biblioteca de Kirin, que es quien los ejecuta al pulsar Jugar. Hace falta Kirin 0.4.0 o superior, la primera versión que permite a otras aplicaciones añadir juegos a su biblioteca y abrirlos. ${EspStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "¿Dónde se instalan los juegos y cómo cambio la carpeta?",
+        "En Android, los juegos se instalan en la carpeta LostieLauncher del almacenamiento interno y esa carpeta no se puede cambiar. Si desinstalas el launcher, los juegos instalados no se borran: puedes eliminarlos a mano desde esa carpeta.",
+    ),
+    FaqEntry(
+        "¿Perderé mis partidas guardadas al actualizar o desinstalar un juego?",
+        "No. Las partidas guardadas se conservan siempre, tanto al actualizar como al desinstalar un juego.",
+    ),
+    FaqEntry(
+        "¿Qué es una versión especial y cómo la activo?",
+        "Es una versión alternativa de un juego que se desbloquea con una clave con formato XXXX-XXXX-XXXX-XXXX-XXXX. Puedes introducir la clave al descargar el juego o cambiar a la versión especial desde Mis Juegos sin perder nada.",
+    ),
+    FaqEntry(
+        "¿Qué significa el modo offline?",
+        "Significa que el launcher no puede conectar con el servidor, ya sea porque no tienes conexión a internet o porque el servidor está en mantenimiento. Puedes seguir jugando a tus juegos instalados; las descargas, actualizaciones y versiones especiales se reactivarán automáticamente cuando vuelva la conexión.",
+    ),
+    FaqEntry(
+        "He encontrado un error, ¿dónde lo reporto?",
+        "Abre un issue en el repositorio de GitHub del launcher contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.",
+    ),
+)
+
+private val EngFaqs = listOf(
+    FaqEntry(
+        "How do I download a game?",
+        "Go to the Library, pick the game you want and press Download. Once the installation finishes, it will appear in My Games ready to play.",
+    ),
+    FaqEntry(
+        "Why do I need Kirin?",
+        "The games are made for Windows, and Android cannot run them on its own. Kirin is the app that runs them on Android: the launcher downloads, installs and updates the games and adds them to Kirin's library, and Kirin runs them when you press Play. Kirin 0.4.0 or later is required, as it is the first version that lets other apps add games to its library and open them. ${EngStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "Where are games installed and how do I change the folder?",
+        "On Android, games are installed in the LostieLauncher folder of the internal storage, and that folder cannot be changed. If you uninstall the launcher, the installed games are not removed: you can delete them manually from that folder.",
+    ),
+    FaqEntry(
+        "Will I lose my saved games when updating or uninstalling a game?",
+        "No. Saved games are always kept, both when updating and when uninstalling a game.",
+    ),
+    FaqEntry(
+        "What is a special version and how do I activate it?",
+        "It is an alternative version of a game unlocked with a key in the format XXXX-XXXX-XXXX-XXXX-XXXX. You can enter the key when downloading the game or switch to the special version from My Games without losing anything.",
+    ),
+    FaqEntry(
+        "What does offline mode mean?",
+        "It means the launcher can't reach the server, either because you have no internet connection or because the server is under maintenance. You can keep playing your installed games; downloads, updates and special versions will reactivate automatically when the connection returns.",
+    ),
+    FaqEntry(
+        "I found a bug, where do I report it?",
+        "Open an issue in the launcher's GitHub repository explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.",
+    ),
+)
+
+private val CatFaqs = listOf(
+    FaqEntry(
+        "Com descarrego un joc?",
+        "Ves a la Biblioteca, tria el joc que vulguis i prem Descarregar. Quan acabi la instal·lació, apareixerà a Els meus jocs a punt per jugar.",
+    ),
+    FaqEntry(
+        "Per què necessito Kirin?",
+        "Els jocs estan fets per a Windows i Android no els pot executar per si sol. Kirin és l'aplicació que els obre a Android: el launcher descarrega, instal·la i actualitza els jocs i els afegeix a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seva biblioteca i obrir-los. ${CatStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "On s'instal·len els jocs i com canvio la carpeta?",
+        "A Android, els jocs s'instal·len a la carpeta LostieLauncher de l'emmagatzematge intern i aquesta carpeta no es pot canviar. Si desinstal·les el launcher, els jocs instal·lats no s'esborren: pots eliminar-los a mà des d'aquesta carpeta.",
+    ),
+    FaqEntry(
+        "Perdré les meves partides desades en actualitzar o desinstal·lar un joc?",
+        "No. Les partides desades es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
+    ),
+    FaqEntry(
+        "Què és una versió especial i com l'activo?",
+        "És una versió alternativa d'un joc que es desbloqueja amb una clau amb format XXXX-XXXX-XXXX-XXXX-XXXX. Pots introduir la clau en descarregar el joc o canviar a la versió especial des d'Els meus jocs sense perdre res.",
+    ),
+    FaqEntry(
+        "Què significa el mode offline?",
+        "Significa que el launcher no pot connectar amb el servidor, ja sigui perquè no tens connexió a internet o perquè el servidor està en manteniment. Pots seguir jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan torni la connexió.",
+    ),
+    FaqEntry(
+        "He trobat un error, on el reporto?",
+        "Obre un issue al repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.",
+    ),
+)
+
+private val EusFaqs = listOf(
+    FaqEntry(
+        "Nola deskargatzen dut joko bat?",
+        "Joan Liburutegira, aukeratu nahi duzun jokoa eta sakatu Deskargatu. Instalazioa amaitzean, Nire Jokoak atalean agertuko da jolasteko prest.",
+    ),
+    FaqEntry(
+        "Zergatik behar dut Kirin?",
+        "Jokoak Windows-erako eginda daude, eta Android-ek ezin ditu bere kabuz exekutatu. Kirin da Android-en jokoak irekitzen dituen aplikazioa: launcher-ak jokoak deskargatu, instalatu eta eguneratzen ditu eta Kirin-en liburutegira gehitzen ditu, eta Kirin-ek exekutatzen ditu Jolastu sakatzean. Kirin 0.4.0 edo berriagoa behar da, beste aplikazioei bere liburutegira jokoak gehitzen eta irekitzen uzten dien lehen bertsioa baita. ${EusStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "Non instalatzen dira jokoak eta nola aldatzen dut karpeta?",
+        "Android-en, jokoak barneko biltegiratzeko LostieLauncher karpetan instalatzen dira, eta karpeta hori ezin da aldatu. Launcher-a desinstalatzen baduzu, instalatutako jokoak ez dira ezabatzen: karpeta horretatik eskuz ezaba ditzakezu.",
+    ),
+    FaqEntry(
+        "Gordetako partidak galduko ditut joko bat eguneratzean edo desinstalatzean?",
+        "Ez. Gordetako partidak beti mantentzen dira, bai eguneratzean bai desinstalatzean.",
+    ),
+    FaqEntry(
+        "Zer da bertsio berezi bat eta nola aktibatzen dut?",
+        "Jokoaren bertsio alternatibo bat da, XXXX-XXXX-XXXX-XXXX-XXXX formatuko gako batekin desblokeatzen dena. Gakoa jokoa deskargatzean sar dezakezu, edo bertsio berezira aldatu Nire Jokoak ataletik ezer galdu gabe.",
+    ),
+    FaqEntry(
+        "Zer esan nahi du offline moduak?",
+        "Launcher-a zerbitzariarekin konektatu ezin dela esan nahi du, interneteko konexiorik ez duzulako edo zerbitzaria mantentze-lanetan dagoelako. Instalatutako jokoetan jolasten jarrai dezakezu; deskargak, eguneraketak eta bertsio bereziak automatikoki berraktibatuko dira konexioa itzultzean.",
+    ),
+    FaqEntry(
+        "Errore bat aurkitu dut, non jakinarazten dut?",
+        "Ireki issue bat launcher-aren GitHub biltegian, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.",
+    ),
+)
+
+private val GalFaqs = listOf(
+    FaqEntry(
+        "Como descargo un xogo?",
+        "Vai á Biblioteca, escolle o xogo que queiras e preme Descargar. Cando remate a instalación, aparecerá en Os meus xogos listo para xogar.",
+    ),
+    FaqEntry(
+        "Por que necesito Kirin?",
+        "Os xogos están feitos para Windows e Android non pode executalos por si só. Kirin é a aplicación que os abre en Android: o launcher descarga, instala e actualiza os xogos e engádeos á biblioteca de Kirin, que é quen os executa ao premer Xogar. Cómpre Kirin 0.4.0 ou superior, a primeira versión que permite que outras aplicacións engadan xogos á súa biblioteca e os abran. ${GalStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "Onde se instalan os xogos e como cambio o cartafol?",
+        "En Android, os xogos instálanse no cartafol LostieLauncher do almacenamento interno e ese cartafol non se pode cambiar. Se desinstalas o launcher, os xogos instalados non se borran: podes eliminalos a man desde ese cartafol.",
+    ),
+    FaqEntry(
+        "Perderei as miñas partidas gardadas ao actualizar ou desinstalar un xogo?",
+        "Non. As partidas gardadas consérvanse sempre, tanto ao actualizar como ao desinstalar un xogo.",
+    ),
+    FaqEntry(
+        "Que é unha versión especial e como a activo?",
+        "É unha versión alternativa dun xogo que se desbloquea cunha clave co formato XXXX-XXXX-XXXX-XXXX-XXXX. Podes introducir a clave ao descargar o xogo ou cambiar á versión especial desde Os meus xogos sen perder nada.",
+    ),
+    FaqEntry(
+        "Que significa o modo offline?",
+        "Significa que o launcher non pode conectar co servidor, xa sexa porque non tes conexión a internet ou porque o servidor está en mantemento. Podes seguir xogando aos teus xogos instalados; as descargas, actualizacións e versións especiais reactivaranse automaticamente cando volva a conexión.",
+    ),
+    FaqEntry(
+        "Atopei un erro, onde o reporto?",
+        "Abre unha issue no repositorio de GitHub do launcher contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.",
+    ),
+)
+
+private val PorFaqs = listOf(
+    FaqEntry(
+        "Como baixo um jogo?",
+        "Vá à Biblioteca, escolha o jogo que deseja e pressione Baixar. Quando a instalação terminar, ele aparecerá em Meus Jogos pronto para jogar.",
+    ),
+    FaqEntry(
+        "Por que preciso do Kirin?",
+        "Os jogos são feitos para Windows e o Android não consegue executá-los sozinho. O Kirin é o aplicativo que os abre no Android: o launcher baixa, instala e atualiza os jogos e os adiciona à biblioteca do Kirin, que é quem os executa quando você pressiona Jogar. É necessário o Kirin 0.4.0 ou superior, a primeira versão que permite que outros aplicativos adicionem jogos à sua biblioteca e os abram. ${PorStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "Onde os jogos são instalados e como mudo a pasta?",
+        "No Android, os jogos são instalados na pasta LostieLauncher do armazenamento interno e essa pasta não pode ser alterada. Se você desinstalar o launcher, os jogos instalados não são removidos: você pode excluí-los manualmente nessa pasta.",
+    ),
+    FaqEntry(
+        "Vou perder meus saves ao atualizar ou desinstalar um jogo?",
+        "Não. Os saves são sempre mantidos, tanto ao atualizar quanto ao desinstalar um jogo.",
+    ),
+    FaqEntry(
+        "O que é uma versão especial e como a ativo?",
+        "É uma versão alternativa de um jogo desbloqueada com uma chave no formato XXXX-XXXX-XXXX-XXXX-XXXX. Você pode inserir a chave ao baixar o jogo ou mudar para a versão especial em Meus Jogos sem perder nada.",
+    ),
+    FaqEntry(
+        "O que significa o modo offline?",
+        "Significa que o launcher não consegue se conectar ao servidor, seja porque você está sem conexão com a internet ou porque o servidor está em manutenção. Você pode continuar jogando seus jogos instalados; downloads, atualizações e versões especiais serão reativados automaticamente quando a conexão voltar.",
+    ),
+    FaqEntry(
+        "Encontrei um erro, onde o reporto?",
+        "Abra uma issue no repositório do launcher no GitHub contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.",
+    ),
+)
+
+private val ValFaqs = listOf(
+    FaqEntry(
+        "Com descarregue un joc?",
+        "Ves a la Biblioteca, tria el joc que vulgues i prem Descarregar. Quan acabe la instal·lació, apareixerà a Els meus jocs a punt per a jugar.",
+    ),
+    FaqEntry(
+        "Per què necessite Kirin?",
+        "Els jocs estan fets per a Windows i Android no els pot executar per si mateix. Kirin és l'aplicació que els obri en Android: el launcher descarrega, instal·la i actualitza els jocs i els afig a la biblioteca de Kirin, que és qui els executa quan prems Jugar. Cal Kirin 0.4.0 o superior, la primera versió que permet a altres aplicacions afegir jocs a la seua biblioteca i obrir-los. ${ValStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "On s'instal·len els jocs i com canvie la carpeta?",
+        "En Android, els jocs s'instal·len en la carpeta LostieLauncher de l'emmagatzematge intern i eixa carpeta no es pot canviar. Si desinstal·les el launcher, els jocs instal·lats no s'esborren: pots eliminar-los a mà des d'eixa carpeta.",
+    ),
+    FaqEntry(
+        "Perdré les meues partides guardades en actualitzar o desinstal·lar un joc?",
+        "No. Les partides guardades es conserven sempre, tant en actualitzar com en desinstal·lar un joc.",
+    ),
+    FaqEntry(
+        "Què és una versió especial i com l'active?",
+        "És una versió alternativa d'un joc que es desbloqueja amb una clau amb format XXXX-XXXX-XXXX-XXXX-XXXX. Pots introduir la clau en descarregar el joc o canviar a la versió especial des d'Els meus jocs sense perdre res.",
+    ),
+    FaqEntry(
+        "Què significa el mode offline?",
+        "Significa que el launcher no pot connectar amb el servidor, ja siga perquè no tens connexió a internet o perquè el servidor està en manteniment. Pots continuar jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan torne la connexió.",
+    ),
+    FaqEntry(
+        "He trobat un error, on el reporte?",
+        "Obri un issue en el repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.",
+    ),
+)
+
+private val FraFaqs = listOf(
+    FaqEntry(
+        "Comment télécharger un jeu ?",
+        "Allez dans la Bibliothèque, choisissez le jeu souhaité et appuyez sur Télécharger. Une fois l'installation terminée, il apparaîtra dans Mes jeux, prêt à jouer.",
+    ),
+    FaqEntry(
+        "Pourquoi ai-je besoin de Kirin ?",
+        "Les jeux sont conçus pour Windows et Android ne peut pas les exécuter seul. Kirin est l'application qui les ouvre sur Android : le launcher télécharge, installe et met à jour les jeux et les ajoute à la bibliothèque de Kirin, qui les lance quand vous appuyez sur Jouer. Kirin 0.4.0 ou une version ultérieure est nécessaire, car c'est la première version qui permet à d'autres applications d'ajouter des jeux à sa bibliothèque et de les ouvrir. ${FraStrings.kirinThanks}",
+    ),
+    FaqEntry(
+        "Où les jeux sont-ils installés et comment changer de dossier ?",
+        "Sur Android, les jeux sont installés dans le dossier LostieLauncher du stockage interne et ce dossier ne peut pas être modifié. Si vous désinstallez le launcher, les jeux installés ne sont pas supprimés : vous pouvez les effacer manuellement depuis ce dossier.",
+    ),
+    FaqEntry(
+        "Vais-je perdre mes sauvegardes en mettant à jour ou en désinstallant un jeu ?",
+        "Non. Les sauvegardes sont toujours conservées, aussi bien lors d'une mise à jour que d'une désinstallation.",
+    ),
+    FaqEntry(
+        "Qu'est-ce qu'une version spéciale et comment l'activer ?",
+        "C'est une version alternative d'un jeu qui se débloque avec une clé au format XXXX-XXXX-XXXX-XXXX-XXXX. Vous pouvez saisir la clé lors du téléchargement du jeu ou passer à la version spéciale depuis Mes jeux sans rien perdre.",
+    ),
+    FaqEntry(
+        "Que signifie le mode hors ligne ?",
+        "Cela signifie que le launcher ne peut pas se connecter au serveur, soit parce que vous n'avez pas de connexion internet, soit parce que le serveur est en maintenance. Vous pouvez continuer à jouer à vos jeux installés ; les téléchargements, mises à jour et versions spéciales se réactiveront automatiquement au retour de la connexion.",
+    ),
+    FaqEntry(
+        "J'ai trouvé un bug, où le signaler ?",
+        "Ouvrez une issue sur le dépôt GitHub du launcher en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.",
+    ),
+)

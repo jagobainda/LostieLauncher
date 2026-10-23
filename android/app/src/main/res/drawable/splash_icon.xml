@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <group
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                android:translateX="30"
+                android:translateY="30">
+                <group
+                    android:name="ember1"
+                    android:pivotX="6"
+                    android:pivotY="50"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#EC6A42"
+                        android:pathData="M5,49h2v2h-2z" />
+                </group>
+                <group
+                    android:name="ember2"
+                    android:pivotX="54"
+                    android:pivotY="48"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#D13831"
+                        android:pathData="M53,47h2v2h-2z" />
+                </group>
+                <group
+                    android:name="ember3"
+                    android:pivotX="2"
+                    android:pivotY="26"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#D13831"
+                        android:pathData="M1,25h2v2h-2z" />
+                </group>
+                <group
+                    android:name="ember4"
+                    android:pivotX="58"
+                    android:pivotY="22"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#EC6A42"
+                        android:pathData="M57,21h2v2h-2z" />
+                </group>
+                <group
+                    android:name="ember5"
+                    android:pivotX="24"
+                    android:pivotY="6"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#EC6A42"
+                        android:pathData="M23,5h2v2h-2z" />
+                </group>
+                <group
+                    android:name="ember6"
+                    android:pivotX="36"
+                    android:pivotY="8"
+                    android:scaleX="0"
+                    android:scaleY="0">
+                    <path
+                        android:fillColor="#D13831"
+                        android:pathData="M35,7h2v2h-2z" />
+                </group>
+                <group android:name="moth">
+                    <group
+                        android:name="leftWing"
+                        android:pivotX="19"
+                        android:pivotY="32">
+                        <path
+                            android:fillColor="#101010"
+                            android:pathData="M3,8h8v4h-8zM11,10h4v42h-4zM5,12h6v10h-6zM15,12h2v40h-2zM17,14h2v36h-2zM7,22h4v4h-4zM9,26h2v16h-2zM5,30h4v10h-4zM1,32h4v4h-4zM3,36h2v2h-2zM9,48h2v4h-2z" />
+                        <path
+                            android:fillColor="#312F2F"
+                            android:pathData="M9,12h2v2h-2zM13,14h2v2h-2zM13,18h2v2h-2zM9,20h2v2h-2zM9,32h2v2h-2zM11,36h2v2h-2zM15,42h2v2h-2zM13,46h2v2h-2z" />
+                        <path
+                            android:fillColor="#471F1D"
+                            android:pathData="M3,8h8v2h-8zM3,10h2v2h-2zM11,10h4v2h-4zM15,12h2v2h-2zM17,14h2v2h-2zM17,24h2v2h-2zM13,30h2v2h-2zM17,30h2v2h-2zM11,42h2v6h-2zM9,48h2v2h-2z" />
+                        <path
+                            android:fillColor="#763428"
+                            android:pathData="M9,28h2v2h-2zM5,30h4v2h-4zM1,32h4v2h-4z" />
+                        <path
+                            android:fillColor="#D13831"
+                            android:pathData="M5,10h6v2h-6zM7,12h2v10h-2zM11,12h4v2h-4zM9,14h4v4h-4zM15,14h2v2h-2zM9,18h2v2h-2zM17,26h2v4h-2zM17,32h2v2h-2zM13,42h2v4h-2zM15,44h2v6h-2zM17,46h2v2h-2zM11,48h4v2h-4z" />
+                        <path
+                            android:fillColor="#EC6A42"
+                            android:pathData="M15,16h4v4h-4zM11,18h2v10h-2zM13,20h4v4h-4zM9,22h2v4h-2zM13,24h2v6h-2zM11,30h2v6h-2zM5,32h4v6h-4zM13,32h2v8h-2zM3,34h2v2h-2zM9,34h2v6h-2zM15,34h2v4h-2zM17,36h2v2h-2zM11,38h2v2h-2zM15,40h4v2h-4zM17,42h2v4h-2z" />
+                    </group>
+                    <group
+                        android:name="rightWing"
+                        android:pivotX="41"
+                        android:pivotY="32">
+                        <path
+                            android:fillColor="#101010"
+                            android:pathData="M49,8h8v4h-8zM45,10h4v42h-4zM43,12h2v40h-2zM49,12h6v10h-6zM41,14h2v36h-2zM49,22h4v4h-4zM49,26h2v16h-2zM51,30h4v10h-4zM55,32h4v4h-4zM55,36h2v2h-2zM49,48h2v4h-2z" />
+                        <path
+                            android:fillColor="#312F2F"
+                            android:pathData="M49,12h2v2h-2zM45,14h2v2h-2zM45,18h2v2h-2zM49,20h2v2h-2zM49,32h2v2h-2zM47,36h2v2h-2zM43,42h2v2h-2zM45,46h2v2h-2z" />
+                        <path
+                            android:fillColor="#471F1D"
+                            android:pathData="M49,8h8v2h-8zM45,10h4v2h-4zM55,10h2v2h-2zM43,12h2v2h-2zM41,14h2v2h-2zM41,24h2v2h-2zM41,30h2v2h-2zM43,38h2v2h-2zM45,40h2v2h-2zM47,42h2v6h-2zM49,48h2v2h-2z" />
+                        <path
+                            android:fillColor="#763428"
+                            android:pathData="M49,28h2v2h-2zM45,30h2v2h-2zM51,30h4v2h-4zM55,32h4v2h-4z" />
+                        <path
+                            android:fillColor="#D13831"
+                            android:pathData="M49,10h6v2h-6zM45,12h4v2h-4zM51,12h2v10h-2zM43,14h2v2h-2zM47,14h4v4h-4zM49,18h2v2h-2zM41,26h2v4h-2zM41,32h2v2h-2zM45,42h2v4h-2zM43,44h2v6h-2zM41,46h2v2h-2zM45,48h4v2h-4z" />
+                        <path
+                            android:fillColor="#EC6A42"
+                            android:pathData="M41,16h4v4h-4zM47,18h2v10h-2zM43,20h4v4h-4zM49,22h2v4h-2zM45,24h2v6h-2zM47,30h2v6h-2zM45,32h2v8h-2zM51,32h4v6h-4zM43,34h2v4h-2zM49,34h2v6h-2zM55,34h2v2h-2zM41,36h2v2h-2zM47,38h2v2h-2zM41,40h4v2h-4zM41,42h2v4h-2z" />
+                    </group>
+                    <path
+                        android:fillColor="#101010"
+                        android:pathData="M21,12h4v36h-4zM35,12h4v36h-4zM25,14h2v36h-2zM33,14h2v36h-2zM19,16h2v34h-2zM39,16h2v34h-2zM27,18h6v32h-6zM29,50h2v2h-2z" />
+                    <path
+                        android:fillColor="#312F2F"
+                        android:pathData="M25,20h2v2h-2zM33,20h2v2h-2zM23,22h2v2h-2zM35,22h2v2h-2zM21,26h2v6h-2zM37,26h2v6h-2zM23,32h2v2h-2zM27,32h6v4h-6zM35,32h2v2h-2zM29,36h2v2h-2zM25,40h2v2h-2zM33,40h2v2h-2zM29,44h2v6h-2zM27,46h2v2h-2zM31,46h2v2h-2z" />
+                    <path
+                        android:fillColor="#471F1D"
+                        android:pathData="M19,16h2v2h-2zM39,16h2v2h-2zM21,18h4v2h-4zM35,18h4v2h-4zM19,24h2v8h-2zM39,24h2v8h-2zM21,32h2v4h-2zM37,32h2v4h-2zM23,34h4v2h-4zM33,34h4v2h-4z" />
+                    <path
+                        android:fillColor="#4D4A49"
+                        android:pathData="M27,20h6v12h-6zM25,22h2v8h-2zM33,22h2v8h-2zM23,24h2v4h-2zM35,24h2v4h-2zM27,40h2v2h-2zM31,40h2v2h-2zM27,44h2v2h-2zM31,44h2v2h-2z" />
+                    <path
+                        android:fillColor="#4D7C94"
+                        android:pathData="M25,30h2v2h-2zM33,30h2v2h-2z" />
+                    <path
+                        android:fillColor="#63B9E3"
+                        android:pathData="M23,28h2v4h-2zM35,28h2v4h-2zM25,32h2v2h-2zM33,32h2v2h-2zM23,44h2v2h-2zM35,44h2v2h-2zM25,46h2v2h-2zM33,46h2v2h-2z" />
+                    <path
+                        android:fillColor="#7D8095"
+                        android:pathData="M19,38h2v2h-2zM39,38h2v2h-2zM23,40h2v4h-2zM35,40h2v4h-2zM21,42h2v2h-2zM25,42h2v2h-2zM33,42h2v2h-2zM37,42h2v2h-2z" />
+                    <path
+                        android:fillColor="#D13831"
+                        android:pathData="M23,14h2v4h-2zM35,14h2v4h-2zM19,20h4v2h-4zM37,20h4v2h-4zM19,22h2v2h-2zM39,22h2v2h-2zM19,32h2v4h-2zM39,32h2v4h-2zM23,36h4v2h-4zM33,36h4v2h-4z" />
+                    <path
+                        android:fillColor="#D6D8DE"
+                        android:pathData="M21,38h2v4h-2zM27,38h2v2h-2zM31,38h2v2h-2zM37,38h2v4h-2zM29,40h2v4h-2zM27,42h2v2h-2zM31,42h2v2h-2zM25,44h2v2h-2zM33,44h2v2h-2z" />
+                    <path
+                        android:fillColor="#EC6A42"
+                        android:pathData="M19,44h2v4h-2zM39,44h2v4h-2z" />
+                </group>
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="leftWing">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="800"
+                android:interpolator="@android:interpolator/accelerate_decelerate">
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="0.25"
+                        android:value="0.55" />
+                    <keyframe
+                        android:fraction="0.5"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="0.75"
+                        android:value="0.55" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="1" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="rightWing">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="800"
+                android:interpolator="@android:interpolator/accelerate_decelerate">
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="0.25"
+                        android:value="0.55" />
+                    <keyframe
+                        android:fraction="0.5"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="0.75"
+                        android:value="0.55" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="1" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="moth">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="800"
+                android:interpolator="@android:interpolator/accelerate_decelerate">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.25"
+                        android:value="-2" />
+                    <keyframe
+                        android:fraction="0.5"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.75"
+                        android:value="-2" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember1">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="100">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember2">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="200">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember3">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="300">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember4">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="250">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember5">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="400">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+    <target android:name="ember6">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="600"
+                android:interpolator="@android:interpolator/linear_out_slow_in"
+                android:startOffset="350">
+                <propertyValuesHolder
+                    android:propertyName="translateY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="-16" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleX"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+                <propertyValuesHolder
+                    android:propertyName="scaleY"
+                    android:valueType="floatType">
+                    <keyframe
+                        android:fraction="0"
+                        android:value="0" />
+                    <keyframe
+                        android:fraction="0.3"
+                        android:value="1" />
+                    <keyframe
+                        android:fraction="1"
+                        android:value="0" />
+                </propertyValuesHolder>
+            </objectAnimator>
+        </aapt:attr>
+    </target>
+</animated-vector>

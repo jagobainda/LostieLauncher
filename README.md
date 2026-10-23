@@ -1,192 +1,93 @@
 <div align="center">
 
-<div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="45" height="45" alt="LostieLauncher icon" />
-    <h1 style="margin: 20 0;">LostieLauncher</h1>
-</div>
+<img src="android/app/src/main/res/drawable-nodpi/launcher_logo.png" width="80" height="80" alt="LostieLauncher logo" />
+
+# LostieLauncher
+
+Discover, download and play EricLostie's games on **Windows and Android**.
 
 <p align="center">
   <a href="https://lostielauncher.jagoba.dev/">
-    <img src="https://img.shields.io/badge/Download%20Installer-Lostie%20Launcher-blue?style=for-the-badge" alt="Download Lostie Launcher" />
+    <img src="https://img.shields.io/badge/Download-Lostie%20Launcher-blue?style=for-the-badge" alt="Download LostieLauncher for Windows and Android" />
+  </a>
+  <a href="REPORTING.md">
+    <img src="https://img.shields.io/badge/Report%20a%20problem-GitHub-EA580C?style=for-the-badge" alt="Report a problem" />
   </a>
 </p>
 
-**Modern game launcher for Windows**
-
-[![Version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](releases/) [![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=brightgreen&style=flat-square)](https://lostielauncher.jagoba.dev/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
-
-Discover, download, install, and manage your games from a clean interface with multi-language support.
-
-</div>
-
----
-
-> [!TIP]
-> **Thinking about contributing?** Read the [contribution guide](CONTRIBUTING.md) first.
-
----
-
-## ✨ Features
-
-| Feature                       | Description                                                                             |
-| ----------------------------- | --------------------------------------------------------------------------------------- |
-| 🎮 **Game library**           | Browse the full catalog of available games from the content server                      |
-| ⬇️ **Resumable downloads**    | Supports pausing and resuming downloads with `.part` files and a real-time progress bar |
-| 🔑 **Key system**             | Access to exclusive content via download keys validated by the server                   |
-| 🕹️ **My games**               | Dedicated view with installed games, version tracking and playtime                      |
-| 🔄 **Automatic updates**      | Delta updates with [Velopack](https://velopack.io/) — the launcher updates itself       |
-| 📰 **News and notifications** | News feed and announcements from the home screen                                        |
-| ❓ **FAQs**                   | Searchable frequently-asked-questions view with localized, collapsible entries           |
-| 🎨 **Themes**                 | 10 swappable visual themes: **Volcarona**, **Zoroark**, **Infernape**, **Torterra**, **Empoleon**, **Mewtwo**, **Cefireon**, **Sylveon**, **Astrem**, and **Auretoskos** |
-| 🌍 **Multi-language**         | 8 available languages with full UI translations                                         |
-| 💾 **Save shortcut**          | Quick-access button to open the save folder of an installed game                        |
-| 📺 **Social links**           | Direct buttons to open EricLostie's Twitch, YouTube, and Twitter from the main UI       |
-| 🖥️ **System tray**            | Minimize to tray with a context menu (Open / Exit)                                      |
-| 🚀 **Start with Windows**     | Option to launch the launcher on login, in normal or minimized mode                     |
-
----
-
-## 🌍 Supported languages
-
-Español · English · Català · Euskera · Galego · Português · Valencià · Français
-
-The language is selected in the settings and applied dynamically throughout the application.
-
----
-
-> [!NOTE]
-> The following sections are intended for developers.
-
-## 🏗️ Architecture
-
-The project follows the **MVVM** pattern with centralized **Dependency Injection**.
-
-```
-LostieLauncher/
-├── Core/               # DI container configuration
-├── Models/             # Data models
-├── Services/           # Service layer
-├── ViewModels/         # ViewModels with CommunityToolkit.Mvvm
-├── Views/              # Windows, dialogs and WPF components
-│   ├── Components/     # GameCard, NewsCard, NotificationCard, FaqCard (+ skeletons)
-│   ├── Dialogs/        # DownloadConfirmDialog, WelcomeDialog, CustomMessageBox, SpecialVersionDialog
-│   └── Partials/       # GamesView, HomeView, LibraryView, FaqsView, SettingsView
-├── Converters/         # XAML value converters
-├── Styles/             # Global styles
-├── Themes/             # Theme resources
-├── Content/            # Localized strings
-├── Utils/              # Logging and process utilities
-└── Assets/             # Icons and graphic resources
-```
-
-### Main services
-
-| Service                  | Responsibility                                                |
-| ------------------------ | ------------------------------------------------------------- |
-| `IContentService`        | Fetches the game catalog, news, and registers installed games |
-| `IDownloadService`       | Manages downloads, file extraction, and the key system        |
-| `ISettingsService`       | Loads and persists configuration in `launcher_settings.json`  |
-| `IWindowsStartupService` | Integration with the Windows registry for automatic startup   |
-| `IUpdateGateway`         | Seam over the Velopack update manager; checks for app updates  |
-| `IUpdateNotifier`        | Prompts the user to apply/restart via WPF dialogs             |
-| `IUpdateService`         | Orchestrates the update check flow (gateway + notifier)        |
-
-### ViewModels
-
-| ViewModel           | View                                           |
-| ------------------- | ---------------------------------------------- |
-| `MainViewModel`     | Main navigation hub                            |
-| `HomeViewModel`     | Home screen with news and notifications        |
-| `LibraryViewModel`  | Available game catalog and download management |
-| `GamesViewModel`    | Installed games                                |
-| `FaqsViewModel`     | Searchable FAQ list                            |
-| `SettingsViewModel` | Settings panel                                 |
-| `GlobalViewModel`   | Shared global state                            |
-
----
-
-## 🛠️ Technologies
-
-| Package                                                                                                             | Version  | Usage                                             |
-| ------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------- |
-| [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                                 | 8.4.2    | MVVM with `ObservableProperty` and `RelayCommand` |
-| [MahApps.Metro.IconPacks](https://github.com/MahApps/MahApps.Metro.IconPacks)                                       | 6.2.1    | Vector icons in the UI                            |
-| [Microsoft.Extensions.DependencyInjection](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection) | 10.0.10  | IoC container                                     |
-| [Microsoft.Extensions.Http](https://www.nuget.org/packages/Microsoft.Extensions.Http)                               | 10.0.10  | `IHttpClientFactory` with named clients           |
-| [SharpCompress](https://github.com/adamhathcock/sharpcompress)                                                      | 0.50.0   | ZIP/7z extraction of downloaded files             |
-| [Velopack](https://velopack.io/)                                                                                    | 0.0.1298 | Automatic delta update system                     |
-
----
-
-## 🚀 Build and publish
-
-### Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Windows 10/11
-- PowerShell 7+ (for the release script)
-- `vpk` Velopack CLI installed globally
-
-### Development build
-
-```powershell
-cd LostieLauncher
-dotnet build
-```
-
-### Release build (local)
-
-```powershell
-.\scripts\build-release.ps1
-```
-
-Artifacts are generated in `releases/`:
-
-- `LostieLauncher-0.9.1-full.nupkg` — initial installation package
-- Delta packages (on successive builds)
-- `releases.win.json` — update manifest
-- `RELEASES` — Velopack metadata
-
-### Release build with server upload
-
-```powershell
-.\scripts\build-release.ps1 -Upload -SshHost "user@my-server.com" -SshPath "/var/www/installer/"
-```
-
----
-
-## ⚙️ Configuration
-
-Configuration is automatically saved to `launcher_settings.json` in `%APPDATA%\LostieLauncher\` (settings from older versions stored next to the executable are migrated automatically).
-
-Games are installed into `<DownloadDirectory>\LostieLauncher\`, which defaults to `%USERPROFILE%\LostieLauncher\`. The launcher deliberately stays out of Documents (usually OneDrive-synced), out of `%LOCALAPPDATA%` (its own install directory) and out of Downloads (Storage Sense can delete its contents). Before a folder is accepted it must pass a write **and rename** check, because a folder can grant write while refusing the rename that finalizes every download.
-
-| Option              | Type          | Default      | Description                                  |
-| ------------------- | ------------- | ------------ | -------------------------------------------- |
-| `Language`          | `AppLanguage` | `Esp`        | Interface language                           |
-| `Theme`             | `AppTheme`    | `Volcarona`  | Visual theme                                 |
-| `StartWithWindows`  | `bool`        | `false`      | Launch on Windows startup                    |
-| `StartMinimized`    | `bool`        | `false`      | Start in the system tray                     |
-| `AutoUpdate`        | `bool`        | `false`      | Check for updates on startup                 |
-| `DownloadDirectory` | `string`      | `%USERPROFILE%` | Game library root; games are installed into its `LostieLauncher\` subfolder |
-| `HasSeenWelcome`    | `bool`        | `false`      | Controls whether the welcome dialog is shown |
-
----
-
-## 📡 API Endpoints
-
-| Endpoint                                                                 | Description                        |
-| ------------------------------------------------------------------------ | ---------------------------------- |
-| `https://ericlostie-launcher.jagoba.dev/games/listado.json`              | Available game catalog             |
-| `https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json` | Home screen news and notifications |
-| `https://cdn.jagoba.dev/ericlostie-launcher/flag.txt`                     | Maintenance flag (gates server actions) |
-| `https://ericlostie-launcher.jagoba.dev/games`                           | Base URL for downloads             |
-| `https://ericlostie-launcher.jagoba.dev/public/installer/`               | Velopack update feed               |
-
----
-
-<div align="center">
-
-LostieLauncher © 2026
+[![Windows version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](CONTRIBUTING.md#windows-release)
+[![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=1a7f37&style=flat-square)](https://lostielauncher.jagoba.dev/)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-0078D4?style=flat-square)](#platforms)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE.txt)
 
 </div>
+
+## What you can do
+
+- Browse the game catalog and manage your installed games.
+- Download games with pause, resume and progress tracking.
+- Install games and download updates from the launcher.
+- Access special versions with download keys.
+- Read news, announcements and searchable FAQs.
+- Choose from ten themes and eight interface languages.
+
+Available languages: Español · English · Català · Euskera · Galego · Português · Valencià · Français.
+Change your language and theme in Settings; both apply immediately.
+
+## Platforms
+
+| | Windows | Android |
+| --- | --- | --- |
+| Requirements | Windows 10 or 11, 64-bit | Android 8.0 or later, with Kirin installed |
+| Game launch | Launches installed games directly | Launches installed games through Kirin |
+| Downloads | Pause and resume from the launcher | Background downloads with a progress notification |
+| Launcher updates | Velopack updates | Downloads an APK and opens the Android installer |
+| Platform features | Playtime, save-folder shortcut, system tray and start with Windows | Touch interface and Android storage permissions |
+
+The Windows app is the original launcher. Android is in development and
+already supports downloading, installing, updating and launching games.
+The applications have separate versions and release processes.
+
+Android does not track playtime or detect whether a game is running.
+Some installation recovery operations are still incomplete.
+
+### Install
+
+Download LostieLauncher for Windows or Android from the
+[official website](https://lostielauncher.jagoba.dev/).
+
+### Where your games live
+
+On Windows, games go into `%USERPROFILE%\LostieLauncher\` by default.
+You can choose another parent folder in Settings. Launcher settings are stored
+in `%APPDATA%\LostieLauncher\launcher_settings.json`.
+
+On Android, installed games and their library record live in the shared
+`LostieLauncher/` folder and survive uninstalling the launcher. Downloaded
+archives use app storage, which Android removes on uninstall. The download
+location is fixed.
+
+## Problems and suggestions
+
+Something went wrong, or you have an idea? Follow the short
+[reporting guide](REPORTING.md). No programming knowledge is needed.
+
+## Development
+
+This repository contains two applications that share product behavior, with
+separate code and toolchains:
+
+| Project | Stack | Source |
+| --- | --- | --- |
+| Windows | C#, .NET 10, WPF, MVVM | [`desktop/`](desktop/) |
+| Android | Kotlin, Jetpack Compose, Hilt, MVVM | [`android/`](android/) |
+
+The [contribution guide](CONTRIBUTING.md) covers setup, builds, tests and
+release packaging for each platform. It also links the architecture rules
+and the maintained sources for configuration and dependencies.
+
+Coding assistants should start with [AGENTS.md](AGENTS.md).
+
+## License
+
+The launcher source is available under the [MIT License](LICENSE.txt).

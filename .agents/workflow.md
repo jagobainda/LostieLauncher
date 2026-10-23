@@ -1,8 +1,8 @@
 # Workflow and boundaries
 
-Part of the agent guidelines — see [AGENTS.md](../AGENTS.md) for the index and
-the rules that always apply. Read this before branching, committing or opening a
-PR. The authoritative human version is [CONTRIBUTING.md](../CONTRIBUTING.md).
+Read this before branching, committing or opening a PR. The authoritative
+human version is [CONTRIBUTING.md](../CONTRIBUTING.md); shared task rules are
+in [general.md](general.md).
 
 ## Git
 

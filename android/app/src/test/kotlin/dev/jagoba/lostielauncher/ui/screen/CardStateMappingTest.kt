@@ -1,0 +1,106 @@
+package dev.jagoba.lostielauncher.ui.screen
+
+import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.model.LibraryCardStatus
+import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
+import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
+import dev.jagoba.lostielauncher.ui.viewmodel.testDownload
+import dev.jagoba.lostielauncher.ui.viewmodel.testGame
+import io.kotest.matchers.shouldBe
+import java.util.UUID
+import org.junit.jupiter.api.Test
+
+class CardStateMappingTest {
+    private val game = testGame(version = "v2.0")
+
+    @Test
+    fun `downloading library row carries progress speed and remaining time`() {
+        val card = libraryRow(DownloadStatus.DOWNLOADING, LibraryCardStatus.DOWNLOADING).toCardState()
+        card.title shouldBe game.name
+        card.size shouldBe game.formattedSize
+        card.version shouldBe "v2.0"
+        card.progress shouldBe 50f
+        card.speed shouldBe "0.0 KB/s"
+        card.remainingTime shouldBe "10s"
+        card.canPause shouldBe true
+        card.canCancel shouldBe true
+    }
+
+    @Test
+    fun `queued library row waits for a connection without a stale speed`() {
+        val card = libraryRow(DownloadStatus.QUEUED, LibraryCardStatus.DOWNLOADING).toCardState()
+        card.waitingForConnection shouldBe true
+        card.speed shouldBe null
+        card.progress shouldBe 50f
+        libraryRow(DownloadStatus.DOWNLOADING, LibraryCardStatus.DOWNLOADING).toCardState()
+            .waitingForConnection shouldBe false
+    }
+
+    @Test
+    fun `paused library row has no speed and keeps its progress`() {
+        val card = libraryRow(DownloadStatus.PAUSED, LibraryCardStatus.PAUSED).toCardState()
+        card.speed shouldBe null
+        card.progress shouldBe 50f
+        card.canPause shouldBe false
+    }
+
+    @Test
+    fun `library row without transfer starts at zero`() {
+        val row = libraryRow(null, LibraryCardStatus.AVAILABLE)
+        val card = row.copy(download = null).toCardState()
+        card.progress shouldBe 0f
+        card.speed shouldBe null
+        card.canCancel shouldBe false
+    }
+
+    @Test
+    fun `extracting library row carries installation progress separately from the completed download`() {
+        val row = libraryRow(DownloadStatus.COMPLETED, LibraryCardStatus.EXTRACTING)
+            .copy(installation = GameInstallationState.Extracting(37))
+
+        row.toCardState().extractionProgress shouldBe 37f
+        row.copy(installation = GameInstallationState.Extracting()).toCardState().extractionProgress shouldBe null
+    }
+
+    @Test
+    fun `installed row shows the catalogue version only when it is an update`() {
+        installedRow(hasUpdate = true).toCardState().updateVersion shouldBe "v2.0"
+        installedRow(hasUpdate = false).toCardState().updateVersion shouldBe null
+    }
+
+    @Test
+    fun `installed row maps its guards`() {
+        val card = installedRow(hasUpdate = false).copy(isUpdating = true).toCardState()
+        card.title shouldBe "Local Name"
+        card.installedVersion shouldBe "v1.0"
+        card.specialType shouldBe "NUZLOCKE"
+        card.logoUrl shouldBe game.logoUrl
+        card.canPlay shouldBe false
+        card.canSwitchSpecialVersion shouldBe false
+        card.canUninstall shouldBe true
+    }
+
+    private fun libraryRow(status: DownloadStatus?, cardStatus: LibraryCardStatus) = LibraryGameUiState(
+        game = game,
+        installed = null,
+        installedStateKnown = false,
+        hasUpdate = false,
+        download = testDownload(game, status ?: DownloadStatus.PAUSED),
+        installation = null,
+        status = cardStatus,
+        remainingTime = "10s",
+        canStart = cardStatus == LibraryCardStatus.AVAILABLE,
+        canUpdate = false,
+        canSwitchSpecialVersion = true,
+    )
+
+    private fun installedRow(hasUpdate: Boolean) = InstalledGameUiState(
+        game = LocalGame(UUID.randomUUID(), "Local Name", "v1.0", "NUZLOCKE"),
+        remote = game,
+        hasUpdate = hasUpdate,
+        isUpdating = false,
+        isUninstalling = false,
+    )
+}
