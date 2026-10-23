@@ -7,7 +7,7 @@ a whole and for the Android side.
 
 > [!TIP]
 > **Thinking about contributing?** Read the [contribution guide](../CONTRIBUTING.md)
-> first. If you work with a coding assistant, point it at [AGENTS.md](AGENTS.md).
+> first. If you work with a coding assistant, point it at [the root agent index](../AGENTS.md).
 
 > [!IMPORTANT]
 > Every command below runs **from this folder** (`desktop/`), not from the

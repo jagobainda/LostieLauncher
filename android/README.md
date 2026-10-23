@@ -9,21 +9,21 @@ It is a port of the desktop launcher's **behavior**, not of its code. The
 authority on what the app must do is the desktop side, under
 [`../desktop/`](../desktop/); how Android does it is an Android decision.
 
-> **Feature-complete except for games themselves.** Every screen works against
-> the real CDN, but installing and launching a game on Android is an open
-> decision — see [Status](#status) and the
-> [parity report](docs/parity-report.md).
+> **Games install and launch through Kirin.** The client reads the real CDN,
+> verifies and extracts game archives, and registers games for Kirin. Running
+> detection and some recovery operations remain incomplete — see [Status](#status)
+> and the [parity report](docs/parity-report.md).
 
 ## Status
 
 | Piece                                 | State                                                   |
 | ------------------------------------- | ------------------------------------------------------- |
 | Gradle project and app skeleton       | done — builds, runs, tested in CI                       |
-| Architecture guidelines               | done — [AGENTS.md](AGENTS.md) and [.agents/](.agents/)  |
+| Architecture guidelines               | done — [root index](../AGENTS.md) and [.agents/](.agents/)  |
 | CI jobs                               | done — format, build, tests, lint and release build     |
 | Dependency injection graph            | done — one Hilt module per area in `core/di/`           |
 | Theme system                          | done — ten palettes, plus type, spacing, radii, motion  |
-| Text catalogue                        | done — 112 keys and 7 FAQs, in eight languages           |
+| Text catalogue                        | done — string and FAQ catalogues in eight languages           |
 | Domain models and the CDN layer       | done — catalogue, home content, maintenance flag        |
 | Settings storage                      | done — DataStore, live state and debounced writes        |
 | Local game registry                   | done — JSON in the games root, survives a reinstall      |
@@ -35,9 +35,9 @@ authority on what the app must do is the desktop side, under
 | Product screens                       | done — Home, My Games, Library, FAQs and Settings        |
 | Accessibility, offline and logging    | done — reviewed at the end of the port                  |
 | Launcher self-update                  | done — asks, downloads, opens the system installer      |
-| Installing and launching a game       | pending — eleven open questions, [docs/](docs/game-runtime-options.md) |
+| Installing and launching a game       | implemented through Kirin; [remaining limitations](docs/game-runtime-options.md#remaining-limitations) |
 
-What is ported, partial, pending and deliberately not ported, with the reason
+What is implemented, partial and deliberately omitted, with the reason
 for each: [docs/parity-report.md](docs/parity-report.md).
 
 ## The stack, and why
@@ -49,18 +49,18 @@ this table is the reasoning, not the source of truth.
 | --- | --- | --- |
 | Build | Gradle (wrapper, checksum-pinned) + AGP, Kotlin DSL, version catalog | AGP 9 compiles Kotlin itself, so there is no `kotlin-android` plugin anywhere in this build |
 | UI | Jetpack Compose + Material 3 | declarative UI; the desktop's XAML has no Android equivalent worth emulating |
-| DI | Hilt (KSP) | compile-time verified graph, everything a singleton — the desktop's centralized container, constructor injection included |
+| DI | Hilt (KSP) | compile-time verified graph, singleton application services and lifecycle-managed ViewModels, all with constructor injection |
 | HTTP | OkHttp + Retrofit + kotlinx.serialization | the desktop runs three HTTP clients with three different timeouts for three reasons; three `OkHttpClient`s sharing a pool is the direct equivalent, and raw OkHttp handles the resumable, ranged download |
 | Images | Coil 3 (OkHttp fetcher) | the game logos are remote PNGs on the CDN; Coil is the Compose-native loader, and only an HTTPS URL is ever handed to it |
 | Persistence | DataStore (settings) + Room (downloads) + JSON file (local library) | settings are a small typed record; the installed-game registry lives beside the games in shared storage, as `local_games.json` does on the desktop, so it survives reinstalling the app |
 | Navigation | `NavigationStore` (one section value) + `BackHandler`, no navigation library | the launcher has five top-level sections and no back stack, like the desktop; a `NavController` would be a second source of truth beside the store the ViewModels already navigate through |
-| Tests | JUnit 5, MockK, Kotest assertions, Turbine | the closest mapping of the desktop's xUnit + NSubstitute + Shouldly |
+| Tests | JUnit Jupiter (JUnit 6), MockK, Kotest assertions, Turbine | the closest mapping of the desktop's xUnit + NSubstitute + Shouldly |
 | Format gate | Spotless + ktlint | this side's `dotnet format --verify-no-changes` |
 
 **SDK levels:** `compileSdk` and `targetSdk` 37 (Android 17), `minSdk` 26
 (Android 8.0). 26 is what makes `java.time` available without desugaring — the
 content feed's timestamps need real time-zone handling — and brings notification
-channels and adaptive icons, at roughly 96 % of active devices.
+channels and adaptive icons.
 
 ## Building and running
 
@@ -88,15 +88,15 @@ user, work profile or Xiaomi's Second space and Dual apps:
 adb shell pm uninstall dev.jagoba.lostielauncher    # every user on the device
 ```
 
-Requirements: an Android SDK (the build accepts its licences and downloads what
-it is missing) and a JDK between 17 and 26 for `gradlew` to start with.
+Requirements: an Android SDK with the required licences accepted, and a JDK
+capable of starting the pinned Gradle wrapper. SDK/toolchain downloads need
+network access when components are not already installed.
 
-Everything after that is pinned, so a build does not vary by machine: the Gradle
-daemon runs on **Temurin 17** (`gradle/gradle-daemon-jvm.properties`) and the
-code compiles against **17** (a toolchain in `app/build.gradle.kts`). Gradle
-downloads that JDK itself if the machine has none. Both pins matter — a
-JetBrains Runtime, the JDK a JetBrains IDE ships with, is missing `jlink` that
-AGP needs and crashes KSP's worker.
+The Gradle daemon criteria request **Adoptium 17**
+(`gradle/gradle-daemon-jvm.properties`), and the app's toolchain requests Java
+language level **17** without a separate vendor constraint. Preserve both;
+Gradle/Foojay can resolve missing matching JDKs when downloads are available.
+See [build and validation](.agents/build-and-validation.md) for exact CI gates.
 
 ### Signed release APK (maintainer only)
 
@@ -160,7 +160,7 @@ a narrow interface with a thin adapter, and the decision logic moves into a pure
 function in `util/`. The seams include `DispatcherProvider` (threading),
 `Logger`, `java.time.Clock` (so content expiry can be pinned in a test),
 `MaintenanceFlagApi`, the download seams, the settings and library stores, and
-the four game seams in `service/game/`. The rules, including what
+the game-operation interfaces in `service/game/`. The rules, including what
 each layer may depend on: [.agents/architecture.md](.agents/architecture.md).
 
 `util/` is where that pays off. It holds the desktop's decision functions and
@@ -176,7 +176,7 @@ collation, so `instal·lació` and `installació` are the same word, and the FAQ
 filter in Catalan and Valencian is useless without it. The rules were measured
 against .NET rather than inferred, and a differential over the whole shipped
 corpus keeps them honest. Which desktop test cases came across, which did not
-and why: [Desktop test parity](.agents/testing.md#desktop-test-parity-utils).
+and why: [test correspondence](docs/test-parity.md) and [search evidence](docs/search-parity.md).
 
 ### Reading the CDN
 
@@ -193,7 +193,8 @@ its answer is a status code and Retrofit will not let a `@HEAD` return anything
 else. Every URL and every timeout is written in `core/di/NetworkModule.kt` and
 nowhere else.
 
-The layer never throws. A CDN that is down produces an empty catalogue or the
+Transport failures degrade to explicit fallback data, while cancellation is
+preserved. A CDN that is down produces an empty catalogue or the
 last known home content flagged stale, and the maintenance flag fails *open* so
 an unreachable server cannot lock a user out of their own launcher.
 
@@ -212,18 +213,18 @@ runs.
 **Ten palettes**, in `ui/theme/Palettes.kt`, with the desktop's exact values;
 read one with `LocalLauncherColors.current` and never inline a colour.
 Everything that is not a colour — the type scale, the spacing scale, radii,
-border widths, elevation and the four animation durations — is in
+border widths, elevation, opacity and animation durations — is in
 `ui/theme/Tokens.kt` as plain objects, because none of it varies by theme. The
 desktop tokenizes colour and nothing else, so those values are the desktop's
 but the names are this port's.
 
-**Eight languages**, in `content/`, in Kotlin rather than `res/values-xx/`: 112
-string keys and seven FAQ entries each. Read text with `LocalStrings.current`, and
+**Eight languages**, with strings and FAQ entries in `content/`, in Kotlin
+rather than `res/values-xx/`. Read text with `LocalStrings.current`, and
 substitute a placeholder with `withArgs` — never `format`, which resolves to the
 standard library's and quietly does nothing.
 A key missing from a language is a compile error, which is the guarantee the
 desktop gets from having one class per language and the one property that makes
-this worth 900 lines of `override val`.
+this explicit catalogue useful.
 
 Both settings live in `SettingsStore`, whose appearance seam reaches the UI through
 `SettingsViewModel`, so changing either recomposes and never recreates the
@@ -233,9 +234,9 @@ state immediately and rapid writes are coalesced over 500 ms before DataStore
 persists the last snapshot. Stopping the activity flushes a pending snapshot
 immediately from an application-owned scope, with a process lifecycle fallback.
 
-See [.agents/localization-and-themes.md](.agents/localization-and-themes.md),
-which also carries the contrast review list — colours that fail WCAG on the
-desktop values, and what the end-of-port review decided for each.
+See [.agents/localization.md](.agents/localization.md),
+[.agents/themes.md](.agents/themes.md) and the historical
+[palette review](docs/palette-review.md) for the rules and visual decisions.
 
 ## Local persistence
 
@@ -349,7 +350,7 @@ installer opens. That is expected, and nothing in the code works around it.
 
 ## Contributing
 
-[AGENTS.md](AGENTS.md) has the conventions and the pre-PR checklist;
+[The root agent index](../AGENTS.md) links conventions and validation topics;
 [../CONTRIBUTING.md](../CONTRIBUTING.md) has the workflow and the acceptance
 criteria. See [the monorepo README](../README.md) for how the two sides sit
 together.

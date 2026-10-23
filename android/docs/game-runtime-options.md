@@ -1,155 +1,77 @@
-# Android game installation and launch: open decisions
+# Android game runtime
 
-Step 09 defines contracts and inert adapters. It does not install, execute, remove,
-or inspect a game. The existing CDN catalogue describes ZIP archives containing
-Windows games; the desktop expects `Game.exe`. An Android runtime or Android game
-artifact has not been identified. A completed download currently stays an archive
-in the app's download directory, and its Room download row remains `COMPLETED`.
-That state means the transfer finished, not that the game is playable.
+This reference describes the current implementation, checked against
+[GameOperationsModule.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/GameOperationsModule.kt)
+and its adapters. Installation and launch are implemented through Kirin; they
+are no longer an undecided choice among APKs, bundled runtimes and archives.
+This is a source review, not evidence of a fresh device run.
 
-Installation is now implemented for Kirin: `ArchiveGameInstallationService`
-verifies the archive, extracts it into `<shared-storage>/LostieLauncher/<slug>`,
-and registers the directory in `<shared-storage>/Kirin/game-library.json` and
-the local registry, `<shared-storage>/LostieLauncher/local_games.json` (see [../../.docs/integracion-kirin.md](../../.docs/integracion-kirin.md)).
-The shared-storage root is resolved for the current Android user with
-`Environment.getExternalStorageDirectory()` rather than assuming user 0.
-A missing library file is created; one that is not a JSON array is left alone
-and reported as `RegistryFailed`. Launch is implemented by `KirinGameLaunchService`:
-Play resolves `LostieLauncher/<slug>` and sends Kirin's explicit
-`LAUNCH_GAME_SHORTCUT` intent with that directory; a missing directory reports
-`GameNotFound` and an intent Android cannot deliver reports `LaunchFailed`.
-Uninstall deletes `LostieLauncher/<slug>`, removes its entry from Kirin's library
-and the local registry, and reports the desktop outcomes; if nothing could be
-deleted, both registrations remain. Running state is unknown, so uninstall asks
-for the usual confirmation. Running-state detection, opening a partial-uninstall
-blocker and lookup remain pending. Playtime is not tracked on Android (item 6).
+## Current operations
 
-The searchable marker `TODO-ANDROID-GAME-RUNTIME` has exactly eleven numbered
-questions. Each marker occurs once in code, beside the deferred method or handoff.
-The contracts live in `service/game/`, their result types in
-`model/GameOperations.kt`, and Hilt binds the pending implementations in
-`core/di/GameOperationsModule.kt`. Every pending operation logs its invocation
-and returns `NotSupportedYet`; none touches the archive, registry or packages. `InstallDownloadedFileHandoff` is the only completed-download entry
-point. Future presentation code must call these services for game lifecycle
-operations and handle `NotSupportedYet` explicitly.
-
-## Desktop behavior that the seam preserves
-
-| Concern | Desktop behavior | Android contract |
+| Operation | Implementation | Current behavior |
 | --- | --- | --- |
-| Installation | `LibraryViewModel.HandleDownloadSuccessAsync` chooses the catalogue hash or special-version config hash, requires 64 hex characters, hashes the ZIP, deletes it on failure, then marks verification/extraction states. `GameArchiveInstaller` extracts with a path-containment check into `.tmp`, swaps the old folder into `.old`, and registers the GUID, name, version and optional type after extraction. | `GameInstallationService.install(GameInstallationRequest)` distinguishes missing archive, invalid hash, mismatch, extraction failure, registry failure, success and unsupported. The request carries the archive, catalogue GUID, expected hash and variant separately. |
-| Installed lookup | `ContentService.GetLocalGamesAsync` reads the local registry, deduplicates by GUID or case-insensitive name and returns the stored version. `GamesViewModel` joins it to the catalogue to mark updates, including games no longer in the catalogue. | `GameInstallationService.findInstalled(GameTarget)` returns a single installed record with version, absent, or unsupported. `installedGames` exposes the full observable list, including off-catalogue games; the pending adapter emits `NotSupportedYet`. |
-| Uninstall | `GamesViewModel.GetRunningSignal` blocks a tracked live process and warns on a locked executable. `UninstallCoreAsync` retries folder deletion. If nothing was deleted, registration remains; if deletion was partial, registration is removed and the blocking path is reported; a missing folder has its own outcome. | `GameInstallationService.uninstall` retains the five desktop outcomes plus unsupported and an optional opaque blocking location that can be passed to `GameLocationService.openBlockingLocation`. |
-| Launch and running state | `GamesViewModel.Play` checks `Game.exe`, starts it in its own working directory and minimizes the launcher. It tracks the `Process`; a file-lock probe gives a weaker maybe-running signal after the tracked process is gone. | `GameLaunchService.launch` distinguishes launched, missing, failed and unsupported. `runningSignal` preserves stopped, tracked, possible and unsupported as separate values. `activeSessions` exposes a flow for global state; the pending adapter emits `NotSupportedYet` rather than an empty set. |
-| Playtime | On process exit the desktop computes whole elapsed UTC minutes, ignores nonpositive durations and empty GUIDs, records positive minutes through `ContentService.AddPlaytimeAsync`, updates both cards and restores the window. | None. Android does not track playtime (item 6): there is no session service, no Room table and nothing on the cards. |
-| Locations | `GamesViewModel.OpenFolderAsync` opens the game directory, offering a download if it is absent. `OpenHelpFolder` looks for a case-insensitive `ayuda` child; its availability controls the help button. `FolderLauncher` refuses missing directories before asking Explorer to open them. | My Games has no folder or help buttons, so `GameLocationService` only keeps `openBlockingLocation`, which handles an opaque uninstall location. |
+| Install/update | `ArchiveGameInstallationService` | Validates SHA-256, extracts a ZIP, swaps directories, registers in Kirin and the local library |
+| Installed list | `ArchiveGameInstallationService.installedGames` | Publishes the local registry; refreshes at startup, on foreground entry and after install/uninstall |
+| Uninstall | `ArchiveGameInstallationService.uninstall` | Removes or moves the game directory aside, updates both registries, reports missing/blocked/partial removal |
+| Individual lookup | inherited `PendingGameInstallationService.findInstalled` | Returns `NotSupportedYet` |
+| Launch | `KirinGameLaunchService` and `AndroidKirinShortcut` | Checks the game directory and starts Kirin's explicit shortcut intent |
+| Running detection / active sessions | inherited `PendingGameLaunchService` | Reports unsupported, not a known stopped state |
+| Open a partial-uninstall blocker | `PendingGameLocationService` | Reports unsupported |
+| Playtime | no accounting implementation | Not tracked; there is no reliable supported session-end signal |
 
-The desktop implementation is the authority for these details:
-`desktop/LostieLauncher/ViewModels/LibraryViewModel.cs`,
-`desktop/LostieLauncher/ViewModels/GamesViewModel.cs`,
-`desktop/LostieLauncher/Utils/GameArchiveInstaller.cs`,
-`desktop/LostieLauncher/Utils/FileLockProbe.cs`, and
-`desktop/LostieLauncher/Utils/FolderLauncher.cs`.
+Pending classes remain as delegated fallbacks. Their existence does not mean
+all operations are pending. In particular, installed-list loading and individual
+lookup have different implementations.
 
-The installation phase is also observable: `observeInstallation(gameId)` emits
-`NotStarted`, `VerifyingIntegrity`, `Extracting` or `Finished(result)`. The
-pending adapter always emits `Finished(NotSupportedYet)`, so a screen can show
-the unsupported outcome without depending on a transient worker log or a
-particular activity lifetime. Presentation must only show that state for a game
-with a `COMPLETED` download row; the pending adapter cannot infer whether a
-download was attempted from a game id alone. A later real adapter must replay
-its latest phase and terminal result after process recreation.
+## Storage and handoff
 
-## The eleven open items
+[KirinModule.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/KirinModule.kt)
+resolves the current user's shared storage root and configures:
 
-1. **TODO-ANDROID-GAME-RUNTIME-01 — artifact and installation.** Is the CDN to
-   publish Android APKs, game data consumed by a bundled Android runtime, or
-   merely a link to another distribution channel? The present Windows ZIP cannot
-   become an Android app by extraction. Any archive strategy still needs the
-   desktop's expected-hash check and traversal protection, an atomic or
-   recoverable update, sufficient space for archive plus extracted data, and a
-   defined cleanup policy. If games are APKs, package installation is a system
-   transaction with user participation; it is not a folder swap.
-2. **TODO-ANDROID-GAME-RUNTIME-02 — uninstall.** For app-owned game data,
-   decide whether to remove files and the registry record together, and what to
-   report after partial deletion. For a separately installed package, decide
-   whether the launcher requests system uninstall or simply removes its own
-   association. Package removal can require the user's action and may be denied.
-3. **TODO-ANDROID-GAME-RUNTIME-03 — installed identity and version.** Decide
-   whether the registry record, files, Android `PackageManager`, or a combination is
-   authoritative. A stale registry entry cannot prove an APK or files still exist.
-   The catalogue GUID/name and Android package name/version need an explicit
-   mapping. Package queries are filtered on Android 11+ unless appropriate
-   visibility is declared.
-4. **TODO-ANDROID-GAME-RUNTIME-04 — launch.** Decide whether Play opens an
-   installed package via a user-driven intent, enters a runtime bundled with
-   the launcher, or opens an external listing. An arbitrary `Game.exe` has no
-   Android launch target. A worker finishing a download in the background must
-   not silently start an activity; the user should initiate or resume the flow.
-5. **TODO-ANDROID-GAME-RUNTIME-05 — running signal.** A process handle and
-   exclusive executable lock do not exist for another Android app. Decide if a
-   launcher-tracked session is sufficient, if an optional usage-access grant is
-   warranted for a weaker cross-app signal, or if the middle signal disappears.
-   Never report `NOT_RUNNING` simply because visibility or permission is absent.
-6. **TODO-ANDROID-GAME-RUNTIME-06 — playtime.** Decided: Android does not track
-   playtime, and the session contract, the Room table and the card item were
-   removed. Games run inside Kirin, so nothing reliably marks a session's end:
-   Android can kill the launcher while Kirin is foreground, activity callbacks do
-   not prove the game exited, usage events need user-granted access, and any
-   Kirin-specific signal could break with a Kirin update. Reopening this needs a
-   signal Kirin itself guarantees.
-7. **TODO-ANDROID-GAME-RUNTIME-07 — game and help locations.** Decided for
-   My Games: the open-folder and help buttons disappear. The original question
-   was whether they expose app-owned files through a scoped `content://` URI
-   and a document handler, show an in-app help viewer, or disappear. A Windows-style
-   absolute path cannot be passed to an arbitrary Android file manager. If the
-   library moves to a user-selected document tree, access is URI based and its
-   persistence and provider behavior need a separate design.
-8. **TODO-ANDROID-GAME-RUNTIME-08 — durable handoff metadata.** The download
-   table currently stores the slug, display name, version, key and archive path,
-   but not the catalogue GUID, expected SHA-256 or special-version label. The
-   handoff resolves them when the download completes, from the loaded or a
-   freshly fetched catalogue and the special version's `game.config`.
-   Decide how to persist a verified immutable snapshot before enqueuing, recover
-   it after process death, and retry an installation failure without treating a
-   completed download as an installed game. Any future Room schema change needs
-   a migration and exported schema, as step 08 established.
-9. **TODO-ANDROID-GAME-RUNTIME-09 — installation state.** The contract now
-   exposes verification, extraction and terminal outcomes. Decide where a real
-   installer stores and replays them because the download worker may finish
-   while no screen is alive. The pending adapter can replay unsupported without
-   storage; a real adapter must retain per-game terminal state across process
-   recreation.
-10. **TODO-ANDROID-GAME-RUNTIME-10 — help availability.** Decided: the card
-    has no help action, so nothing probes for the desktop's `ayuda` directory.
-11. **TODO-ANDROID-GAME-RUNTIME-11 — partial-uninstall location.** Decide how
-    to identify and expose a blocker after partial removal because it might be
-    an app-owned file, a document URI or a package. The UI receives an opaque
-    `GameLocationReference` and returns it to `GameLocationService`; it does
-    not interpret or open a raw path.
+- games: `LostieLauncher/<slug>`;
+- local registry: `LostieLauncher/local_games.json`;
+- Kirin registry: `Kirin/game-library.json`.
 
-## Approaches and consequences
+These shared files survive launcher uninstall. Archives use the separate,
+app-specific `StorageLocations.downloadsRoot/downloads`, which is removed with
+the app. Logs use private `noBackupFilesDir` storage.
 
-| Approach | Permissions and platform limits | Storage and distribution consequences |
-| --- | --- | --- |
-| Publish each game as an Android package | A launcher that requests APK installation needs the platform's installation flow and, for applicable intents, `REQUEST_INSTALL_PACKAGES`; user consent is required. Querying installed packages requires declared visibility. Launch uses an activity intent, not `Process.Start`. | The archive format, package identity, signing, version mapping, update ownership and uninstall flow all change. Google Play restricts the install permission to qualifying core functionality and prohibits downloading executable dex/JAR/native code outside Play. Store eligibility must be established before choosing this. |
-| Bundle an Android-capable game runtime; download data only | The runtime is part of the app; downloaded data is not executable code. No package-install permission is implied. Session tracking can be inside the app, though lifecycle and process death still matter. | Games must be ported or expressed as data the bundled runtime understands. The existing app-specific external `downloadsRoot` needs no storage permission but is deleted on launcher uninstall and may be unavailable when external storage is unmounted. Play distribution of the runtime and downloaded content needs review against the actual payload. |
-| Use another store, website, or companion app | A user-driven HTTPS link or intent can transfer control without package-install permission. Detecting whether the companion is installed may need package visibility. | The launcher cannot claim that a CDN ZIP is installed. Updates, uninstall and playtime may belong to the other app or store; local download could be unnecessary. Association between catalogue entries and package/listing IDs must be defined. |
-| Keep downloads as archives only | No new permissions or Android execution mechanism. | Step 08 continues to provide a real transfer, but Play, installed status, game uninstall, running detection and automatic playtime remain unsupported. The UI must say the archive is downloaded only. |
+`InstallDownloadedFileHandoff`, in `service/download/DownloadedFileHandoff.kt`,
+resolves the catalogue GUID, expected hash and special-version type when a
+transfer completes. The installer rejects a missing/invalid hash or mismatch,
+extracts under `.tmp` with path-containment checks, moves a previous installation
+to a unique `.old-<UUID>` directory, and cleans old directories in the background.
+A `.nomedia` marker keeps game images out of media scanning.
 
-The step 07 storage decision still governs downloads:
-`StorageLocations.downloadsRoot` is app-specific external storage with an internal
-fallback; there is no picker. App-specific files are removed when the launcher is
-uninstalled. Installed games are not app-specific: the Kirin installation
-extracts them into `<shared-storage>/LostieLauncher` for the current Android user,
-which survives uninstall. Shared documents selected with the Storage Access Framework can
-survive uninstall, but that would be a separate storage migration rather than
-an incidental consequence of installation.
+`KirinGameLibrary` merges entries by path. Kirin launches with the configured
+action, activity and game-path extra in `KirinOptions`. The launcher neither
+executes `Game.exe` itself nor installs each game as an Android package.
 
-## Platform sources checked on 2026-09-23
+## Permissions and runtime setup
 
-- [Android app-specific storage](https://developer.android.com/training/data-storage/app-specific) and [shared documents](https://developer.android.com/training/data-storage/shared/documents-files): permissions, availability, URI-based sharing and uninstall behavior.
-- [PackageInstaller](https://developer.android.com/reference/android/content/pm/PackageInstaller), [alternative distribution](https://developer.android.com/distribute/marketing-tools/alternative-distribution) and [Google Play install-package permission policy](https://support.google.com/googleplay/android-developer/answer/16558241): installation, user choice and distribution limits.
-- [Google Play device and network abuse policy](https://support.google.com/googleplay/android-developer/answer/16559646): limits on executable code downloaded outside Play.
-- [Package visibility](https://developer.android.com/training/package-visibility/declaring), [package launch intents](https://developer.android.com/reference/android/content/pm/PackageManager) and [background activity launch restrictions](https://developer.android.com/guide/components/activities/secure-bal): discovery and launch limits.
-- [UsageStatsManager](https://developer.android.com/reference/android/app/usage/UsageStatsManager): user-granted usage access and event retention.
+The implementation checks shared-storage access through `StorageAccess`:
+all-files access on Android 11+, or legacy write permission on older supported
+versions. User-started install/update waits for that access. Notification
+permission affects progress visibility and is a separate request.
+
+`KirinSetupService` checks server requirements and the installed Kirin version.
+`KirinRequirement` blocks the shell for missing/outdated Kirin; a recommended
+update is nonblocking. Kirin and launcher updates use separate instances of the
+shared APK installer engine, followed by Android's system installation UI.
+
+## Remaining limitations
+
+- Installation phases and terminal results are held in memory, not replayed
+  from durable storage after process recreation.
+- The Room download row does not persist the catalogue GUID, expected SHA-256
+  or resolved special-version type as an immutable enqueue-time snapshot.
+- Per-game installed lookup, running detection and blocker opening remain
+  unsupported as shown above.
+- Installation failure and retry behavior still need a complete recovery
+  contract; a durable `COMPLETED` transfer is not proof of installation.
+- Registry entries provide the installed-list projection; they are not a
+  filesystem validation of every game directory.
+
+The former document referred to eleven numbered runtime TODO markers. Those
+markers are no longer present in production source; use the bindings and the
+limitations above rather than treating that old count as an active checklist.

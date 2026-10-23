@@ -94,6 +94,23 @@ dotnet list LostieLauncher.slnx package --vulnerable --include-transitive
 
 ---
 
+### Android gates
+
+Run from `android/`:
+
+```bash
+./gradlew spotlessCheck
+./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
+```
+
+On Windows use `.\gradlew.bat` with the same tasks. The toolchain and gate
+details are in [Android build and validation](android/.agents/build-and-validation.md).
+The corresponding [desktop document](desktop/.agents/build-and-validation.md)
+also explains the JSON vulnerability check used by CI: a successful NuGet
+report command is insufficient if that report contains vulnerable packages.
+
+---
+
 ## 🧪 Tests
 
 Desktop tests live in `desktop/LostieLauncher.Tests/`, whose folder structure
@@ -109,8 +126,10 @@ Test stack:
 Guidelines:
 
 - Add or update tests for any behavior change.
-- Tests **must not** load XAML, instantiate windows, or use a real `Dispatcher`:
-  they must be able to run on a headless CI agent.
+- Tests **must not** load view XAML, instantiate windows, or pump a real
+  `Dispatcher`. Resource-dependent tests use the shared `WpfApplicationFixture`;
+  theme dictionaries are an existing supported exception. Tests must run on
+  a headless CI agent.
 - The app exposes its internals to the tests via `InternalsVisibleTo`, so you
   can test `internal` types without making them public.
 
@@ -118,11 +137,12 @@ Guidelines:
 
 ## 📦 Dependencies
 
-Dependency updates (NuGet and GitHub Actions) are handled automatically by
+Dependency updates (NuGet, Gradle and GitHub Actions) are handled automatically by
 **Dependabot** through PRs — the `nuget` ecosystem is pointed at `/desktop`,
 where the .NET projects live. Thanks to `.github/CODEOWNERS`, the maintainer is
-automatically assigned as reviewer on those PRs. You don't need to update
-dependencies manually unless your change requires it.
+automatically assigned as reviewer on those PRs. Velopack is excluded from
+automatic updates and maintained manually. You do not need to update
+dependencies unless your change requires it.
 
 ---
 
@@ -154,13 +174,13 @@ Using AI tools as an **assistant** during development is allowed. That said:
   security.
 
 If you work with a coding assistant, point it at [AGENTS.md](AGENTS.md): it is
-the machine-readable version of this guide. It holds the rules that apply across
-the monorepo and routes to the side you are working on —
-[desktop/AGENTS.md](desktop/AGENTS.md) or [android/AGENTS.md](android/AGENTS.md)
-— where the architecture rules, code conventions, testing constraints and the
-exact commands CI runs live. Most agentic tools, Claude Code included, read it
-automatically. Keeping the assistant inside those rules saves you review
-cycles — but it does not transfer responsibility for the result.
+the machine-readable version of this guide. It is the single reading index for
+shared topics in [`.agents/`](.agents/) and platform topics in
+[`desktop/.agents/`](desktop/.agents/) or [`android/.agents/`](android/.agents/).
+The topic files contain architecture rules, code conventions, testing constraints
+and the commands CI runs. Follow the index links explicitly. Keeping the
+assistant inside those rules saves review cycles, but does not transfer
+responsibility for the result.
 
 ---
 

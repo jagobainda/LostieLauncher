@@ -35,21 +35,20 @@ they live side by side:
 | Side                   | Stack                     | Status                                                           |
 | ---------------------- | ------------------------- | ---------------------------------------------------------------- |
 | [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | **Shipping** — the Windows launcher                              |
-| [`android/`](android/) | Kotlin · Compose · MVVM   | **In development** — every screen works; games cannot run yet    |
+| [`android/`](android/) | Kotlin · Compose · MVVM   | **In development** — installs games and launches them through Kirin    |
 
 ```
-├── .agents/            # Global agent rules (workflow, boundaries)
+├── .agents/            # Shared agent rules, organized by topic
 ├── .github/            # CI, Dependabot and CODEOWNERS for both sides
 ├── .editorconfig       # Monorepo baseline only (charset, CRLF, indentation)
 ├── .gitignore          # Covers both sides
-├── AGENTS.md           # Global agent guidelines → routes to each side
+├── AGENTS.md           # Agent index linking shared and platform topics
 ├── CONTRIBUTING.md     # Contribution guide
 ├── LICENSE.txt
 ├── README.md           # This file
 ├── desktop/            # Windows launcher
 │   ├── .agents/        #   Desktop-only agent rules
 │   ├── .editorconfig   #   C#, XAML and MSBuild rules
-│   ├── AGENTS.md       #   Desktop agent index
 │   ├── README.md       #   Architecture, build, configuration, endpoints
 │   ├── global.json     #   Test runner opt-in
 │   ├── LostieLauncher.slnx
@@ -57,9 +56,8 @@ they live side by side:
 │   ├── LostieLauncher.Tests/   # Unit tests
 │   └── scripts/        #   Release packaging (maintainer only)
 └── android/            # Android app — Kotlin, Compose, MVVM
-    ├── .agents/        #   Android-only agent rules (4 topic files)
+    ├── .agents/        #   Android-only agent rules
     ├── .editorconfig   #   Kotlin and Gradle rules
-    ├── AGENTS.md       #   Android index
     ├── README.md       #   Android architecture, stack and build
     ├── build.gradle.kts, settings.gradle.kts, gradle.properties
     ├── gradle/         #   Version catalog + the pinned wrapper

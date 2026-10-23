@@ -1,86 +1,41 @@
-# Code style
+# Android code style
 
-Part of the agent guidelines — see [AGENTS.md](../AGENTS.md) for the index and
-the rules that always apply. Read this before writing or editing any `.kt` or
-`.kts` file.
+[.editorconfig](../.editorconfig) holds IDE settings. The explicit
+`ktlintSettings` map in [build.gradle.kts](../build.gradle.kts) supplies
+Spotless overrides; keep the duplicated settings aligned. Use
+`spotlessApply` to format and `spotlessCheck` to verify.
 
-The formatter decides layout. `./gradlew spotlessApply` rewrites it,
-`spotlessCheck` is the CI gate, and arguing with either is not a use of your
-time. Listed below is what a formatter cannot catch.
+## Kotlin
 
-## Where the formatting rules actually live
-
-Two files, on purpose, and they must be kept in step:
-
-- [`../.editorconfig`](../.editorconfig) — what the IDE reads. Inherits the
-  monorepo baseline at [`../../.editorconfig`](../../.editorconfig) (UTF-8,
-  CRLF, 4-space indent, final newline) and adds the Kotlin rules.
-- The `ktlintSettings` map in [`../build.gradle.kts`](../build.gradle.kts) —
-  what the gate reads. Spotless' ktlint step does not pick up
-  `android/.editorconfig`, with or without `setEditorConfigPath`; it silently
-  falls back to ktlint's defaults. The map is the workaround, and it is
-  commented as one.
-
-Settings worth knowing: ktlint's `intellij_idea` code style (so the IDE's
-default formatting is accepted as-is), `max_line_length = 120`, and
-`@Composable` functions exempted from the lowercase-function-name rule.
-
-## Language usage
-
-- **Immutability by default.** `val` unless mutation is the point, `data class`
-  for models, read-only `List`/`Map` in public signatures. The domain models are
-  immutable and the serialization is separate from them.
-- **Nullability is modelled, not silenced.** No `!!`. Use `?.`, `?:`, `let`, or
-  a `when` that handles null. A `!!` in a diff is a review comment.
-- `sealed interface` for a closed set of states or results; `enum class` where
-  the desktop has an enum, keeping the member order identical so persisted
-  ordinals and combo-box orders line up.
-- Expression bodies where they genuinely read better, block bodies where the
-  expression would need wrapping.
-- Extension functions over utility classes, kept in the package of the type they
-  extend.
-- Visibility is the narrowest that compiles: `private` first, then `internal`.
-  `public` is not written out — it is the default and ktlint's style omits it.
-  **Never widen visibility to make something testable**; unit tests live in the
-  same module and see `internal`.
-- Explicit imports only. No wildcard imports, and no unused ones. Note **which**
-  gate catches which: the Kotlin compiler does not report an unused import at
-  all, so `allWarningsAsErrors` never sees one — `spotlessCheck` fails it,
-  through ktlint. `allWarningsAsErrors` is what turns a deprecation or an
-  unchecked cast into a build break. Running only `assembleDebug` therefore
-  proves nothing about imports; run the formatting gate too.
+- Prefer `val`, immutable domain `data class` values and read-only collection
+  signatures. Keep serialization representations separate from domain models.
+- Model nullability with safe calls, Elvis expressions or exhaustive branches.
+  Do not use `!!` to silence a missing null case.
+- Use `sealed interface` for closed states/results. Preserve enum display order
+  when it is part of the product; settings persist names rather than ordinals.
+- Prefer expression bodies when readable, extension functions where appropriate,
+  and the surrounding code's established pure utility objects.
+- Keep visibility narrow, starting with `private` then `internal`. Omit redundant
+  `public`. Tests already see module internals.
+- Keep explicit, alphabetically ordered imports without wildcard groups.
+  Run the format gate as well as the compiler to catch import problems.
+- Use the configured `intellij_idea` style and 120-character line limit.
+  `@Composable` functions are exempted from lowercase function naming.
 
 ## Compose
 
-- Composables are `PascalCase`, return `Unit`, and take `modifier: Modifier =
-  Modifier` as their first optional parameter.
-- A composable receives **state and lambdas**, not a ViewModel. Only a screen
-  root may call `hiltViewModel()`; everything below it is stateless and
-  previewable.
-- Hoist state to the lowest common owner. `remember` is for what is genuinely
-  local and disposable.
-- **Never inline a colour, a dimension or a font size.** Colours come from
-  `LocalLauncherColors.current`; everything else comes from `ui/theme/Tokens.kt`
-  — `LauncherSpacing`, `LauncherRadii`, `LauncherType`, `LauncherBorders`,
-  `LauncherSizes`, `LauncherMotion`. A literal hex in a composable does not
-  follow the active theme, which is the same bug the desktop's XAML rule
-  prevents, and a literal `12.dp` is a value nobody can trace back to the
-  desktop.
-- **No user-visible literal in a composable.** Text comes from
-  `LocalStrings.current`, and a string with an argument goes through
-  `String.withArgs` from `content/` — **not** `format`, which is a name
-  `kotlin.text` already owns and would silently win. A label written inline is
-  invisible to seven of the eight languages.
+- Composable UI functions use PascalCase, return `Unit`, and take
+  `modifier: Modifier = Modifier` as the first optional parameter.
+- Hoist state to its appropriate owner; `remember` is for local disposable state.
+- Follow [ui.md](ui.md) for ViewModel boundaries, layout and visual tokens.
+  Read [localization.md](localization.md) for catalogue text and `withArgs`.
 
-## Comments and docs
+## Comments and documentation
 
-- **As few comments as possible.** Kotlin on this side is written without
-  comments or KDoc unless one is indispensable, and a file that is edited loses
-  the ones it had. This replaced the earlier "KDoc on every seam" rule during
-  the port; KDoc from steps 03 to 06 survives only in files nobody has edited
-  since. The reasoning lives in these topic files, in `docs/` and in the tests.
-- The exceptions are load-bearing text: the `TODO-ANDROID-GAME-RUNTIME-NN`
-  markers ([game-runtime-options.md](../docs/game-runtime-options.md)), and a
-  short `why` in a build script.
-- Do not leave commented-out code behind.
-- Everything written in English, comments and KDoc included.
+- Keep comments and KDoc only when they explain a necessary constraint or
+  decision. Remove redundant narration when editing; preserve useful rationale
+  rather than deleting comments merely because the file changed.
+- Longer explanations belong in `docs/`. Short build-script explanations may
+  record constraints the configuration itself does not explain.
+- Do not leave commented-out code or obsolete runtime TODO markers behind.
+  Current limitations live in [game runtime](../docs/game-runtime-options.md).

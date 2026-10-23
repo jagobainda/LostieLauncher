@@ -1,135 +1,41 @@
-# Agent guidelines — monorepo
+# Agent documentation index
 
-Instructions for AI coding agents (Claude Code, Codex, Copilot, Cursor, …)
-working in this repository. This file is the **global** index: it holds the
-rules that apply to every change, on either side of the monorepo, and routes you
-to the side you are actually working on.
+Read the documents below before the corresponding work. Follow links explicitly;
+this index does not load their contents. Read the shared rules and only the
+platform documents relevant to the task. Paths are relative to this repository.
 
-This repository holds **two applications that share a product, not a stack**: a
-Windows desktop launcher and an Android app. They have separate builds, separate
-toolchains, separate conventions and separate guidelines. Read the ones for your
-side **before** you write code. The links are plain Markdown on purpose — the
-detail is loaded on demand, not injected into every session — so following them
-is your job, not the tool's.
+## Shared topics
 
-## Pick your side
+| When | Read |
+| --- | --- |
+| Every task | [.agents/general.md](.agents/general.md) |
+| Branching, committing or opening a PR | [.agents/workflow.md](.agents/workflow.md) |
+| Changing application code | [.agents/architecture.md](.agents/architecture.md) |
+| Changing behavior or tests | [.agents/testing.md](.agents/testing.md) |
+| Changing visible text, colors or themes | [.agents/localization-and-themes.md](.agents/localization-and-themes.md) |
+| Changing CI, dependencies or repository configuration | [.agents/infrastructure.md](.agents/infrastructure.md) |
+| Changing documentation or agent instructions | [.agents/documentation.md](.agents/documentation.md) |
 
-| Working on…                                     | Read                                       |
-| ----------------------------------------------- | ------------------------------------------ |
-| the desktop launcher (WPF, .NET 10, C#)         | [desktop/AGENTS.md](desktop/AGENTS.md)     |
-| the Android app (Kotlin, Compose)               | [android/AGENTS.md](android/AGENTS.md)     |
-| branching, committing or opening a PR           | [.agents/workflow.md](.agents/workflow.md) |
+## Platform topics
 
-Each side's `AGENTS.md` is authoritative for that side: its layer rules, its code
-style, its test constraints and the exact commands its CI jobs run. Nothing in
-this file overrides them; it only states what is true regardless of which side
-you are on.
+| When | Desktop (`desktop/`) | Android (`android/`) |
+| --- | --- | --- |
+| Changing application code | [Architecture](desktop/.agents/architecture.md) | [Architecture](android/.agents/architecture.md) |
+| Writing source or build files | [Code style](desktop/.agents/code-style.md) | [Code style](android/.agents/code-style.md) |
+| Changing dependency injection or network configuration | [Architecture](desktop/.agents/architecture.md) | [Dependencies](android/.agents/dependencies.md) |
+| Changing ViewModels, concurrency or lifecycle | [MVVM and threading](desktop/.agents/mvvm-and-threading.md) | [State and lifecycle](android/.agents/state-and-lifecycle.md) |
+| Changing screens, components or dialogs | [MVVM and threading](desktop/.agents/mvvm-and-threading.md) | [UI](android/.agents/ui.md) |
+| Changing downloads, installation or game launch | [Architecture](desktop/.agents/architecture.md) | [Game runtime](android/.agents/game-runtime.md) |
+| Writing or editing tests | [Testing](desktop/.agents/testing.md) | [Testing](android/.agents/testing.md) |
+| Changing visible text | [Localization](desktop/.agents/localization.md) | [Localization](android/.agents/localization.md) |
+| Changing colors, themes or visual tokens | [Themes](desktop/.agents/themes.md) | [Themes](android/.agents/themes.md) |
+| Building, changing build configuration or validating changes | [Build and validation](desktop/.agents/build-and-validation.md) | [Build and validation](android/.agents/build-and-validation.md) |
 
-The human-facing docs are [CONTRIBUTING.md](CONTRIBUTING.md) (workflow and
-acceptance criteria) and [README.md](README.md) (the monorepo and the product).
-Nothing here may contradict them; if it does, they win and the drift is a bug
-worth fixing.
+## Product references
 
-## Repository layout
-
-```
-├── .agents/            # global agent rules (workflow, boundaries)
-│   └── workflow.md     #   git, PR and boundary rules for both sides
-├── .github/            # CI, Dependabot and CODEOWNERS for both sides
-├── .editorconfig       # monorepo baseline only (charset, CRLF, indentation)
-├── .gitattributes      # line endings Git must enforce (gradlew stays LF)
-├── .gitignore          # covers both sides (patterns match at any depth)
-├── AGENTS.md           # this file
-├── CONTRIBUTING.md     # human contribution guide
-├── LICENSE.txt
-├── README.md           # monorepo overview and product landing page
-├── desktop/            # Windows launcher — WPF, .NET 10, C#
-│   ├── .agents/        #   desktop-only agent rules (4 topic files)
-│   ├── .editorconfig   #   C#, XAML and MSBuild rules
-│   ├── AGENTS.md       #   desktop index
-│   ├── README.md       #   desktop architecture, build and configuration
-│   ├── global.json     #   test runner opt-in — see "Where to run commands"
-│   ├── LostieLauncher.slnx
-│   ├── LostieLauncher/         # the app
-│   ├── LostieLauncher.Tests/   # unit tests
-│   └── scripts/        #   release packaging (maintainer only)
-└── android/            # Android app — Kotlin, Compose, MVVM
-    ├── .agents/        #   Android-only agent rules (4 topic files)
-    ├── .editorconfig   #   Kotlin and Gradle rules
-    ├── AGENTS.md       #   Android index
-    ├── README.md       #   Android architecture, stack, build
-    ├── build.gradle.kts, settings.gradle.kts, gradle.properties
-    ├── gradle/         #   libs.versions.toml + the pinned wrapper
-    ├── gradlew(.bat)   #   the wrapper — see "Where to run commands"
-    ├── docs/           #   parity report, open game-runtime decisions, asset licences
-    └── app/            #   the app and its unit tests
-```
-
-## Where to run commands
-
-**Each side's commands run from that side's folder, never from the repository
-root.** This is not a style preference: the configuration that makes them work
-lives inside the folder. On the desktop side, `desktop/global.json` is what opts
-the repo into the Microsoft.Testing.Platform runner, and it is discovered by
-walking up from the **current working directory**. Run `dotnet test` from the
-repository root and it will not be found:
-
-```
-error : Testing with VSTest target is no longer supported by
-Microsoft.Testing.Platform on .NET 10 SDK and later.
-```
-
-That error means you are in the wrong directory, not that anything is broken.
-`cd desktop` first.
-
-The Android side works the same way: the Gradle build, the version catalogue and
-the wrapper all live in `android/`, and `./gradlew` only exists there. `cd
-android` first.
-
-The CI jobs do the same thing, with `working-directory: desktop` on the desktop
-jobs and `working-directory: android` on the Android ones.
-
-## Global non-negotiables
-
-These apply to every change, on both sides, with no topic file to look up:
-
-1. **Everything you write is in English**: code, comments, docs, commits, branch
-   names, PR text.
-2. **Branch off `development`**; PRs target `development`, never `main`. See
-   [.agents/workflow.md](.agents/workflow.md).
-3. **One side per change.** A PR that touches `desktop/` and `android/` together
-   needs a reason. Do not "fix something while you're in there" on the other
-   side — you will be reviewed by someone who only opened the PR for one of them.
-4. **Run that side's full CI gates locally before proposing a change**, from that
-   side's folder. A PR that fails any of them will not be merged.
-5. **Warnings are failures** on both sides.
-6. **Never bump the version** (`<Version>` / `<FileVersion>` / `<AssemblyVersion>`,
-   the Gradle `versionName` / `versionCode`, or the README badges) as part of a
-   feature or fix. Releases are the maintainer's path.
-7. **Stay inside the scope of what was asked.** You assist; the developer opening
-   the PR is responsible for the result. See
-   [Boundaries](.agents/workflow.md#boundaries).
-
-## Shared infrastructure
-
-`.github/` serves both sides, so treat it as shared ground:
-
-- **`workflows/ci.yml`** — five jobs. The three `desktop-*` ones are on
-  `windows-latest` with `working-directory: desktop`; the two `android-*` ones
-  are on `ubuntu-latest` with `working-directory: android`. A new job scopes
-  itself the same way rather than changing the defaults for everyone, and its
-  name starts with its side, so a PR's check list says which side failed.
-- **`dependabot.yml`** — `nuget` points at `/desktop`, `gradle` at `/android`,
-  `github-actions` at `/`. A new ecosystem gets its own entry; do not repoint an
-  existing one.
-- **`CODEOWNERS`** — patterns without a leading slash match at any depth, which
-  is why `*.csproj` still works after the move to `desktop/`, and why
-  `*.gradle.kts` and `libs.versions.toml` are written the same way.
-- **`.editorconfig`** — the root file is the baseline for *every* file in the
-  repository and carries `root = true`. Language rules belong in the side's own
-  `.editorconfig`, which deliberately omits `root` so it inherits. Do not move
-  language rules up to the root file.
-- **`.gitattributes`** — at the repository root, and it exists for one reason:
-  the baseline is CRLF, but `android/gradlew` is a shell script the Linux CI
-  runner executes, so it is forced to LF here regardless of anyone's
-  `core.autocrlf`. Leave that rule alone.
+| Topic | Read |
+| --- | --- |
+| Repository and contribution policy | [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Desktop product, architecture and configuration | [desktop/README.md](desktop/README.md) |
+| Android product, architecture and configuration | [android/README.md](android/README.md) |
+| Android capabilities and remaining limitations | [Parity report](android/docs/parity-report.md), [game runtime](android/docs/game-runtime-options.md) |

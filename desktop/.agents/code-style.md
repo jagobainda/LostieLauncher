@@ -1,7 +1,6 @@
 # Code style
 
-Part of the agent guidelines — see [AGENTS.md](../AGENTS.md) for the index and
-the rules that always apply. Read this before writing or editing any `.cs` file.
+Apply the [shared architecture rules](../../.agents/architecture.md).
 
 [`.editorconfig`](../.editorconfig) is authoritative and `dotnet format`
 enforces it. Listed below are the parts an agent is likely to get wrong; for
