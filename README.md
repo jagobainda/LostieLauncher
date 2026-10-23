@@ -6,9 +6,17 @@
 
 Discover, download and play EricLostie's games on **Windows and Android**.
 
-[**Download for Windows**](https://lostielauncher.jagoba.dev/) · [Build for Android](CONTRIBUTING.md#android) · [Report a problem](REPORTING.md)
+<p align="center">
+  <a href="https://lostielauncher.jagoba.dev/">
+    <img src="https://img.shields.io/badge/Download-Lostie%20Launcher-blue?style=for-the-badge" alt="Download LostieLauncher for Windows and Android" />
+  </a>
+  <a href="REPORTING.md">
+    <img src="https://img.shields.io/badge/Report%20a%20problem-GitHub-EA580C?style=for-the-badge" alt="Report a problem" />
+  </a>
+</p>
 
 [![Windows version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](CONTRIBUTING.md#windows-release)
+[![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=1a7f37&style=flat-square)](https://lostielauncher.jagoba.dev/)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-0078D4?style=flat-square)](#platforms)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE.txt)
 
@@ -40,19 +48,13 @@ The Windows app is the original launcher. Android is in development and
 already supports downloading, installing, updating and launching games.
 The applications have separate versions and release processes.
 
-### Install
-
-On Windows, get the installer from the [download page](https://lostielauncher.jagoba.dev/),
-run it and open LostieLauncher.
-
-For an Android development build, follow the [build instructions](CONTRIBUTING.md#android).
-To install an Android APK, open it and follow the system installation prompts. The
-launcher checks whether Kirin is installed and meets the required version;
-follow its setup instructions before playing. Allow storage access when
-prompted to install games, and notifications to see download progress.
-
 Android does not track playtime or detect whether a game is running.
 Some installation recovery operations are still incomplete.
+
+### Install
+
+Download LostieLauncher for Windows or Android from the
+[official website](https://lostielauncher.jagoba.dev/).
 
 ### Where your games live
 
