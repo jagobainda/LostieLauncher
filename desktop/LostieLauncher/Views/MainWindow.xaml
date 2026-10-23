@@ -152,6 +152,12 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource TitleBarButtonStyle}"
+                        Command="{Binding RefreshDataCommand}"
+                        ToolTip="{Binding Strings.TooltipRefresh, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
+                        Visibility="{Binding IsRefreshVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <iconPacks:PackIconLucide Kind="RefreshCw" Width="14" Height="14" />
+                </Button>
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding IsSettingsActive, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -232,11 +238,6 @@
                                 Command="{Binding OpenSavedGamesCommand}"
                                 ToolTip="Saved Games">
                         <iconPacks:PackIconLucide Kind="Save" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                    <Button Style="{StaticResource NavActionButtonStyle}"
-                            Command="{Binding RefreshDataCommand}"
-                            ToolTip="{Binding Strings.TooltipRefresh, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
-                        <iconPacks:PackIconLucide Kind="RefreshCw" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Bottom">

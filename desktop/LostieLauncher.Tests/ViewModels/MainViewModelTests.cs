@@ -123,6 +123,24 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task IsRefreshVisible_OnlyInHomeGamesAndLibrary()
+    {
+        // Arrange
+        var vm = await CreateSutAsync();
+
+        // Act & Assert
+        vm.IsRefreshVisible.ShouldBeTrue();
+        vm.NavigateToGamesCommand.Execute(null);
+        vm.IsRefreshVisible.ShouldBeTrue();
+        vm.NavigateToLibraryCommand.Execute(null);
+        vm.IsRefreshVisible.ShouldBeTrue();
+        vm.NavigateToFaqsCommand.Execute(null);
+        vm.IsRefreshVisible.ShouldBeFalse();
+        vm.NavigateToSettingsCommand.Execute(null);
+        vm.IsRefreshVisible.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task CurrentViewModelChange_RaisesPropertyChangedForActiveFlags()
     {
         // Arrange

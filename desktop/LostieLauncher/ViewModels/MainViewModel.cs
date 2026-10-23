@@ -22,6 +22,7 @@ public partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsLibraryActive))]
     [NotifyPropertyChangedFor(nameof(IsFaqsActive))]
     [NotifyPropertyChangedFor(nameof(IsSettingsActive))]
+    [NotifyPropertyChangedFor(nameof(IsRefreshVisible))]
     public partial ObservableObject CurrentViewModel { get; set; } = null!;
 
     public bool IsHomeActive => CurrentViewModel is HomeViewModel;
@@ -29,6 +30,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsLibraryActive => CurrentViewModel is LibraryViewModel;
     public bool IsFaqsActive => CurrentViewModel is FaqsViewModel;
     public bool IsSettingsActive => CurrentViewModel is SettingsViewModel;
+    public bool IsRefreshVisible => IsHomeActive || IsGamesActive || IsLibraryActive;
     public bool IsOfflineMode => _homeViewModel.IsOfflineMode;
     public bool IsTwitchLive => _homeViewModel.IsTwitchLive;
 
