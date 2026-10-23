@@ -1,154 +1,91 @@
 <div align="center">
 
-<div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-    <img src="https://ericlostie-launcher.jagoba.dev/public/imgs/logo-launcher.png" width="45" height="45" alt="LostieLauncher icon" />
-    <h1 style="margin: 20 0;">LostieLauncher</h1>
-</div>
+<img src="android/app/src/main/res/drawable-nodpi/launcher_logo.png" width="80" height="80" alt="LostieLauncher logo" />
 
-<p align="center">
-  <a href="https://lostielauncher.jagoba.dev/">
-    <img src="https://img.shields.io/badge/Download%20Installer-Lostie%20Launcher-blue?style=for-the-badge" alt="Download Lostie Launcher" />
-  </a>
-</p>
+# LostieLauncher
 
-**Modern game launcher**
+Discover, download and play EricLostie's games on **Windows and Android**.
 
-[![Version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](desktop/README.md#-build-and-publish) [![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=1a7f37&style=flat-square)](https://lostielauncher.jagoba.dev/) [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows)](https://microsoft.com/windows) [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/) [![WPF](https://img.shields.io/badge/UI-WPF-68217A?style=flat-square)](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/) [![Velopack](https://img.shields.io/badge/updates-Velopack-FFE084?style=flat-square)](https://velopack.io/) [![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey?style=flat-square)](LICENSE.txt)
+[**Download for Windows**](https://lostielauncher.jagoba.dev/) · [Build for Android](CONTRIBUTING.md#android) · [Report a problem](REPORTING.md)
 
-Discover, download, install, and manage your games from a clean interface with multi-language support.
+[![Windows version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](CONTRIBUTING.md#windows-release)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-0078D4?style=flat-square)](#platforms)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE.txt)
 
 </div>
 
----
+## What you can do
 
-> [!TIP]
-> **Thinking about contributing?** Read the [contribution guide](CONTRIBUTING.md) first.
+- Browse the game catalog and manage your installed games.
+- Download games with pause, resume and progress tracking.
+- Install games and download updates from the launcher.
+- Access special versions with download keys.
+- Read news, announcements and searchable FAQs.
+- Choose from ten themes and eight interface languages.
 
----
+Available languages: Español · English · Català · Euskera · Galego · Português · Valencià · Français.
+Change your language and theme in Settings; both apply immediately.
 
-## 📦 Monorepo
+## Platforms
 
-This repository holds **two applications that share a product, not a stack**.
-They have separate builds, separate toolchains and separate conventions, and
-they live side by side:
+| | Windows | Android |
+| --- | --- | --- |
+| Requirements | Windows 10 or 11, 64-bit | Android 8.0 or later, with Kirin installed |
+| Game launch | Launches installed games directly | Launches installed games through Kirin |
+| Downloads | Pause and resume from the launcher | Background downloads with a progress notification |
+| Launcher updates | Velopack updates | Downloads an APK and opens the Android installer |
+| Platform features | Playtime, save-folder shortcut, system tray and start with Windows | Touch interface and Android storage permissions |
 
-| Side                   | Stack                     | Status                                                           |
-| ---------------------- | ------------------------- | ---------------------------------------------------------------- |
-| [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | **Shipping** — the Windows launcher                              |
-| [`android/`](android/) | Kotlin · Compose · MVVM   | **In development** — installs games and launches them through Kirin    |
+The Windows app is the original launcher. Android is in development and
+already supports downloading, installing, updating and launching games.
+The applications have separate versions and release processes.
 
-```
-├── .agents/            # Shared agent rules, organized by topic
-├── .github/            # CI, Dependabot and CODEOWNERS for both sides
-├── .editorconfig       # Monorepo baseline only (charset, CRLF, indentation)
-├── .gitignore          # Covers both sides
-├── AGENTS.md           # Agent index linking shared and platform topics
-├── CONTRIBUTING.md     # Contribution guide
-├── LICENSE.txt
-├── README.md           # This file
-├── desktop/            # Windows launcher
-│   ├── .agents/        #   Desktop-only agent rules
-│   ├── .editorconfig   #   C#, XAML and MSBuild rules
-│   ├── README.md       #   Architecture, build, configuration, endpoints
-│   ├── global.json     #   Test runner opt-in
-│   ├── LostieLauncher.slnx
-│   ├── LostieLauncher/         # The app
-│   ├── LostieLauncher.Tests/   # Unit tests
-│   └── scripts/        #   Release packaging (maintainer only)
-└── android/            # Android app — Kotlin, Compose, MVVM
-    ├── .agents/        #   Android-only agent rules
-    ├── .editorconfig   #   Kotlin and Gradle rules
-    ├── README.md       #   Android architecture, stack and build
-    ├── build.gradle.kts, settings.gradle.kts, gradle.properties
-    ├── gradle/         #   Version catalog + the pinned wrapper
-    ├── gradlew, gradlew.bat
-    ├── docs/           #   Parity report, open game-runtime decisions, asset licences
-    └── app/            #   The app and its unit tests
-```
+### Install
 
-The Android app is a port of the desktop launcher's **behavior**, not of its
-code. The desktop side is the authority on what the product does; how Android
-does it is an Android decision.
+On Windows, get the installer from the [download page](https://lostielauncher.jagoba.dev/),
+run it and open LostieLauncher.
 
-### Working on each side
+For an Android development build, follow the [build instructions](CONTRIBUTING.md#android).
+To install an Android APK, open it and follow the system installation prompts. The
+launcher checks whether Kirin is installed and meets the required version;
+follow its setup instructions before playing. Allow storage access when
+prompted to install games, and notifications to see download progress.
 
-> [!IMPORTANT]
-> **Run each side's commands from that side's folder, never from the repository
-> root.** The configuration that makes them work lives inside the folder:
-> `desktop/global.json` is what opts the repo into the test runner, and it is
-> found by walking up from the current working directory. From the root,
-> `dotnet test` fails with _"Testing with VSTest target is no longer supported"_
-> — that means you are in the wrong directory, not that anything is broken. The
-> same holds on the Android side, where the Gradle build and its wrapper live in
-> `android/`. The CI jobs do the same thing with `working-directory: desktop`
-> and `working-directory: android`.
+Android does not track playtime or detect whether a game is running.
+Some installation recovery operations are still incomplete.
 
-```powershell
-# Desktop — build and run the three CI gates
-cd desktop
-dotnet format LostieLauncher.slnx
-dotnet restore LostieLauncher.slnx
-dotnet build LostieLauncher.slnx --no-restore --configuration Release
-dotnet test  LostieLauncher.slnx --no-build --configuration Release
-dotnet list  LostieLauncher.slnx package --vulnerable --include-transitive
-```
+### Where your games live
 
-```bash
-# Android — format, then build, test, lint and the release build
-cd android
-./gradlew spotlessApply
-./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
-```
+On Windows, games go into `%USERPROFILE%\LostieLauncher\` by default.
+You can choose another parent folder in Settings. Launcher settings are stored
+in `%APPDATA%\LostieLauncher\launcher_settings.json`.
 
-Where the Android port stands against the desktop, and what it still lacks, is
-in [android/docs/parity-report.md](android/docs/parity-report.md).
+On Android, installed games and their library record live in the shared
+`LostieLauncher/` folder and survive uninstalling the launcher. Downloaded
+archives use app storage, which Android removes on uninstall. The download
+location is fixed.
 
-Full detail for each side — architecture, technologies, build and configuration
-— is in [desktop/README.md](desktop/README.md) and
-[android/README.md](android/README.md).
+## Problems and suggestions
 
-| You are…                              | Read                                       |
-| ------------------------------------- | ------------------------------------------ |
-| contributing to the desktop launcher  | [desktop/README.md](desktop/README.md)     |
-| contributing to the Android app       | [android/README.md](android/README.md)     |
-| opening a pull request                | [CONTRIBUTING.md](CONTRIBUTING.md)         |
-| a coding assistant                    | [AGENTS.md](AGENTS.md)                     |
+Something went wrong, or you have an idea? Follow the short
+[reporting guide](REPORTING.md). No programming knowledge is needed.
 
----
+## Development
 
-## ✨ Features
+This repository contains two applications that share product behavior, with
+separate code and toolchains:
 
-| Feature                       | Description                                                                             |
-| ----------------------------- | --------------------------------------------------------------------------------------- |
-| 🎮 **Game library**           | Browse the full catalog of available games from the content server                      |
-| ⬇️ **Resumable downloads**    | Supports pausing and resuming downloads with `.part` files and a real-time progress bar |
-| 🔑 **Key system**             | Access to exclusive content via download keys validated by the server                   |
-| 🕹️ **My games**               | Dedicated view with installed games, version tracking and playtime                      |
-| 🔄 **Automatic updates**      | Delta updates with [Velopack](https://velopack.io/) — the launcher updates itself       |
-| 📰 **News and notifications** | News feed and announcements from the home screen                                        |
-| ❓ **FAQs**                   | Searchable frequently-asked-questions view with localized, collapsible entries           |
-| 🎨 **Themes**                 | 10 swappable visual themes: **Volcarona**, **Zoroark**, **Infernape**, **Torterra**, **Empoleon**, **Mewtwo**, **Cefireon**, **Sylveon**, **Astrem**, and **Auretoskos** |
-| 🌍 **Multi-language**         | 8 available languages with full UI translations                                         |
-| 💾 **Save shortcut**          | Quick-access button to open the save folder of an installed game                        |
-| 📺 **Social links**           | Direct buttons to open EricLostie's Twitch, YouTube, and Twitter from the main UI       |
-| 🖥️ **System tray**            | Minimize to tray with a context menu (Open / Exit)                                      |
-| 🚀 **Start with Windows**     | Option to launch the launcher on login, in normal or minimized mode                     |
+| Project | Stack | Source |
+| --- | --- | --- |
+| Windows | C#, .NET 10, WPF, MVVM | [`desktop/`](desktop/) |
+| Android | Kotlin, Jetpack Compose, Hilt, MVVM | [`android/`](android/) |
 
-The feature set above describes the shipping Windows launcher. It is also the
-target the Android port works towards.
+The [contribution guide](CONTRIBUTING.md) covers setup, builds, tests and
+release packaging for each platform. It also links the architecture rules
+and the maintained sources for configuration and dependencies.
 
----
+Coding assistants should start with [AGENTS.md](AGENTS.md).
 
-## 🌍 Supported languages
+## License
 
-Español · English · Català · Euskera · Galego · Português · Valencià · Français
-
-The language is selected in the settings and applied dynamically throughout the application.
-
----
-
-<div align="center">
-
-LostieLauncher © 2026
-
-</div>
+The launcher source is available under the [MIT License](LICENSE.txt).

@@ -42,5 +42,6 @@ Target one JVM suite while iterating with:
 - A debug APK has an `.debug` application ID suffix. Without
   `keystore.properties`, release assembly is unsigned; with it, the build signs
   and exports the APK. Keep signing credentials outside version control.
-- Release/version changes are the maintainer's workflow in [README.md](../README.md),
+- Release/version changes are the maintainer's workflow in
+  [CONTRIBUTING.md](../../CONTRIBUTING.md#android-release),
   not part of a feature or fix.

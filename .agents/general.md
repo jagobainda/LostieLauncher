@@ -5,7 +5,8 @@
 - Keep changes within the requested scope. Normally work on one application;
   changes to both need a reason, such as a shared documentation reorganization.
 - Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution policy and
-  acceptance. Use the root and platform README files for product context.
+  acceptance. Use the root [README](../README.md) for product context and the
+  contribution guide for platform setup and technical references.
   Report conflicting instructions rather than silently choosing a weaker rule.
 - Do not change application versions or README version badges in a feature or
   fix. Releases belong to the maintainer. The applications have separate versions.

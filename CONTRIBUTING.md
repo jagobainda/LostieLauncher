@@ -4,6 +4,9 @@ Thanks for your interest in contributing to **LostieLauncher**! This document
 summarizes the workflow, conventions, and requirements that any contribution
 must meet to be merged into the project.
 
+**Reporting a problem or suggesting an idea?** Use the short
+[reporting guide](REPORTING.md); you do not need to build the app.
+
 LostieLauncher is a **monorepo** holding two applications that share a product
 but not a stack:
 
@@ -12,9 +15,8 @@ but not a stack:
 | [`desktop/`](desktop/) | WPF · .NET 10 · C# · MVVM | Shipping                |
 | [`android/`](android/) | Kotlin · Compose · MVVM   | In development          |
 
-Before you start, review the [monorepo overview](README.md) and then the README
-of the side you are contributing to — [desktop](desktop/README.md) or
-[android](android/README.md).
+Before you start, review the [product overview](README.md), then follow the
+setup instructions for your platform below.
 
 > [!IMPORTANT]
 > **Run each side's commands from that side's folder, never from the repository
@@ -29,6 +31,86 @@ Keep a pull request to **one side**. A change that touches both `desktop/` and
 in there.
 
 ---
+
+## Development setup
+
+### Windows
+
+Use Windows 10 or 11 and the .NET 10 SDK. From the repository root:
+
+```powershell
+cd desktop
+dotnet build LostieLauncher.slnx
+dotnet run --project LostieLauncher
+```
+
+The development build does not require the release packaging tools.
+
+### Android
+
+Install Android Studio or the Android SDK command-line tools, accept the SDK
+licences and install the SDK requested by
+[`libs.versions.toml`](android/gradle/libs.versions.toml).
+Set `sdk.dir` in the ignored `android/local.properties`, or configure
+`ANDROID_HOME` to point to the SDK.
+
+Use a compatible JDK to start the committed Gradle wrapper. The daemon criteria
+request Adoptium 17, and the app's Java toolchain requests language level 17.
+Gradle/Foojay can download missing matching JDKs when network access is available.
+Keep the daemon criteria and the toolchain settings intact.
+
+From the repository root:
+
+```bash
+cd android
+./gradlew assembleDebug
+./gradlew installDebug
+```
+
+On Windows use `.\gradlew.bat` instead of `./gradlew`. Installation requires
+a connected device or running emulator. The debug APK is written under
+`app/build/outputs/apk/debug/`.
+
+Debug builds install as **Lostie Launcher Dev** (`dev.jagoba.lostielauncher.debug`),
+alongside the release app (`dev.jagoba.lostielauncher`). They use different signing
+keys. Older debug builds used the release package ID; uninstall those before
+installing a release, including copies in secondary users or work profiles.
+A debug build rejects the launcher's release APK during self-update because
+the package IDs differ.
+
+## Technical references
+
+Both apps use MVVM with injected services and pure decision utilities. Desktop
+is the reference for product behavior; Android implements that behavior with
+its own platform services. Use the [agent index](AGENTS.md) to find the shared
+and platform-specific architecture, UI, localization and test rules.
+
+| Topic | Windows | Android |
+| --- | --- | --- |
+| Architecture and layers | [Desktop architecture](desktop/.agents/architecture.md) | [Android architecture](android/.agents/architecture.md) |
+| Dependencies | [Project file](desktop/LostieLauncher/LostieLauncher.csproj) | [Version catalog](android/gradle/libs.versions.toml) |
+| HTTP configuration | [Composition root](desktop/LostieLauncher/Core/DependencyInjection.cs), [endpoints](desktop/LostieLauncher/Core/Endpoints.cs) | [Network module](android/app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/NetworkModule.kt) |
+| Settings | [Defaults](desktop/LostieLauncher/Models/AppSettings.cs) | [DataStore implementation](android/app/src/main/kotlin/dev/jagoba/lostielauncher/service/settings/DataStoreSettingsStore.kt) |
+| Downloads and game launch | [Desktop architecture](desktop/.agents/architecture.md) | [Android game operations](android/.agents/game-runtime.md) |
+| Tests | [Desktop testing](desktop/.agents/testing.md) | [Android testing](android/.agents/testing.md) |
+
+Desktop uses CommunityToolkit.Mvvm, Microsoft dependency injection and named
+HTTP clients, SharpCompress for extraction, and Velopack for launcher updates.
+Android uses Compose and Material 3, Hilt, OkHttp/Retrofit, Coil, DataStore for
+settings, Room and WorkManager for downloads, and a shared JSON game registry.
+Android's five top-level sections use `NavigationStore` without a navigation
+back stack. Dependency versions belong in the build sources linked above.
+
+Android game setup and launcher updates use separate configurations:
+
+- [Kirin module](android/app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/KirinModule.kt):
+  `public/config/kirin-setup-options.json` provides `minimumVersion` and
+  `releaseFeedUrl`. Missing/outdated Kirin blocks setup; recommended updates
+  do not. The fallback minimum is defined in that module.
+- [Update module](android/app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/UpdateModule.kt):
+  `public/android/latest.json` provides `versionName` and `downloadUrl` for
+  launcher updates. The APK installer validates the package and version before
+  handing off to Android, which checks the signing key.
 
 ## 🔀 Git workflow
 
@@ -79,8 +161,9 @@ dotnet build LostieLauncher.slnx --no-restore --configuration Release
 dotnet test  LostieLauncher.slnx --no-build --configuration Release
 ```
 
-> The project treats **warnings as errors** (including `IDE0005` for unused
-> `using`s). A warning will break the build.
+> Repository policy treats warnings as failures. The test project sets
+> `TreatWarningsAsErrors`, and the app escalates `IDE0005` for unused `using`s.
+> Not every compiler warning in the app is automatically a build error.
 
 ### 3. Vulnerable dependencies
 
@@ -89,7 +172,7 @@ with:
 
 ```powershell
 cd desktop
-dotnet list LostieLauncher.slnx package --vulnerable --include-transitive
+dotnet list LostieLauncher.slnx package --vulnerable --include-transitive --format json --output-version 1
 ```
 
 ---
@@ -112,6 +195,11 @@ report command is insufficient if that report contains vulnerable packages.
 ---
 
 ## 🧪 Tests
+
+Android unit tests live in `android/app/src/test/` and use JUnit Jupiter,
+MockK, Kotest assertions and Turbine. See the
+[Android testing rules](android/.agents/testing.md) for coroutine, fixture
+and platform boundaries.
 
 Desktop tests live in `desktop/LostieLauncher.Tests/`, whose folder structure
 mirrors the production project (`Services/`, `ViewModels/`, `Utils/`, `Models/`,
@@ -186,10 +274,72 @@ responsibility for the result.
 
 ## 🐛 Reporting bugs or proposing improvements
 
-Open an **issue** describing the problem or proposal in as much detail as
-possible (steps to reproduce, version, operating system, screenshots if
-applicable). If you're going to work on a large change, discuss it first in an
-issue to agree on the approach.
+Follow [REPORTING.md](REPORTING.md) for a short guide and a copyable example.
+If you're going to work on a large change, discuss it first in an issue to
+agree on the approach.
+
+---
+
+## Release packaging (maintainer only)
+
+The apps have separate versions. Do not change version fields or README
+version badges as part of feature or fix work.
+
+### Windows release
+
+Packaging needs PowerShell 7+ and the Velopack `vpk` CLI installed globally.
+From the repository root:
+
+```powershell
+.\desktop\scripts\build-release.ps1
+```
+
+The script reads the version from the app's project file, publishes a
+self-contained `win-x64` build into `desktop/publish/`, and writes packages
+and update metadata into `desktop/releases/`. Outputs include full/delta
+`.nupkg` packages, `releases.win.json` and `RELEASES`.
+
+For signing and optional server upload, see the parameters and examples in
+[`build-release.ps1`](desktop/scripts/build-release.ps1). Velopack must handle
+signing both the app and its own binaries.
+
+### Android release
+
+Keep the release keystore outside the repository and back it up along with
+its passwords. Every release must use the same key to update installed copies.
+To generate a key once:
+
+```bash
+keytool -genkeypair -v -keystore /path/outside/repository/lostie-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias lostie
+```
+
+Create the ignored `android/keystore.properties`. A relative `storeFile`
+resolves against `android/`:
+
+```properties
+storeFile=C:/path/outside/repository/lostie-release.jks
+storePassword=...
+keyAlias=lostie
+keyPassword=...
+```
+
+From `android/`, run `./gradlew assembleRelease` (`.\gradlew.bat` on Windows).
+With credentials present, Gradle signs `app/build/outputs/apk/release/app-release.apk`
+and copies it to `release/LostieLauncher-<versionName>.apk`.
+Without credentials, as on CI, it builds `app-release-unsigned.apk` and does
+not export it. Use `signingReport` to inspect the variant keys.
+
+Publish in this order:
+
+1. Increase both `versionCode` and `versionName` in
+   [`app/build.gradle.kts`](android/app/build.gradle.kts).
+2. Build the release with the existing release key.
+3. Upload the APK from `android/release/`.
+4. Update `public/android/latest.json` with the new `versionName` and HTTPS
+   `downloadUrl` only after the APK is available.
+
+Self-update compares `versionName`; Android also rejects a downgrade in
+`versionCode`. Changing either alone is insufficient.
 
 ---
 
