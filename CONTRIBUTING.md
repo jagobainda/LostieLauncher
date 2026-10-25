@@ -299,6 +299,11 @@ self-contained `win-x64` build into `desktop/publish/`, and writes packages
 and update metadata into `desktop/releases/`. Outputs include full/delta
 `.nupkg` packages, `releases.win.json` and `RELEASES`.
 
+Pass `-Channel pre` to publish a pre-release build to the same feed. It writes
+`releases.pre.json` and `LostieLauncher-pre-Setup.exe`; installs made with that
+installer update from the `pre` channel, and every other install stays on the
+stable `win` channel.
+
 For signing and optional server upload, see the parameters and examples in
 [`build-release.ps1`](desktop/scripts/build-release.ps1). Velopack must handle
 signing both the app and its own binaries.

@@ -25,12 +25,17 @@
     Remote path on the server (e.g. /var/www/ericlostie-launcher/public/installer/).
     Required when -Upload is set.
 
+.PARAMETER Channel
+    Velopack release channel. Defaults to "win" (stable); use "pre" for pre-release builds.
+    Installs only receive updates from the channel their installer was built for.
+
 .EXAMPLE
     Paths are relative to the repository root of the monorepo.
 
     .\desktop\scripts\build-release.ps1
     .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
     .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
+    .\desktop\scripts\build-release.ps1 -Channel pre
 #>
 
 param(
@@ -38,7 +43,8 @@ param(
     [switch]$Upload,
     [string]$SshHost = "",
     [string]$SshPath = "/var/www/ericlostie-launcher/public/installer/",
-    [string]$CertThumbprint = ""
+    [string]$CertThumbprint = "",
+    [string]$Channel = "win"
 )
 
 Set-StrictMode -Version Latest
@@ -72,6 +78,7 @@ Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  LostieLauncher — Velopack Release Build" -ForegroundColor Cyan
 Write-Host "  Version : $Version" -ForegroundColor Cyan
+Write-Host "  Channel : $Channel" -ForegroundColor Cyan
 if ($Sign) {
     Write-Host "  Signing : Enabled (Certum smart card)" -ForegroundColor Cyan
     Write-Host "  Thumbprint: $CertThumbprint" -ForegroundColor Cyan
@@ -122,6 +129,7 @@ $vpkArgs = @(
     "--packTitle",   "Lostie Launcher"
     "--icon",        $IconFile
     "--outputDir",   $ReleasesDir
+    "--channel",     $Channel
 )
 
 if ($Sign) {
