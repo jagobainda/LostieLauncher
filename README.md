@@ -15,7 +15,7 @@ Discover, download and play EricLostie's games on **Windows and Android**.
   </a>
 </p>
 
-[![Windows version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square)](CONTRIBUTING.md#windows-release)
+[![Windows version](https://img.shields.io/badge/version-0.9.2-blue?style=flat-square)](CONTRIBUTING.md#windows-release)
 [![Downloads](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fericlostie-launcher.jagoba.dev%2Fstats%2Fdownloads.txt&search=%5Cs*%28%5B%5E%5Cs%5D%2B%29%5Cs*&replace=%241&label=downloads&color=1a7f37&style=flat-square)](https://lostielauncher.jagoba.dev/)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-0078D4?style=flat-square)](#platforms)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE.txt)
