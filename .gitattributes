@@ -25,3 +25,11 @@ gradlew.bat text eol=crlf
 *.png binary
 *.apk binary
 *.aab binary
+
+# GitHub Linguist language statistics. Markdown is prose and XAML/XML are data,
+# so Linguist leaves them out by default. They are written by hand here: the
+# documentation, the desktop views, styles and themes, and the Android
+# resources and manifest (the Android UI itself is Compose, already counted).
+*.md linguist-detectable=true
+*.xaml linguist-detectable=true
+android/**/src/**/*.xml linguist-detectable=true
