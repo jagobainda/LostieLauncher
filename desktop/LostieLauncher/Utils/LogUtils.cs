@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Text;
 
 namespace LostieLauncher.Utils;
@@ -29,6 +30,20 @@ public static class Logs
     public static void DebugLogManager(string mensaje) => AddLog(CreateLogString("DEBUG", mensaje));
 
     public static void InfoLogManager(string mensaje) => AddLog(CreateLogString("INFO", mensaje));
+
+    /// <summary>
+    /// Logs a failed remote call: a network failure or timeout as a single INFO line, so an offline
+    /// session does not bury real errors, and anything else as an ERROR with its stack trace.
+    /// </summary>
+    public static void NetworkFailureLogManager(Exception e, string operation, string outcome)
+    {
+        if (IsNetworkFailure(e))
+            InfoLogManager($"{operation} failed ({e.GetType().Name}: {e.Message}); {outcome}.");
+        else
+            ErrorLogManager(e);
+    }
+
+    internal static bool IsNetworkFailure(Exception e) => e is HttpRequestException or OperationCanceledException;
 
     public static void PurgeOldLogs()
     {

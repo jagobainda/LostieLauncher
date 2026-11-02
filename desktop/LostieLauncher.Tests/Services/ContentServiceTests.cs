@@ -198,6 +198,47 @@ public class ContentServiceTests : IDisposable
         handler.Requests.Count.ShouldBe(initialRequests);
     }
 
+    [Fact]
+    public async Task IsServerActionBlockedAsync_WhenCalledConcurrently_SharesASingleRequest()
+    {
+        // Arrange — Library and Home both check the flag on startup and refresh; the response is held
+        // back until both have asked, so a second request would be visible.
+        using var release = new ManualResetEventSlim();
+        var handler = _httpFactory.HandlerFor("SecurityFlag").Respond(_ =>
+        {
+            release.Wait();
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+        var sut = CreateSut();
+
+        // Act
+        var first = sut.IsServerActionBlockedAsync(forceRefresh: true);
+        var second = sut.IsServerActionBlockedAsync(forceRefresh: true);
+        release.Set();
+        var results = await Task.WhenAll(first, second);
+
+        // Assert
+        results.ShouldAllBe(blocked => !blocked);
+        handler.Requests.Count.ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData(typeof(HttpRequestException))]
+    [InlineData(typeof(TaskCanceledException))]
+    [InlineData(typeof(InvalidOperationException))]
+    public async Task IsServerActionBlockedAsync_WhenTheCheckFails_FailsOpen(Type exceptionType)
+    {
+        // Arrange
+        _httpFactory.HandlerFor("SecurityFlag").Respond(_ => throw (Exception)Activator.CreateInstance(exceptionType)!);
+        var sut = CreateSut();
+
+        // Act
+        var blocked = await sut.IsServerActionBlockedAsync(forceRefresh: true);
+
+        // Assert
+        blocked.ShouldBeFalse();
+    }
+
     // -------------------- GetGameDirectory --------------------
 
     [Fact]

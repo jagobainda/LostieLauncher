@@ -31,6 +31,8 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
     private HomeContentDto? _homeContentCache;
     private bool _homeContentIsStale;
     private volatile ServerActionFlagCache? _serverActionBlockedCache;
+    private readonly Lock _serverActionCheckSync = new();
+    private Task<bool>? _serverActionCheckInFlight;
     private static readonly TimeSpan ServerActionBlockedCacheDuration = TimeSpan.FromSeconds(30);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -92,7 +94,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         }
         catch (Exception ex)
         {
-            Logs.ErrorLogManager(ex);
+            Logs.NetworkFailureLogManager(ex, "Games catalogue request", "showing no remote games");
             return [];
         }
     }
@@ -171,7 +173,7 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         }
         catch (Exception ex)
         {
-            LogHomeContentRefreshFailure(ex);
+            Logs.NetworkFailureLogManager(ex, "Home content refresh", "keeping the last known content");
             _homeContentIsStale = true;
             return (_homeContentCache, true);
         }
@@ -181,38 +183,34 @@ public class ContentService(IHttpClientFactory httpClientFactory, ContentOptions
         }
     }
 
-    private static void LogHomeContentRefreshFailure(Exception ex)
-    {
-        if (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
-            Logs.InfoLogManager($"Home content refresh failed ({ex.GetType().Name}: {ex.Message}); keeping the last known content.");
-        else
-            Logs.ErrorLogManager(ex);
-    }
-
-    public async Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default)
+    public Task<bool> IsServerActionBlockedAsync(bool forceRefresh = false, CancellationToken ct = default)
     {
         var cache = _serverActionBlockedCache;
         if (!forceRefresh && cache is not null && DateTime.UtcNow < cache.ExpiresAtUtc)
-            return cache.Blocked;
+            return Task.FromResult(cache.Blocked);
 
+        lock (_serverActionCheckSync)
+        {
+            if (_serverActionCheckInFlight is null || _serverActionCheckInFlight.IsCompleted)
+                _serverActionCheckInFlight = Task.Run(() => RefreshServerActionBlockedAsync(ct));
+            return _serverActionCheckInFlight;
+        }
+    }
+
+    private async Task<bool> RefreshServerActionBlockedAsync(CancellationToken ct)
+    {
+        var blocked = false;
         try
         {
-            var blocked = await CheckServerActionFlagAsync(ct).ConfigureAwait(false);
-            _serverActionBlockedCache = new ServerActionFlagCache(blocked, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
-            return blocked;
-        }
-        catch (OperationCanceledException)
-        {
-            Logs.InfoLogManager("Maintenance flag check timed out or was cancelled; assuming not blocked.");
-            _serverActionBlockedCache = new ServerActionFlagCache(false, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
-            return false;
+            blocked = await CheckServerActionFlagAsync(ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            Logs.ErrorLogManager(ex);
-            _serverActionBlockedCache = new ServerActionFlagCache(false, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
-            return false;
+            Logs.NetworkFailureLogManager(ex, "Maintenance flag check", "assuming not blocked");
         }
+
+        _serverActionBlockedCache = new ServerActionFlagCache(blocked, DateTime.UtcNow.Add(ServerActionBlockedCacheDuration));
+        return blocked;
     }
 
     private async Task<bool> CheckServerActionFlagAsync(CancellationToken ct)
