@@ -236,7 +236,7 @@
                     </RadioButton>
                     <Button Style="{StaticResource NavActionButtonStyle}"
                                 Command="{Binding OpenSavedGamesCommand}"
-                                ToolTip="Saved Games">
+                                ToolTip="{Binding Strings.TooltipOpenSavedGames, Source={x:Static viewmodels:SettingsViewModel.Instance}}">
                         <iconPacks:PackIconLucide Kind="Save" Width="22" Height="22" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
                 </StackPanel>

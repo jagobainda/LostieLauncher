@@ -12,5 +12,5 @@ Apply the [shared localization rules](../../.agents/localization-and-themes.md).
 - Substitute placeholders with `string.Format(strings.SomeMessage, arg)`.
 - A new language requires an `AppLanguage` member with its display-name
   `Description` attribute and complete string and FAQ implementations.
-- The existing Windows-only `Saved Games` tooltip and startup fatal-error
-  fallback are legacy exceptions; do not copy them into new UI text.
+- The startup fatal-error fallback is a legacy exception; do not copy it into
+  new UI text.
