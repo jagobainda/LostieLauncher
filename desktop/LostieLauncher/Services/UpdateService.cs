@@ -43,7 +43,7 @@ public sealed class UpdateService : IUpdateService
         }
         catch (Exception ex)
         {
-            Logs.ErrorLogManager(ex);
+            Logs.NetworkFailureLogManager(ex, "Update check", "keeping the current version");
             if (notifyWhenUpToDate) _notifier.NotifyCheckFailed();
         }
     }

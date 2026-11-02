@@ -77,4 +77,22 @@ public class LogsTests
         line[19].ShouldBe(' ');
         line[20].ShouldBe('[');
     }
+
+    [Theory]
+    [InlineData(typeof(HttpRequestException), true)]
+    [InlineData(typeof(TaskCanceledException), true)]
+    [InlineData(typeof(OperationCanceledException), true)]
+    [InlineData(typeof(System.Text.Json.JsonException), false)]
+    [InlineData(typeof(InvalidOperationException), false)]
+    public void IsNetworkFailure_ClassifiesOnlyTransportFailuresAndTimeoutsAsNetworkFailures(Type exceptionType, bool expected)
+    {
+        // Arrange
+        var exception = (Exception)Activator.CreateInstance(exceptionType)!;
+
+        // Act
+        var isNetworkFailure = Logs.IsNetworkFailure(exception);
+
+        // Assert — anything else, such as an invalid payload, must still surface as an ERROR.
+        isNetworkFailure.ShouldBe(expected);
+    }
 }
