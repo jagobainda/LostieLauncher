@@ -54,7 +54,7 @@ public partial class MainViewModel : ObservableObject
         _settingsViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(SettingsViewModel.Strings)) UpdateCurrentTitle();
-            if (e.PropertyName == nameof(SettingsViewModel.DownloadDirectory)) _ = _libraryViewModel.RefreshAsync();
+            if (e.PropertyName == nameof(SettingsViewModel.DownloadDirectory)) _ = ReloadCatalogueAsync();
         };
 
         _globalViewModel.PropertyChanged += (_, e) =>
@@ -83,12 +83,14 @@ public partial class MainViewModel : ObservableObject
     private void OnOfflineModeChanged()
     {
         OnPropertyChanged(nameof(IsOfflineMode));
-        if (!IsOfflineMode && !_globalViewModel.IsDownloading) _ = ReloadCatalogueAsync();
+        if (IsOfflineMode || _globalViewModel.IsDownloading) return;
+
+        Logs.InfoLogManager("Maintenance flag cleared. Reloading the catalogue.");
+        _ = ReloadCatalogueAsync();
     }
 
     private async Task ReloadCatalogueAsync()
     {
-        Logs.InfoLogManager("Maintenance flag cleared. Reloading the catalogue.");
         await _libraryViewModel.RefreshAsync();
         await _gamesViewModel.RefreshAsync();
     }

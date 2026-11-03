@@ -11,6 +11,8 @@ public class MainViewModelTests
     private readonly ITwitchLiveService _twitchLiveService = Substitute.For<ITwitchLiveService>();
     private readonly GlobalViewModel _global = new();
     private HomeViewModel _home = null!;
+    private SettingsViewModel _settings = null!;
+    private GamesViewModel _games = null!;
     private readonly ISettingsService _settingsService = Substitute.For<ISettingsService>();
     private readonly IWindowsStartupService _startupService = Substitute.For<IWindowsStartupService>();
     private readonly IDownloadService _downloadService = Substitute.For<IDownloadService>();
@@ -30,17 +32,17 @@ public class MainViewModelTests
 
     private async Task<MainViewModel> CreateSutAsync()
     {
-        var settings = new SettingsViewModel(_settingsService, _startupService, _global, Substitute.For<IUpdateService>(),
+        _settings = new SettingsViewModel(_settingsService, _startupService, _global, Substitute.For<IUpdateService>(),
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         var library = new LibraryViewModel(_contentService, _settingsService, _downloadService, _global, _downloadOptions,
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
         await library.LibraryLoadedTask;
-        _home = new HomeViewModel(_contentService, _twitchLiveService, settings);
+        _home = new HomeViewModel(_contentService, _twitchLiveService, _settings);
         await _home.RefreshAsync();
-        var games = new GamesViewModel(_contentService, library, _global);
-        await games.RefreshAsync();
-        var faqs = new FaqsViewModel(settings);
-        return new MainViewModel(_global, _home, games, library, faqs, settings);
+        _games = new GamesViewModel(_contentService, library, _global);
+        await _games.RefreshAsync();
+        var faqs = new FaqsViewModel(_settings);
+        return new MainViewModel(_global, _home, _games, library, faqs, _settings);
     }
 
     private async Task EndMaintenanceAsync()
@@ -222,6 +224,22 @@ public class MainViewModelTests
 
         // Assert
         await _contentService.DidNotReceive().GetGamesAsync();
+    }
+
+    [Fact]
+    public async Task DownloadDirectoryChange_RefreshesLibraryAndInstalledGames()
+    {
+        // Arrange
+        await CreateSutAsync();
+        _contentService.ClearReceivedCalls();
+        _contentService.GetLocalGamesAsync().Returns([TestData.LocalGame(name: "Other folder game")]);
+
+        // Act
+        _settings.DownloadDirectory = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-other-folder");
+
+        // Assert
+        await _contentService.Received(1).GetGamesAsync();
+        _games.InstalledGames.Single().Nombre.ShouldBe("Other folder game");
     }
 
     [Fact]
