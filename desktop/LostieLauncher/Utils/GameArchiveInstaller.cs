@@ -7,7 +7,6 @@ namespace LostieLauncher.Utils;
 
 public static class GameArchiveInstaller
 {
-    // Fixed progress weight per entry, matching Android, so archives of many small files still advance.
     private const long EntryProgressCostBytes = 64 * 1024;
 
     public static async Task ExtractAsync(string zipPath, string extractDir, IProgress<int>? progress = null) => await Task.Run(() =>
