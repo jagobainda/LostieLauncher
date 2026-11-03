@@ -7,7 +7,10 @@ namespace LostieLauncher.Utils;
 
 public static class GameArchiveInstaller
 {
-    public static async Task ExtractAsync(string zipPath, string extractDir) => await Task.Run(() =>
+    // Fixed progress weight per entry, matching Android, so archives of many small files still advance.
+    private const long EntryProgressCostBytes = 64 * 1024;
+
+    public static async Task ExtractAsync(string zipPath, string extractDir, IProgress<int>? progress = null) => await Task.Run(() =>
     {
         var tempDir = extractDir + ".tmp";
         var backupDir = extractDir + ".old";
@@ -31,7 +34,22 @@ public static class GameArchiveInstaller
             using (var stream = File.OpenRead(zipPath))
             using (var archive = ArchiveFactory.OpenArchive(stream, readerOptions))
             {
-                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory && e.Key is not null))
+                var entries = archive.Entries.Where(e => !e.IsDirectory && e.Key is not null).ToList();
+                var totalUnits = entries.Sum(e => Math.Max(e.Size, 0) + EntryProgressCostBytes);
+                var doneUnits = 0L;
+                var lastPercent = -1;
+                void Advance(long units)
+                {
+                    doneUnits += units;
+                    var percent = totalUnits > 0 ? (int)Math.Min(doneUnits * 100 / totalUnits, 100) : 100;
+                    if (percent <= lastPercent) return;
+                    lastPercent = percent;
+                    progress?.Report(percent);
+                }
+
+                Advance(0);
+                var buffer = new byte[81920];
+                foreach (var entry in entries)
                 {
                     var destPath = Path.GetFullPath(Path.Combine(tempDir, entry.Key!));
                     if (!destPath.StartsWith(tempDirFull, StringComparison.OrdinalIgnoreCase))
@@ -39,7 +57,13 @@ public static class GameArchiveInstaller
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
                     using var entryStream = entry.OpenEntryStream();
                     using var outStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    entryStream.CopyTo(outStream);
+                    int read;
+                    while ((read = entryStream.Read(buffer)) > 0)
+                    {
+                        outStream.Write(buffer, 0, read);
+                        Advance(read);
+                    }
+                    Advance(EntryProgressCostBytes);
                     entryCount++;
                 }
             }

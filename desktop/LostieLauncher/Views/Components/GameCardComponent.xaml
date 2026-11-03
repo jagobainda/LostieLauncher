@@ -297,9 +297,6 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.Extracting}">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding DownloadStatus, ElementName=Root}" Value="{x:Static models:GameDownloadStatus.VerifyingIntegrity}">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
@@ -312,7 +309,7 @@
                                        FontSize="11" Margin="4,0,0,0"
                                        Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource DownloadingVisibility}}" />
                             <TextBlock Text="{Binding Strings.StatusExtracting, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
-                                       Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="11"
+                                       Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="11" Margin="4,0,0,0"
                                        Visibility="{Binding DownloadStatus, ElementName=Root, Converter={StaticResource ExtractingVisibility}}" />
                             <TextBlock Text="{Binding Strings.StatusVerifying, Source={x:Static viewmodels:SettingsViewModel.Instance}}"
                                        Foreground="{DynamicResource SecondaryFgDimBrush}" FontSize="11"
