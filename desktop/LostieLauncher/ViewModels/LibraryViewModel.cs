@@ -462,10 +462,10 @@ public partial class LibraryViewModel : ObservableObject
             }
 
             game.DownloadStatus = GameDownloadStatus.Extracting;
-            game.DownloadProgressValue = 100;
+            game.DownloadProgressValue = 0;
             game.DownloadRemainingText = string.Empty;
 
-            await GameArchiveInstaller.ExtractAsync(session.ZipPath, session.ExtractDir);
+            await GameArchiveInstaller.ExtractAsync(session.ZipPath, session.ExtractDir, new Progress<int>(p => game.DownloadProgressValue = p));
 
             var tipo = session.SpecialConfig?.Tipo;
             await _contentService.RegisterGameAsync(game.Id, game.Nombre, session.Args.Version, tipo);

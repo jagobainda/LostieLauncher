@@ -60,6 +60,46 @@ public class GameArchiveInstallerTests
         Directory.Exists(extractDir + ".tmp").ShouldBeFalse();
     }
 
+    // -------------------- Extraction progress --------------------
+
+    [Theory]
+    [InlineData(1, 4 * 1024 * 1024)]
+    [InlineData(50, 1)]
+    public async Task ExtractAsync_ReportsIncreasingProgressFromZeroTo100(int fileCount, int fileSize)
+    {
+        // Arrange — one large file advances by bytes written; many tiny ones by their per-entry cost.
+        using var root = new TempDirectoryFixture("extract-progress");
+        var zipPath = root.Combine("demo.zip");
+        File.WriteAllBytes(zipPath, ZipArchiveWithFiles(fileCount, fileSize));
+        var reports = new List<int>();
+        var progress = Substitute.For<IProgress<int>>();
+        progress.When(p => p.Report(Arg.Any<int>())).Do(c => reports.Add(c.Arg<int>()));
+
+        // Act
+        await GameArchiveInstaller.ExtractAsync(zipPath, root.Combine("Demo"), progress);
+
+        // Assert
+        reports.First().ShouldBe(0);
+        reports.Last().ShouldBe(100);
+        reports.ShouldBe(reports.Distinct().Order());
+        reports.Count.ShouldBeGreaterThan(10);
+    }
+
+    private static byte[] ZipArchiveWithFiles(int fileCount, int fileSize)
+    {
+        using var buffer = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(buffer, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            for (var i = 0; i < fileCount; i++)
+            {
+                using var entry = archive.CreateEntry($"file{i}.bin").Open();
+                entry.Write(new byte[fileSize]);
+            }
+        }
+
+        return buffer.ToArray();
+    }
+
     /// <summary>A minimal, stored zip holding a single <c>game.exe</c> with "v2.0".</summary>
     private static byte[] ValidZipArchiveWithSingleEntry()
     {
