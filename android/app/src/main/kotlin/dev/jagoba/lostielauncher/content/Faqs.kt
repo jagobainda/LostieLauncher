@@ -25,7 +25,9 @@ fun faqsFor(language: AppLanguage): List<FaqEntry> = when (language) {
     AppLanguage.FRA -> FraFaqs
 }
 
-fun kirinFaqFor(language: AppLanguage): FaqEntry = faqsFor(language)[KIRIN_FAQ_INDEX]
+fun kirinFaqFor(language: AppLanguage): FaqEntry = faqsFor(language)[KIRIN_FAQ_INDEX].let {
+    it.copy(answer = it.answer.removeSuffix(stringsFor(language).kirinThanks).trimEnd())
+}
 
 private val EspFaqs = listOf(
     FaqEntry(
