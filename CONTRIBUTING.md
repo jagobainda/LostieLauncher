@@ -304,6 +304,17 @@ Pass `-Channel pre` to publish a pre-release build to the same feed. It writes
 installer update from the `pre` channel, and every other install stays on the
 stable `win` channel.
 
+The version is `VersionPrefix` plus an optional `VersionSuffix` in the project
+file. Velopack offers an update only when the SemVer version is higher, and
+`X.Y.Z-pre.N` sorts below `X.Y.Z`, so:
+
+- A pre-release build sets `VersionSuffix` to `pre.N` and increases `N` for each
+  new pre build of the same `X.Y.Z`. The script refuses `-Channel pre` without
+  a suffix and the stable channel with one.
+- Promoting to stable clears `VersionSuffix` and packs that version twice: once
+  on the stable channel and once with `-Channel pre -AllowStableOnPre`, so
+  pre-release installs also reach `X.Y.Z`.
+
 For signing and optional server upload, see the parameters and examples in
 [`build-release.ps1`](desktop/scripts/build-release.ps1). Velopack must handle
 signing both the app and its own binaries.

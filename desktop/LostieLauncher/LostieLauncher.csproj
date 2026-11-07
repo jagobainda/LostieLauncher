@@ -8,9 +8,9 @@
 	<UseWPF>true</UseWPF>
 	<UseWindowsForms>true</UseWindowsForms>
 
-	<Version>0.9.2.0</Version>
-	<FileVersion>0.9.2.0</FileVersion>
-	<AssemblyVersion>0.9.2.0</AssemblyVersion>
+	<VersionPrefix>0.9.3</VersionPrefix>
+	<VersionSuffix>pre.1</VersionSuffix>
+	<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 	<ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
