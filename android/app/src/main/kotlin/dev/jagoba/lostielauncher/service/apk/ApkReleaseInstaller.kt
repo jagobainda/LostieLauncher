@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -52,9 +53,13 @@ internal class ApkReleaseInstaller(
     @Volatile
     private var offered: ApkReleaseDto? = null
 
-    suspend fun loadRelease(feedUrl: String, force: Boolean = false): ApkReleaseDto? {
+    suspend fun loadRelease(
+        feedUrl: String,
+        force: Boolean = false,
+        format: DeserializationStrategy<ApkReleaseDto> = ApkReleaseDto.serializer(),
+    ): ApkReleaseDto? {
         if (release == null || force) {
-            release = remoteJson.fetch(feedUrl, ApkReleaseDto.serializer(), "${target.label} release feed")
+            release = remoteJson.fetch(feedUrl, format, "${target.label} release feed")
                 ?.takeIf { HttpsUrls.parseOrNull(it.downloadUrl) != null }
                 ?.also { logger.info("${target.label} release feed offers ${it.versionName}.") }
         }

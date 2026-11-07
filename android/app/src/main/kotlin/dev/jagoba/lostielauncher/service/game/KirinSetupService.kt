@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.ApkTarget
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.KirinStatus
+import dev.jagoba.lostielauncher.service.apk.ApkReleaseDto
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -17,6 +18,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonTransformingSerializer
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 interface KirinSetupService {
     val status: StateFlow<KirinStatus?>
@@ -31,6 +38,18 @@ interface KirinSetupService {
 
 @Serializable
 private data class KirinRequirementsDto(val minimumVersion: String, val releaseFeedUrl: String)
+
+private object GitHubReleaseFormat : JsonTransformingSerializer<ApkReleaseDto>(ApkReleaseDto.serializer()) {
+    override fun transformDeserialize(element: JsonElement): JsonElement {
+        val release = element.jsonObject
+        val apk = release.getValue("assets").jsonArray.map { it.jsonObject }
+            .first { it.getValue("name").jsonPrimitive.content.endsWith(".apk") }
+        return buildJsonObject {
+            put("versionName", release.getValue("tag_name"))
+            put("downloadUrl", apk.getValue("browser_download_url"))
+        }
+    }
+}
 
 @Singleton
 internal class DefaultKirinSetupService @Inject constructor(
@@ -64,7 +83,7 @@ internal class DefaultKirinSetupService @Inject constructor(
                     "Kirin requirements",
                 )
             }
-            requirements?.releaseFeedUrl?.let { installer.loadRelease(it) }
+            requirements?.releaseFeedUrl?.let { installer.loadRelease(it, format = GitHubReleaseFormat) }
             updateStatus()
             installer.settle(installedVersion, minimumVersion)
         }

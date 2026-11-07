@@ -179,6 +179,19 @@ class KirinSetupServiceTest {
     }
 
     @Test
+    fun `does not offer a release without an APK`() = runTest(dispatcher) {
+        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveRelease("0.4.2", apkName = "Kirin-0.4.2.zip")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.status.value shouldBe KirinStatus.Missing("0.4.0")
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @Test
     fun `asks nothing more of the network once the requirements and the feed are known`() = runTest(dispatcher) {
         every { packages.installedVersion(KIRIN_PACKAGE) } returns null
         serveRequirements()
@@ -227,8 +240,13 @@ class KirinSetupServiceTest {
         serve(REQUIREMENTS_PATH, """{"minimumVersion":"$minimum","releaseFeedUrl":"${server.url(FEED_PATH)}"}""")
     }
 
-    private fun serveRelease(version: String, url: String = APK_URL) {
-        serve(FEED_PATH, """{"versionCode":23,"versionName":"$version","downloadUrl":"$url","required":false}""")
+    private fun serveRelease(version: String, url: String = APK_URL, apkName: String = "Kirin-$version-arm64-v8a.apk") {
+        serve(
+            FEED_PATH,
+            """{"tag_name":"$version","draft":false,"assets":[""" +
+                """{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt"},""" +
+                """{"name":"$apkName","browser_download_url":"$url"}]}""",
+        )
     }
 
     private fun serve(path: String, body: String) {
@@ -237,7 +255,7 @@ class KirinSetupServiceTest {
 
     private companion object {
         const val REQUIREMENTS_PATH = "/kirin-setup-options.json"
-        const val FEED_PATH = "/latest.json"
+        const val FEED_PATH = "/releases/latest"
         const val FALLBACK_MINIMUM = "0.4.0"
         const val KIRIN_PACKAGE = "com.gmax.kirin"
         const val APK_URL = "https://example.com/Kirin-0.4.2.apk"
