@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LostieLauncher.Content;
+using LostieLauncher.Core;
 using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Views.Dialogs;
@@ -260,15 +261,9 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     public bool HasSeenWelcome => _hasSeenWelcome;
-    public static string CurrentVersion => FormatVersion(typeof(SettingsViewModel).Assembly.GetName().Version);
+    public static string CurrentVersion => FormatVersion(AppVersion.Packed);
 
-    internal static string FormatVersion(Version? version)
-    {
-        if (version is null) return "Unknown";
-
-        var availableFields = version.Revision >= 0 ? 4 : version.Build >= 0 ? 3 : 2;
-        return "v" + version.ToString(Math.Min(3, availableFields));
-    }
+    internal static string FormatVersion(string? version) => version is null ? "Unknown" : "v" + version;
 
     public void MarkWelcomeSeen()
     {

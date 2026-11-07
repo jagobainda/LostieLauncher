@@ -3,7 +3,7 @@
     Builds and packages LostieLauncher for release using Velopack.
 
 .DESCRIPTION
-    1. Reads the version from the .csproj
+    1. Reads the version from the .csproj and checks it matches the channel
     2. Publishes a self-contained win-x64 build
     3. Packages it with `vpk pack` (Velopack signs its own binaries + the app)
     4. Optionally uploads the releases/ folder to the server via SCP
@@ -28,6 +28,11 @@
 .PARAMETER Channel
     Velopack release channel. Defaults to "win" (stable); use "pre" for pre-release builds.
     Installs only receive updates from the channel their installer was built for.
+    "win" requires a stable version (X.Y.Z); "pre" requires a pre-release one (X.Y.Z-pre.N).
+
+.PARAMETER AllowStableOnPre
+    Allows packing a stable version on the "pre" channel. Use it when promoting a version
+    to stable, so pre installs also move from X.Y.Z-pre.N to X.Y.Z.
 
 .EXAMPLE
     Paths are relative to the repository root of the monorepo.
@@ -36,6 +41,7 @@
     .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
     .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
     .\desktop\scripts\build-release.ps1 -Channel pre
+    .\desktop\scripts\build-release.ps1 -Channel pre -AllowStableOnPre
 #>
 
 param(
@@ -44,7 +50,8 @@ param(
     [string]$SshHost = "",
     [string]$SshPath = "/var/www/ericlostie-launcher/public/installer/",
     [string]$CertThumbprint = "",
-    [string]$Channel = "win"
+    [string]$Channel = "win",
+    [switch]$AllowStableOnPre
 )
 
 Set-StrictMode -Version Latest
@@ -65,12 +72,20 @@ $ReleasesDir = Join-Path $DesktopRoot "releases"
 $IconFile    = Join-Path $DesktopRoot "LostieLauncher\Assets\app.ico"
 
 # ── Read version from .csproj ─────────────────────────────────────────────────
-[xml]$csproj = Get-Content $ProjectFile
-$Version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-$Version = ($Version -split "\.")[0..2] -join "."
+$Version = "$(dotnet msbuild $ProjectFile -getProperty:Version)".Trim()
 
-if (-not $Version) {
-    Write-Error "Could not read <Version> from $ProjectFile"
+if ($LASTEXITCODE -ne 0 -or $Version -notmatch '^\d+\.\d+\.\d+(-pre\.\d+)?$') {
+    Write-Error "Version '$Version' from $ProjectFile must be X.Y.Z or X.Y.Z-pre.N."
+    exit 1
+}
+
+$IsPreRelease = $Version.Contains("-")
+if ($Channel -eq "win" -and $IsPreRelease) {
+    Write-Error "Version $Version is a pre-release. Pack it with -Channel pre, or clear <VersionSuffix>."
+    exit 1
+}
+if ($Channel -eq "pre" -and -not $IsPreRelease -and -not $AllowStableOnPre) {
+    Write-Error "Version $Version is stable. Set <VersionSuffix>pre.N</VersionSuffix>, or pass -AllowStableOnPre to promote it."
     exit 1
 }
 

@@ -419,55 +419,37 @@ public class SettingsViewModelTests
         _updateService.DidNotReceive().NotifyDownloadInProgress();
     }
 
-    // -------------------- FormatVersion (BUG-016) --------------------
+    // -------------------- FormatVersion --------------------
 
-    [Fact]
-    public void FormatVersion_FourComponentAssemblyVersion_TrimsToThreeComponents()
+    [Theory]
+    [InlineData("0.9.3", "v0.9.3")]
+    [InlineData("0.9.3-pre.2", "v0.9.3-pre.2")]
+    public void FormatVersion_PackedVersion_PrefixesV(string version, string expected)
     {
-        // Arrange — the production assembly version is 4-component (e.g. 0.8.11.0).
-        var version = new Version(0, 8, 11, 0);
-
-        // Act
-        var formatted = SettingsViewModel.FormatVersion(version);
-
-        // Assert — aligns with the 3-component convention used elsewhere (VersionUtils).
-        formatted.ShouldBe("v0.8.11");
-    }
-
-    [Fact]
-    public void FormatVersion_ThreeComponentVersion_KeepsAllThree()
-    {
-        // Arrange
-        var version = new Version(1, 2, 3);
-
         // Act
         var formatted = SettingsViewModel.FormatVersion(version);
 
         // Assert
-        formatted.ShouldBe("v1.2.3");
-    }
-
-    [Fact]
-    public void FormatVersion_TwoComponentVersion_DoesNotThrowAndKeepsAvailableFields()
-    {
-        // Arrange — a Version with only major.minor would make ToString(3) throw; the
-        // clamp on available fields must keep it safe.
-        var version = new Version(1, 5);
-
-        // Act
-        var formatted = SettingsViewModel.FormatVersion(version);
-
-        // Assert
-        formatted.ShouldBe("v1.5");
+        formatted.ShouldBe(expected);
     }
 
     [Fact]
     public void FormatVersion_NullVersion_ReturnsUnknownFallback()
     {
-        // Act — the regression of BUG-016: the fallback must actually be reachable.
+        // Act
         var formatted = SettingsViewModel.FormatVersion(null);
 
         // Assert
         formatted.ShouldBe("Unknown");
+    }
+
+    [Fact]
+    public void CurrentVersion_BuiltAssembly_HasNoCommitHash()
+    {
+        // Act
+        var current = SettingsViewModel.CurrentVersion;
+
+        // Assert
+        current.ShouldMatch(@"^v\d+\.\d+\.\d+(-pre\.\d+)?$");
     }
 }

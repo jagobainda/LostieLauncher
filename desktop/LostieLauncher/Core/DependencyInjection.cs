@@ -16,16 +16,7 @@ public static class DependencyInjection
     private const string UpdateFeedUrl = $"{Endpoints.CdnBaseUrl}/public/installer/";
     private const string TwitchPreviewUrl = "https://static-cdn.jtvnw.net/previews-ttv/live_user_ericlostie-80x45.jpg";
 
-    internal static readonly string UserAgent = $"LostieLauncher/{ResolveVersion()}";
-
-    private static string ResolveVersion()
-    {
-        var version = typeof(DependencyInjection).Assembly.GetName().Version;
-        if (version is null) return "unknown";
-
-        var availableFields = version.Revision >= 0 ? 4 : version.Build >= 0 ? 3 : 2;
-        return version.ToString(Math.Min(3, availableFields));
-    }
+    internal static readonly string UserAgent = $"LostieLauncher/{AppVersion.Packed ?? "unknown"}";
 
     public static IServiceProvider Configure()
     {

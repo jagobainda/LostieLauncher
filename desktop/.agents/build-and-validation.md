@@ -30,4 +30,5 @@ dotnet list LostieLauncher.slnx package --vulnerable --include-transitive --form
 
 `scripts/build-release.ps1` is the maintainer's packaging path, writing
 `desktop/publish/` and `desktop/releases/`. Feature and fix work must not
-change the version fields in `LostieLauncher.csproj` or README version badges.
+change `VersionPrefix` or `VersionSuffix` in `LostieLauncher.csproj` or README
+version badges.
