@@ -39,7 +39,7 @@ public class EspFaqs : IFaqs
         new("¿Qué significa el modo offline?",
             "Significa que el servidor está en mantenimiento. Puedes seguir jugando a tus juegos instalados; las descargas, actualizaciones y versiones especiales se reactivarán automáticamente cuando termine el mantenimiento."),
         new("He encontrado un error, ¿dónde lo reporto?",
-            "Escribe en el canal #testeo-launcher del Discord de la comunidad contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.")
+            "Abre un issue en el repositorio de GitHub del launcher contando qué ha pasado y qué estabas haciendo. Cuanto más detalle des, más fácil será arreglarlo.")
     ];
 }
 
@@ -58,7 +58,7 @@ public class EngFaqs : IFaqs
         new("What does offline mode mean?",
             "It means the server is under maintenance. You can keep playing your installed games; downloads, updates and special versions will reactivate automatically when the maintenance ends."),
         new("I found a bug, where do I report it?",
-            "Write in the #testeo-launcher channel of the community Discord explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.")
+            "Open an issue in the launcher's GitHub repository explaining what happened and what you were doing. The more detail you give, the easier it will be to fix.")
     ];
 }
 
@@ -77,7 +77,7 @@ public class CatFaqs : IFaqs
         new("Què significa el mode offline?",
             "Significa que el servidor està en manteniment. Pots seguir jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan acabi el manteniment."),
         new("He trobat un error, on el reporto?",
-            "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.")
+            "Obre un issue al repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall donis, més fàcil serà arreglar-ho.")
     ];
 }
 
@@ -96,7 +96,7 @@ public class EusFaqs : IFaqs
         new("Zer esan nahi du offline moduak?",
             "Zerbitzaria mantentze-lanetan dagoela esan nahi du. Instalatutako jokoetan jolasten jarrai dezakezu; deskargak, eguneraketak eta bertsio bereziak automatikoki berraktibatuko dira mantentze-lanak amaitzean."),
         new("Errore bat aurkitu dut, non jakinarazten dut?",
-            "Idatzi komunitatearen Discord-eko #testeo-launcher kanalean, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.")
+            "Ireki issue bat launcher-aren GitHub biltegian, zer gertatu den eta zer egiten ari zinen azalduz. Zenbat eta xehetasun gehiago eman, orduan eta errazagoa izango da konpontzea.")
     ];
 }
 
@@ -115,7 +115,7 @@ public class GalFaqs : IFaqs
         new("Que significa o modo offline?",
             "Significa que o servidor está en mantemento. Podes seguir xogando aos teus xogos instalados; as descargas, actualizacións e versións especiais reactivaranse automaticamente cando remate o mantemento."),
         new("Atopei un erro, onde o reporto?",
-            "Escribe na canle #testeo-launcher do Discord da comunidade contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.")
+            "Abre unha issue no repositorio de GitHub do launcher contando que pasou e que estabas a facer. Canto máis detalle deas, máis fácil será arranxalo.")
     ];
 }
 
@@ -134,7 +134,7 @@ public class PorFaqs : IFaqs
         new("O que significa o modo offline?",
             "Significa que o servidor está em manutenção. Você pode continuar jogando seus jogos instalados; downloads, atualizações e versões especiais serão reativados automaticamente quando a manutenção terminar."),
         new("Encontrei um erro, onde o reporto?",
-            "Escreva no canal #testeo-launcher do Discord da comunidade contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.")
+            "Abra uma issue no repositório do launcher no GitHub contando o que aconteceu e o que você estava fazendo. Quanto mais detalhes você der, mais fácil será corrigir.")
     ];
 }
 
@@ -153,7 +153,7 @@ public class ValFaqs : IFaqs
         new("Què significa el mode offline?",
             "Significa que el servidor està en manteniment. Pots continuar jugant als teus jocs instal·lats; les descàrregues, actualitzacions i versions especials es reactivaran automàticament quan acabe el manteniment."),
         new("He trobat un error, on el reporte?",
-            "Escriu al canal #testeo-launcher del Discord de la comunitat explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.")
+            "Obri un issue en el repositori de GitHub del launcher explicant què ha passat i què estaves fent. Com més detall dones, més fàcil serà arreglar-ho.")
     ];
 }
 
@@ -172,6 +172,6 @@ public class FraFaqs : IFaqs
         new("Que signifie le mode hors ligne ?",
             "Cela signifie que le serveur est en maintenance. Vous pouvez continuer à jouer à vos jeux installés ; les téléchargements, mises à jour et versions spéciales se réactiveront automatiquement à la fin de la maintenance."),
         new("J'ai trouvé un bug, où le signaler ?",
-            "Écrivez dans le canal #testeo-launcher du Discord de la communauté en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.")
+            "Ouvrez une issue sur le dépôt GitHub du launcher en expliquant ce qui s'est passé et ce que vous faisiez. Plus vous donnez de détails, plus il sera facile de le corriger.")
     ];
 }
