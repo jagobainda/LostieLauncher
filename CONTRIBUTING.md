@@ -105,8 +105,10 @@ Android game setup and launcher updates use separate configurations:
 
 - [Kirin module](android/app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/KirinModule.kt):
   `public/config/kirin-setup-options.json` provides `minimumVersion` and
-  `releaseFeedUrl`. Missing/outdated Kirin blocks setup; recommended updates
-  do not. The fallback minimum is defined in that module.
+  `releaseFeedUrl`, a GitHub latest-release API URL whose `tag_name` is the
+  version and whose `.apk` asset is downloaded. Missing/outdated Kirin blocks
+  setup; recommended updates do not. The fallback minimum is defined in that
+  module.
 - [Update module](android/app/src/main/kotlin/dev/jagoba/lostielauncher/core/di/UpdateModule.kt):
   `public/android/latest.json` provides `versionName` and `downloadUrl` for
   launcher updates. The APK installer validates the package and version before
