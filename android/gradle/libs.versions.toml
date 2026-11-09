@@ -13,7 +13,7 @@
 # ── Toolchain ───────────────────────────────────────────────────────────────
 agp = "9.5.1"
 kotlin = "2.4.21"
-ksp = "2.3.12"
+ksp = "2.3.13"
 # AGP 9 requires JDK 17 and compiles to it by default; D8 is happy there.
 javaTarget = "17"
 
