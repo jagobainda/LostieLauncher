@@ -207,6 +207,10 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             var previous = emptyMap<String, DownloadStatus>()
             downloads.downloads.collect { rows ->
+                val pendingCancel = transient.value.pendingCancelGameId
+                if (pendingCancel != null && rows.none { it.gameId == pendingCancel && !it.status.isFinished }) {
+                    transient.value = transient.value.copy(pendingCancelGameId = null)
+                }
                 val notice = rows.firstNotNullOfOrNull { row ->
                     row.status.failureNotice()?.takeIf { previous[row.gameId]?.isActive == true }
                 }
@@ -382,7 +386,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun requestCancel(gameId: String) {
-        if (state.value.games.none { it.game.gameId == gameId }) return
+        if (state.value.games.none { it.game.gameId == gameId && it.canCancel }) return
         transient.value = transient.value.copy(pendingCancelGameId = gameId)
     }
 

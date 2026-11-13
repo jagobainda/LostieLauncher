@@ -5,6 +5,7 @@ using LostieLauncher.Models;
 using LostieLauncher.Services;
 using LostieLauncher.Views.Dialogs;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -598,11 +599,12 @@ public partial class LibraryViewModel : ObservableObject
         if (game is null) return;
 
         var strings = SettingsViewModel.Instance.Strings;
-        var confirmed = CustomMessageBox.Show(
+        var confirmed = ConfirmDownloadCancellation(game, cancellationToken => CustomMessageBox.Show(
             strings.CancelDownloadConfirmTitle,
             strings.CancelDownloadConfirmMessage,
             CustomMessageBoxButton.YesNo,
-            CustomMessageBoxIcon.Information);
+            CustomMessageBoxIcon.Information,
+            cancellationToken: cancellationToken));
 
         if (confirmed != true)
         {
@@ -631,6 +633,29 @@ public partial class LibraryViewModel : ObservableObject
     {
         if (string.IsNullOrEmpty(gameId)) return _activeSession;
         return _sessions.TryGetValue(gameId, out var session) ? session : null;
+    }
+
+    /// <summary>Scopes a confirmation to the transfer phase; the token dismisses its dialog.</summary>
+    internal static bool ConfirmDownloadCancellation(GameInfo game, Func<CancellationToken, bool?> show)
+    {
+        bool InTransfer() => game.DownloadStatus is GameDownloadStatus.Downloading or GameDownloadStatus.Paused;
+        if (!InTransfer()) return false;
+
+        using var dismissal = new CancellationTokenSource();
+        void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(GameInfo.DownloadStatus) && !InTransfer()) dismissal.Cancel();
+        }
+
+        game.PropertyChanged += OnPropertyChanged;
+        try
+        {
+            return show(dismissal.Token) == true && !dismissal.IsCancellationRequested;
+        }
+        finally
+        {
+            game.PropertyChanged -= OnPropertyChanged;
+        }
     }
 
     private static void CleanupDownloadFiles(DownloadSession session) => DownloadArtifacts.Delete(session.ZipPath);

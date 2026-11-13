@@ -30,6 +30,8 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModelTest {
@@ -501,6 +503,51 @@ class LibraryViewModelTest {
         runCurrent()
         sut.state.value.notice shouldBe null
         sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_FAILED
+    }
+
+    @ParameterizedTest
+    @EnumSource(DownloadStatus::class)
+    fun `cancel prompt follows the download phase`(status: DownloadStatus) = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestCancel(remote.gameId)
+        runCurrent()
+        sut.state.value.pendingCancelGameId shouldBe remote.gameId
+
+        downloads.current.value = listOf(testDownload(remote, status))
+        runCurrent()
+
+        val canCancel = !status.isFinished
+        sut.state.value.pendingCancelGameId shouldBe remote.gameId.takeIf { canCancel }
+        sut.confirmCancel()
+        runCurrent()
+        downloads.cancelled shouldBe if (canCancel) listOf(remote.gameId) else emptyList()
+        if (status == DownloadStatus.COMPLETED) sut.state.value.notice shouldBe null
+    }
+
+    @Test
+    fun `removed download dismisses cancellation and does not reopen on a new transfer`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.PAUSED))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestCancel(remote.gameId)
+        runCurrent()
+
+        downloads.current.value = emptyList()
+        runCurrent()
+        sut.state.value.pendingCancelGameId shouldBe null
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+        runCurrent()
+        sut.confirmCancel()
+        runCurrent()
+
+        sut.state.value.pendingCancelGameId shouldBe null
+        downloads.cancelled shouldBe emptyList()
     }
 
     private fun createSut(scope: CoroutineScope): LibraryViewModel {
