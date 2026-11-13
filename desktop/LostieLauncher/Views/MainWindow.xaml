@@ -11,6 +11,7 @@
         mc:Ignorable="d"
         Height="650"
         Width="1000"
+        Style="{StaticResource WorkAreaWindowStyle}"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
