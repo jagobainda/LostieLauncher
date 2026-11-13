@@ -520,7 +520,7 @@ class LibraryViewModelTest {
         downloads.current.value = listOf(testDownload(remote, status))
         runCurrent()
 
-        val canCancel = status.isActive || status == DownloadStatus.PAUSED
+        val canCancel = !status.isFinished
         sut.state.value.pendingCancelGameId shouldBe remote.gameId.takeIf { canCancel }
         sut.confirmCancel()
         runCurrent()

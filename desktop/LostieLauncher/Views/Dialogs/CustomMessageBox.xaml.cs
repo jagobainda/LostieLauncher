@@ -74,20 +74,10 @@ public partial class CustomMessageBox : Window
         {
             if (cancellationToken.IsCancellationRequested) dialog.Close();
         };
-        using var registration = cancellationToken.Register(() =>
+        using var registration = cancellationToken.Register(() => dialog.Dispatcher.BeginInvoke(() =>
         {
-            if (dialog.Dispatcher.CheckAccess())
-            {
-                if (dialog.IsVisible) dialog.Close();
-            }
-            else
-            {
-                dialog.Dispatcher.BeginInvoke(() =>
-                {
-                    if (dialog.IsVisible) dialog.Close();
-                });
-            }
-        });
+            if (dialog.IsVisible) dialog.Close();
+        }));
         return dialog.ShowDialog();
     }
 

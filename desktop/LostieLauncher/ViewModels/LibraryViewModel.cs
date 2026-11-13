@@ -638,14 +638,13 @@ public partial class LibraryViewModel : ObservableObject
     /// <summary>Scopes a confirmation to the transfer phase; the token dismisses its dialog.</summary>
     internal static bool ConfirmDownloadCancellation(GameInfo game, Func<CancellationToken, bool?> show)
     {
-        if (game.DownloadStatus is not (GameDownloadStatus.Downloading or GameDownloadStatus.Paused)) return false;
+        bool InTransfer() => game.DownloadStatus is GameDownloadStatus.Downloading or GameDownloadStatus.Paused;
+        if (!InTransfer()) return false;
 
         using var dismissal = new CancellationTokenSource();
         void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(GameInfo.DownloadStatus) &&
-                game.DownloadStatus is not (GameDownloadStatus.Downloading or GameDownloadStatus.Paused))
-                dismissal.Cancel();
+            if (e.PropertyName == nameof(GameInfo.DownloadStatus) && !InTransfer()) dismissal.Cancel();
         }
 
         game.PropertyChanged += OnPropertyChanged;
