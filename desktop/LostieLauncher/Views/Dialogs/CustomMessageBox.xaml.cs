@@ -53,8 +53,9 @@ public partial class CustomMessageBox : Window
         }
     }
 
-    public static bool? Show(string title, string description, CustomMessageBoxButton button = CustomMessageBoxButton.OK, CustomMessageBoxIcon icon = CustomMessageBoxIcon.Update, Window? owner = null)
+    public static bool? Show(string title, string description, CustomMessageBoxButton button = CustomMessageBoxButton.OK, CustomMessageBoxIcon icon = CustomMessageBoxIcon.Update, Window? owner = null, CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested) return false;
         var dialog = new CustomMessageBox(title, description, button, icon);
 
         var candidateOwner = owner ?? Application.Current.MainWindow;
@@ -69,6 +70,24 @@ public partial class CustomMessageBox : Window
             dialog.Loaded += (_, _) => dialog.Activate();
         }
 
+        dialog.Loaded += (_, _) =>
+        {
+            if (cancellationToken.IsCancellationRequested) dialog.Close();
+        };
+        using var registration = cancellationToken.Register(() =>
+        {
+            if (dialog.Dispatcher.CheckAccess())
+            {
+                if (dialog.IsVisible) dialog.Close();
+            }
+            else
+            {
+                dialog.Dispatcher.BeginInvoke(() =>
+                {
+                    if (dialog.IsVisible) dialog.Close();
+                });
+            }
+        });
         return dialog.ShowDialog();
     }
 

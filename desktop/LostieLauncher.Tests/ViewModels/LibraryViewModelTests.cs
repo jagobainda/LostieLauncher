@@ -35,6 +35,60 @@ public class LibraryViewModelTests
         _downloadService, _globalViewModel, _downloadOptions,
         _downloadLocation, _downloadLocationNotifier);
 
+    [Theory]
+    [InlineData(GameDownloadStatus.Downloading, false)]
+    [InlineData(GameDownloadStatus.Paused, false)]
+    [InlineData(GameDownloadStatus.VerifyingIntegrity, true)]
+    [InlineData(GameDownloadStatus.Extracting, true)]
+    [InlineData(GameDownloadStatus.Downloaded, true)]
+    [InlineData(GameDownloadStatus.Available, true)]
+    [InlineData(GameDownloadStatus.UpdateAvailable, true)]
+    public void ConfirmDownloadCancellation_PhaseChanges_DismissesOnlyOutsideTransfer(GameDownloadStatus status, bool dismissed)
+    {
+        // Arrange
+        var game = new GameInfo { DownloadStatus = GameDownloadStatus.Downloading };
+
+        // Act
+        var confirmed = LibraryViewModel.ConfirmDownloadCancellation(game, token =>
+        {
+            game.DownloadStatus = status;
+            token.IsCancellationRequested.ShouldBe(dismissed);
+            return true;
+        });
+
+        // Assert
+        confirmed.ShouldBe(!dismissed);
+        game.DownloadStatus = GameDownloadStatus.Downloading;
+        game.DownloadStatus = GameDownloadStatus.Extracting;
+    }
+
+    [Fact]
+    public void ConfirmDownloadCancellation_AlreadyExtracting_DoesNotOpenDialog()
+    {
+        // Arrange
+        var game = new GameInfo { DownloadStatus = GameDownloadStatus.Extracting };
+
+        // Act
+        var confirmed = LibraryViewModel.ConfirmDownloadCancellation(game, _ => throw new InvalidOperationException());
+
+        // Assert
+        confirmed.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void ConfirmDownloadCancellation_UserDeclines_DoesNotConfirm()
+    {
+        // Arrange
+        var game = new GameInfo { DownloadStatus = GameDownloadStatus.Paused };
+
+        // Act
+        var confirmed = LibraryViewModel.ConfirmDownloadCancellation(game, _ => false);
+
+        // Assert
+        confirmed.ShouldBeFalse();
+        game.DownloadStatus = GameDownloadStatus.Extracting;
+    }
+
     [Fact]
     public async Task Constructor_TriggersInitialLoad_ResolvingLibraryLoadedTask()
     {
