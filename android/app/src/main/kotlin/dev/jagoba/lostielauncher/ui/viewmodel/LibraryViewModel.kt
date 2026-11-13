@@ -209,7 +209,9 @@ class LibraryViewModel @Inject constructor(
             downloads.downloads.collect { rows ->
                 val pendingCancel = transient.value.pendingCancelGameId
                 val pendingStatus = rows.firstOrNull { it.gameId == pendingCancel }?.status
-                if (pendingCancel != null && pendingStatus?.isActive != true && pendingStatus != DownloadStatus.PAUSED) {
+                if (pendingCancel != null && pendingStatus?.isActive != true &&
+                    pendingStatus != DownloadStatus.PAUSED
+                ) {
                     transient.value = transient.value.copy(pendingCancelGameId = null)
                 }
                 val notice = rows.firstNotNullOfOrNull { row ->
