@@ -9,7 +9,7 @@
 	<UseWindowsForms>true</UseWindowsForms>
 
 	<VersionPrefix>0.9.3</VersionPrefix>
-	<VersionSuffix>pre.3</VersionSuffix>
+	<VersionSuffix>pre.4</VersionSuffix>
 	<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 	<ApplicationIcon>Assets\app.ico</ApplicationIcon>
