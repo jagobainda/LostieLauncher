@@ -74,6 +74,8 @@ public partial class App : Application
 
         InitializeTrayIcon();
 
+        MainWindow = Services.GetRequiredService<MainWindow>();
+
         if (StartupWindowPolicy.ShouldShowOnStartup(SettingsViewModel.Instance.StartMinimized, SettingsViewModel.Instance.HasSeenWelcome))
         {
             var splash = new SplashWindow(() => ShowMainWindow(mainViewModel));
@@ -82,7 +84,6 @@ public partial class App : Application
         }
         else
         {
-            Services.GetRequiredService<MainWindow>();
             Logs.DebugLogManager("Window kept hidden on startup (StartMinimized).");
             CompleteStartup();
         }
