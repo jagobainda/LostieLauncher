@@ -14,6 +14,15 @@ updates:
               update-types:
                   - minor
                   - patch
+          # Microsoft.Extensions.* majors must move together: each package
+          # requires the same major of the others, so a PR bumping only one
+          # fails to restore with NU1605 (package downgrade). Listed after
+          # minor-and-patch so their minor and patch updates stay in that group.
+          microsoft-extensions-major:
+              patterns:
+                  - "Microsoft.Extensions.*"
+              update-types:
+                  - major
       ignore:
           # Velopack es la dependencia crítica de auto-actualización: no queremos
           # NINGÚN PR automático (ni de versión ni de seguridad). Se gestiona a mano.
