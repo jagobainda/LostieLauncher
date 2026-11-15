@@ -56,7 +56,7 @@
 
     <!-- DI helpers (the production project uses Microsoft.Extensions.DI). -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0" />
 
     <!-- Coverage -->
     <PackageReference Include="coverlet.collector" Version="10.1.0">
