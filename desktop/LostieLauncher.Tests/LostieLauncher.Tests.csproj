@@ -55,7 +55,7 @@
     <PackageReference Include="Shouldly" Version="4.3.0" />
 
     <!-- DI helpers (the production project uses Microsoft.Extensions.DI). -->
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
 
     <!-- Coverage -->
