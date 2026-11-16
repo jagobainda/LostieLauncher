@@ -13,6 +13,8 @@ import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
+import dev.jagoba.lostielauncher.util.file.LEGACY_ZIP_CHARSET
+import dev.jagoba.lostielauncher.util.file.unicodePathField
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -20,6 +22,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.File
 import java.io.IOException
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.UUID
@@ -33,6 +36,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @DisplayName("ArchiveGameInstallationService")
@@ -72,11 +77,17 @@ class ArchiveGameInstallationServiceTest {
         logger,
     )
 
-    private fun writeArchive(vararg entries: Pair<String, String>): String {
+    private fun writeArchive(
+        vararg entries: Pair<String, String>,
+        charset: Charset = Charsets.UTF_8,
+        unicodePaths: Map<String, String> = emptyMap(),
+    ): String {
         archive.parentFile?.mkdirs()
-        ZipOutputStream(archive.outputStream()).use { zip ->
+        ZipOutputStream(archive.outputStream(), charset).use { zip ->
             for ((name, content) in entries) {
-                zip.putNextEntry(ZipEntry(name))
+                val entry = ZipEntry(name)
+                unicodePaths[name]?.let { entry.extra = unicodePathField(name, it.toByteArray()) }
+                zip.putNextEntry(entry)
                 zip.write(content.toByteArray())
                 zip.closeEntry()
             }
@@ -204,6 +215,45 @@ class ArchiveGameInstallationServiceTest {
 
         File(gameDirectory, "Save").isDirectory shouldBe true
         File(gameDirectory, "Audio/BGM/Theme.ogg").readText() shouldBe "ogg"
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "IBM850, Trovão Distorsión.mp3,",
+        "UTF-8,  Trovão Distorsión.mp3,",
+        "IBM850, Trov_o Distorsi_n.mp3, Audio/BGM/Trovão Distorsión.mp3",
+    )
+    fun `extracts an accented name from the legacy code page, the UTF-8 flag or the Unicode Path field`(
+        charset: String,
+        headerName: String,
+        unicodePath: String?,
+    ) = runTest(dispatcher) {
+        val entryName = "Audio/BGM/$headerName"
+        val hash = writeArchive(
+            entryName to "bgm",
+            charset = Charset.forName(charset),
+            unicodePaths = unicodePath?.let { mapOf(entryName to it) }.orEmpty(),
+        )
+        val sut = createSut()
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+
+        File(gameDirectory, "Audio/BGM").list().orEmpty().toList() shouldBe listOf("Trovão Distorsión.mp3")
+    }
+
+    @Test
+    fun `rejects a Unicode Path field that escapes the game directory`() = runTest(dispatcher) {
+        val hash = writeArchive(
+            "Data/safe.txt" to "evil",
+            charset = LEGACY_ZIP_CHARSET,
+            unicodePaths = mapOf("Data/safe.txt" to "../escaped.txt"),
+        )
+        val sut = createSut()
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+
+        File(gamesRoot, "escaped.txt").exists() shouldBe false
+        gameDirectory.exists() shouldBe false
     }
 
     @Test
