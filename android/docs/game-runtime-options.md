@@ -43,6 +43,13 @@ extracts under `.tmp` with path-containment checks, moves a previous installatio
 to a unique `.old-<UUID>` directory, and cleans old directories in the background.
 A `.nomedia` marker keeps game images out of media scanning.
 
+Entry names are resolved by `ZipEntryNames` and follow desktop: a name flagged
+as UTF-8 is read as UTF-8, and the Info-ZIP Unicode Path extra field replaces
+the header name. Android differs in two details. It ignores a Unicode Path whose
+checksum does not match the header name, as the ZIP specification asks. It reads
+an unflagged name without a usable Unicode Path as code page 850, the encoding
+the game archives are packed with; desktop decodes those bytes as UTF-8.
+
 `KirinGameLibrary` merges entries by path. Kirin launches with the configured
 action, activity and game-path extra in `KirinOptions`. The launcher neither
 executes `Game.exe` itself nor installs each game as an Android package.

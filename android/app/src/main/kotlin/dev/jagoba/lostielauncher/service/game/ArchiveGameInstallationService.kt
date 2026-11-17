@@ -14,6 +14,7 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.model.gameSlug
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
+import dev.jagoba.lostielauncher.util.file.ZipEntryNames
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
 import java.io.IOException
@@ -183,7 +184,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")
         hideGamesFromMediaScanner()
         try {
-            ZipFile(archive, Charsets.UTF_8).use { zip -> extractEntries(zip, temp, gameId) }
+            ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip -> extractEntries(zip, temp, gameId) }
             swap(temp, directory)
         } catch (error: Exception) {
             temp.deleteRecursively()
@@ -197,9 +198,10 @@ internal class ArchiveGameInstallationService @Inject constructor(
         val files = linkedMapOf<File, ZipEntry>()
         val directories = mutableSetOf<Path>()
         for (entry in zip.entries()) {
-            val target = root.resolve(entry.name.replace('\\', '/')).normalize()
+            val name = ZipEntryNames.resolve(entry)
+            val target = root.resolve(name.replace('\\', '/')).normalize()
             if (!target.startsWith(root) || (target == root && !entry.isDirectory)) {
-                throw IOException("Zip Slip attempt detected in entry: ${entry.name}")
+                throw IOException("Zip Slip attempt detected in entry: $name")
             }
             if (entry.isDirectory) {
                 directories.addWithAncestors(target, root)
