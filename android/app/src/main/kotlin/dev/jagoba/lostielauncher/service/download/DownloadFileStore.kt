@@ -22,6 +22,8 @@ internal interface DownloadFileStore {
 
     fun hasArtifacts(destinationPath: String): Boolean
 
+    fun hasArchive(destinationPath: String): Boolean
+
     fun hasResumablePartial(destinationPath: String): Boolean
 
     fun destination(): DownloadDestination
@@ -58,6 +60,8 @@ internal class DefaultDownloadFileStore @Inject constructor(
     }
 
     override fun hasArtifacts(destinationPath: String): Boolean = artifactsOf(destinationPath).any(File::exists)
+
+    override fun hasArchive(destinationPath: String): Boolean = File(destinationPath).isFile
 
     override fun hasResumablePartial(destinationPath: String): Boolean {
         val (_, part, metadata) = artifactsOf(destinationPath)

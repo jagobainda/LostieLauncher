@@ -26,6 +26,7 @@ interface Strings {
     val btnDownloaded: String
     val btnPause: String
     val btnResume: String
+    val btnRetry: String
     val btnUpdate: String
     val btnPlay: String
     val tooltipUninstall: String
@@ -74,6 +75,9 @@ interface Strings {
     val downloadErrorMessage: String
     val downloadPermissionDeniedTitle: String
     val downloadPermissionDeniedMessage: String
+    val installationErrorTitle: String
+    val installationErrorMessage: String
+    val installationCompleteMessage: String
     val btnCancel: String
     val btnClose: String
     val cancelDownloadConfirmTitle: String
@@ -83,6 +87,7 @@ interface Strings {
     val statusVerifying: String
     val statusUninstalling: String
     val statusWaitingForConnection: String
+    val statusInstallationPending: String
     val statusNotSupportedYet: String
     val notSupportedYetMessage: String
     val locationNoHandlerTitle: String

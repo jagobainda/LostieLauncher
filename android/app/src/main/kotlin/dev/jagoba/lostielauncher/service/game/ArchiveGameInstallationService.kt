@@ -14,6 +14,7 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.model.gameSlug
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
+import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.file.ZipEntryNames
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
@@ -49,6 +50,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
     private val library: LocalLibraryStore,
     private val kirin: KirinGameLibrary,
     private val options: KirinOptions,
+    private val storageAccess: StorageAccess,
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
 ) : GameInstallationService by pending {
@@ -92,6 +94,10 @@ internal class ArchiveGameInstallationService @Inject constructor(
         if (!archive.isFile) {
             logger.error("Downloaded archive not found for ${file.gameId}: ${file.path}.")
             return GameInstallationResult.MissingArchive
+        }
+        if (!storageAccess.isGranted()) {
+            logger.error("Shared storage access is missing; ${file.gameId} cannot be installed.")
+            return GameInstallationResult.StorageAccessDenied
         }
 
         setPhase(file.gameId, GameInstallationState.VerifyingIntegrity)

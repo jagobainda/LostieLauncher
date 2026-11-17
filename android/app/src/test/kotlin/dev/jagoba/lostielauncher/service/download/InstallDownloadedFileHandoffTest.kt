@@ -45,7 +45,7 @@ class InstallDownloadedFileHandoffTest {
         val file = DownloadedFile("demo", "Demo", "v1", null, "downloads/demo.zip")
         val sut = createSut()
 
-        sut.deliver(file)
+        sut.deliver(file) shouldBe GameInstallationResult.ExtractionFailed
 
         request.captured shouldBe GameInstallationRequest(file, game.id, game.sha256, null)
         coVerify(exactly = 0) { content.getGames() }

@@ -153,7 +153,7 @@ fun LibraryGameCard(
             when (state.status) {
                 in PROGRESS_STATUSES -> DownloadProgress(state)
                 LibraryCardStatus.INSTALLATION_UNSUPPORTED -> StatusNotice(strings.statusNotSupportedYet)
-                LibraryCardStatus.INSTALLATION_FAILED -> StatusNotice(strings.downloadErrorTitle)
+                LibraryCardStatus.INSTALLATION_FAILED -> StatusNotice(strings.installationErrorTitle)
                 else -> Unit
             }
         },
@@ -179,17 +179,20 @@ fun LibraryGameCard(
                     CancelButton(state.canCancel, onCancel)
                 }
 
-                LibraryCardStatus.PAUSED -> Row {
+                LibraryCardStatus.PAUSED, LibraryCardStatus.INSTALLATION_FAILED -> Row {
+                    val paused = state.status == LibraryCardStatus.PAUSED
                     CardButton(
                         style = CardButtonStyle.ACCENT,
-                        icon = R.drawable.ic_card_play,
-                        label = strings.btnResume,
+                        icon = if (paused) R.drawable.ic_card_play else R.drawable.ic_card_update,
+                        label = if (paused) strings.btnResume else strings.btnRetry,
                         enabled = state.canStart,
                         onClick = onDownload,
                     )
                     Spacer(Modifier.width(LauncherSpacing.Small))
                     CancelButton(state.canCancel, onCancel)
                 }
+
+                LibraryCardStatus.INSTALLATION_PENDING -> CancelButton(state.canCancel, onCancel)
 
                 LibraryCardStatus.DOWNLOADED, LibraryCardStatus.INSTALLATION_UNSUPPORTED -> CardButton(
                     style = CardButtonStyle.SECONDARY,
@@ -450,6 +453,8 @@ private fun DownloadProgress(state: LibraryGameCardState) {
         }
 
         LibraryCardStatus.VERIFYING_INTEGRITY -> strings.statusVerifying
+
+        LibraryCardStatus.INSTALLATION_PENDING -> strings.statusInstallationPending
 
         else -> "${value.roundToInt()}%"
     }

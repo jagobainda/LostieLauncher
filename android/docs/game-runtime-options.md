@@ -43,6 +43,19 @@ extracts under `.tmp` with path-containment checks, moves a previous installatio
 to a unique `.old-<UUID>` directory, and cleans old directories in the background.
 A `.nomedia` marker keeps game images out of media scanning.
 
+The Room row records the installation durably. A finished transfer becomes
+`INSTALLING` before the handoff and turns `COMPLETED` only once the game is
+installed; any other result turns it `INSTALLATION_FAILED`. A worker that finds
+an `INSTALLING` row, for example after the process died during extraction,
+installs the kept archive again instead of returning without work. The installer
+refuses to start without shared-storage access and reports that cause. A failed
+installation keeps its archive, except after a hash failure. The card offers
+Retry, which installs the kept archive or downloads it again when it is gone,
+and Cancel, which deletes it; the cache purge removes an abandoned archive. The
+worker ends with a notification of the result: installed, failed or missing
+storage access. Desktop instead returns the card to Download and has no final
+notification.
+
 Entry names are resolved by `ZipEntryNames` and follow desktop: a name flagged
 as UTF-8 is read as UTF-8, and the Info-ZIP Unicode Path extra field replaces
 the header name. Android differs in two details. It ignores a Unicode Path whose
@@ -58,8 +71,9 @@ executes `Game.exe` itself nor installs each game as an Android package.
 
 The implementation checks shared-storage access through `StorageAccess`:
 all-files access on Android 11+, or legacy write permission on older supported
-versions. User-started install/update waits for that access. Notification
-permission affects progress visibility and is a separate request.
+versions. User-started install/update and a retried installation wait for that
+access. Notification permission affects progress and result visibility and is a
+separate request.
 
 `KirinSetupService` checks server requirements and the installed Kirin version.
 `KirinRequirement` blocks the shell for missing/outdated Kirin; a recommended
@@ -68,14 +82,13 @@ shared APK installer engine, followed by Android's system installation UI.
 
 ## Remaining limitations
 
-- Installation phases and terminal results are held in memory, not replayed
-  from durable storage after process recreation.
+- Installation phases and terminal results are held in memory. After process
+  recreation the row still says whether an installation is pending or failed,
+  but not why it failed, so the failure notice is not shown again.
 - The Room download row does not persist the catalogue GUID, expected SHA-256
   or resolved special-version type as an immutable enqueue-time snapshot.
 - Per-game installed lookup, running detection and blocker opening remain
   unsupported as shown above.
-- Installation failure and retry behavior still need a complete recovery
-  contract; a durable `COMPLETED` transfer is not proof of installation.
 - Registry entries provide the installed-list projection; they are not a
   filesystem validation of every game directory.
 

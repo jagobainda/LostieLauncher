@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.model.DownloadedFile
+import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
 import javax.inject.Inject
@@ -21,6 +22,10 @@ internal interface DownloadWorkerRuntime {
     suspend fun setForeground(displayName: String, phase: DownloadNotificationPhase)
 
     suspend fun reportProgress(displayName: String, progress: DownloadProgress)
+
+    suspend fun notifyResult(displayName: String, result: GameInstallationResult)
+
+    fun clearResult(displayName: String)
 }
 
 internal enum class DownloadWorkerOutcome {
@@ -39,42 +44,12 @@ internal class DownloadWorkerRunner @Inject constructor(
     private val logger: Logger,
 ) {
     suspend fun run(gameId: String, workId: String, runtime: DownloadWorkerRuntime): DownloadWorkerOutcome {
-        val entity = dao.get(gameId) ?: return DownloadWorkerOutcome.SUCCESS
-        val startable = entity.workId == workId && entity.status in DownloadStatus.ActiveNames
-        if (!startable) return DownloadWorkerOutcome.SUCCESS
-        val changed = dao.setWorkerStatus(
-            gameId = gameId,
-            workId = workId,
-            status = DownloadStatus.DOWNLOADING.name,
-            expectedStatuses = DownloadStatus.ActiveNames,
-        )
-        if (changed == 0) return DownloadWorkerOutcome.SUCCESS
-        val initialProgress = DownloadProgress(
-            percent = entity.percent,
-            bytesPerSecond = 0.0,
-            downloadedBytes = entity.downloadedBytes,
-            totalBytes = entity.totalBytes,
-        )
+        val entity = dao.get(gameId)?.takeIf { it.workId == workId } ?: return DownloadWorkerOutcome.SUCCESS
         return try {
-            runtime.setForeground(entity.displayName, DownloadNotificationPhase.Downloading(initialProgress))
-            when (
-                val result = transfer.download(
-                    DownloadTransferRequest(entity.url, entity.destinationPath),
-                ) { progress -> updateProgress(entity, workId, progress, runtime) }
-            ) {
-                DownloadTransferResult.Success -> complete(entity, workId, runtime)
-
-                DownloadTransferResult.PermissionDenied -> {
-                    deleteArtifacts(entity)
-                    finish(entity, workId, DownloadStatus.PERMISSION_DENIED, PERMISSION_DENIED_MESSAGE)
-                }
-
-                is DownloadTransferResult.Failed -> finish(
-                    entity,
-                    workId,
-                    DownloadStatus.FAILED,
-                    result.message,
-                )
+            when (entity.status) {
+                DownloadStatus.INSTALLING.name -> install(entity, workId, runtime)
+                in DownloadStatus.TransferringNames -> download(entity, workId, runtime)
+                else -> DownloadWorkerOutcome.SUCCESS
             }
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) {
@@ -93,6 +68,46 @@ internal class DownloadWorkerRunner @Inject constructor(
         } catch (error: Exception) {
             logger.error("Download worker failed for $gameId.", error)
             finish(entity, workId, DownloadStatus.FAILED, error.message)
+        }
+    }
+
+    private suspend fun download(
+        entity: DownloadEntity,
+        workId: String,
+        runtime: DownloadWorkerRuntime,
+    ): DownloadWorkerOutcome {
+        val changed = dao.setWorkerStatus(
+            gameId = entity.gameId,
+            workId = workId,
+            status = DownloadStatus.DOWNLOADING.name,
+            expectedStatuses = DownloadStatus.TransferringNames,
+        )
+        if (changed == 0) return DownloadWorkerOutcome.SUCCESS
+        val initialProgress = DownloadProgress(
+            percent = entity.percent,
+            bytesPerSecond = 0.0,
+            downloadedBytes = entity.downloadedBytes,
+            totalBytes = entity.totalBytes,
+        )
+        runtime.setForeground(entity.displayName, DownloadNotificationPhase.Downloading(initialProgress))
+        return when (
+            val result = transfer.download(
+                DownloadTransferRequest(entity.url, entity.destinationPath),
+            ) { progress -> updateProgress(entity, workId, progress, runtime) }
+        ) {
+            DownloadTransferResult.Success -> complete(entity, workId, runtime)
+
+            DownloadTransferResult.PermissionDenied -> {
+                deleteArtifacts(entity)
+                finish(entity, workId, DownloadStatus.PERMISSION_DENIED, PERMISSION_DENIED_MESSAGE)
+            }
+
+            is DownloadTransferResult.Failed -> finish(
+                entity,
+                workId,
+                DownloadStatus.FAILED,
+                result.message,
+            )
         }
     }
 
@@ -124,17 +139,44 @@ internal class DownloadWorkerRunner @Inject constructor(
             gameId = entity.gameId,
             workId = workId,
             expectedStatus = DownloadStatus.DOWNLOADING.name,
-            status = DownloadStatus.COMPLETED.name,
+            status = DownloadStatus.INSTALLING.name,
         )
         if (changed == 0) return DownloadWorkerOutcome.SUCCESS
         logger.info("Download complete: ${entity.gameId}.")
+        return install(entity, workId, runtime)
+    }
+
+    private suspend fun install(
+        entity: DownloadEntity,
+        workId: String,
+        runtime: DownloadWorkerRuntime,
+    ): DownloadWorkerOutcome {
+        runtime.clearResult(entity.displayName)
         showPhase(entity, DownloadNotificationPhase.Verifying, runtime)
-        try {
+        val result = try {
             deliver(entity, runtime)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (error: Exception) {
             logger.error("Downloaded file handoff failed for ${entity.gameId}.", error)
+            GameInstallationResult.ExtractionFailed
         }
-        return DownloadWorkerOutcome.SUCCESS
+        val installed = result is GameInstallationResult.Installed
+        dao.finish(
+            gameId = entity.gameId,
+            workId = workId,
+            expectedStatus = DownloadStatus.INSTALLING.name,
+            status = if (installed) DownloadStatus.COMPLETED.name else DownloadStatus.INSTALLATION_FAILED.name,
+            errorMessage = result.takeUnless { installed }?.toString(),
+        )
+        try {
+            runtime.notifyResult(entity.displayName, result)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("Installation result could not be notified for ${entity.gameId}.", error)
+        }
+        return if (installed) DownloadWorkerOutcome.SUCCESS else DownloadWorkerOutcome.FAILURE
     }
 
     private suspend fun deliver(entity: DownloadEntity, runtime: DownloadWorkerRuntime) = coroutineScope {

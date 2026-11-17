@@ -88,7 +88,7 @@ internal class DefaultDownloadManager @Inject constructor(
 
     override suspend fun pause(gameId: String): DownloadCommandResult = commandGate.withLock {
         val entity = dao.get(gameId) ?: return@withLock DownloadCommandResult.NOT_FOUND
-        if (entity.status !in DownloadStatus.ActiveNames) return@withLock DownloadCommandResult.INVALID_STATE
+        if (entity.status !in DownloadStatus.TransferringNames) return@withLock DownloadCommandResult.INVALID_STATE
         dao.setStatus(gameId, DownloadStatus.PAUSED.name)
         scheduler.cancel(UUID.fromString(entity.workId))
         logger.info("Download paused: $gameId.")
@@ -108,6 +108,26 @@ internal class DefaultDownloadManager @Inject constructor(
         )
         if (changed == 0) return@withLock DownloadCommandResult.INVALID_STATE
         logger.info("Download resumed: $gameId.")
+        enqueue(gameId, workId)
+    }
+
+    override suspend fun retry(gameId: String): DownloadCommandResult = commandGate.withLock {
+        val entity = dao.get(gameId) ?: return@withLock DownloadCommandResult.NOT_FOUND
+        if (entity.status !=
+            DownloadStatus.INSTALLATION_FAILED.name
+        ) {
+            return@withLock DownloadCommandResult.INVALID_STATE
+        }
+        if (hasActiveDownload()) return@withLock DownloadCommandResult.BUSY
+        val workId = scheduler.nextId()
+        val archived = withContext(dispatchers.io) { fileStore.hasArchive(entity.destinationPath) }
+        val retried = if (archived) {
+            entity.copy(status = DownloadStatus.INSTALLING.name)
+        } else {
+            entity.copy(status = DownloadStatus.QUEUED.name, percent = 0.0, downloadedBytes = 0, totalBytes = null)
+        }
+        dao.upsert(retried.copy(workId = workId.toString(), errorMessage = null))
+        logger.info("Retrying ${if (archived) "installation" else "download"}: $gameId.")
         enqueue(gameId, workId)
     }
 

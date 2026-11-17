@@ -4,6 +4,8 @@ import dev.jagoba.lostielauncher.content.strings.EngStrings
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.MissingGameId
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -76,6 +78,24 @@ class DownloadNotificationContentTest {
         GameInstallationState.VerifyingIntegrity.notificationPhase() shouldBe DownloadNotificationPhase.Verifying
         GameInstallationState.Extracting(10).notificationPhase() shouldBe DownloadNotificationPhase.Extracting(10)
         GameInstallationState.Finished(GameInstallationResult.HashMismatch).notificationPhase() shouldBe null
+    }
+
+    @Test
+    fun `names the outcome of every finished installation except an unsupported one`() {
+        val installed = GameInstallationResult.Installed(LocalGame(MissingGameId, "Demo", "1.0", null))
+
+        installationResultNotificationText(installed, EngStrings) shouldBe EngStrings.installationCompleteMessage
+        listOf(GameInstallationResult.InvalidHash, GameInstallationResult.HashMismatch).forEach {
+            installationResultNotificationText(it, EngStrings) shouldBe EngStrings.hashMismatchTitle
+        }
+        installationResultNotificationText(GameInstallationResult.StorageAccessDenied, EngStrings) shouldBe
+            EngStrings.storageAccessDeniedMessage
+        listOf(
+            GameInstallationResult.MissingArchive,
+            GameInstallationResult.ExtractionFailed,
+            GameInstallationResult.RegistryFailed,
+        ).forEach { installationResultNotificationText(it, EngStrings) shouldBe EngStrings.installationErrorTitle }
+        installationResultNotificationText(GameInstallationResult.NotSupportedYet, EngStrings) shouldBe null
     }
 
     private companion object {

@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.content.Strings
 import dev.jagoba.lostielauncher.model.DownloadProgress
+import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.util.format.DownloadSpeedFormatter
 import dev.jagoba.lostielauncher.util.format.RemainingTimeFormatter
@@ -62,6 +63,22 @@ internal fun downloadNotificationContent(
         indeterminate = phase.percent == null,
     )
 }
+
+internal fun installationResultNotificationText(result: GameInstallationResult, strings: Strings): String? =
+    when (result) {
+        is GameInstallationResult.Installed -> strings.installationCompleteMessage
+
+        GameInstallationResult.InvalidHash, GameInstallationResult.HashMismatch -> strings.hashMismatchTitle
+
+        GameInstallationResult.StorageAccessDenied -> strings.storageAccessDeniedMessage
+
+        GameInstallationResult.MissingArchive,
+        GameInstallationResult.ExtractionFailed,
+        GameInstallationResult.RegistryFailed,
+        -> strings.installationErrorTitle
+
+        GameInstallationResult.NotSupportedYet -> null
+    }
 
 internal fun GameInstallationState.notificationPhase(): DownloadNotificationPhase? = when (this) {
     GameInstallationState.VerifyingIntegrity -> DownloadNotificationPhase.Verifying

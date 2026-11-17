@@ -19,20 +19,26 @@ data class DownloadSnapshot(
 enum class DownloadStatus {
     QUEUED,
     DOWNLOADING,
+    INSTALLING,
     PAUSED,
     COMPLETED,
     FAILED,
+    INSTALLATION_FAILED,
     PERMISSION_DENIED,
     CANCELLED,
     ;
 
-    val isActive: Boolean
+    val isTransferring: Boolean
         get() = this == QUEUED || this == DOWNLOADING
+
+    val isActive: Boolean
+        get() = isTransferring || this == INSTALLING
 
     val isFinished: Boolean
         get() = this == COMPLETED || this == CANCELLED
 
     companion object {
+        val TransferringNames: List<String> = entries.filter { it.isTransferring }.map { it.name }
         val ActiveNames: List<String> = entries.filter { it.isActive }.map { it.name }
         val InactiveNames: List<String> = entries.filterNot { it.isActive }.map { it.name }
     }

@@ -110,9 +110,11 @@ internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (
     LibraryNotice.DOWNLOAD_INVALID,
     LibraryNotice.DOWNLOAD_NOT_FOUND,
     LibraryNotice.DOWNLOAD_FAILED,
-    LibraryNotice.INSTALLATION_FAILED,
     LibraryNotice.SPECIAL_DOWNLOAD_ERROR,
     -> errorMessageBox(strings.downloadErrorTitle, strings.downloadErrorMessage)
+
+    LibraryNotice.INSTALLATION_FAILED ->
+        errorMessageBox(strings.installationErrorTitle, strings.installationErrorMessage)
 
     LibraryNotice.DOWNLOAD_PERMISSION_DENIED ->
         errorMessageBox(strings.downloadPermissionDeniedTitle, strings.downloadPermissionDeniedMessage)

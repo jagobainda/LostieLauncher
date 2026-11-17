@@ -82,6 +82,19 @@ class DownloadFileStoreTest {
         sut.hasResumablePartial(destination.toString()) shouldBe true
     }
 
+    @Test
+    fun `recognizes a downloaded archive but not a partial`() {
+        val sut = createSut()
+        val destination = sut.destinationFor(GameDownloadArgs("demo", "1.0", "/demo.zip")).toPath()
+        requireNotNull(destination.parent).createDirectories()
+        Path.of(DownloadPathUtils.getPartFilePath(destination.toString())).createFile()
+
+        sut.hasArchive(destination.toString()) shouldBe false
+
+        destination.createFile()
+        sut.hasArchive(destination.toString()) shouldBe true
+    }
+
     private fun createSut() = DefaultDownloadFileStore(
         storageLocations = FixedStorageLocations(directory.toFile(), directory.resolve("logs").toFile()),
         options = DownloadTransferOptions(
