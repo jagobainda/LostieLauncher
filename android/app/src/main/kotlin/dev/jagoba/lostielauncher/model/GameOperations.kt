@@ -20,6 +20,8 @@ sealed interface GameInstallationResult {
 
     data object HashMismatch : GameInstallationResult
 
+    data object StorageAccessDenied : GameInstallationResult
+
     data object ExtractionFailed : GameInstallationResult
 
     data object RegistryFailed : GameInstallationResult

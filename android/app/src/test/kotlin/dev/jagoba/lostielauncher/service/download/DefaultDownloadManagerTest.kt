@@ -115,6 +115,66 @@ class DefaultDownloadManagerTest {
     }
 
     @Test
+    fun `does not pause an installation in progress`() = runTest {
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.INSTALLING)
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.pause("demo") shouldBe DownloadCommandResult.INVALID_STATE
+
+        coVerify(exactly = 0) { dao.setStatus(any(), any(), any()) }
+        coVerify(exactly = 0) { scheduler.cancel(any()) }
+    }
+
+    @Test
+    fun `retries a failed installation from the kept archive with a new worker`() = runTest {
+        val entity = slot<DownloadEntity>()
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.INSTALLATION_FAILED).copy(
+            workId = "old-work",
+            errorMessage = "ExtractionFailed",
+        )
+        every { fileStore.hasArchive(destinationPath) } returns true
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.retry("demo") shouldBe DownloadCommandResult.ACCEPTED
+
+        coVerify(exactly = 1) { dao.upsert(capture(entity)) }
+        entity.captured shouldBe entity(DownloadStatus.INSTALLING)
+        verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @Test
+    fun `downloads the archive again when a failed installation no longer has it`() = runTest {
+        val entity = slot<DownloadEntity>()
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.INSTALLATION_FAILED)
+        every { fileStore.hasArchive(destinationPath) } returns false
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.retry("demo") shouldBe DownloadCommandResult.ACCEPTED
+
+        coVerify(exactly = 1) { dao.upsert(capture(entity)) }
+        entity.captured shouldBe
+            entity(DownloadStatus.QUEUED).copy(percent = 0.0, downloadedBytes = 0, totalBytes = null)
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @Test
+    fun `only retries a failed installation when no other download is active`() = runTest {
+        coEvery { dao.get("demo") } returnsMany listOf(
+            entity(DownloadStatus.FAILED),
+            entity(DownloadStatus.INSTALLATION_FAILED),
+        )
+        coEvery { dao.countWithStatuses(any()) } returns 1
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.retry("demo") shouldBe DownloadCommandResult.INVALID_STATE
+        sut.retry("demo") shouldBe DownloadCommandResult.BUSY
+
+        coVerify(exactly = 0) { dao.upsert(any()) }
+        verify(exactly = 0) { scheduler.enqueue(any(), any()) }
+    }
+
+    @Test
     fun `resumes a paused transfer with a new worker`() = runTest {
         coEvery { dao.get("demo") } returns entity(DownloadStatus.PAUSED)
         coEvery { dao.replaceWork(any(), any(), any(), any()) } returns 1

@@ -13,12 +13,14 @@ import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
+import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.file.LEGACY_ZIP_CHARSET
 import dev.jagoba.lostielauncher.util.file.unicodePathField
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import java.io.File
 import java.io.IOException
@@ -49,6 +51,7 @@ class ArchiveGameInstallationServiceTest {
     private val logger = mockk<Logger>(relaxed = true)
     private val library = mockk<LocalLibraryStore>(relaxed = true)
     private val kirin = mockk<KirinGameLibrary>(relaxed = true)
+    private val storageAccess = mockk<StorageAccess> { every { isGranted() } returns true }
     private val gameId = UUID.fromString("11111111-2222-3333-4444-555555555555")
     private val installedGame = LocalGame(gameId, "Demo", "v1", null)
     private val gamesRoot get() = directory.resolve("LostieLauncher").toFile()
@@ -73,6 +76,7 @@ class ArchiveGameInstallationServiceTest {
             archiveExtractionWorkers = 4,
             archiveEntryCostBytes = entryCostBytes,
         ),
+        storageAccess,
         TestDispatcherProvider(dispatcher),
         logger,
     )
@@ -348,6 +352,19 @@ class ArchiveGameInstallationServiceTest {
         File(gamesRoot, "escaped.txt").exists() shouldBe false
         gameDirectory.exists() shouldBe false
         File("${gameDirectory.path}.tmp").exists() shouldBe false
+        archive.exists() shouldBe true
+        coVerify(exactly = 0) { kirin.register(any(), any()) }
+    }
+
+    @Test
+    fun `reports missing shared storage access without extracting and keeps the archive`() = runTest(dispatcher) {
+        val hash = writeArchive("Game.exe" to "exe")
+        every { storageAccess.isGranted() } returns false
+        val sut = createSut()
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.StorageAccessDenied
+
+        gameDirectory.exists() shouldBe false
         archive.exists() shouldBe true
         coVerify(exactly = 0) { kirin.register(any(), any()) }
     }

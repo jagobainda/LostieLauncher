@@ -6,6 +6,8 @@ import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
+import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
@@ -25,6 +27,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 @DisplayName("DownloadWorkerRunner")
 class DownloadWorkerRunnerTest {
@@ -43,10 +47,12 @@ class DownloadWorkerRunnerTest {
         coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.finish(any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.complete(any(), any(), any(), any()) } returns 1
-        coEvery { handoff.deliver(any()) } returns Unit
+        coEvery { handoff.deliver(any()) } returns GameInstallationResult.Installed(INSTALLED_GAME)
         every { fileStore.deleteArtifacts(any()) } returns 2
         coEvery { runtime.setForeground(any(), any()) } returns Unit
         coEvery { runtime.reportProgress(any(), any()) } returns Unit
+        coEvery { runtime.notifyResult(any(), any()) } returns Unit
+        every { runtime.clearResult(any()) } returns Unit
         every { installer.observeInstallation(any()) } returns emptyFlow()
     }
 
@@ -75,10 +81,86 @@ class DownloadWorkerRunnerTest {
             )
         }
         coVerify(exactly = 1) { runtime.reportProgress("Demo", progress) }
-        coVerify(exactly = 1) {
-            dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.COMPLETED.name)
+        coVerifyOrder {
+            dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.INSTALLING.name)
+            runtime.clearResult("Demo")
+            handoff.deliver(match { it.gameId == GAME_ID && it.path == DESTINATION })
+            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null)
+            runtime.notifyResult("Demo", GameInstallationResult.Installed(INSTALLED_GAME))
         }
-        coVerify(exactly = 1) { handoff.deliver(match { it.gameId == GAME_ID && it.path == DESTINATION }) }
+    }
+
+    @ParameterizedTest
+    @MethodSource("failedInstallations")
+    fun `records a failed installation with its cause and notifies it`(result: GameInstallationResult) = runTest {
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        coEvery { handoff.deliver(any()) } returns result
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.FAILURE
+
+        coVerify(exactly = 1) {
+            dao.finish(
+                GAME_ID,
+                WORK_ID,
+                DownloadStatus.INSTALLING.name,
+                DownloadStatus.INSTALLATION_FAILED.name,
+                result.toString(),
+            )
+        }
+        coVerify(exactly = 1) { runtime.notifyResult("Demo", result) }
+        verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
+    }
+
+    @Test
+    fun `records an unexpected handoff failure as a failed installation`() = runTest {
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        coEvery { handoff.deliver(any()) } throws IOException("catalogue")
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.FAILURE
+
+        coVerify(exactly = 1) {
+            dao.finish(
+                GAME_ID,
+                WORK_ID,
+                DownloadStatus.INSTALLING.name,
+                DownloadStatus.INSTALLATION_FAILED.name,
+                "ExtractionFailed",
+            )
+        }
+        coVerify(exactly = 1) { runtime.notifyResult("Demo", GameInstallationResult.ExtractionFailed) }
+    }
+
+    @Test
+    fun `installs the downloaded archive again when the worker reruns an interrupted installation`() = runTest {
+        coEvery { dao.get(GAME_ID) } returns entity().copy(status = DownloadStatus.INSTALLING.name)
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerify(exactly = 0) { transfer.download(any(), any()) }
+        coVerify(exactly = 0) { dao.setWorkerStatus(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { handoff.deliver(match { it.path == DESTINATION }) }
+        coVerify(exactly = 1) {
+            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null)
+        }
+    }
+
+    @Test
+    fun `propagates a cancellation during the installation and keeps it resumable`() = runTest {
+        coEvery { dao.get(GAME_ID) } returns entity().copy(status = DownloadStatus.INSTALLING.name)
+        coEvery { handoff.deliver(any()) } throws CancellationException("stopped")
+        val sut = createSut()
+
+        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
+
+        (error is CancellationException) shouldBe true
+        coVerify(exactly = 0) { dao.finish(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { dao.setWorkerStatus(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { runtime.notifyResult(any(), any()) }
+        verify(exactly = 0) { logger.error("Downloaded file handoff failed for demo.", any()) }
+        verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
     }
 
     @Test
@@ -273,6 +355,16 @@ class DownloadWorkerRunnerTest {
     )
 
     private companion object {
+        val INSTALLED_GAME = LocalGame(MissingGameId, "Demo", "1.0", null)
+
+        @JvmStatic
+        fun failedInstallations() = listOf(
+            GameInstallationResult.ExtractionFailed,
+            GameInstallationResult.HashMismatch,
+            GameInstallationResult.StorageAccessDenied,
+            GameInstallationResult.RegistryFailed,
+        )
+
         const val GAME_ID = "demo"
         const val WORK_ID = "11111111-2222-3333-4444-555555555555"
         const val DESTINATION = "C:/downloads/demo.zip"

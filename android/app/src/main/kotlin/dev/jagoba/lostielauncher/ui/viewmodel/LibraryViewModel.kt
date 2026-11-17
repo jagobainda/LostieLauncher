@@ -57,7 +57,7 @@ data class LibraryGameUiState(
     val canUpdate: Boolean,
     val canSwitchSpecialVersion: Boolean,
 ) {
-    val canPause: Boolean get() = download?.status?.isActive == true
+    val canPause: Boolean get() = download?.status?.isTransferring == true
     val canResume: Boolean get() = canStart && download?.status == DownloadStatus.PAUSED
     val canCancel: Boolean get() = download != null && !download.status.isFinished
     val installationUnsupported: Boolean
@@ -92,19 +92,18 @@ private fun cardStatus(
 
     DownloadStatus.PAUSED -> LibraryCardStatus.PAUSED
 
-    DownloadStatus.COMPLETED -> when (installation) {
+    DownloadStatus.INSTALLING -> when (installation) {
         GameInstallationState.VerifyingIntegrity -> LibraryCardStatus.VERIFYING_INTEGRITY
-
         is GameInstallationState.Extracting -> LibraryCardStatus.EXTRACTING
-
-        is GameInstallationState.Finished -> when (installation.result) {
-            is GameInstallationResult.Installed -> LibraryCardStatus.DOWNLOADED
-            GameInstallationResult.NotSupportedYet -> LibraryCardStatus.INSTALLATION_UNSUPPORTED
-            else -> LibraryCardStatus.INSTALLATION_FAILED
-        }
-
         else -> LibraryCardStatus.INSTALLATION_PENDING
     }
+
+    DownloadStatus.INSTALLATION_FAILED ->
+        if (installation == GameInstallationState.Finished(GameInstallationResult.NotSupportedYet)) {
+            LibraryCardStatus.INSTALLATION_UNSUPPORTED
+        } else {
+            LibraryCardStatus.INSTALLATION_FAILED
+        }
 
     else -> when {
         hasUpdate -> LibraryCardStatus.UPDATE_AVAILABLE
@@ -148,12 +147,12 @@ class LibraryViewModel @Inject constructor(
     private var afterStorageAccess: (() -> Unit)? = null
 
     private val installationStates = downloads.downloads.flatMapLatest { rows ->
-        val completed = rows.filter { it.status == DownloadStatus.COMPLETED }
-        if (completed.isEmpty()) {
+        val installing = rows.filter { it.status in INSTALLATION_STATUSES }
+        if (installing.isEmpty()) {
             flowOf(emptyMap())
         } else {
             combine(
-                completed.map { row ->
+                installing.map { row ->
                     installation.observeInstallation(row.gameId).map { row.gameId to it }
                 },
             ) { pairs -> pairs.toMap() }
@@ -175,7 +174,7 @@ class LibraryViewModel @Inject constructor(
                 val download = downloadRows.firstOrNull { it.gameId == game.gameId }
                 val canAct = !active && !catalogue.isLoading
                 val hasUpdate = local != null && VersionUtils.isNewerVersion(game.version, local.version)
-                val phase = if (download?.status == DownloadStatus.COMPLETED) phases[game.gameId] else null
+                val phase = phases[game.gameId]
                 val status = cardStatus(local, hasUpdate, download, phase)
                 LibraryGameUiState(
                     game = game,
@@ -191,7 +190,7 @@ class LibraryViewModel @Inject constructor(
                                 RemainingTimeFormatter.format(it - row.downloadedBytes, row.bytesPerSecond)
                             }
                         },
-                    canStart = canAct && status in setOf(LibraryCardStatus.AVAILABLE, LibraryCardStatus.PAUSED),
+                    canStart = canAct && status in STARTABLE_STATUSES,
                     canUpdate = canAct && status == LibraryCardStatus.UPDATE_AVAILABLE,
                     canSwitchSpecialVersion = canAct,
                 )
@@ -225,7 +224,7 @@ class LibraryViewModel @Inject constructor(
                 previous = phases
                 if (before == null) return@collect
                 val notice = phases.entries.firstNotNullOfOrNull { (gameId, phase) ->
-                    phase.failureNotice()?.takeIf { before[gameId] != phase }
+                    phase.failureNotice()?.takeIf { gameId in before && before[gameId] != phase }
                 }
                 if (notice != null) transient.value = transient.value.copy(notice = notice)
             }
@@ -254,6 +253,14 @@ class LibraryViewModel @Inject constructor(
         val row = state.value.games.firstOrNull { it.game.gameId == gameId } ?: return
         if (!row.canStart) {
             logger.debug("Download request ignored for $gameId: its card is ${row.status}.")
+            return
+        }
+        if (row.download?.status == DownloadStatus.INSTALLATION_FAILED) {
+            withStorageAccess {
+                viewModelScope.launch {
+                    if (serverActionsAvailable()) record(downloads.retry(gameId))
+                }
+            }
             return
         }
         viewModelScope.launch {
@@ -449,10 +456,19 @@ class LibraryViewModel @Inject constructor(
     }
 
     private companion object {
+        val INSTALLATION_STATUSES = setOf(DownloadStatus.INSTALLING, DownloadStatus.INSTALLATION_FAILED)
+        val STARTABLE_STATUSES = setOf(
+            LibraryCardStatus.AVAILABLE,
+            LibraryCardStatus.PAUSED,
+            LibraryCardStatus.INSTALLATION_FAILED,
+        )
+
         fun GameInstallationState.failureNotice(): LibraryNotice? =
             when ((this as? GameInstallationState.Finished)?.result) {
                 GameInstallationResult.InvalidHash, GameInstallationResult.HashMismatch ->
                     LibraryNotice.INSTALLATION_HASH_MISMATCH
+
+                GameInstallationResult.StorageAccessDenied -> LibraryNotice.STORAGE_ACCESS_DENIED
 
                 GameInstallationResult.MissingArchive,
                 GameInstallationResult.ExtractionFailed,

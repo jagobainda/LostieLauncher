@@ -8,6 +8,7 @@ import dagger.hilt.android.EntryPointAccessors
 import dev.jagoba.lostielauncher.content.Strings
 import dev.jagoba.lostielauncher.content.stringsFor
 import dev.jagoba.lostielauncher.model.DownloadProgress
+import dev.jagoba.lostielauncher.model.GameInstallationResult
 import kotlinx.coroutines.flow.first
 
 internal class GameDownloadWorker(appContext: Context, parameters: WorkerParameters) :
@@ -44,6 +45,14 @@ internal class GameDownloadWorker(appContext: Context, parameters: WorkerParamet
                 ),
             )
             setForeground(displayName, DownloadNotificationPhase.Downloading(progress))
+        }
+
+        override suspend fun notifyResult(displayName: String, result: GameInstallationResult) {
+            dependencies.foregroundInfoFactory().notifyResult(displayName, result, strings())
+        }
+
+        override fun clearResult(displayName: String) {
+            dependencies.foregroundInfoFactory().clearResult(displayName)
         }
 
         private suspend fun strings(): Strings = strings ?: stringsFor(

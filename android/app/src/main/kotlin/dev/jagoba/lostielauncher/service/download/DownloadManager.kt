@@ -15,6 +15,8 @@ interface DownloadManager {
 
     suspend fun resume(gameId: String): DownloadCommandResult
 
+    suspend fun retry(gameId: String): DownloadCommandResult
+
     suspend fun cancel(gameId: String): DownloadCommandResult
 
     suspend fun purgeStale(knownGameIds: Set<String>): Int

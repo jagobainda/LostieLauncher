@@ -109,6 +109,7 @@ internal class TestDownloads : DownloadManager {
     override val downloads: Flow<List<DownloadSnapshot>> = current
     val starts = mutableListOf<DownloadRequest>()
     val resumed = mutableListOf<String>()
+    val retried = mutableListOf<String>()
     val paused = mutableListOf<String>()
     val cancelled = mutableListOf<String>()
     val purged = mutableListOf<Set<String>>()
@@ -126,6 +127,11 @@ internal class TestDownloads : DownloadManager {
 
     override suspend fun resume(gameId: String): DownloadCommandResult {
         resumed += gameId
+        return result
+    }
+
+    override suspend fun retry(gameId: String): DownloadCommandResult {
+        retried += gameId
         return result
     }
 

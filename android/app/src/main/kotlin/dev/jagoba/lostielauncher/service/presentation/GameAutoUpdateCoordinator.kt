@@ -2,9 +2,7 @@ package dev.jagoba.lostielauncher.service.presentation
 
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
 import dev.jagoba.lostielauncher.model.DownloadRequest
-import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameDownloadArgs
-import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
@@ -55,18 +53,9 @@ class GameAutoUpdateCoordinator @Inject constructor(
                         GameDownloadArgs(game.gameId, game.version, game.relativePath),
                     )
                     when (downloads.start(request)) {
-                        DownloadCommandResult.ACCEPTED -> {
-                            val rows = downloads.downloads.first { snapshots ->
-                                snapshots.any { row ->
-                                    row.gameId == game.gameId && row.version == game.version &&
-                                        !row.status.isActive
-                                }
-                            }
-                            val row = rows.first { it.gameId == game.gameId && it.version == game.version }
-                            if (row.status == DownloadStatus.COMPLETED) {
-                                installation.observeInstallation(game.gameId).first {
-                                    it is GameInstallationState.Finished
-                                }
+                        DownloadCommandResult.ACCEPTED -> downloads.downloads.first { snapshots ->
+                            snapshots.any { row ->
+                                row.gameId == game.gameId && row.version == game.version && !row.status.isActive
                             }
                         }
 

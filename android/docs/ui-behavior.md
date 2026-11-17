@@ -34,9 +34,11 @@ Links support tap, long press and accessibility actions. The caller opens the
 canonical HTTPS URL through `ExternalLinkService`. Android's ICU regex engine
 needs device verification when the parser changes.
 
-Progress distinguishes transfer, integrity verification, extraction, terminal
-failure and unsupported fallback. `INSTALLATION_UNSUPPORTED` remains a fallback
-contract; it no longer describes every normal completed game download.
+Progress distinguishes transfer, integrity verification, extraction, an
+installation waiting for its worker, terminal failure and unsupported fallback.
+A pending installation offers Cancel; a failed one offers Retry and Cancel.
+`INSTALLATION_UNSUPPORTED` remains a fallback contract; it no longer describes
+every normal completed game download.
 
 ## Dialogs and settings
 

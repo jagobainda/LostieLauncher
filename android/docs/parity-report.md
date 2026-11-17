@@ -16,7 +16,7 @@ below and in [UI behavior](ui-behavior.md) and [game runtime](game-runtime-optio
 | Maintenance/offline | maintenance API and `NetworkMonitor` | No validated internet is a separate offline signal; content reloads on reconnect |
 | Downloads | Room, WorkManager, OkHttp | Resumable foreground work survives activity recreation; network interruption requeues work |
 | Special versions | `SpecialVersionService`, policies and dialogs | Lookup remains separate from the archive transfer |
-| Install/update | `ArchiveGameInstallationService` | Verifies ZIPs and registers extracted games for Kirin in shared storage; legacy entry names are read as code page 850, see [storage and handoff](game-runtime-options.md#storage-and-handoff) |
+| Install/update | `ArchiveGameInstallationService` | Verifies ZIPs and registers extracted games for Kirin in shared storage; legacy entry names are read as code page 850; a failed installation keeps its archive for Retry and every result is notified, see [storage and handoff](game-runtime-options.md#storage-and-handoff) |
 | Installed list and uninstall | archive installer and local registry | Shared registry survives launcher uninstall; individual lookup is still pending |
 | Launch | `KirinGameLaunchService` | Uses Kirin's explicit shortcut intent |
 | Game auto-update | `GameAutoUpdateCoordinator` | Startup preference drives sequential updates of regular outdated games |
@@ -37,8 +37,9 @@ in [build-and-validation.md](../.agents/build-and-validation.md).
   still use pending implementations. The installed list, uninstall and launch
   do not: read the [operation table](game-runtime-options.md#current-operations).
 - Installation phases are in-memory and the durable download row lacks a
-  resolved enqueue-time hash/catalogue snapshot. Recovery across process death
-  remains a separate concern.
+  resolved enqueue-time hash/catalogue snapshot. A pending or failed
+  installation survives process death: see
+  [storage and handoff](game-runtime-options.md#storage-and-handoff).
 - Games auto-update is implemented, but stops on a server-action block without
   the interactive notice shown by manual actions.
 - Open prompts and notices are held by ViewModels; they are not a durable

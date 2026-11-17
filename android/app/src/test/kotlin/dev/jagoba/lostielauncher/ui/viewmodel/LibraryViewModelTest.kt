@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.MethodSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryViewModelTest {
@@ -246,10 +247,10 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `completed transfer shows installation seam outcome`() = runTest(dispatcher) {
+    fun `unsupported installation shows installation seam outcome`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
-        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLATION_FAILED))
         val sut = createSut(backgroundScope)
         runCurrent()
         sut.state.value.games.single().installation shouldBe
@@ -443,13 +444,13 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `extraction progress updates the completed download card without enabling another download`() =
+    fun `extraction progress updates the installing download card without enabling another download`() =
         runTest(dispatcher) {
             val remote = testGame()
             content.games = listOf(remote)
             val phase = MutableStateFlow<GameInstallationState>(GameInstallationState.Extracting(0))
             installation.installation = phase
-            downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+            downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLING))
             val sut = createSut(backgroundScope)
             runCurrent()
 
@@ -461,7 +462,7 @@ class LibraryViewModelTest {
             row.status shouldBe LibraryCardStatus.EXTRACTING
             row.installation shouldBe GameInstallationState.Extracting(42)
             row.canStart shouldBe false
-            row.canCancel shouldBe false
+            row.canPause shouldBe false
             sut.state.value.notice shouldBe null
         }
 
@@ -471,7 +472,7 @@ class LibraryViewModelTest {
         content.games = listOf(remote)
         val phase = MutableStateFlow<GameInstallationState>(GameInstallationState.VerifyingIntegrity)
         installation.installation = phase
-        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLING))
         val sut = createSut(backgroundScope)
         runCurrent()
         sut.state.value.notice shouldBe null
@@ -480,17 +481,40 @@ class LibraryViewModelTest {
         sut.state.value.notice shouldBe LibraryNotice.INSTALLATION_HASH_MISMATCH
     }
 
+    @ParameterizedTest
+    @MethodSource("installationFailures")
+    fun `a transfer that completes into a failed installation raises a notice with its cause`(
+        result: GameInstallationResult,
+        notice: LibraryNotice,
+    ) = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val phase = MutableStateFlow<GameInstallationState>(GameInstallationState.NotStarted)
+        installation.installation = phase
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLING))
+        runCurrent()
+        phase.value = GameInstallationState.Finished(result)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLATION_FAILED))
+        runCurrent()
+        sut.state.value.notice shouldBe notice
+        sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_FAILED
+    }
+
     @Test
-    fun `a transfer that completes into a failed installation raises the installation notice`() = runTest(dispatcher) {
+    fun `a failure left by an earlier installation is not raised again by a new one`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
         installation.installation = flowOf(GameInstallationState.Finished(GameInstallationResult.ExtractionFailed))
         downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
         val sut = createSut(backgroundScope)
         runCurrent()
-        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLING))
         runCurrent()
-        sut.state.value.notice shouldBe LibraryNotice.INSTALLATION_FAILED
+        sut.state.value.notice shouldBe null
+        sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_PENDING
     }
 
     @Test
@@ -498,11 +522,72 @@ class LibraryViewModelTest {
         val remote = testGame()
         content.games = listOf(remote)
         installation.installation = flowOf(GameInstallationState.Finished(GameInstallationResult.InvalidHash))
-        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLATION_FAILED))
         val sut = createSut(backgroundScope)
         runCurrent()
         sut.state.value.notice shouldBe null
         sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_FAILED
+    }
+
+    @Test
+    fun `an installation interrupted by a restart waits to resume and can be cancelled`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.installation = flowOf(GameInstallationState.NotStarted)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        val row = sut.state.value.games.single()
+        row.status shouldBe LibraryCardStatus.INSTALLATION_PENDING
+        row.canStart shouldBe false
+        row.canPause shouldBe false
+        row.canCancel shouldBe true
+    }
+
+    @Test
+    fun `a failed installation found after a restart is retried once storage access is granted`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            installation.installation = flowOf(GameInstallationState.NotStarted)
+            downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLATION_FAILED))
+            storageAccess.granted = false
+            val sut = createSut(backgroundScope)
+            runCurrent()
+            val row = sut.state.value.games.single()
+            row.status shouldBe LibraryCardStatus.INSTALLATION_FAILED
+            row.canStart shouldBe true
+            row.canCancel shouldBe true
+
+            sut.requestDownload(remote.gameId)
+            runCurrent()
+            sut.state.value.isStorageAccessPromptVisible shouldBe true
+            downloads.retried shouldBe emptyList()
+            storageAccess.granted = true
+            sut.onStorageAccessResult()
+            runCurrent()
+
+            downloads.retried shouldBe listOf(remote.gameId)
+            downloads.starts shouldBe emptyList()
+            sut.state.value.pendingDownloadGameId shouldBe null
+        }
+
+    @Test
+    fun `a completed transfer leaves the card to the installed games`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.state.value.games.single().status shouldBe LibraryCardStatus.AVAILABLE
+        sut.state.value.games.single().canStart shouldBe true
+
+        installation.current.value = InstalledGamesState.Available(
+            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
+        )
+        runCurrent()
+        sut.state.value.games.single().status shouldBe LibraryCardStatus.DOWNLOADED
     }
 
     @ParameterizedTest
@@ -563,6 +648,15 @@ class LibraryViewModelTest {
             externalLinks,
             storageAccess,
             mockk<Logger>(relaxed = true),
+        )
+    }
+
+    private companion object {
+        @JvmStatic
+        fun installationFailures() = listOf(
+            arrayOf(GameInstallationResult.ExtractionFailed, LibraryNotice.INSTALLATION_FAILED),
+            arrayOf(GameInstallationResult.StorageAccessDenied, LibraryNotice.STORAGE_ACCESS_DENIED),
+            arrayOf(GameInstallationResult.HashMismatch, LibraryNotice.INSTALLATION_HASH_MISMATCH),
         )
     }
 }

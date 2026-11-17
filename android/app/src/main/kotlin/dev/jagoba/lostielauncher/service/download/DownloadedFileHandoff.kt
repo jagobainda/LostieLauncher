@@ -3,6 +3,7 @@ package dev.jagoba.lostielauncher.service.download
 import dev.jagoba.lostielauncher.model.DownloadedFile
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
+import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
@@ -13,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface DownloadedFileHandoff {
-    suspend fun deliver(file: DownloadedFile)
+    suspend fun deliver(file: DownloadedFile): GameInstallationResult
 }
 
 @Singleton
@@ -24,7 +25,7 @@ internal class InstallDownloadedFileHandoff @Inject constructor(
     private val specialVersions: SpecialVersionService,
     private val logger: Logger,
 ) : DownloadedFileHandoff {
-    override suspend fun deliver(file: DownloadedFile) {
+    override suspend fun deliver(file: DownloadedFile): GameInstallationResult {
         val game = findGame(file.gameId)
         val special = file.key?.let { (specialVersions.lookup(it) as? SpecialVersionLookup.Found)?.config }
         val result = installer.install(
@@ -36,6 +37,7 @@ internal class InstallDownloadedFileHandoff @Inject constructor(
             ),
         )
         logger.info("Downloaded file handoff result for ${file.gameId}: $result.")
+        return result
     }
 
     private suspend fun findGame(gameId: String): GameInfo? =
