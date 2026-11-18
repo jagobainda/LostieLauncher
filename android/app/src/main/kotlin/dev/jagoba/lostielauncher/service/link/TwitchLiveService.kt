@@ -4,8 +4,9 @@ import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.TwitchLiveOptions
 import dev.jagoba.lostielauncher.service.cdn.TwitchPreviewClient
 import dev.jagoba.lostielauncher.util.log.Logger
-import java.io.IOException
+import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -22,8 +23,12 @@ internal class PreviewTwitchLiveService @Inject constructor(
 ) : TwitchLiveService {
     override suspend fun isLive(): Boolean = withContext(dispatchers.io) {
         try {
-            client.newCall(Request.Builder().url(options.previewUrl).head().build()).execute().use { it.isSuccessful }
-        } catch (error: IOException) {
+            client.newCall(Request.Builder().url(options.previewUrl).head().build()).useCancellableResponse {
+                it.isSuccessful
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
             logger.error("Checking whether the Twitch channel is live failed.", error)
             false
         }

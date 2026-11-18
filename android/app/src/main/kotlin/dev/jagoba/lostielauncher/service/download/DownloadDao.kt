@@ -44,7 +44,7 @@ internal interface DownloadDao {
     @Query(
         """
         UPDATE downloads
-        SET status = :status
+        SET status = :status, bytes_per_second = 0
         WHERE game_id = :gameId AND work_id = :workId AND status IN (:expectedStatuses)
         """,
     )

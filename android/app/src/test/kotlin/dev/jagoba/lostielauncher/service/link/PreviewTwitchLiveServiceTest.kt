@@ -7,10 +7,14 @@ import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -66,10 +70,37 @@ class PreviewTwitchLiveServiceTest {
         verify(exactly = 1) { logger.error(any(), any()) }
     }
 
-    private fun createSut(url: String = server.url("/preview.jpg").toString()) = PreviewTwitchLiveService(
-        NetworkModule.provideTwitchPreviewClient(OkHttpClient()),
-        TwitchLiveOptions(url),
-        TestDispatcherProvider(Dispatchers.IO),
-        logger,
-    )
+    @Test
+    fun `a malformed preview URL only disables the live indicator`() = runTest {
+        createSut("invalid").isLive() shouldBe false
+
+        verify(exactly = 1) { logger.error(any(), ofType<IllegalArgumentException>()) }
+    }
+
+    @Test
+    fun `cancellation aborts the preview request without reporting a lookup failure`() = runTest {
+        val observedCall = CompletableDeferred<Call>()
+        val client = OkHttpClient.Builder().addNetworkInterceptor { chain ->
+            observedCall.complete(chain.call())
+            chain.proceed(chain.request())
+        }.build()
+        server.enqueue(MockResponse.Builder().headersDelay(2, TimeUnit.SECONDS).build())
+        val sut = createSut(client = client)
+        val job = launch { sut.isLive() }
+
+        val call = observedCall.await()
+        job.cancel()
+
+        call.isCanceled() shouldBe true
+        job.join()
+        verify(exactly = 0) { logger.error(any(), any()) }
+    }
+
+    private fun createSut(url: String = server.url("/preview.jpg").toString(), client: OkHttpClient = OkHttpClient()) =
+        PreviewTwitchLiveService(
+            NetworkModule.provideTwitchPreviewClient(client),
+            TwitchLiveOptions(url),
+            TestDispatcherProvider(Dispatchers.IO),
+            logger,
+        )
 }

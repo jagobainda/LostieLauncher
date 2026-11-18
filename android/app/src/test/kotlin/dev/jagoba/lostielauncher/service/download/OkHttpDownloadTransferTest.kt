@@ -16,17 +16,23 @@ import kotlin.io.path.writeText
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullAndEmptySource
+import org.junit.jupiter.params.provider.ValueSource
 
 @DisplayName("OkHttpDownloadTransfer")
 class OkHttpDownloadTransferTest {
@@ -86,7 +92,9 @@ class OkHttpDownloadTransferTest {
         val metadata = Path.of(DownloadPathUtils.getMetaFilePath(part.toString()))
         part.writeText("hello ")
         metadata.writeText("""{"etag":"\"v1\"","totalBytes":11}""")
-        server.enqueue(MockResponse.Builder().code(206).body("world").build())
+        server.enqueue(
+            MockResponse.Builder().code(206).addHeader("Content-Range", "bytes 6-10/11").body("world").build(),
+        )
 
         val result = createSut().download(request(destination)) {}
 
@@ -204,33 +212,79 @@ class OkHttpDownloadTransferTest {
         destination.readText() shouldBe "alive"
     }
 
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = ["bytes 0-4/11", "bytes 7-10/11", "items 6-10/11", "bytes 6-"])
+    fun `restarts without a range after an invalid partial response`(range: String?) = runTest {
+        val destination = directory.resolve("game.zip")
+        val part = Path.of(DownloadPathUtils.getPartFilePath(destination.toString()))
+        part.writeText("hello ")
+        Path.of(DownloadPathUtils.getMetaFilePath(part.toString())).writeText("""{"etag":"\"v1\"","totalBytes":11}""")
+        val partial = MockResponse.Builder().code(206).body("wrong")
+        if (range != null) partial.addHeader("Content-Range", range)
+        server.enqueue(partial.build())
+        server.enqueue(MockResponse.Builder().body("fresh").build())
+
+        val result = createSut(maximumAttempts = 1).download(request(destination)) {}
+
+        result shouldBe DownloadTransferResult.Success
+        destination.readText() shouldBe "fresh"
+        server.takeRequest().headers["Range"] shouldBe "bytes=6-"
+        server.takeRequest().headers["Range"] shouldBe null
+    }
+
+    @Test
+    fun `cancelling a transfer cancels the call while the body is open`() = runTest {
+        val receivedBytes = CompletableDeferred<Unit>()
+        val observedCall = CompletableDeferred<Call>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            observedCall.complete(chain.call())
+            chain.proceed(chain.request())
+        }.build()
+        server.enqueue(MockResponse.Builder().body("abcdefgh").throttleBody(4, 2, TimeUnit.SECONDS).build())
+        val transfer = createSut(inactivityTimeout = 5.seconds, client = client)
+        val job = launch {
+            transfer.download(request(directory.resolve("game.zip"))) { receivedBytes.complete(Unit) }
+        }
+
+        receivedBytes.await()
+        job.cancel()
+
+        observedCall.await().isCanceled() shouldBe true
+        job.join()
+        server.requestCount shouldBe 1
+    }
+
     private fun request(destination: Path) = DownloadTransferRequest(
         url = server.url("/game.zip").toString(),
         destinationPath = destination.toString(),
     )
 
-    private fun createSut(maximumAttempts: Int = 3, inactivityTimeout: Duration = 1.seconds): OkHttpDownloadTransfer =
-        OkHttpDownloadTransfer(
-            client = OkHttpClient(),
-            options = DownloadTransferOptions(
-                cacheDirectoryName = "downloads",
-                cacheMaxAge = java.time.Duration.ofDays(14),
-                bufferSizeBytes = 4,
-                maximumAttempts = maximumAttempts,
-                retryBaseDelay = 1.milliseconds,
-                inactivityTimeout = inactivityTimeout,
-                progressSampleInterval = 1.milliseconds,
-                finalizationMaximumAttempts = 3,
-                finalizationBaseDelay = 1.milliseconds,
-            ),
-            dispatchers = RealIoDispatchers,
-            timeSource = MonotonicTimeSource {
-                nanos += 1_000_000
-                nanos
-            },
-            json = Json,
-            logger = logger,
-        )
+    private fun createSut(
+        maximumAttempts: Int = 3,
+        inactivityTimeout: Duration = 1.seconds,
+        client: OkHttpClient = OkHttpClient(),
+    ): OkHttpDownloadTransfer = OkHttpDownloadTransfer(
+        client = client,
+        options = DownloadTransferOptions(
+            cacheDirectoryName = "downloads",
+            cacheMaxAge = java.time.Duration.ofDays(14),
+            bufferSizeBytes = 4,
+            maximumAttempts = maximumAttempts,
+            retryBaseDelay = 1.milliseconds,
+            inactivityTimeout = inactivityTimeout,
+            progressSampleInterval = 1.milliseconds,
+            finalizationMaximumAttempts = 3,
+            finalizationBaseDelay = 1.milliseconds,
+        ),
+        dispatchers = RealIoDispatchers,
+        timeSource = MonotonicTimeSource {
+            nanos += 1_000_000
+            nanos
+        },
+        json = Json,
+        logger = logger,
+    )
 
     private object RealIoDispatchers : DispatcherProvider {
         override val io = Dispatchers.IO

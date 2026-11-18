@@ -28,21 +28,21 @@ class DownloadResumePolicyTest {
 
     @Test
     fun `appends a partial response`() {
-        DownloadResumePolicy.responseAction(206, 40, 100) shouldBe DownloadResponseAction.APPEND
+        DownloadResumePolicy.responseAction(206, 40, 100, "bytes 40-99/100") shouldBe DownloadResponseAction.APPEND
     }
 
     @Test
     fun `restarts when a ranged request receives a full response`() {
-        DownloadResumePolicy.responseAction(200, 40, 100) shouldBe DownloadResponseAction.RESTART
+        DownloadResumePolicy.responseAction(200, 40, 100, null) shouldBe DownloadResponseAction.RESTART
     }
 
     @Test
     fun `accepts a complete partial after range not satisfiable`() {
-        DownloadResumePolicy.responseAction(416, 100, 100) shouldBe DownloadResponseAction.COMPLETE
+        DownloadResumePolicy.responseAction(416, 100, 100, null) shouldBe DownloadResponseAction.COMPLETE
     }
 
     @Test
     fun `invalidates a mismatched partial after range not satisfiable`() {
-        DownloadResumePolicy.responseAction(416, 90, 100) shouldBe DownloadResponseAction.INVALIDATE
+        DownloadResumePolicy.responseAction(416, 90, 100, null) shouldBe DownloadResponseAction.INVALIDATE
     }
 }

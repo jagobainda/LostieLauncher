@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.util.download.DownloadResumePolicy
 import dev.jagoba.lostielauncher.util.download.DownloadSpeedSampler
 import dev.jagoba.lostielauncher.util.file.FileMoveRetryPolicy
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -25,7 +26,6 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -100,65 +100,56 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         destination.parentFile?.mkdirs()
         val partFile = File(DownloadPathUtils.getPartFilePath(request.destinationPath))
         val metadataFile = File(DownloadPathUtils.getMetaFilePath(partFile.path))
-        var existingBytes = partFile.takeIf(File::exists)?.length() ?: 0
-        var metadata = readMetadata(metadataFile)
-        val requestBuilder = Request.Builder().url(request.url)
-        if (existingBytes > 0) {
-            val validator = DownloadResumePolicy.validator(metadata)
-            if (validator == null) {
-                partFile.delete()
-                metadataFile.delete()
-                existingBytes = 0
-                metadata = null
-            } else {
-                requestBuilder.header(RANGE_HEADER, "bytes=$existingBytes-")
-                requestBuilder.header(IF_RANGE_HEADER, validator)
+        val metadata = readMetadata(metadataFile)
+        val validator = DownloadResumePolicy.validator(metadata)
+        var existingBytes = partFile.length()
+        if (existingBytes > 0 && validator == null) {
+            Files.deleteIfExists(partFile.toPath())
+            Files.deleteIfExists(metadataFile.toPath())
+            existingBytes = 0
+        }
+        while (true) {
+            val builder = Request.Builder().url(request.url)
+            if (existingBytes > 0 && validator != null) {
+                builder.header(RANGE_HEADER, "bytes=$existingBytes-")
+                builder.header(IF_RANGE_HEADER, validator)
             }
-        }
-        val call = client.newCall(requestBuilder.build())
-        val cancellationHandle = currentCoroutineContext()[Job]?.invokeOnCompletion { error ->
-            if (error is CancellationException) call.cancel()
-        }
-        try {
-            val response = awaitResponse(call)
-            response.use {
-                when (DownloadResumePolicy.responseAction(response.code, existingBytes, metadata?.totalBytes)) {
-                    DownloadResponseAction.COMPLETE -> {
-                        finalize(partFile, destination)
-                        metadataFile.delete()
-                        onProgress(DownloadProgressCalculator.calculate(existingBytes, existingBytes, 0.0))
-                        return
-                    }
+            val complete = client.newCall(builder.build()).useCancellableResponse({ awaitResponse(it) }) { response ->
+                when (
+                    DownloadResumePolicy.responseAction(
+                        response.code,
+                        existingBytes,
+                        metadata?.totalBytes,
+                        response.header("Content-Range"),
+                    )
+                ) {
+                    DownloadResponseAction.COMPLETE -> Unit
 
                     DownloadResponseAction.INVALIDATE -> {
-                        partFile.delete()
-                        metadataFile.delete()
-                        throw IOException(INVALID_PARTIAL_MESSAGE)
+                        Files.deleteIfExists(partFile.toPath())
+                        Files.deleteIfExists(metadataFile.toPath())
+                        if (response.code != 206 || existingBytes == 0L) throw IOException(INVALID_PARTIAL_MESSAGE)
+                        return@useCancellableResponse false
                     }
 
-                    DownloadResponseAction.RESTART -> {
-                        partFile.delete()
-                        existingBytes = 0
-                        metadata = buildMetadata(response)
-                        writeMetadata(metadataFile, metadata)
+                    DownloadResponseAction.RESTART, DownloadResponseAction.WRITE -> {
+                        if (existingBytes > 0) Files.deleteIfExists(partFile.toPath())
+                        writeMetadata(metadataFile, buildMetadata(response))
+                        writeBody(response, partFile, 0, onProgress)
                     }
 
-                    DownloadResponseAction.WRITE -> {
-                        metadata = buildMetadata(response)
-                        writeMetadata(metadataFile, metadata)
-                    }
-
-                    DownloadResponseAction.APPEND -> Unit
+                    DownloadResponseAction.APPEND -> writeBody(response, partFile, existingBytes, onProgress)
 
                     DownloadResponseAction.REJECT -> throw IOException(
                         "Download server returned HTTP ${response.code}.",
                     )
                 }
-                writeBody(response, partFile, existingBytes, onProgress)
+                true
             }
-        } finally {
-            cancellationHandle?.dispose()
+            if (complete) break
+            existingBytes = 0
         }
+        currentCoroutineContext().ensureActive()
         finalize(partFile, destination)
         metadataFile.delete()
         val total = destination.length()
