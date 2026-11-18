@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -20,7 +21,7 @@ internal class RemoteJson @Inject constructor(
     suspend fun <T> fetch(url: String, deserializer: DeserializationStrategy<T>, label: String): T? =
         withContext(dispatchers.io) {
             try {
-                client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                client.newCall(Request.Builder().url(url).build()).useCancellableResponse { response ->
                     if (!response.isSuccessful) throw IOException("$label returned HTTP ${response.code}.")
                     json.decodeFromString(deserializer, response.body.string())
                 }

@@ -19,8 +19,13 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -325,6 +330,38 @@ class DownloadWorkerRunnerTest {
             dao.finish(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.FAILED.name, "boom")
         }
         verify(exactly = 1) { logger.error("Download worker failed for demo.", any()) }
+    }
+
+    @Test
+    fun `a replacement worker waits for the previous transfer and its cancellation cleanup`() = runTest {
+        val cleanupStarted = CompletableDeferred<Unit>()
+        val releaseCleanup = CompletableDeferred<Unit>()
+        coEvery { transfer.download(any(), any()) } coAnswers { awaitCancellation() }
+        coEvery { dao.get(GAME_ID) } returnsMany
+            listOf(entity(), entity().copy(status = DownloadStatus.DOWNLOADING.name), entity())
+        coEvery {
+            dao.setWorkerStatus(GAME_ID, WORK_ID, DownloadStatus.QUEUED.name, any())
+        } coAnswers {
+            cleanupStarted.complete(Unit)
+            releaseCleanup.await()
+            1
+        }
+        val sut = createSut()
+        val original = launch(start = CoroutineStart.UNDISPATCHED) { sut.run(GAME_ID, WORK_ID, runtime) }
+        original.cancel()
+        cleanupStarted.await()
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        val replacement = async(start = CoroutineStart.UNDISPATCHED) { sut.run(GAME_ID, WORK_ID, runtime) }
+
+        try {
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+        } finally {
+            releaseCleanup.complete(Unit)
+        }
+
+        original.join()
+        replacement.await() shouldBe DownloadWorkerOutcome.SUCCESS
+        coVerify(exactly = 1) { handoff.deliver(any()) }
     }
 
     private fun TestScope.createSut() = DownloadWorkerRunner(

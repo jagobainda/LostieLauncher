@@ -4,6 +4,7 @@ import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import dev.jagoba.lostielauncher.model.SpecialVersionOptions
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
@@ -37,7 +38,7 @@ internal class CdnSpecialVersionService @Inject constructor(
                 .addPathSegment(key)
                 .addPathSegment(options.configFileName)
                 .build()
-            client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            client.newCall(Request.Builder().url(url).build()).useCancellableResponse { response ->
                 when {
                     response.code == 404 -> SpecialVersionLookup.NotFound
 

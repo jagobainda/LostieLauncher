@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import javax.inject.Inject
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -21,6 +22,6 @@ internal class OkHttpMaintenanceFlagApi @Inject constructor(
     override suspend fun get(url: String): Int = statusOf(Request.Builder().url(url).get().build())
 
     private suspend fun statusOf(request: Request): Int = withContext(dispatchers.io) {
-        client.newCall(request).execute().use { it.code }
+        client.newCall(request).useCancellableResponse { it.code }
     }
 }

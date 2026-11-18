@@ -16,6 +16,8 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 internal interface DownloadWorkerRuntime {
@@ -43,33 +45,37 @@ internal class DownloadWorkerRunner @Inject constructor(
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
 ) {
-    suspend fun run(gameId: String, workId: String, runtime: DownloadWorkerRuntime): DownloadWorkerOutcome {
-        val entity = dao.get(gameId)?.takeIf { it.workId == workId } ?: return DownloadWorkerOutcome.SUCCESS
-        return try {
-            when (entity.status) {
-                DownloadStatus.INSTALLING.name -> install(entity, workId, runtime)
-                in DownloadStatus.TransferringNames -> download(entity, workId, runtime)
-                else -> DownloadWorkerOutcome.SUCCESS
-            }
-        } catch (cancelled: CancellationException) {
-            withContext(NonCancellable) {
-                val current = dao.get(gameId)
-                if (current?.workId != workId) return@withContext
-                when (current.status) {
-                    DownloadStatus.CANCELLED.name -> deleteArtifacts(entity)
+    private val workerGate = Mutex()
 
-                    DownloadStatus.DOWNLOADING.name -> {
-                        dao.setWorkerStatus(gameId, workId, DownloadStatus.QUEUED.name, listOf(current.status))
-                        logger.info("Download interrupted by the system, waiting to resume: $gameId.")
+    suspend fun run(gameId: String, workId: String, runtime: DownloadWorkerRuntime): DownloadWorkerOutcome =
+        workerGate.withLock {
+            val entity = dao.get(gameId)
+            if (entity?.workId != workId) return@withLock DownloadWorkerOutcome.SUCCESS
+            try {
+                when (entity.status) {
+                    DownloadStatus.INSTALLING.name -> install(entity, workId, runtime)
+                    in DownloadStatus.TransferringNames -> download(entity, workId, runtime)
+                    else -> DownloadWorkerOutcome.SUCCESS
+                }
+            } catch (cancelled: CancellationException) {
+                withContext(NonCancellable) {
+                    val current = dao.get(gameId)
+                    if (current?.workId != workId) return@withContext
+                    when (current.status) {
+                        DownloadStatus.CANCELLED.name -> deleteArtifacts(entity)
+
+                        DownloadStatus.DOWNLOADING.name -> {
+                            dao.setWorkerStatus(gameId, workId, DownloadStatus.QUEUED.name, listOf(current.status))
+                            logger.info("Download interrupted by the system, waiting to resume: $gameId.")
+                        }
                     }
                 }
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Download worker failed for $gameId.", error)
+                finish(entity, workId, DownloadStatus.FAILED, error.message)
             }
-            throw cancelled
-        } catch (error: Exception) {
-            logger.error("Download worker failed for $gameId.", error)
-            finish(entity, workId, DownloadStatus.FAILED, error.message)
         }
-    }
 
     private suspend fun download(
         entity: DownloadEntity,
