@@ -112,6 +112,7 @@ internal object ValStrings : Strings {
     override val contentOutOfDateLabel = "Contingut desactualitzat"
     override val contentOutOfDateMessage = "No s'ha pogut connectar amb el servidor. Es mostra l'últim contingut conegut, que pot estar desactualitzat."
     override val kirinMissingTitle = "Instal·la Kirin per a continuar"
+    override val kirinUntrustedSignerMessage = "La signatura del Kirin instal·lat no coincidix amb l’oficial. Desinstal·la Kirin des de la configuració d’Android i torna ací per a instal·lar la versió oficial."
     override val kirinOutdatedTitle = "Actualitza Kirin per a continuar"
     override val kirinMissingMessage = "Lostie Launcher obri els jocs amb Kirin, que no està instal·lat en este dispositiu. Instal·la Kirin {0} o superior."
     override val kirinOutdatedMessage = "Tens Kirin {0}, però Lostie Launcher necessita Kirin {1} o superior per a instal·lar i obrir els jocs."

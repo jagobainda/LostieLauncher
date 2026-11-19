@@ -76,9 +76,16 @@ access. Notification permission affects progress and result visibility and is a
 separate request.
 
 `KirinSetupService` checks server requirements and the installed Kirin version.
-`KirinRequirement` blocks the shell for missing/outdated Kirin; a recommended
-update is nonblocking. Kirin and launcher updates use separate instances of the
+`KirinRequirement` blocks the shell when Kirin is missing, outdated or signed
+with another certificate. In the last case the screen asks the user to
+uninstall that copy in Android settings before installing the official release.
+The launcher checks the installed signer again before handing a game to Kirin.
+A recommended update is nonblocking. Kirin and launcher updates use separate instances of the
 shared APK installer engine, followed by Android's system installation UI.
+The engine checks the package name, version and current signing certificates of
+both cached and newly downloaded APKs. Kirin must match its single pinned
+certificate. A launcher update must match the complete signer set of the
+running launcher. An APK with missing signing information is rejected.
 
 ## Remaining limitations
 

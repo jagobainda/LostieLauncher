@@ -14,6 +14,11 @@ sealed interface ApkDownloadState {
     data object Failed : ApkDownloadState
 }
 
-data class ApkTarget(val packageName: String, val installerFile: File, val label: String)
+data class ApkTarget(
+    val packageName: String,
+    val installerFile: File,
+    val label: String,
+    val pinnedSigner: String? = null,
+)
 
 data class ApkInstallOptions(val fileProviderAuthority: String)

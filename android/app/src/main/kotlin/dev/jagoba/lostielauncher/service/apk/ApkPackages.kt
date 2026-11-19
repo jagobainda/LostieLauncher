@@ -9,14 +9,19 @@ import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.jagoba.lostielauncher.model.ApkInstallOptions
 import java.io.File
+import java.security.MessageDigest
 import javax.inject.Inject
 
 private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
 
-internal interface ApkPackages {
-    fun installedVersion(packageName: String): String?
+internal data class SignedApk(val version: String, val signers: Set<String>) {
+    fun matches(expected: Set<String>?): Boolean = signers.isNotEmpty() && signers == expected
+}
 
-    fun archiveVersion(apk: File, packageName: String): String?
+internal interface ApkPackages {
+    fun installedPackage(packageName: String): SignedApk?
+
+    fun archivePackage(apk: File, packageName: String): SignedApk?
 
     fun install(apk: File)
 }
@@ -25,14 +30,9 @@ internal class AndroidApkPackages @Inject constructor(
     @ApplicationContext private val context: Context,
     private val options: ApkInstallOptions,
 ) : ApkPackages {
-    override fun installedVersion(packageName: String): String? = try {
-        packageInfo(packageName).versionName.orEmpty()
-    } catch (_: PackageManager.NameNotFoundException) {
-        null
-    }
+    override fun installedPackage(packageName: String): SignedApk? = readPackage(packageName)
 
-    override fun archiveVersion(apk: File, packageName: String): String? =
-        archiveInfo(apk)?.takeIf { it.packageName == packageName }?.versionName
+    override fun archivePackage(apk: File, packageName: String): SignedApk? = readPackage(packageName, apk)
 
     override fun install(apk: File) {
         context.startActivity(
@@ -42,18 +42,45 @@ internal class AndroidApkPackages @Inject constructor(
         )
     }
 
-    private fun packageInfo(packageName: String): PackageInfo =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+    private fun readPackage(packageName: String, archive: File? = null): SignedApk? {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageManager.GET_SIGNING_CERTIFICATES
         } else {
             @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(packageName, 0)
+            PackageManager.GET_SIGNATURES
         }
+        val manager = context.packageManager
+        val info = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val infoFlags = PackageManager.PackageInfoFlags.of(flags.toLong())
+                if (archive == null) {
+                    manager.getPackageInfo(packageName, infoFlags)
+                } else {
+                    manager.getPackageArchiveInfo(archive.path, infoFlags)
+                }
+            } else if (archive == null) {
+                @Suppress("DEPRECATION")
+                manager.getPackageInfo(packageName, flags)
+            } else {
+                @Suppress("DEPRECATION")
+                manager.getPackageArchiveInfo(archive.path, flags)
+            }
+        } catch (_: PackageManager.NameNotFoundException) {
+            null
+        }
+        if (info == null || info.packageName != packageName) return null
+        return SignedApk(info.versionName.orEmpty(), info.signerDigests())
+    }
 
-    private fun archiveInfo(apk: File): PackageInfo? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        context.packageManager.getPackageArchiveInfo(apk.path, PackageManager.PackageInfoFlags.of(0))
-    } else {
-        @Suppress("DEPRECATION")
-        context.packageManager.getPackageArchiveInfo(apk.path, 0)
+    private fun PackageInfo.signerDigests(): Set<String> {
+        val current = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            signingInfo?.apkContentsSigners
+        } else {
+            @Suppress("DEPRECATION")
+            signatures
+        }
+        return current.orEmpty().mapTo(mutableSetOf()) { signer ->
+            MessageDigest.getInstance("SHA-256").digest(signer.toByteArray()).toHexString()
+        }
     }
 }

@@ -66,8 +66,8 @@ internal class ApkReleaseInstaller(
         return release
     }
 
-    suspend fun installedVersion(): String? = withContext(dispatchers.io) {
-        packages.installedVersion(target.packageName)
+    suspend fun installedPackage(): SignedApk? = withContext(dispatchers.io) {
+        packages.installedPackage(target.packageName)
     }
 
     fun settle(installedVersion: String?, minimumVersion: String?): ApkReleaseDto? {
@@ -114,7 +114,7 @@ internal class ApkReleaseInstaller(
                 return false
             }
             if (!isInstallable(apk, release.versionName)) {
-                logger.error("The downloaded file is not ${target.label} ${release.versionName} or later.")
+                logger.error("The downloaded ${target.label} APK failed package, version or signer validation.")
                 withContext(dispatchers.io) { apk.delete() }
                 return false
             }
@@ -130,6 +130,9 @@ internal class ApkReleaseInstaller(
     }
 
     private suspend fun isInstallable(apk: File, version: String): Boolean = withContext(dispatchers.io) {
-        apk.isFile && ApkVersionPolicy.isSupported(packages.archiveVersion(apk, target.packageName), version)
+        if (!apk.isFile) return@withContext false
+        val archive = packages.archivePackage(apk, target.packageName) ?: return@withContext false
+        val expected = target.pinnedSigner?.let { setOf(it) } ?: packages.installedPackage(target.packageName)?.signers
+        archive.matches(expected) && ApkVersionPolicy.isSupported(archive.version, version)
     }
 }

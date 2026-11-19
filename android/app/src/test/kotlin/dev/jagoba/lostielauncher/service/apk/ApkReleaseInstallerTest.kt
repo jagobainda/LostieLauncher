@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 @DisplayName("ApkReleaseInstaller")
 class ApkReleaseInstallerTest {
@@ -57,7 +59,7 @@ class ApkReleaseInstallerTest {
     private fun createSut(): ApkReleaseInstaller {
         val dispatchers = TestDispatcherProvider(dispatcher)
         return ApkReleaseInstaller(
-            ApkTarget(PACKAGE, installer, "Target"),
+            ApkTarget(PACKAGE, installer, "Target", "official"),
             RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger),
             transfer,
             packages,
@@ -81,10 +83,10 @@ class ApkReleaseInstallerTest {
 
     @Test
     fun `reads the installed version of its own package`() = runTest(dispatcher) {
-        every { packages.installedVersion(PACKAGE) } returns "1.0.0"
+        every { packages.installedPackage(PACKAGE) } returns SignedApk("1.0.0", setOf("official"))
         val sut = createSut()
 
-        sut.installedVersion() shouldBe "1.0.0"
+        sut.installedPackage()?.version shouldBe "1.0.0"
     }
 
     @Test
@@ -127,7 +129,7 @@ class ApkReleaseInstallerTest {
         val sut = offeringRelease()
         val observed = mutableListOf<ApkDownloadState>()
         downloadSucceeds { observed += sut.download.value }
-        every { packages.archiveVersion(installer, PACKAGE) } returns "0.4.2"
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe true
 
@@ -142,7 +144,7 @@ class ApkReleaseInstallerTest {
         val sut = offeringRelease()
         installer.parentFile?.mkdirs()
         installer.writeText("apk")
-        every { packages.archiveVersion(installer, PACKAGE) } returns "0.4.2"
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
 
@@ -155,7 +157,10 @@ class ApkReleaseInstallerTest {
         val sut = offeringRelease()
         installer.parentFile?.mkdirs()
         installer.writeText("apk")
-        every { packages.archiveVersion(installer, PACKAGE) } returnsMany listOf("0.4.1", "0.4.2")
+        every { packages.archivePackage(installer, PACKAGE) } returnsMany listOf(
+            SignedApk("0.4.1", setOf("official")),
+            SignedApk("0.4.2", setOf("official")),
+        )
         downloadSucceeds()
 
         sut.install()
@@ -168,7 +173,7 @@ class ApkReleaseInstallerTest {
     fun `rejects and deletes a download that is not the released package`() = runTest(dispatcher) {
         val sut = offeringRelease()
         downloadSucceeds()
-        every { packages.archiveVersion(installer, PACKAGE) } returns null
+        every { packages.archivePackage(installer, PACKAGE) } returns null
 
         sut.install() shouldBe false
 
@@ -176,6 +181,24 @@ class ApkReleaseInstallerTest {
         installer.exists() shouldBe false
         verify(exactly = 0) { packages.install(any()) }
     }
+
+    @ParameterizedTest
+    @MethodSource("untrustedSigners")
+    fun `rejects both cached and downloaded APKs without the sole pinned signer`(signers: Set<String>) =
+        runTest(dispatcher) {
+            val sut = offeringRelease()
+            installer.parentFile?.mkdirs()
+            installer.writeText("cached")
+            every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", signers)
+            downloadSucceeds()
+
+            sut.install() shouldBe false
+
+            sut.download.value shouldBe ApkDownloadState.Failed
+            installer.exists() shouldBe false
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+            verify(exactly = 0) { packages.install(any()) }
+        }
 
     @Test
     fun `keeps a failed download reported until it is acknowledged`() = runTest(dispatcher) {
@@ -195,7 +218,7 @@ class ApkReleaseInstallerTest {
     fun `reports a failure when the system installer cannot be opened`() = runTest(dispatcher) {
         val sut = offeringRelease()
         downloadSucceeds()
-        every { packages.archiveVersion(installer, PACKAGE) } returns "0.4.2"
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
         every { packages.install(any()) } throws IllegalStateException("No activity")
 
         sut.install() shouldBe false
@@ -264,6 +287,9 @@ class ApkReleaseInstallerTest {
     }
 
     private companion object {
+        @JvmStatic
+        fun untrustedSigners() = listOf(emptySet(), setOf("different"), setOf("official", "other"))
+
         const val PACKAGE = "dev.example.target"
         const val FEED_PATH = "/latest.json"
         const val APK_URL = "https://example.com/Target-0.4.2.apk"

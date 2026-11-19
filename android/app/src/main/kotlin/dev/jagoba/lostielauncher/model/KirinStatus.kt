@@ -5,6 +5,8 @@ import java.io.File
 sealed interface KirinStatus {
     data object Ready : KirinStatus
 
+    data object UntrustedSigner : KirinStatus
+
     data class Missing(val minimumVersion: String) : KirinStatus
 
     data class Outdated(val installedVersion: String, val minimumVersion: String) : KirinStatus
@@ -12,4 +14,9 @@ sealed interface KirinStatus {
     data class UpdateRecommended(val installedVersion: String, val latestVersion: String) : KirinStatus
 }
 
-data class KirinSetupOptions(val requirementsUrl: String, val fallbackMinimumVersion: String, val installerFile: File)
+data class KirinSetupOptions(
+    val requirementsUrl: String,
+    val fallbackMinimumVersion: String,
+    val installerFile: File,
+    val signerSha256: String,
+)

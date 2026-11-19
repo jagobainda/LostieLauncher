@@ -22,7 +22,8 @@ data class KirinUiState(
     val download: ApkDownloadState = ApkDownloadState.Checking,
     val faq: FaqEntry? = null,
 ) {
-    val isBlocking: Boolean get() = status is KirinStatus.Missing || status is KirinStatus.Outdated
+    val isBlocking: Boolean get() = status is KirinStatus.Missing || status is KirinStatus.Outdated ||
+        status == KirinStatus.UntrustedSigner
 }
 
 @HiltViewModel

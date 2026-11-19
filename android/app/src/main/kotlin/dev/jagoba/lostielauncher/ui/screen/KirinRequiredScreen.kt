@@ -89,6 +89,8 @@ private fun KirinRequiredScreen(
         icon = R.drawable.ic_games_gamepad,
         message = if (status is KirinStatus.Outdated) strings.kirinOutdatedTitle else strings.kirinMissingTitle,
         detail = when (status) {
+            KirinStatus.UntrustedSigner -> strings.kirinUntrustedSignerMessage
+
             is KirinStatus.Outdated -> strings.kirinOutdatedMessage.withArgs(
                 status.installedVersion,
                 status.minimumVersion,
@@ -103,25 +105,27 @@ private fun KirinRequiredScreen(
             .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout)),
         action = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                when (val download = state.download) {
-                    ApkDownloadState.Checking -> Unit
+                if (status != KirinStatus.UntrustedSigner) {
+                    when (val download = state.download) {
+                        ApkDownloadState.Checking -> Unit
 
-                    ApkDownloadState.Unavailable -> StatusNotice(strings.kirinDownloadUnavailable)
+                        ApkDownloadState.Unavailable -> StatusNotice(strings.kirinDownloadUnavailable)
 
-                    ApkDownloadState.Available, ApkDownloadState.Failed -> DialogButton(
-                        label = if (status is KirinStatus.Outdated) strings.btnUpdate else strings.btnDownload,
-                        style = DialogButtonStyle.ACCENT,
-                        onClick = onInstall,
-                        horizontalPadding = LauncherSpacing.Screen,
-                    )
+                        ApkDownloadState.Available, ApkDownloadState.Failed -> DialogButton(
+                            label = if (status is KirinStatus.Outdated) strings.btnUpdate else strings.btnDownload,
+                            style = DialogButtonStyle.ACCENT,
+                            onClick = onInstall,
+                            horizontalPadding = LauncherSpacing.Screen,
+                        )
 
-                    is ApkDownloadState.Downloading -> DialogButton(
-                        label = strings.downloadingLabel(download.percent),
-                        style = DialogButtonStyle.ACCENT,
-                        onClick = {},
-                        horizontalPadding = LauncherSpacing.Screen,
-                        enabled = false,
-                    )
+                        is ApkDownloadState.Downloading -> DialogButton(
+                            label = strings.downloadingLabel(download.percent),
+                            style = DialogButtonStyle.ACCENT,
+                            onClick = {},
+                            horizontalPadding = LauncherSpacing.Screen,
+                            enabled = false,
+                        )
+                    }
                 }
                 state.faq?.let { faq ->
                     DialogLinkButton(
