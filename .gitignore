@@ -98,6 +98,7 @@ secrets.json
 .bugs-resueltos/
 .claude/
 .codex/
+.kimi-code/
 .docs/
 releases/
 brag-output/
