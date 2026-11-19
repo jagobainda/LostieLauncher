@@ -23,6 +23,7 @@ fun keystoreProperty(name: String): String =
 android {
     namespace = "dev.jagoba.lostielauncher"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 
     defaultConfig {
         applicationId = "dev.jagoba.lostielauncher"

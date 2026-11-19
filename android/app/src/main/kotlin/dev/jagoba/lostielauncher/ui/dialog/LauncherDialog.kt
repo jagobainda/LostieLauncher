@@ -1,5 +1,10 @@
 package dev.jagoba.lostielauncher.ui.dialog
 
+import android.text.InputType
+import android.util.TypedValue
+import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,46 +14,55 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.widget.doAfterTextChanged
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.theme.FixedColors
@@ -62,6 +76,10 @@ import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 import dev.jagoba.lostielauncher.ui.theme.inputSurface
 
 internal enum class DialogButtonStyle { ACCENT, SECONDARY }
+
+internal fun useScrollingDialogTitle(height: Dp, keyboardVisible: Boolean): Boolean =
+    keyboardVisible && height < LauncherSizes.TitleBarHeight + LauncherSizes.DialogFooterHeight +
+        LauncherSizes.MinimumTouchTarget + LauncherSizes.DialogScreenGutter * 2
 
 @Composable
 internal fun LauncherDialog(
@@ -77,29 +95,39 @@ internal fun LauncherDialog(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalLauncherColors.current
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Box(
+    val preferredHeight = Modifier.heightIn(min = minHeight, max = maxHeight)
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        BoxWithConstraints(
             Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
-                .padding(LauncherSizes.DialogScreenGutter),
+                .padding(horizontal = LauncherSizes.DialogScreenGutter),
             contentAlignment = Alignment.Center,
         ) {
+            val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+            val compact = useScrollingDialogTitle(this.maxHeight, keyboardVisible)
             Column(
                 Modifier
+                    .padding(vertical = if (compact) 0.dp else LauncherSizes.DialogScreenGutter)
                     .widthIn(max = width)
                     .fillMaxWidth()
-                    .heightIn(min = minHeight, max = maxHeight)
+                    .then(preferredHeight)
                     .background(colors.primaryBg)
                     .border(LauncherBorders.Thin, colors.primaryFg),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                DialogTitleBar(icon, title, onDismiss)
-                Column(Modifier.weight(1f, fill = !centerBody), content = body)
+                if (!compact) DialogTitleBar(icon, title, onDismiss)
+                Column(Modifier.weight(1f, fill = !centerBody).verticalScroll(rememberScrollState())) {
+                    if (compact) DialogTitleBar(icon, title, onDismiss)
+                    body()
+                }
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .height(LauncherSizes.DialogFooterHeight)
+                        .height(if (compact) LauncherSizes.MinimumTouchTarget else LauncherSizes.DialogFooterHeight)
                         .background(footerBackground),
                     horizontalArrangement = Arrangement.End,
                     content = footer,
@@ -163,9 +191,9 @@ internal fun DialogFooterButtons(content: @Composable RowScope.() -> Unit) {
     Row(
         Modifier
             .fillMaxSize()
-            .padding(start = LauncherSpacing.Screen, end = LauncherSpacing.Screen, bottom = LauncherSpacing.Screen),
+            .padding(start = LauncherSpacing.Screen, end = LauncherSpacing.Screen, top = LauncherSpacing.Small),
         horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium, Alignment.End),
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.Top,
         content = content,
     )
 }
@@ -268,22 +296,63 @@ internal fun DialogLinkButton(
 @Composable
 internal fun DialogKeyField(label: String, value: String, onValueChange: (String) -> Unit, onDone: () -> Unit) {
     val colors = LocalLauncherColors.current
+    val change by rememberUpdatedState(onValueChange)
+    val confirm by rememberUpdatedState(onDone)
+    val requester = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    LaunchedEffect(focused, imeBottom) {
+        if (focused && imeBottom > 0) requester.bringIntoView()
+    }
     Column {
         DialogFieldLabel(R.drawable.ic_dialog_key, label)
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = TextStyle(color = colors.secondaryFg, fontSize = LauncherType.CaptionSize),
-            cursorBrush = SolidColor(colors.secondaryFg),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onDone() }),
+        AndroidView(
+            factory = { context ->
+                EditText(context, null, 0, R.style.Widget_Launcher_KeyField).apply {
+                    inputType = InputType.TYPE_CLASS_TEXT
+                    setSingleLine()
+                    imeOptions = EditorInfo.IME_ACTION_DONE
+                    background = null
+                    includeFontPadding = false
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, LauncherType.CaptionSize.value)
+                    setOnFocusChangeListener { _, hasFocus -> focused = hasFocus }
+                    doAfterTextChanged { change(it.toString()) }
+                    setOnEditorActionListener { _, action, event ->
+                        when {
+                            event?.keyCode == KeyEvent.KEYCODE_ENTER -> {
+                                if (event.action == KeyEvent.ACTION_UP) confirm()
+                                true
+                            }
+
+                            action == EditorInfo.IME_ACTION_DONE -> {
+                                confirm()
+                                true
+                            }
+
+                            else -> false
+                        }
+                    }
+                }
+            },
+            update = { field ->
+                field.contentDescription = label
+                field.setTextColor(colors.secondaryFg.toArgb())
+                with(density) {
+                    val horizontal = LauncherSpacing.MediumLarge.roundToPx()
+                    val vertical = LauncherSpacing.Medium.roundToPx()
+                    field.setPadding(horizontal, vertical, horizontal, vertical)
+                }
+                if (field.text.toString() != value) {
+                    field.setText(value)
+                    field.setSelection(value.length)
+                }
+            },
             modifier = Modifier
                 .padding(top = LauncherSpacing.ExtraSmall)
                 .fillMaxWidth()
-                .semantics { contentDescription = label }
-                .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small))
-                .padding(horizontal = LauncherSpacing.MediumLarge, vertical = LauncherSpacing.Medium),
+                .bringIntoViewRequester(requester)
+                .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small)),
         )
     }
 }

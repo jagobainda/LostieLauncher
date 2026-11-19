@@ -52,6 +52,14 @@ dismisses or declines and input actions follow the on-screen confirmation.
 Icon-only close controls have localized spoken labels. Key fields use saveable
 UI state, but open ViewModel prompts do not survive process death as durable data.
 
+Key fields support Android's fullscreen keyboard editor on short landscape
+screens. The keyboard decides whether to use it. Done submits the current
+key and closing the keyboard returns to the dialog. When a partial keyboard
+leaves little height, the title scrolls with the body and the actions stay
+visible. FAQ search keeps its
+results above the keyboard and collapses the shell title when space is short.
+Leaving the section clears focus and dismisses the keyboard.
+
 The launcher asks before downloading its own APK and then opens the system
 installer. No holds for the process unless a manual update check resets the
 offer. The download-progress pill is visible across sections.

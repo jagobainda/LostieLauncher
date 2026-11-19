@@ -1,8 +1,6 @@
 package dev.jagoba.lostielauncher.ui.dialog
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -74,7 +72,6 @@ fun LauncherMessageBox(spec: MessageBoxSpec, onConfirm: () -> Unit, onDismiss: (
             color = LocalLauncherColors.current.secondaryFg,
             fontSize = LauncherType.BodySize,
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = LauncherSpacing.Screen),
         )
     }

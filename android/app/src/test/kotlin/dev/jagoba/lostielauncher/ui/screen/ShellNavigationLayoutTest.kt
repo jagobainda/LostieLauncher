@@ -6,6 +6,12 @@ import org.junit.jupiter.api.Test
 
 class ShellNavigationLayoutTest {
     @Test
+    fun `FAQ search leaves room for the first result above a landscape keyboard`() {
+        collapseFaqTitle(122.dp) shouldBe true
+        collapseFaqTitle(340.dp) shouldBe false
+    }
+
+    @Test
     fun `a compact width always uses the bottom bar`() {
         shellNavigationLayout(width = 411.dp, availableHeight = 700.dp, itemCount = 6) shouldBe
             ShellNavigationLayout.Bar

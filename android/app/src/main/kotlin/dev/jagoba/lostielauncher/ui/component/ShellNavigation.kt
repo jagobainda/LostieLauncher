@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -68,16 +70,19 @@ fun ShellNavigationRail(
             .fillMaxHeight()
             .background(colors.secondaryBg),
     ) {
-        SelectionIndicator(IndicatorEdge.START, itemModifier) {
-            val y = selectionOffset(selection()) {
-                if (it < top.size) itemHeight * it else maxHeight - itemHeight * (count - it)
+        val contentHeight = maxOf(maxHeight, itemHeight * count)
+        Box(Modifier.verticalScroll(rememberScrollState()).height(contentHeight)) {
+            SelectionIndicator(IndicatorEdge.START, itemModifier) {
+                val y = selectionOffset(selection()) {
+                    if (it < top.size) itemHeight * it else contentHeight - itemHeight * (count - it)
+                }
+                IntOffset(0, y.roundToPx())
             }
-            IntOffset(0, y.roundToPx())
-        }
-        Column(Modifier.fillMaxSize().selectableGroup()) {
-            top.forEach { ShellNavigationItem(it, itemModifier) }
-            Spacer(Modifier.weight(1f))
-            bottom.forEach { ShellNavigationItem(it, itemModifier) }
+            Column(Modifier.fillMaxSize().selectableGroup()) {
+                top.forEach { ShellNavigationItem(it, itemModifier) }
+                Spacer(Modifier.weight(1f))
+                bottom.forEach { ShellNavigationItem(it, itemModifier) }
+            }
         }
     }
 }

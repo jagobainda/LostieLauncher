@@ -9,30 +9,39 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.recalculateWindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -54,21 +63,32 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 import dev.jagoba.lostielauncher.ui.theme.inputSurface
 import dev.jagoba.lostielauncher.ui.viewmodel.FaqsViewModel
+import kotlinx.coroutines.flow.drop
 
 @Composable
 fun FaqsScreen(modifier: Modifier = Modifier, viewModel: FaqsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var query by rememberSaveable { mutableStateOf(state.searchText) }
-    val search = { text: String ->
-        query = text
-        viewModel.setSearchText(text)
+    val query = rememberTextFieldState(state.searchText)
+    LaunchedEffect(query) {
+        snapshotFlow { query.text.toString() }.drop(1).collect(viewModel::setSearchText)
     }
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(
         modifier
             .fillMaxSize()
-            .padding(LauncherSpacing.Screen),
+            .recalculateWindowInsets()
+            .imePadding()
+            .padding(
+                horizontal = LauncherSpacing.Screen,
+                vertical = if (keyboardVisible) LauncherSpacing.ExtraSmall else LauncherSpacing.Screen,
+            ),
     ) {
-        FaqsSearchBar(query = query, onQueryChange = search, onClear = { search("") })
+        FaqsSearchBar(
+            query = query,
+            modifier = Modifier.padding(
+                bottom = if (keyboardVisible) LauncherSpacing.ExtraSmall else LauncherSpacing.Card,
+            ),
+        )
         if (state.hasNoResults) {
             EmptyState(
                 icon = R.drawable.ic_faqs_search_x,
@@ -94,14 +114,13 @@ fun FaqsScreen(modifier: Modifier = Modifier, viewModel: FaqsViewModel = hiltVie
 }
 
 @Composable
-private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClear: () -> Unit) {
+private fun FaqsSearchBar(query: TextFieldState, modifier: Modifier = Modifier) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
     val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
     Row(
-        Modifier
-            .padding(bottom = LauncherSpacing.Card)
+        modifier
             .fillMaxWidth()
             .heightIn(min = LauncherSizes.SearchBarHeight)
             .inputSurface(colors, RoundedCornerShape(LauncherRadii.Medium))
@@ -117,19 +136,18 @@ private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClea
         Spacer(Modifier.width(LauncherSpacing.MediumLarge))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                singleLine = true,
+                state = query,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 textStyle = TextStyle(color = colors.secondaryFg, fontSize = LauncherType.BodySize),
                 cursorBrush = SolidColor(colors.secondaryFg),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                onKeyboardAction = { focusManager.clearFocus() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { contentDescription = strings.faqsSearchPlaceholder },
             )
-            if (query.isEmpty() && !focused) {
+            if (query.text.isEmpty() && !focused) {
                 Text(
                     strings.faqsSearchPlaceholder,
                     color = colors.secondaryFgDim,
@@ -139,7 +157,7 @@ private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClea
                 )
             }
         }
-        if (query.isNotEmpty()) FaqsClearButton(strings.faqsClearSearch, onClear)
+        if (query.text.isNotEmpty()) FaqsClearButton(strings.faqsClearSearch, query::clearText)
     }
 }
 

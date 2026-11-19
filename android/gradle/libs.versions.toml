@@ -21,15 +21,17 @@ javaTarget = "17"
 # compileSdk/targetSdk 37 is Android 17, AGP 9.4's maximum. minSdk 26 buys
 # java.time without desugaring, notification channels and adaptive icons.
 compileSdk = "37"
+# Compose 1.13 (BOM 2026.11) requires compiling against API 37.1 or later.
+compileSdkMinor = "1"
 minSdk = "26"
 targetSdk = "37"
 
 # ── AndroidX and Compose ────────────────────────────────────────────────────
 androidxCore = "1.19.1"
 androidxActivity = "1.13.0"
-androidxLifecycle = "2.11.0"
+androidxLifecycle = "2.11.1"
 androidxSplashscreen = "1.2.0"
-composeBom = "2026.09.00"
+composeBom = "2026.11.01"
 datastore = "1.3.0"
 room = "2.8.5"                        # step 07
 work = "2.12.0"                       # step 08
