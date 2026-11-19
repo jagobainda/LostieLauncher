@@ -92,7 +92,7 @@ internal class DefaultLauncherUpdateService @Inject constructor(
     }
 
     private suspend fun evaluate(): String? {
-        val version = installer.settle(installer.installedVersion(), null)?.versionName
+        val version = installer.settle(installer.installedPackage()?.version, null)?.versionName
         if (version == null) installer.deleteInstaller()
         offered = version
         publish()

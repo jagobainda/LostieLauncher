@@ -112,6 +112,7 @@ internal object EusStrings : Strings {
     override val contentOutOfDateLabel = "Eduki zaharkitua"
     override val contentOutOfDateMessage = "Ezin izan da zerbitzariarekin konektatu. Ezagutzen den azken edukia erakusten da, eta zaharkituta egon daiteke."
     override val kirinMissingTitle = "Instalatu Kirin jarraitzeko"
+    override val kirinUntrustedSignerMessage = "Instalatutako Kirinen sinadura ez dator bat sinadura ofizialarekin. Desinstalatu Kirin Androiden ezarpenetan eta itzuli hona bertsio ofiziala instalatzeko."
     override val kirinOutdatedTitle = "Eguneratu Kirin jarraitzeko"
     override val kirinMissingMessage = "Lostie Launcher-ak Kirin-ekin irekitzen ditu jokoak, eta Kirin ez dago gailu honetan instalatuta. Instalatu Kirin {0} edo berriagoa."
     override val kirinOutdatedMessage = "Kirin {0} duzu, baina Lostie Launcher-ak Kirin {1} edo berriagoa behar du jokoak instalatu eta irekitzeko."

@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 internal class KirinGameLaunchService @Inject constructor(
     pending: PendingGameLaunchService,
     private val shortcut: KirinShortcut,
+    private val kirinSetup: KirinSetupService,
     private val options: KirinOptions,
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
@@ -24,6 +25,10 @@ internal class KirinGameLaunchService @Inject constructor(
         if (!withContext(dispatchers.io) { directory.isDirectory }) {
             logger.error("Game directory not found for ${game.name}: ${directory.path}.")
             return GameLaunchResult.GameNotFound
+        }
+        if (!kirinSetup.isOfficialKirinInstalled()) {
+            logger.error("Game launch refused because the official Kirin signer could not be verified.")
+            return GameLaunchResult.LaunchFailed
         }
         return try {
             shortcut.open(directory)

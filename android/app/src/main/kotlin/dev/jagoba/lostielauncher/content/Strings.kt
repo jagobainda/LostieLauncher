@@ -120,6 +120,7 @@ interface Strings {
     val kirinMissingTitle: String
     val kirinOutdatedTitle: String
     val kirinMissingMessage: String
+    val kirinUntrustedSignerMessage: String
     val kirinOutdatedMessage: String
     val kirinDownloadUnavailable: String
     val kirinUpdateRecommended: String

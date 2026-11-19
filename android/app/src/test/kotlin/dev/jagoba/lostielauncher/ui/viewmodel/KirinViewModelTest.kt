@@ -48,7 +48,7 @@ class KirinViewModelTest {
 
     @ParameterizedTest(name = "{0} -> {1}")
     @MethodSource("statuses")
-    fun `blocks the launcher only below the minimum version`(status: KirinStatus?, blocking: Boolean) =
+    fun `blocks the launcher when the required official Kirin is unavailable`(status: KirinStatus?, blocking: Boolean) =
         runTest(dispatcher) {
             this@KirinViewModelTest.status.value = status
             val sut = createSut()
@@ -103,6 +103,7 @@ class KirinViewModelTest {
         fun statuses() = listOf(
             arrayOf(null, false),
             arrayOf(KirinStatus.Ready, false),
+            arrayOf(KirinStatus.UntrustedSigner, true),
             arrayOf(KirinStatus.UpdateRecommended("0.4.0", "0.4.2"), false),
             arrayOf(KirinStatus.Missing("0.4.0"), true),
             arrayOf(KirinStatus.Outdated("0.3.5", "0.4.0"), true),

@@ -9,6 +9,7 @@ import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.apk.ApkPackages
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
+import dev.jagoba.lostielauncher.service.apk.SignedApk
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
 import dev.jagoba.lostielauncher.service.download.DownloadTransferRequest
@@ -71,14 +72,14 @@ class KirinSetupServiceTest {
             remoteJson,
             ApkReleaseInstallerFactory(remoteJson, transfer, packages, dispatchers, logger),
             KirinOptions(File(""), File(""), "", "", KIRIN_PACKAGE, "", "", ""),
-            KirinSetupOptions(server.url(REQUIREMENTS_PATH).toString(), FALLBACK_MINIMUM, installer),
+            KirinSetupOptions(server.url(REQUIREMENTS_PATH).toString(), FALLBACK_MINIMUM, installer, "official"),
             logger,
         )
     }
 
     @Test
     fun `blocks a missing Kirin with the server's minimum version`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements(minimum = "0.4.1")
         val sut = createSut()
 
@@ -88,8 +89,29 @@ class KirinSetupServiceTest {
     }
 
     @Test
+    fun `rejects an untrusted installed Kirin and blocks downloading an available update`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.1", setOf("different"))
+        serveRequirements()
+        serveRelease("0.4.2")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.status.value shouldBe KirinStatus.UntrustedSigner
+        sut.isOfficialKirinInstalled() shouldBe false
+        sut.download.value shouldBe ApkDownloadState.Available
+        sut.install()
+        coVerify(exactly = 0) { transfer.download(any(), any()) }
+
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
+        sut.isOfficialKirinInstalled() shouldBe true
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        sut.isOfficialKirinInstalled() shouldBe false
+    }
+
+    @Test
     fun `blocks an installation below the server's minimum version`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.4.0"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
         serveRequirements(minimum = "0.4.1")
         val sut = createSut()
 
@@ -100,7 +122,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `recommends the feed's release when it is newer than the installed Kirin`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.4.0-beta8"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0-beta8", setOf("official"))
         serveRequirements()
         serveRelease("0.4.2")
         val sut = createSut()
@@ -115,7 +137,7 @@ class KirinSetupServiceTest {
     fun `deletes a leftover installer once Kirin is at the feed's release`() = runTest(dispatcher) {
         installer.parentFile?.mkdirs()
         installer.writeText("apk")
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.4.2"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
         serveRequirements()
         serveRelease("0.4.2")
         val sut = createSut()
@@ -129,7 +151,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `falls back to the built-in minimum and retries the requirements on the next refresh`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.3.5"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.3.5", setOf("official"))
         val sut = createSut()
 
         sut.refresh()
@@ -143,7 +165,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `offers the feed's release to a missing Kirin`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()
         serveRelease("0.4.2")
         val sut = createSut()
@@ -155,7 +177,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `does not offer a release below the minimum version`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()
         serveRelease("0.3.5")
         val sut = createSut()
@@ -167,7 +189,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `does not offer a download that is not served over HTTPS`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.4.0"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
         serveRequirements()
         serveRelease("0.4.2", "http://example.com/Kirin.apk")
         val sut = createSut()
@@ -180,7 +202,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `does not offer a release without an APK`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()
         serveRelease("0.4.2", apkName = "Kirin-0.4.2.zip")
         val sut = createSut()
@@ -193,7 +215,7 @@ class KirinSetupServiceTest {
 
     @Test
     fun `asks nothing more of the network once the requirements and the feed are known`() = runTest(dispatcher) {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns null
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()
         serveRelease("0.4.2")
         val sut = createSut()
@@ -209,7 +231,7 @@ class KirinSetupServiceTest {
         val sut = offeringRelease()
         val observed = mutableListOf<ApkDownloadState>()
         downloadSucceeds { observed += sut.download.value }
-        every { packages.archiveVersion(installer, KIRIN_PACKAGE) } returns "0.4.2"
+        every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
 
@@ -220,7 +242,7 @@ class KirinSetupServiceTest {
     }
 
     private suspend fun offeringRelease(): DefaultKirinSetupService {
-        every { packages.installedVersion(KIRIN_PACKAGE) } returns "0.4.0"
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
         serveRequirements()
         serveRelease("0.4.2")
         return createSut().also { it.refresh() }

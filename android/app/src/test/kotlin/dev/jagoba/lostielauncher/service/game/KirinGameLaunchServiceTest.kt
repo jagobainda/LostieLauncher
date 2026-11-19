@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.model.GameTarget
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -25,12 +26,16 @@ class KirinGameLaunchServiceTest {
     private val dispatcher = StandardTestDispatcher()
     private val logger = mockk<Logger>(relaxed = true)
     private val shortcut = mockk<KirinShortcut>(relaxed = true)
+    private val kirinSetup = mockk<KirinSetupService> {
+        coEvery { isOfficialKirinInstalled() } returns true
+    }
     private val game = GameTarget(null, "Pokémon Añil")
     private val gameDirectory get() = directory.resolve("pok-mon-a-il").toFile()
 
     private fun createSut() = KirinGameLaunchService(
         PendingGameLaunchService(logger),
         shortcut,
+        kirinSetup,
         KirinOptions(directory.toFile(), File(""), "", "", "", "", "", ""),
         TestDispatcherProvider(dispatcher),
         logger,
@@ -48,6 +53,16 @@ class KirinGameLaunchServiceTest {
     @Test
     fun `reports a missing game directory without opening Kirin`() = runTest(dispatcher) {
         createSut().launch(game) shouldBe GameLaunchResult.GameNotFound
+
+        verify(exactly = 0) { shortcut.open(any()) }
+    }
+
+    @Test
+    fun `refuses to hand off a game if the installed signer has changed`() = runTest(dispatcher) {
+        gameDirectory.mkdirs()
+        coEvery { kirinSetup.isOfficialKirinInstalled() } returns false
+
+        createSut().launch(game) shouldBe GameLaunchResult.LaunchFailed
 
         verify(exactly = 0) { shortcut.open(any()) }
     }

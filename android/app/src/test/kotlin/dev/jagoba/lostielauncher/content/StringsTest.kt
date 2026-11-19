@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 93 keys kept from the desktop and the 24 Android-only keys")
+    @DisplayName("declares the 93 keys kept from the desktop and the 25 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 117
+        keys.size shouldBe 118
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -30,6 +30,7 @@ class StringsTest {
                 "statusWaitingForConnection",
                 "statusDownloading",
                 "kirinMissingTitle",
+                "kirinUntrustedSignerMessage",
                 "kirinOutdatedTitle",
                 "kirinMissingMessage",
                 "kirinOutdatedMessage",

@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.model.LauncherUpdateOptions
 import dev.jagoba.lostielauncher.service.apk.ApkPackages
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
+import dev.jagoba.lostielauncher.service.apk.SignedApk
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -38,7 +39,7 @@ class LauncherUpdateServiceTest {
     private val dispatcher = StandardTestDispatcher()
     private val transfer = mockk<DownloadTransfer>()
     private val packages = mockk<ApkPackages>(relaxed = true) {
-        every { installedVersion(PACKAGE) } returns INSTALLED
+        every { installedPackage(PACKAGE) } returns SignedApk(INSTALLED, setOf("official"))
     }
     private val logger = mockk<Logger>(relaxed = true)
     private val installer get() = directory.resolve("apk/launcher/LostieLauncher.apk").toFile()
@@ -148,6 +149,22 @@ class LauncherUpdateServiceTest {
     }
 
     @Test
+    fun `a launcher package signed by a different key cannot open the installer`() = runTest(dispatcher) {
+        serveRelease("1.1.0")
+        installer.parentFile?.mkdirs()
+        installer.writeText("cached")
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("different"))
+        coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+        val sut = createSut()
+        sut.refresh()
+
+        sut.install()
+
+        sut.download.value shouldBe ApkDownloadState.Failed
+        verify(exactly = 0) { packages.install(any()) }
+    }
+
+    @Test
     fun `opening the system installer answers the offer`() = runTest(dispatcher) {
         serveRelease("1.1.0")
         coEvery { transfer.download(any(), any()) } coAnswers {
@@ -155,7 +172,7 @@ class LauncherUpdateServiceTest {
             installer.writeText("apk")
             DownloadTransferResult.Success
         }
-        every { packages.archiveVersion(installer, PACKAGE) } returns "1.1.0"
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
         val sut = createSut()
         sut.refresh()
 

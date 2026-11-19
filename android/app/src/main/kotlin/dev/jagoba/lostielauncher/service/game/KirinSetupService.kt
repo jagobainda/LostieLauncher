@@ -7,6 +7,7 @@ import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseDto
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
+import dev.jagoba.lostielauncher.service.apk.SignedApk
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.KirinVersionPolicy
@@ -30,6 +31,8 @@ interface KirinSetupService {
     val download: StateFlow<ApkDownloadState>
 
     suspend fun refresh()
+
+    suspend fun isOfficialKirinInstalled(): Boolean
 
     suspend fun install()
 
@@ -59,7 +62,9 @@ internal class DefaultKirinSetupService @Inject constructor(
     private val options: KirinSetupOptions,
     private val logger: Logger,
 ) : KirinSetupService {
-    private val installer = installers.create(ApkTarget(kirin.packageName, options.installerFile, "Kirin"))
+    private val installer = installers.create(
+        ApkTarget(kirin.packageName, options.installerFile, "Kirin", options.signerSha256),
+    )
     private val refreshGate = Mutex()
     private val mutableStatus = MutableStateFlow<KirinStatus?>(null)
     override val status: StateFlow<KirinStatus?> = mutableStatus.asStateFlow()
@@ -90,16 +95,25 @@ internal class DefaultKirinSetupService @Inject constructor(
     }
 
     override suspend fun install() {
-        installer.install()
+        if (status.value != KirinStatus.UntrustedSigner) installer.install()
     }
+
+    override suspend fun isOfficialKirinInstalled(): Boolean = isOfficial(installer.installedPackage())
+
+    private fun isOfficial(installed: SignedApk?): Boolean = installed?.matches(setOf(options.signerSha256)) == true
 
     override fun acknowledgeFailure() {
         installer.acknowledgeFailure()
     }
 
     private suspend fun updateStatus() {
-        installedVersion = installer.installedVersion()
-        val status = KirinVersionPolicy.status(installedVersion, minimumVersion, installer.release?.versionName)
+        val installed = installer.installedPackage()
+        installedVersion = installed?.version
+        val status = if (installed != null && !isOfficial(installed)) {
+            KirinStatus.UntrustedSigner
+        } else {
+            KirinVersionPolicy.status(installedVersion, minimumVersion, installer.release?.versionName)
+        }
         if (mutableStatus.value != status) logger.info("Kirin status: $status.")
         mutableStatus.value = status
         if (status == KirinStatus.Ready) installer.deleteInstaller()
