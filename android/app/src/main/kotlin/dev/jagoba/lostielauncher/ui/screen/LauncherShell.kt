@@ -6,17 +6,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -31,6 +35,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -113,6 +119,14 @@ fun LauncherShellLayout(
 ) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(state.section) {
+        if (state.section != LauncherSection.FAQS) {
+            focusManager.clearFocus()
+            keyboard?.hide()
+        }
+    }
     val insets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
     val top = shellDestinations(TOP_SECTIONS, state, strings, onNavigate)
     val bottom = shellDestinations(BOTTOM_SECTIONS, state, strings, onNavigate)
@@ -156,19 +170,27 @@ fun LauncherShellLayout(
     BoxWithConstraints(modifier.fillMaxSize().background(colors.primaryBg)) {
         val verticalInsets = with(LocalDensity.current) { (insets.getTop(this) + insets.getBottom(this)).toDp() }
         val availableHeight = maxHeight - verticalInsets - LauncherSizes.TitleBarHeight
+        val density = LocalDensity.current
+        val imeBottom = WindowInsets.ime.getBottom(density)
+        val heightAboveIme = maxHeight - with(density) { (insets.getTop(this) + imeBottom).toDp() }
+        val collapseTitle = state.section == LauncherSection.FAQS && imeBottom > 0 && collapseFaqTitle(heightAboveIme)
         val layout = shellNavigationLayout(maxWidth, availableHeight, top.size + bottom.size)
         val pagerState = rememberPagerState(SECTIONS.indexOf(state.section)) { SECTIONS.size }
         val selection = { pagerState.currentPage + pagerState.currentPageOffsetFraction }
         Column(Modifier.fillMaxSize()) {
-            ShellTopBar(
-                title = state.title,
-                logo = painterResource(R.drawable.launcher_logo),
-                pills = listOfNotNull(offline, kirinUpdate, launcherUpdate),
-                actions = actions,
-                modifier = Modifier.windowInsetsPadding(
-                    insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ),
-            )
+            if (collapseTitle) {
+                Spacer(Modifier.windowInsetsTopHeight(insets))
+            } else {
+                ShellTopBar(
+                    title = state.title,
+                    logo = painterResource(R.drawable.launcher_logo),
+                    pills = listOfNotNull(offline, kirinUpdate, launcherUpdate),
+                    actions = actions,
+                    modifier = Modifier.windowInsetsPadding(
+                        insets.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ),
+                )
+            }
             if (layout is ShellNavigationLayout.Rail) {
                 Row(
                     Modifier
@@ -181,7 +203,7 @@ fun LauncherShellLayout(
                         bottom = bottom,
                         itemHeight = layout.itemHeight,
                         selection = selection,
-                        modifier = Modifier.padding(
+                        modifier = Modifier.imePadding().padding(
                             horizontal = LauncherSizes.ShellInset,
                             vertical = layout.verticalInset,
                         ),
@@ -210,7 +232,8 @@ fun LauncherShellLayout(
                     selection = selection,
                     modifier = Modifier
                         .background(colors.secondaryBg)
-                        .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)),
+                        .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+                        .imePadding(),
                 )
             }
         }

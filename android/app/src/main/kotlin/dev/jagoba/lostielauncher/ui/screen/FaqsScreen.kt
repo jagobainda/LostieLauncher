@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.recalculateWindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -63,12 +68,25 @@ fun FaqsScreen(modifier: Modifier = Modifier, viewModel: FaqsViewModel = hiltVie
         query = text
         viewModel.setSearchText(text)
     }
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(
         modifier
             .fillMaxSize()
-            .padding(LauncherSpacing.Screen),
+            .recalculateWindowInsets()
+            .imePadding()
+            .padding(
+                horizontal = LauncherSpacing.Screen,
+                vertical = if (keyboardVisible) LauncherSpacing.ExtraSmall else LauncherSpacing.Screen,
+            ),
     ) {
-        FaqsSearchBar(query = query, onQueryChange = search, onClear = { search("") })
+        FaqsSearchBar(
+            query = query,
+            onQueryChange = search,
+            onClear = { search("") },
+            modifier = Modifier.padding(
+                bottom = if (keyboardVisible) LauncherSpacing.ExtraSmall else LauncherSpacing.Card,
+            ),
+        )
         if (state.hasNoResults) {
             EmptyState(
                 icon = R.drawable.ic_faqs_search_x,
@@ -94,14 +112,18 @@ fun FaqsScreen(modifier: Modifier = Modifier, viewModel: FaqsViewModel = hiltVie
 }
 
 @Composable
-private fun FaqsSearchBar(query: String, onQueryChange: (String) -> Unit, onClear: () -> Unit) {
+private fun FaqsSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
     val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
     Row(
-        Modifier
-            .padding(bottom = LauncherSpacing.Card)
+        modifier
             .fillMaxWidth()
             .heightIn(min = LauncherSizes.SearchBarHeight)
             .inputSurface(colors, RoundedCornerShape(LauncherRadii.Medium))

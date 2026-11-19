@@ -2,8 +2,6 @@ package dev.jagoba.lostielauncher.ui.dialog
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,11 +41,7 @@ fun SpecialVersionDialog(onConfirm: (key: String) -> Unit, onDismiss: () -> Unit
             }
         },
     ) {
-        Column(
-            Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = LauncherSpacing.Screen),
-        ) {
+        Column(Modifier.padding(horizontal = LauncherSpacing.Screen)) {
             Text(
                 text = strings.specialVersionDialogDescription,
                 color = LocalLauncherColors.current.secondaryFgDim,
