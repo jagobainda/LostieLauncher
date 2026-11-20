@@ -57,7 +57,7 @@ class DefaultDownloadManagerTest {
         coEvery { dao.getWithStatuses(any()) } returns emptyList()
         coEvery { dao.deleteByGameIds(any()) } returns 0
         coEvery { dao.upsert(any()) } returns Unit
-        coEvery { dao.setStatus(any(), any(), any()) } returns Unit
+        coEvery { dao.setStatus(any(), any(), any(), any()) } returns Unit
     }
 
     @Test
@@ -110,7 +110,7 @@ class DefaultDownloadManagerTest {
 
         sut.pause("demo") shouldBe DownloadCommandResult.ACCEPTED
 
-        coVerify(exactly = 1) { dao.setStatus("demo", DownloadStatus.PAUSED.name, null) }
+        coVerify(exactly = 1) { dao.setStatus("demo", DownloadStatus.PAUSED.name, null, false) }
         coVerify(exactly = 1) { scheduler.cancel(workId) }
     }
 
@@ -121,7 +121,7 @@ class DefaultDownloadManagerTest {
 
         sut.pause("demo") shouldBe DownloadCommandResult.INVALID_STATE
 
-        coVerify(exactly = 0) { dao.setStatus(any(), any(), any()) }
+        coVerify(exactly = 0) { dao.setStatus(any(), any(), any(), any()) }
         coVerify(exactly = 0) { scheduler.cancel(any()) }
     }
 
@@ -196,7 +196,7 @@ class DefaultDownloadManagerTest {
 
         sut.cancel("demo") shouldBe DownloadCommandResult.ACCEPTED
 
-        coVerify(exactly = 1) { dao.setStatus("demo", DownloadStatus.CANCELLED.name, null) }
+        coVerify(exactly = 1) { dao.setStatus("demo", DownloadStatus.CANCELLED.name, null, true) }
         coVerify(exactly = 1) { scheduler.cancel(workId) }
         verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
     }

@@ -35,11 +35,20 @@ internal interface DownloadDao {
     @Query(
         """
         UPDATE downloads
-        SET status = :status, error_message = :errorMessage, bytes_per_second = 0
+        SET status = :status,
+            error_message = :errorMessage,
+            bytes_per_second = 0,
+            key = CASE WHEN :clearSensitiveData THEN NULL ELSE key END,
+            url = CASE WHEN :clearSensitiveData THEN '' ELSE url END
         WHERE game_id = :gameId
         """,
     )
-    suspend fun setStatus(gameId: String, status: String, errorMessage: String? = null)
+    suspend fun setStatus(
+        gameId: String,
+        status: String,
+        errorMessage: String? = null,
+        clearSensitiveData: Boolean = false,
+    )
 
     @Query(
         """
@@ -78,7 +87,9 @@ internal interface DownloadDao {
         UPDATE downloads
         SET status = :status,
             bytes_per_second = 0,
-            error_message = :errorMessage
+            error_message = :errorMessage,
+            key = CASE WHEN :clearSensitiveData THEN NULL ELSE key END,
+            url = CASE WHEN :clearSensitiveData THEN '' ELSE url END
         WHERE game_id = :gameId AND work_id = :workId AND status = :expectedStatus
         """,
     )
@@ -88,6 +99,7 @@ internal interface DownloadDao {
         expectedStatus: String,
         status: String,
         errorMessage: String?,
+        clearSensitiveData: Boolean = false,
     ): Int
 
     @Query(

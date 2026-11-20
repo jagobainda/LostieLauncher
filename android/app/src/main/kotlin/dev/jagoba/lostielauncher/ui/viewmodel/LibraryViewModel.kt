@@ -354,14 +354,16 @@ class LibraryViewModel @Inject constructor(
             transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_INVALID)
             return
         }
-        logger.debug("Fetching special version config for key: $key.")
+        logger.debug("Fetching special version config for ${game.gameId}.")
         when (val result = specialVersions.lookup(key)) {
             is SpecialVersionLookup.Found -> {
                 if (!SpecialVersionPolicy.isValidConfig(result.config)) {
-                    logger.error("Invalid special version config for key $key: archivo='${result.config.fileName}'.")
+                    logger.error(
+                        "Invalid special version config for ${game.gameId}: archivo='${result.config.fileName}'.",
+                    )
                     transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
                 } else if (!SpecialVersionPolicy.matchesGame(result.config, game.id)) {
-                    logger.info("Special version key $key belongs to another game than ${game.gameId}.")
+                    logger.info("Special version config for ${game.gameId} belongs to another game.")
                     transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_MISMATCH)
                 } else {
                     logger.debug("Starting special version session for ${game.gameId} (${result.config.version}).")
@@ -373,12 +375,12 @@ class LibraryViewModel @Inject constructor(
             }
 
             SpecialVersionLookup.NotFound -> {
-                logger.info("No special version config exists for key $key.")
+                logger.info("No special version config exists for ${game.gameId}.")
                 transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
             }
 
             SpecialVersionLookup.NetworkError, SpecialVersionLookup.InvalidResponse -> {
-                logger.info("Special version config for key $key could not be read: $result.")
+                logger.info("Special version config for ${game.gameId} could not be read: $result.")
                 transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR)
             }
         }

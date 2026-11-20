@@ -16,6 +16,7 @@ import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import io.mockk.verify
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +47,7 @@ class LibraryViewModelTest {
     private val externalLinks = TestExternalLinkService()
     private val network = TestNetworkMonitor()
     private val storageAccess = TestStorageAccess()
+    private val logger = mockk<Logger>(relaxed = true)
     private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -333,6 +335,38 @@ class LibraryViewModelTest {
         special.keys shouldBe listOf(key)
         downloads.starts.single().args.key shouldBe key
         downloads.starts.single().args.version shouldBe "v1.5"
+    }
+
+    @Test
+    fun `special version logs never contain the entered key`() = runTest(dispatcher) {
+        val remote = testGame()
+        val key = "ABCD-1234-EFGH-5678-IJKL"
+        val config = SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip")
+        content.games = listOf(remote)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        val results = listOf(
+            SpecialVersionLookup.Found(config),
+            SpecialVersionLookup.Found(config.copy(sha256 = "bad")),
+            SpecialVersionLookup.Found(config.copy(mainGameId = testGame(name = "Other").id!!)),
+            SpecialVersionLookup.NotFound,
+            SpecialVersionLookup.NetworkError,
+            SpecialVersionLookup.InvalidResponse,
+        )
+
+        results.forEach { result ->
+            special.result = result
+            sut.requestSpecialVersion(remote.gameId)
+            runCurrent()
+            sut.submitSpecialVersionKey(key)
+            runCurrent()
+        }
+
+        verify(exactly = 0) {
+            logger.debug(match { key in it })
+            logger.info(match { key in it })
+            logger.error(match { key in it }, any())
+        }
     }
 
     @Test
@@ -647,7 +681,7 @@ class LibraryViewModelTest {
             navigation,
             externalLinks,
             storageAccess,
-            mockk<Logger>(relaxed = true),
+            logger,
         )
     }
 

@@ -105,7 +105,13 @@ internal class DownloadWorkerRunner @Inject constructor(
 
             DownloadTransferResult.PermissionDenied -> {
                 deleteArtifacts(entity)
-                finish(entity, workId, DownloadStatus.PERMISSION_DENIED, PERMISSION_DENIED_MESSAGE)
+                finish(
+                    entity,
+                    workId,
+                    DownloadStatus.PERMISSION_DENIED,
+                    PERMISSION_DENIED_MESSAGE,
+                    clearSensitiveData = true,
+                )
             }
 
             is DownloadTransferResult.Failed -> finish(
@@ -174,6 +180,7 @@ internal class DownloadWorkerRunner @Inject constructor(
             expectedStatus = DownloadStatus.INSTALLING.name,
             status = if (installed) DownloadStatus.COMPLETED.name else DownloadStatus.INSTALLATION_FAILED.name,
             errorMessage = result.takeUnless { installed }?.toString(),
+            clearSensitiveData = installed,
         )
         try {
             runtime.notifyResult(entity.displayName, result)
@@ -225,6 +232,7 @@ internal class DownloadWorkerRunner @Inject constructor(
         workId: String,
         status: DownloadStatus,
         errorMessage: String?,
+        clearSensitiveData: Boolean = false,
     ): DownloadWorkerOutcome {
         logger.error("Download failed: ${entity.gameId} ($status): $errorMessage")
         dao.finish(
@@ -233,6 +241,7 @@ internal class DownloadWorkerRunner @Inject constructor(
             expectedStatus = DownloadStatus.DOWNLOADING.name,
             status = status.name,
             errorMessage = errorMessage,
+            clearSensitiveData = clearSensitiveData,
         )
         return DownloadWorkerOutcome.FAILURE
     }

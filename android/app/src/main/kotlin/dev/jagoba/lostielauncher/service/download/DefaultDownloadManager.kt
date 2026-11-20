@@ -134,7 +134,7 @@ internal class DefaultDownloadManager @Inject constructor(
     override suspend fun cancel(gameId: String): DownloadCommandResult = commandGate.withLock {
         val entity = dao.get(gameId) ?: return@withLock DownloadCommandResult.NOT_FOUND
         if (entity.status.toDownloadStatus().isFinished) return@withLock DownloadCommandResult.INVALID_STATE
-        dao.setStatus(gameId, DownloadStatus.CANCELLED.name)
+        dao.setStatus(gameId, DownloadStatus.CANCELLED.name, clearSensitiveData = true)
         scheduler.cancel(UUID.fromString(entity.workId))
         withContext(dispatchers.io) { fileStore.deleteArtifacts(entity.destinationPath) }
         logger.info("Download cancelled: $gameId.")
