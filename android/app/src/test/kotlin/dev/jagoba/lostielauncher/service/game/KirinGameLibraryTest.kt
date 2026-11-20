@@ -3,10 +3,16 @@ package dev.jagoba.lostielauncher.service.game
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.KirinOptions
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
+import java.util.concurrent.Executors
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -27,9 +33,9 @@ class KirinGameLibraryTest {
     private val libraryFile get() = directory.resolve("Kirin/game-library.json").toFile()
     private val gameDirectory get() = directory.resolve("LostieLauncher/demo").toFile()
 
-    private fun createSut() = KirinGameLibrary(
+    private fun createSut(ioDispatcher: CoroutineDispatcher = dispatcher) = KirinGameLibrary(
         KirinOptions(directory.toFile(), libraryFile, "Game.exe", "auto", "", "", "", ""),
-        TestDispatcherProvider(dispatcher),
+        TestDispatcherProvider(ioDispatcher),
     )
 
     private fun entry(title: String, path: String, vararg extra: Pair<String, String>) = JsonObject(
@@ -65,16 +71,42 @@ class KirinGameLibraryTest {
     }
 
     @Test
-    fun `updates the title of an existing entry and preserves its settings`() = runTest(dispatcher) {
+    fun `refreshes launch options for an existing path and preserves other fields`() = runTest(dispatcher) {
+        val path = gameDirectory.absolutePath
+        val old = entry("Old", path, "executableName" to "Old.exe", "runtimeMode" to "compat", "icon" to "cover.png")
         libraryFile.parentFile?.mkdirs()
-        libraryFile.writeText(
-            JsonArray(listOf(entry("Old", gameDirectory.absolutePath, "runtimeMode" to "compat"))).toString(),
-        )
+        libraryFile.writeText(JsonArray(listOf(old)).toString())
         val sut = createSut()
 
         sut.register("Demo", gameDirectory)
 
-        readLibrary() shouldBe JsonArray(listOf(entry("Demo", gameDirectory.absolutePath, "runtimeMode" to "compat")))
+        readLibrary() shouldBe JsonArray(
+            listOf(entry("Demo", path, "executableName" to "Game.exe", "runtimeMode" to "auto", "icon" to "cover.png")),
+        )
+    }
+
+    @Test
+    fun `concurrent registrations and removals preserve every change`() = runTest(dispatcher) {
+        val added = (1..16).map { directory.resolve("new-$it").toFile() }
+        val removed = (1..16).map { directory.resolve("old-$it").toFile() }
+        val untouched = entry("Other", "/storage/other", "runtimeMode" to "compat")
+        libraryFile.parentFile?.mkdirs()
+        libraryFile.writeText(JsonArray(removed.map { entry(it.name, it.absolutePath) } + untouched).toString())
+
+        Executors.newFixedThreadPool(4).asCoroutineDispatcher().use { ioDispatcher ->
+            val sut = createSut(ioDispatcher)
+            coroutineScope {
+                for (index in added.indices) {
+                    launch { sut.register(added[index].name, added[index]) }
+                    launch { sut.unregister(removed[index]) }
+                }
+            }
+        }
+
+        val expected = added.map {
+            entry(it.name, it.absolutePath, "executableName" to "Game.exe", "runtimeMode" to "auto")
+        }
+        (readLibrary() as JsonArray) shouldContainExactlyInAnyOrder (expected + untouched)
     }
 
     @Test
