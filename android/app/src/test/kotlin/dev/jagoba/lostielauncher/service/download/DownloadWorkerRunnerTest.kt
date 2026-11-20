@@ -50,7 +50,7 @@ class DownloadWorkerRunnerTest {
         coEvery { dao.get(GAME_ID) } returns entity()
         coEvery { dao.setWorkerStatus(any(), any(), any(), any()) } returns 1
         coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any(), any()) } returns 1
-        coEvery { dao.finish(any(), any(), any(), any(), any()) } returns 1
+        coEvery { dao.finish(any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.complete(any(), any(), any(), any()) } returns 1
         coEvery { handoff.deliver(any()) } returns GameInstallationResult.Installed(INSTALLED_GAME)
         every { fileStore.deleteArtifacts(any()) } returns 2
@@ -90,7 +90,7 @@ class DownloadWorkerRunnerTest {
             dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.INSTALLING.name)
             runtime.clearResult("Demo")
             handoff.deliver(match { it.gameId == GAME_ID && it.path == DESTINATION })
-            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null)
+            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null, true)
             runtime.notifyResult("Demo", GameInstallationResult.Installed(INSTALLED_GAME))
         }
     }
@@ -111,6 +111,7 @@ class DownloadWorkerRunnerTest {
                 DownloadStatus.INSTALLING.name,
                 DownloadStatus.INSTALLATION_FAILED.name,
                 result.toString(),
+                false,
             )
         }
         coVerify(exactly = 1) { runtime.notifyResult("Demo", result) }
@@ -148,7 +149,7 @@ class DownloadWorkerRunnerTest {
         coVerify(exactly = 0) { dao.setWorkerStatus(any(), any(), any(), any()) }
         coVerify(exactly = 1) { handoff.deliver(match { it.path == DESTINATION }) }
         coVerify(exactly = 1) {
-            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null)
+            dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null, true)
         }
     }
 
@@ -161,7 +162,7 @@ class DownloadWorkerRunnerTest {
         val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
 
         (error is CancellationException) shouldBe true
-        coVerify(exactly = 0) { dao.finish(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { dao.finish(any(), any(), any(), any(), any(), any()) }
         coVerify(exactly = 0) { dao.setWorkerStatus(any(), any(), any(), any()) }
         coVerify(exactly = 0) { runtime.notifyResult(any(), any()) }
         verify(exactly = 0) { logger.error("Downloaded file handoff failed for demo.", any()) }
@@ -268,6 +269,7 @@ class DownloadWorkerRunnerTest {
                 DownloadStatus.DOWNLOADING.name,
                 DownloadStatus.PERMISSION_DENIED.name,
                 "Download storage permission was denied.",
+                true,
             )
         }
     }
