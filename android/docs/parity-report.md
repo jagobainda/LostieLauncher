@@ -43,8 +43,10 @@ in [build-and-validation.md](../.agents/build-and-validation.md).
   [storage and handoff](game-runtime-options.md#storage-and-handoff).
 - Games auto-update is implemented, but stops on a server-action block without
   the interactive notice shown by manual actions.
-- Open prompts and notices are held by ViewModels; they are not a durable
-  process-death record.
+- Pending Library and My Games prompts/notices, the post-storage-access action,
+  the un-dismissed welcome dialog and FAQ search/expansion state survive process
+  death through `SavedStateHandle` or DataStore. Transient update-check notices
+  and in-flight APK check state remain in memory.
 
 ## Deliberate omissions
 

@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
@@ -18,6 +19,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -671,7 +673,193 @@ class LibraryViewModelTest {
         downloads.cancelled shouldBe emptyList()
     }
 
-    private fun createSut(scope: CoroutineScope): LibraryViewModel {
+    @Test
+    fun `download confirmation prompt and destination survive process death`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val saved = SavedStateHandle()
+        val original = createSut(backgroundScope, saved)
+        runCurrent()
+        original.requestDownload(remote.gameId)
+        runCurrent()
+
+        val restored = createSut(backgroundScope, saved)
+        runCurrent()
+
+        restored.state.value.pendingDownloadGame shouldBe remote
+        restored.state.value.downloadDestination shouldBe downloads.destination
+        restored.confirmDownload()
+        runCurrent()
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+    }
+
+    @Test
+    fun `special version and cancel prompts survive process death`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val savedSpecial = SavedStateHandle()
+        val original = createSut(backgroundScope, savedSpecial)
+        runCurrent()
+        original.requestSpecialVersion(remote.gameId)
+        runCurrent()
+
+        val restoredSpecial = createSut(backgroundScope, savedSpecial)
+        runCurrent()
+        restoredSpecial.state.value.pendingSpecialGameId shouldBe remote.gameId
+
+        val savedCancel = SavedStateHandle()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.PAUSED))
+        val cancelOriginal = createSut(backgroundScope, savedCancel)
+        runCurrent()
+        cancelOriginal.requestCancel(remote.gameId)
+        runCurrent()
+
+        val restoredCancel = createSut(backgroundScope, savedCancel)
+        runCurrent()
+        restoredCancel.state.value.pendingCancelGameId shouldBe remote.gameId
+        restoredCancel.confirmCancel()
+        runCurrent()
+        downloads.cancelled shouldBe listOf(remote.gameId)
+    }
+
+    @Test
+    fun `granting storage access after process death starts the confirmed download even while catalogue reloads`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            storageAccess.granted = false
+            val saved = SavedStateHandle()
+            val original = createSut(backgroundScope, saved)
+            runCurrent()
+            original.requestDownload(remote.gameId)
+            runCurrent()
+            original.confirmDownload()
+            runCurrent()
+            original.state.value.isStorageAccessPromptVisible shouldBe true
+
+            val onRationale = createSut(backgroundScope, saved)
+            runCurrent()
+            onRationale.state.value.isStorageAccessPromptVisible shouldBe true
+            onRationale.requestStorageAccess()
+            runCurrent()
+            onRationale.state.value.isStorageAccessPromptVisible shouldBe false
+
+            val barrier = CompletableDeferred<Unit>()
+            content.gameBarrier = barrier
+            val freshCoordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
+            val restored = createSut(backgroundScope, saved, freshCoordinator)
+            storageAccess.granted = true
+            restored.onStorageAccessResult()
+            runCurrent()
+            downloads.starts shouldBe emptyList()
+
+            barrier.complete(Unit)
+            runCurrent()
+
+            downloads.starts.single().args.gameId shouldBe remote.gameId
+            restored.state.value.notice shouldBe null
+        }
+
+    @Test
+    fun `special key download survives storage access grant across process death`() = runTest(dispatcher) {
+        val remote = testGame()
+        val key = "ABCD-1234-EFGH-5678-IJKL"
+        content.games = listOf(remote)
+        special.result = SpecialVersionLookup.Found(
+            SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+        )
+        storageAccess.granted = false
+        val saved = SavedStateHandle()
+        val original = createSut(backgroundScope, saved)
+        runCurrent()
+        original.requestDownload(remote.gameId)
+        runCurrent()
+        original.confirmDownload(" $key ")
+        runCurrent()
+        original.requestStorageAccess()
+
+        val restored = createSut(backgroundScope, saved)
+        runCurrent()
+        storageAccess.granted = true
+        restored.onStorageAccessResult()
+        runCurrent()
+
+        downloads.starts.single().args.key shouldBe key
+        downloads.starts.single().args.version shouldBe "v1.5"
+        saved.get<String>("library.storageAction.key") shouldBe null
+    }
+
+    @Test
+    fun `update and installation retry survive storage access grant across process death`() = runTest(dispatcher) {
+        val remote = testGame(version = "v2.0")
+        content.games = listOf(remote)
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        storageAccess.granted = false
+        val updateSaved = SavedStateHandle()
+        val originalUpdate = createSut(backgroundScope, updateSaved)
+        runCurrent()
+        originalUpdate.startUpdate(remote.gameId)
+        runCurrent()
+        originalUpdate.requestStorageAccess()
+
+        val restoredUpdate = createSut(backgroundScope, updateSaved)
+        runCurrent()
+        storageAccess.granted = true
+        restoredUpdate.onStorageAccessResult()
+        runCurrent()
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+
+        storageAccess.granted = false
+        installation.installation = flowOf(GameInstallationState.NotStarted)
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.INSTALLATION_FAILED))
+        val retrySaved = SavedStateHandle()
+        val originalRetry = createSut(backgroundScope, retrySaved)
+        runCurrent()
+        originalRetry.requestDownload(remote.gameId)
+        runCurrent()
+        originalRetry.requestStorageAccess()
+
+        val restoredRetry = createSut(backgroundScope, retrySaved)
+        runCurrent()
+        storageAccess.granted = true
+        restoredRetry.onStorageAccessResult()
+        runCurrent()
+        downloads.retried shouldBe listOf(remote.gameId)
+    }
+
+    @Test
+    fun `denied storage access after process death shows notice and clears the saved continuation`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            storageAccess.granted = false
+            val saved = SavedStateHandle()
+            val original = createSut(backgroundScope, saved)
+            runCurrent()
+            original.requestDownload(remote.gameId)
+            runCurrent()
+            original.confirmDownload()
+            original.requestStorageAccess()
+
+            val restored = createSut(backgroundScope, saved)
+            runCurrent()
+            restored.onStorageAccessResult()
+            runCurrent()
+
+            downloads.starts shouldBe emptyList()
+            restored.state.value.notice shouldBe LibraryNotice.STORAGE_ACCESS_DENIED
+            storageAccess.granted = true
+            restored.onStorageAccessResult()
+            runCurrent()
+            downloads.starts shouldBe emptyList()
+        }
+
+    private fun createSut(
+        scope: CoroutineScope,
+        savedState: SavedStateHandle = SavedStateHandle(),
+        coordinator: LauncherDataCoordinator = this.coordinator,
+    ): LibraryViewModel {
         coordinator.start(scope, settings, network, HomeRefreshOptions(2.minutes))
         return LibraryViewModel(
             coordinator,
@@ -684,6 +872,7 @@ class LibraryViewModelTest {
             externalLinks,
             storageAccess,
             logger,
+            savedState,
         )
     }
 

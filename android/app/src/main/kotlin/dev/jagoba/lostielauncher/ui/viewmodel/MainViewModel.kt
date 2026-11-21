@@ -136,13 +136,14 @@ class MainViewModel @Inject constructor(
             if (settings.settings.first().hasSeenWelcome) return@launch
             logger.info("First launch detected - navigating to library and showing welcome dialog.")
             navigate(LauncherSection.LIBRARY)
-            settings.setHasSeenWelcome(true)
             welcome.value = true
         }
     }
 
     fun dismissWelcome() {
+        if (!welcome.value) return
         welcome.value = false
+        viewModelScope.launch { settings.setHasSeenWelcome(true) }
     }
 
     fun navigate(section: LauncherSection) {

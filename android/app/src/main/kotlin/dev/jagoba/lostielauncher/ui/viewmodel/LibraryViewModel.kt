@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -141,10 +143,11 @@ class LibraryViewModel @Inject constructor(
     private val externalLinks: ExternalLinkService,
     private val storageAccess: StorageAccess,
     private val logger: Logger,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
-    private val transient = MutableStateFlow(LibraryUiState())
+    private val transient = MutableStateFlow(restoreTransient(savedState))
     private var maintenanceNoticeShown = false
-    private var afterStorageAccess: (() -> Unit)? = null
+    private var pendingStorageAction: PendingStorageAction? = restoreStorageAction(savedState)
 
     private val installationStates = downloads.downloads.flatMapLatest { rows ->
         val installing = rows.filter { it.status in INSTALLATION_STATUSES }
@@ -200,7 +203,7 @@ class LibraryViewModel @Inject constructor(
 
     val state: StateFlow<LibraryUiState> = combine(cards, transient) { base, prompts ->
         prompts.copy(isLoading = base.isLoading, games = base.games)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, LibraryUiState())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, transient.value)
 
     init {
         viewModelScope.launch {
@@ -208,13 +211,13 @@ class LibraryViewModel @Inject constructor(
             downloads.downloads.collect { rows ->
                 val pendingCancel = transient.value.pendingCancelGameId
                 if (pendingCancel != null && rows.none { it.gameId == pendingCancel && !it.status.isFinished }) {
-                    transient.value = transient.value.copy(pendingCancelGameId = null)
+                    updateTransient { it.copy(pendingCancelGameId = null) }
                 }
                 val notice = rows.firstNotNullOfOrNull { row ->
                     row.status.failureNotice()?.takeIf { previous[row.gameId]?.isActive == true }
                 }
                 previous = rows.associate { it.gameId to it.status }
-                if (notice != null) transient.value = transient.value.copy(notice = notice)
+                if (notice != null) updateTransient { it.copy(notice = notice) }
             }
         }
         viewModelScope.launch {
@@ -226,7 +229,7 @@ class LibraryViewModel @Inject constructor(
                 val notice = phases.entries.firstNotNullOfOrNull { (gameId, phase) ->
                     phase.failureNotice()?.takeIf { gameId in before && before[gameId] != phase }
                 }
-                if (notice != null) transient.value = transient.value.copy(notice = notice)
+                if (notice != null) updateTransient { it.copy(notice = notice) }
             }
         }
         viewModelScope.launch {
@@ -256,11 +259,7 @@ class LibraryViewModel @Inject constructor(
             return
         }
         if (row.download?.status == DownloadStatus.INSTALLATION_FAILED) {
-            withStorageAccess {
-                viewModelScope.launch {
-                    if (serverActionsAvailable()) record(downloads.retry(gameId))
-                }
-            }
+            withStorageAccess(PendingStorageAction.RetryInstallation(gameId))
             return
         }
         viewModelScope.launch {
@@ -268,30 +267,24 @@ class LibraryViewModel @Inject constructor(
             if (row.download?.status == DownloadStatus.PAUSED) {
                 record(downloads.resume(gameId))
             } else {
-                transient.value = transient.value.copy(
-                    pendingDownloadGameId = gameId,
-                    downloadDestination = downloads.destination(),
-                    notice = null,
-                )
+                val destination = downloads.destination()
+                updateTransient {
+                    it.copy(
+                        pendingDownloadGameId = gameId,
+                        downloadDestination = destination,
+                        notice = null,
+                    )
+                }
             }
         }
     }
 
     fun confirmDownload(key: String? = null) {
         val gameId = transient.value.pendingDownloadGameId ?: return
-        transient.value = transient.value.copy(pendingDownloadGameId = null, downloadDestination = null)
-        val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
-        withStorageAccess {
-            viewModelScope.launch {
-                if (!serverActionsAvailable()) return@launch
-                val trimmedKey = key?.trim().orEmpty()
-                if (trimmedKey.isEmpty()) {
-                    start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
-                } else {
-                    startSpecialVersion(game, trimmedKey)
-                }
-            }
-        }
+        updateTransient { it.copy(pendingDownloadGameId = null, downloadDestination = null) }
+        if (state.value.games.none { it.game.gameId == gameId }) return
+        val trimmedKey = key?.trim()?.takeIf(String::isNotEmpty)
+        withStorageAccess(PendingStorageAction.Download(gameId, trimmedKey))
     }
 
     fun openPendingGamePage() {
@@ -304,28 +297,22 @@ class LibraryViewModel @Inject constructor(
             logger.debug("Update request ignored for $gameId: its card is ${row.status}.")
             return
         }
-        withStorageAccess {
-            viewModelScope.launch {
-                if (!serverActionsAvailable()) return@launch
-                logger.debug("Starting update session for $gameId.")
-                start(row.game, GameDownloadArgs(row.game.gameId, row.game.version, row.game.relativePath))
-            }
-        }
+        withStorageAccess(PendingStorageAction.Update(gameId))
     }
 
     fun requestStorageAccess() {
-        transient.value = transient.value.copy(isStorageAccessPromptVisible = false)
+        updateTransient { it.copy(isStorageAccessPromptVisible = false) }
     }
 
     fun onStorageAccessResult() {
-        val action = afterStorageAccess ?: return
-        afterStorageAccess = null
+        val action = pendingStorageAction ?: return
+        setPendingStorageAction(null)
         if (storageAccess.isGranted()) {
             logger.info("Shared storage access granted.")
-            action()
+            runStorageAction(action)
         } else {
             logger.info("Shared storage access denied; the download was not started.")
-            transient.value = transient.value.copy(notice = LibraryNotice.STORAGE_ACCESS_DENIED)
+            updateTransient { it.copy(notice = LibraryNotice.STORAGE_ACCESS_DENIED) }
         }
     }
 
@@ -334,24 +321,25 @@ class LibraryViewModel @Inject constructor(
         if (!row.canSwitchSpecialVersion) return
         viewModelScope.launch {
             if (serverActionsAvailable()) {
-                transient.value = transient.value.copy(pendingSpecialGameId = gameId, notice = null)
+                updateTransient { it.copy(pendingSpecialGameId = gameId, notice = null) }
             }
         }
     }
 
     fun submitSpecialVersionKey(key: String) {
         val gameId = transient.value.pendingSpecialGameId ?: return
-        transient.value = transient.value.copy(pendingSpecialGameId = null)
-        val game = state.value.games.firstOrNull { it.game.gameId == gameId }?.game ?: return
+        updateTransient { it.copy(pendingSpecialGameId = null) }
         viewModelScope.launch {
-            if (serverActionsAvailable()) startSpecialVersion(game, key.trim())
+            if (!serverActionsAvailable()) return@launch
+            val game = resolveGame(gameId) ?: return@launch
+            startSpecialVersion(game, key.trim())
         }
     }
 
     private suspend fun startSpecialVersion(game: GameInfo, key: String) {
         if (!SpecialVersionPolicy.isValidKey(key)) {
             logger.info("Download key rejected for ${game.gameId}: invalid format.")
-            transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_INVALID)
+            updateTransient { it.copy(notice = LibraryNotice.SPECIAL_KEY_INVALID) }
             return
         }
         logger.debug("Fetching special version config for ${game.gameId}.")
@@ -361,10 +349,10 @@ class LibraryViewModel @Inject constructor(
                     logger.error(
                         "Invalid special version config for ${game.gameId}: archivo='${result.config.fileName}'.",
                     )
-                    transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
+                    updateTransient { it.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND) }
                 } else if (!SpecialVersionPolicy.matchesGame(result.config, game.id)) {
                     logger.info("Special version config for ${game.gameId} belongs to another game.")
-                    transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_MISMATCH)
+                    updateTransient { it.copy(notice = LibraryNotice.SPECIAL_KEY_MISMATCH) }
                 } else {
                     logger.debug("Starting special version session for ${game.gameId} (${result.config.version}).")
                     start(
@@ -378,12 +366,12 @@ class LibraryViewModel @Inject constructor(
 
             SpecialVersionLookup.NotFound -> {
                 logger.info("No special version config exists for ${game.gameId}.")
-                transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND)
+                updateTransient { it.copy(notice = LibraryNotice.SPECIAL_KEY_NOT_FOUND) }
             }
 
             SpecialVersionLookup.NetworkError, SpecialVersionLookup.InvalidResponse -> {
                 logger.info("Special version config for ${game.gameId} could not be read: $result.")
-                transient.value = transient.value.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR)
+                updateTransient { it.copy(notice = LibraryNotice.SPECIAL_DOWNLOAD_ERROR) }
             }
         }
     }
@@ -398,33 +386,86 @@ class LibraryViewModel @Inject constructor(
 
     fun requestCancel(gameId: String) {
         if (state.value.games.none { it.game.gameId == gameId && it.canCancel }) return
-        transient.value = transient.value.copy(pendingCancelGameId = gameId)
+        updateTransient { it.copy(pendingCancelGameId = gameId) }
     }
 
     fun confirmCancel() {
         val gameId = transient.value.pendingCancelGameId ?: return
-        transient.value = transient.value.copy(pendingCancelGameId = null)
+        updateTransient { it.copy(pendingCancelGameId = null) }
         viewModelScope.launch { record(downloads.cancel(gameId)) }
     }
 
     fun dismissPrompt() {
         transient.value.pendingCancelGameId?.let { logger.debug("Cancel download aborted by user for $it.") }
-        afterStorageAccess = null
-        transient.value = LibraryUiState(notice = transient.value.notice)
+        setPendingStorageAction(null)
+        updateTransient { LibraryUiState(notice = it.notice) }
     }
 
     fun clearNotice() {
-        transient.value = transient.value.copy(notice = null)
+        updateTransient { it.copy(notice = null) }
     }
 
-    private fun withStorageAccess(action: () -> Unit) {
+    private fun withStorageAccess(action: PendingStorageAction) {
         if (storageAccess.isGranted()) {
-            action()
+            runStorageAction(action)
             return
         }
         logger.info("Shared storage access is missing; asking before the download starts.")
-        afterStorageAccess = action
-        transient.value = transient.value.copy(isStorageAccessPromptVisible = true, notice = null)
+        setPendingStorageAction(action)
+        updateTransient { it.copy(isStorageAccessPromptVisible = true, notice = null) }
+    }
+
+    private fun runStorageAction(action: PendingStorageAction) {
+        viewModelScope.launch {
+            if (!serverActionsAvailable()) return@launch
+            when (action) {
+                is PendingStorageAction.RetryInstallation -> record(downloads.retry(action.gameId))
+
+                is PendingStorageAction.Download -> {
+                    val game = resolveGame(action.gameId) ?: return@launch
+                    if (action.key.isNullOrEmpty()) {
+                        start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
+                    } else {
+                        startSpecialVersion(game, action.key)
+                    }
+                }
+
+                is PendingStorageAction.Update -> {
+                    val game = resolveGame(action.gameId) ?: return@launch
+                    logger.debug("Starting update session for ${action.gameId}.")
+                    start(game, GameDownloadArgs(game.gameId, game.version, game.relativePath))
+                }
+            }
+        }
+    }
+
+    private suspend fun resolveGame(gameId: String): GameInfo? {
+        state.value.games.firstOrNull { it.game.gameId == gameId }?.game?.let { return it }
+        return coordinator.catalogue.first { !it.isLoading }.games.firstOrNull { it.gameId == gameId }
+    }
+
+    private fun updateTransient(transform: (LibraryUiState) -> LibraryUiState) {
+        val updated = transform(transient.value)
+        transient.value = updated
+        savedState[PENDING_DOWNLOAD_GAME_ID_KEY] = updated.pendingDownloadGameId
+        savedState[DOWNLOAD_DESTINATION_PATH_KEY] = updated.downloadDestination?.path
+        savedState[DOWNLOAD_DESTINATION_FREE_BYTES_KEY] = updated.downloadDestination?.freeBytes
+        savedState[PENDING_CANCEL_GAME_ID_KEY] = updated.pendingCancelGameId
+        savedState[PENDING_SPECIAL_GAME_ID_KEY] = updated.pendingSpecialGameId
+        savedState[STORAGE_ACCESS_PROMPT_KEY] = updated.isStorageAccessPromptVisible
+        savedState[NOTICE_KEY] = updated.notice?.name
+    }
+
+    private fun setPendingStorageAction(action: PendingStorageAction?) {
+        pendingStorageAction = action
+        savedState[STORAGE_ACTION_KIND_KEY] = when (action) {
+            is PendingStorageAction.Download -> ACTION_DOWNLOAD
+            is PendingStorageAction.Update -> ACTION_UPDATE
+            is PendingStorageAction.RetryInstallation -> ACTION_RETRY
+            null -> null
+        }
+        savedState[STORAGE_ACTION_GAME_ID_KEY] = action?.gameId
+        savedState[STORAGE_ACTION_KEY_KEY] = (action as? PendingStorageAction.Download)?.key
     }
 
     private suspend fun start(
@@ -447,7 +488,7 @@ class LibraryViewModel @Inject constructor(
         )
         if (!maintenanceNoticeShown) {
             val notice = if (offline) LibraryNotice.OFFLINE else LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
-            transient.value = transient.value.copy(notice = notice)
+            updateTransient { it.copy(notice = notice) }
             maintenanceNoticeShown = true
         }
         return false
@@ -461,16 +502,65 @@ class LibraryViewModel @Inject constructor(
             DownloadCommandResult.NOT_FOUND -> LibraryNotice.DOWNLOAD_NOT_FOUND
             DownloadCommandResult.INVALID_STATE -> LibraryNotice.DOWNLOAD_INVALID
         }
-        transient.value = transient.value.copy(notice = notice)
+        updateTransient { it.copy(notice = notice) }
+    }
+
+    private sealed interface PendingStorageAction {
+        val gameId: String
+
+        data class Download(override val gameId: String, val key: String? = null) : PendingStorageAction
+
+        data class Update(override val gameId: String) : PendingStorageAction
+
+        data class RetryInstallation(override val gameId: String) : PendingStorageAction
     }
 
     private companion object {
+        const val PENDING_DOWNLOAD_GAME_ID_KEY = "library.pendingDownloadGameId"
+        const val DOWNLOAD_DESTINATION_PATH_KEY = "library.downloadDestination.path"
+        const val DOWNLOAD_DESTINATION_FREE_BYTES_KEY = "library.downloadDestination.freeBytes"
+        const val PENDING_CANCEL_GAME_ID_KEY = "library.pendingCancelGameId"
+        const val PENDING_SPECIAL_GAME_ID_KEY = "library.pendingSpecialGameId"
+        const val STORAGE_ACCESS_PROMPT_KEY = "library.isStorageAccessPromptVisible"
+        const val NOTICE_KEY = "library.notice"
+        const val STORAGE_ACTION_KIND_KEY = "library.storageAction.kind"
+        const val STORAGE_ACTION_GAME_ID_KEY = "library.storageAction.gameId"
+        const val STORAGE_ACTION_KEY_KEY = "library.storageAction.key"
+        const val ACTION_DOWNLOAD = "DOWNLOAD"
+        const val ACTION_UPDATE = "UPDATE"
+        const val ACTION_RETRY = "RETRY"
+
         val INSTALLATION_STATUSES = setOf(DownloadStatus.INSTALLING, DownloadStatus.INSTALLATION_FAILED)
         val STARTABLE_STATUSES = setOf(
             LibraryCardStatus.AVAILABLE,
             LibraryCardStatus.PAUSED,
             LibraryCardStatus.INSTALLATION_FAILED,
         )
+
+        fun restoreTransient(savedState: SavedStateHandle): LibraryUiState {
+            val path = savedState.get<String>(DOWNLOAD_DESTINATION_PATH_KEY)
+            val noticeName = savedState.get<String>(NOTICE_KEY)
+            return LibraryUiState(
+                pendingDownloadGameId = savedState.get<String>(PENDING_DOWNLOAD_GAME_ID_KEY),
+                downloadDestination = path?.let {
+                    DownloadDestination(it, savedState.get<Long>(DOWNLOAD_DESTINATION_FREE_BYTES_KEY))
+                },
+                pendingCancelGameId = savedState.get<String>(PENDING_CANCEL_GAME_ID_KEY),
+                pendingSpecialGameId = savedState.get<String>(PENDING_SPECIAL_GAME_ID_KEY),
+                isStorageAccessPromptVisible = savedState.get<Boolean>(STORAGE_ACCESS_PROMPT_KEY) ?: false,
+                notice = LibraryNotice.entries.firstOrNull { it.name == noticeName },
+            )
+        }
+
+        fun restoreStorageAction(savedState: SavedStateHandle): PendingStorageAction? {
+            val gameId = savedState.get<String>(STORAGE_ACTION_GAME_ID_KEY) ?: return null
+            return when (savedState.get<String>(STORAGE_ACTION_KIND_KEY)) {
+                ACTION_DOWNLOAD -> PendingStorageAction.Download(gameId, savedState.get<String>(STORAGE_ACTION_KEY_KEY))
+                ACTION_UPDATE -> PendingStorageAction.Update(gameId)
+                ACTION_RETRY -> PendingStorageAction.RetryInstallation(gameId)
+                else -> null
+            }
+        }
 
         fun GameInstallationState.failureNotice(): LibraryNotice? =
             when ((this as? GameInstallationState.Finished)?.result) {

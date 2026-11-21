@@ -5,12 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.displayCutout
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
@@ -34,10 +32,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Constraints
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -191,50 +191,91 @@ fun LauncherShellLayout(
                     ),
                 )
             }
-            if (layout is ShellNavigationLayout.Rail) {
-                Row(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)),
-                ) {
-                    ShellNavigationRail(
-                        top = top,
-                        bottom = bottom,
-                        itemHeight = layout.itemHeight,
-                        selection = selection,
-                        modifier = Modifier.imePadding().padding(
-                            horizontal = LauncherSizes.ShellInset,
-                            vertical = layout.verticalInset,
-                        ),
+            val pagerModifier = if (layout is ShellNavigationLayout.Rail) {
+                Modifier
+                    .windowInsetsPadding(insets.only(WindowInsetsSides.End + WindowInsetsSides.Bottom))
+                    .padding(
+                        top = layout.verticalInset,
+                        end = LauncherSizes.ShellInset,
+                        bottom = layout.verticalInset,
                     )
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(
-                                top = layout.verticalInset,
-                                end = LauncherSizes.ShellInset,
-                                bottom = layout.verticalInset,
-                            ),
-                    ) { SectionPager(pagerState, state, onNavigate, onRefresh, content) }
-                }
             } else {
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal))
-                        .padding(LauncherSizes.ShellInset),
-                ) { SectionPager(pagerState, state, onNavigate, onRefresh, content) }
-                ShellNavigationBar(
-                    entries = top + bottom,
-                    selection = selection,
-                    modifier = Modifier
-                        .background(colors.secondaryBg)
-                        .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
-                        .imePadding(),
-                )
+                Modifier
+                    .windowInsetsPadding(insets.only(WindowInsetsSides.Horizontal))
+                    .padding(LauncherSizes.ShellInset)
+            }
+            ShellBody(
+                isRail = layout is ShellNavigationLayout.Rail,
+                navigation = {
+                    if (layout is ShellNavigationLayout.Rail) {
+                        ShellNavigationRail(
+                            top = top,
+                            bottom = bottom,
+                            itemHeight = layout.itemHeight,
+                            selection = selection,
+                            modifier = Modifier
+                                .windowInsetsPadding(insets.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom))
+                                .imePadding()
+                                .padding(
+                                    horizontal = LauncherSizes.ShellInset,
+                                    vertical = layout.verticalInset,
+                                ),
+                        )
+                    } else {
+                        ShellNavigationBar(
+                            entries = top + bottom,
+                            selection = selection,
+                            modifier = Modifier
+                                .background(colors.secondaryBg)
+                                .windowInsetsPadding(
+                                    insets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+                                )
+                                .imePadding(),
+                        )
+                    }
+                },
+                pager = {
+                    Box(pagerModifier) {
+                        SectionPager(pagerState, state, onNavigate, onRefresh, content)
+                    }
+                },
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShellBody(
+    isRail: Boolean,
+    navigation: @Composable () -> Unit,
+    pager: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Layout(
+        content = {
+            pager()
+            navigation()
+        },
+        modifier = modifier,
+    ) { measurables, constraints ->
+        val pagerMeasurable = measurables[0]
+        val navMeasurable = measurables[1]
+        if (isRail) {
+            val nav = navMeasurable.measure(constraints.copy(minWidth = 0))
+            val remainingWidth = (constraints.maxWidth - nav.width).coerceAtLeast(0)
+            val pagerPlaceable = pagerMeasurable.measure(Constraints.fixed(remainingWidth, constraints.maxHeight))
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                nav.placeRelative(0, 0)
+                pagerPlaceable.placeRelative(nav.width, 0)
+            }
+        } else {
+            val nav = navMeasurable.measure(constraints.copy(minHeight = 0))
+            val remainingHeight = (constraints.maxHeight - nav.height).coerceAtLeast(0)
+            val pagerPlaceable = pagerMeasurable.measure(Constraints.fixed(constraints.maxWidth, remainingHeight))
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                pagerPlaceable.placeRelative(0, 0)
+                nav.placeRelative(0, remainingHeight)
             }
         }
     }

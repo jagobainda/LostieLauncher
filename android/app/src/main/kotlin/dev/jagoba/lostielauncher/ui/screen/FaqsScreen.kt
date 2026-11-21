@@ -27,7 +27,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,7 +67,7 @@ import kotlinx.coroutines.flow.drop
 @Composable
 fun FaqsScreen(modifier: Modifier = Modifier, viewModel: FaqsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val query = rememberTextFieldState(state.searchText)
+    val query = remember { TextFieldState(state.searchText) }
     LaunchedEffect(query) {
         snapshotFlow { query.text.toString() }.drop(1).collect(viewModel::setSearchText)
     }

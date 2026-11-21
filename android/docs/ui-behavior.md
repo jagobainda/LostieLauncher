@@ -50,7 +50,10 @@ can each have a visible modal.
 Dialog dimensions are capped to available space, with scrollable bodies. Back
 dismisses or declines and input actions follow the on-screen confirmation.
 Icon-only close controls have localized spoken labels. Key fields use saveable
-UI state, but open ViewModel prompts do not survive process death as durable data.
+UI state, and pending Library/My Games prompts, the post-storage-access action,
+the un-dismissed welcome dialog and FAQ search/expansion state survive process
+death via `SavedStateHandle` or DataStore. Transient update-check notices stay
+in memory.
 
 Key fields support Android's fullscreen keyboard editor on short landscape
 screens. The keyboard decides whether to use it. Done submits the current
