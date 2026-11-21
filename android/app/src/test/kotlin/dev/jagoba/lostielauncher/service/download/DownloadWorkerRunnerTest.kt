@@ -89,7 +89,14 @@ class DownloadWorkerRunnerTest {
         coVerifyOrder {
             dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.INSTALLING.name)
             runtime.clearResult("Demo")
-            handoff.deliver(match { it.gameId == GAME_ID && it.path == DESTINATION })
+            handoff.deliver(
+                match {
+                    it.gameId == GAME_ID &&
+                        it.path == DESTINATION &&
+                        it.expectedSha256 == "a".repeat(64) &&
+                        it.variant == null
+                },
+            )
             dao.finish(GAME_ID, WORK_ID, DownloadStatus.INSTALLING.name, DownloadStatus.COMPLETED.name, null, true)
             runtime.notifyResult("Demo", GameInstallationResult.Installed(INSTALLED_GAME))
         }
@@ -382,6 +389,8 @@ class DownloadWorkerRunnerTest {
         version = "1.0",
         key = null,
         url = "https://cdn.test/demo.zip",
+        expectedSha256 = "a".repeat(64),
+        variant = null,
         destinationPath = DESTINATION,
         workId = WORK_ID,
         status = DownloadStatus.QUEUED.name,

@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.service.download.DownloadDao
 import dev.jagoba.lostielauncher.service.download.LauncherDatabase
+import dev.jagoba.lostielauncher.service.download.MIGRATION_1_2
 import javax.inject.Singleton
 
 @Module
@@ -20,6 +21,7 @@ internal object DatabaseModule {
     @Singleton
     internal fun provideDatabase(@ApplicationContext context: Context): LauncherDatabase =
         Room.databaseBuilder(context, LauncherDatabase::class.java, DATABASE_NAME)
+            .addMigrations(MIGRATION_1_2)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
 

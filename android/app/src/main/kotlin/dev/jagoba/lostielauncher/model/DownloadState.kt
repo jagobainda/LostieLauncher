@@ -1,6 +1,11 @@
 package dev.jagoba.lostielauncher.model
 
-data class DownloadRequest(val displayName: String, val args: GameDownloadArgs)
+data class DownloadRequest(
+    val displayName: String,
+    val args: GameDownloadArgs,
+    val expectedSha256: String,
+    val variant: String? = null,
+)
 
 data class DownloadDestination(val path: String, val freeBytes: Long?)
 
@@ -60,6 +65,8 @@ data class DownloadedFile(
     val version: String,
     val key: String?,
     val path: String,
+    val expectedSha256: String? = null,
+    val variant: String? = null,
 )
 
 data class DownloadProgress(

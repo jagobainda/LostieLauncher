@@ -37,8 +37,10 @@ app-specific `StorageLocations.downloadsRoot/downloads`, which is removed with
 the app. Logs use private `noBackupFilesDir` storage.
 
 `InstallDownloadedFileHandoff`, in `service/download/DownloadedFileHandoff.kt`,
-resolves the catalogue GUID, expected hash and special-version type when a
-transfer completes. The installer rejects a missing/invalid hash or mismatch,
+resolves the catalogue GUID when a transfer completes. New downloads persist
+the expected hash and special-version type in Room when they are enqueued;
+rows migrated from schema 1 retain the former handoff-time lookup. The
+installer rejects a missing/invalid hash or mismatch,
 extracts under `.tmp` with path-containment checks, moves a previous installation
 to a unique `.old-<UUID>` directory, and cleans old directories in the background.
 A `.nomedia` marker keeps game images out of media scanning.
@@ -92,8 +94,9 @@ running launcher. An APK with missing signing information is rejected.
 - Installation phases and terminal results are held in memory. After process
   recreation the row still says whether an installation is pending or failed,
   but not why it failed, so the failure notice is not shown again.
-- The Room download row does not persist the catalogue GUID, expected SHA-256
-  or resolved special-version type as an immutable enqueue-time snapshot.
+- The Room download row does not persist the catalogue GUID as an immutable
+  enqueue-time snapshot. Rows migrated from schema 1 also lack the pinned
+  expected SHA-256 and special-version type stored for new downloads.
 - Per-game installed lookup, running detection and blocker opening remain
   unsupported as shown above.
 - Registry entries provide the installed-list projection; they are not a

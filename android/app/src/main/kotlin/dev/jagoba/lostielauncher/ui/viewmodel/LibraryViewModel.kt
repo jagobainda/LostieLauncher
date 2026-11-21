@@ -370,6 +370,8 @@ class LibraryViewModel @Inject constructor(
                     start(
                         game,
                         GameDownloadArgs(game.gameId, result.config.version, "/${result.config.fileName}", key),
+                        result.config.sha256,
+                        result.config.type,
                     )
                 }
             }
@@ -425,8 +427,13 @@ class LibraryViewModel @Inject constructor(
         transient.value = transient.value.copy(isStorageAccessPromptVisible = true, notice = null)
     }
 
-    private suspend fun start(game: GameInfo, args: GameDownloadArgs) {
-        record(downloads.start(DownloadRequest(game.name, args)))
+    private suspend fun start(
+        game: GameInfo,
+        args: GameDownloadArgs,
+        expectedSha256: String = game.sha256,
+        variant: String? = null,
+    ) {
+        record(downloads.start(DownloadRequest(game.name, args, expectedSha256, variant)))
     }
 
     private suspend fun serverActionsAvailable(): Boolean {
