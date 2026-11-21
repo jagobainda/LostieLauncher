@@ -155,19 +155,83 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v6
 
-            # assembleDebug proves it builds, testDebugUnitTest runs the suite,
-            # lintDebug is the static-analysis gate (warningsAsErrors), and
-            # assembleRelease proves the release source set and R8 still build.
-            # Local gates are documented in android/.agents/build-and-validation.md.
-            - name: Build, test and lint
-              run: ./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
+            # The full local gate in android/.agents/build-and-validation.md is
+            # split across android-build-and-test, android-lint and
+            # android-release-build so lint and R8 run on separate runners
+            # instead of competing for the same cores.
+            - name: Build and test
+              run: ./gradlew assembleDebug testDebugUnitTest
 
             - name: Upload reports on failure
               if: failure()
               uses: actions/upload-artifact@v7
               with:
-                  name: android-reports
+                  name: android-build-and-test-reports
                   path: |
                       android/app/build/reports/
                       android/app/build/test-results/
+                  retention-days: 7
+
+    android-lint:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            # Static-analysis gate (warningsAsErrors, abortOnError).
+            - name: Lint
+              run: ./gradlew lintDebug
+
+            - name: Upload reports on failure
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: android-lint-reports
+                  path: android/app/build/reports/
+                  retention-days: 7
+
+    android-release-build:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: android
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v6
+
+            # Proves the release source set and R8 still build.
+            - name: Assemble release
+              run: ./gradlew assembleRelease
+
+            - name: Upload reports on failure
+              if: failure()
+              uses: actions/upload-artifact@v7
+              with:
+                  name: android-release-build-reports
+                  path: android/app/build/reports/
                   retention-days: 7

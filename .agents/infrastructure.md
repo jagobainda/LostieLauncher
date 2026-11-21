@@ -1,7 +1,7 @@
 # Shared infrastructure
 
 - [CI](../.github/workflows/ci.yml) has three desktop jobs on `windows-latest`
-  and two Android jobs on `ubuntu-latest`. Each job sets its platform's working
+  and four Android jobs on `ubuntu-latest`. Each job sets its platform's working
   directory. New jobs use the same convention and a platform-prefixed name.
 - Keep build and test commands in each platform's `build-and-validation.md`
   synchronized with CI. A formatting apply command is not the verification gate.
