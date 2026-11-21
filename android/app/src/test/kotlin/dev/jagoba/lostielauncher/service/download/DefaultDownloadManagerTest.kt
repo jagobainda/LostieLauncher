@@ -32,6 +32,8 @@ import kotlinx.coroutines.yield
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 @DisplayName("DefaultDownloadManager")
 class DefaultDownloadManagerTest {
@@ -73,6 +75,8 @@ class DefaultDownloadManagerTest {
         coVerify(exactly = 1) { dao.upsert(capture(entity)) }
         entity.captured.status shouldBe DownloadStatus.QUEUED.name
         entity.captured.url shouldBe "https://cdn.test/games/demo/1.zip"
+        entity.captured.expectedSha256 shouldBe "a".repeat(64)
+        entity.captured.variant shouldBe null
         verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
         verify(exactly = 1) { scheduler.enqueue("demo", workId) }
     }
@@ -91,6 +95,48 @@ class DefaultDownloadManagerTest {
         }
         coVerify(exactly = 0) { dao.upsert(any()) }
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @Test
+    fun `retries a legacy failed download without deleting its resumable partial`() = runTest {
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.FAILED).copy(
+            expectedSha256 = null,
+            variant = null,
+        )
+        coEvery { dao.replaceWork(any(), any(), any(), any()) } returns 1
+        every { fileStore.hasResumablePartial(destinationPath) } returns true
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.start(request()) shouldBe DownloadCommandResult.ACCEPTED
+
+        coVerify(exactly = 1) {
+            dao.replaceWork("demo", DownloadStatus.FAILED.name, workId.toString(), DownloadStatus.QUEUED.name)
+        }
+        coVerify(exactly = 0) { dao.upsert(any()) }
+        verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["hash", "variant"])
+    fun `does not reuse a partial when its pinned metadata changes`(changedMetadata: String) = runTest {
+        val existing = when (changedMetadata) {
+            "hash" -> entity(DownloadStatus.FAILED).copy(expectedSha256 = "b".repeat(64))
+            else -> entity(DownloadStatus.FAILED).copy(variant = "special")
+        }
+        val replacement = slot<DownloadEntity>()
+        coEvery { dao.get("demo") } returns existing
+        every { fileStore.hasResumablePartial(destinationPath) } returns true
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.start(request()) shouldBe DownloadCommandResult.ACCEPTED
+
+        coVerify(exactly = 0) { dao.replaceWork(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { dao.upsert(capture(replacement)) }
+        replacement.captured.expectedSha256 shouldBe request().expectedSha256
+        replacement.captured.variant shouldBe request().variant
+        verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
         verify(exactly = 1) { scheduler.enqueue("demo", workId) }
     }
 
@@ -299,6 +345,7 @@ class DefaultDownloadManagerTest {
     private fun request() = DownloadRequest(
         displayName = "Demo",
         args = GameDownloadArgs("demo", "1.0", "/demo/1.zip"),
+        expectedSha256 = "a".repeat(64),
     )
 
     private fun entity(status: DownloadStatus) = DownloadEntity(
@@ -307,6 +354,8 @@ class DefaultDownloadManagerTest {
         version = "1.0",
         key = null,
         url = "https://cdn.test/games/demo/1.zip",
+        expectedSha256 = "a".repeat(64),
+        variant = null,
         destinationPath = destinationPath,
         workId = workId.toString(),
         status = status.name,

@@ -335,6 +335,8 @@ class LibraryViewModelTest {
         special.keys shouldBe listOf(key)
         downloads.starts.single().args.key shouldBe key
         downloads.starts.single().args.version shouldBe "v1.5"
+        downloads.starts.single().expectedSha256 shouldBe "a".repeat(64)
+        downloads.starts.single().variant shouldBe "special"
     }
 
     @Test

@@ -51,6 +51,7 @@ class GameAutoUpdateCoordinator @Inject constructor(
                     val request = DownloadRequest(
                         game.name,
                         GameDownloadArgs(game.gameId, game.version, game.relativePath),
+                        game.sha256,
                     )
                     when (downloads.start(request)) {
                         DownloadCommandResult.ACCEPTED -> downloads.downloads.first { snapshots ->

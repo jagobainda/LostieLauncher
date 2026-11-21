@@ -206,6 +206,8 @@ internal class DownloadWorkerRunner @Inject constructor(
                     version = entity.version,
                     key = entity.key,
                     path = entity.destinationPath,
+                    expectedSha256 = entity.expectedSha256,
+                    variant = entity.variant,
                 ),
             )
         } finally {

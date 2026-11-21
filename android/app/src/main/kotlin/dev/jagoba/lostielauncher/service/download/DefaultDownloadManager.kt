@@ -55,6 +55,10 @@ internal class DefaultDownloadManager @Inject constructor(
         if (
             existing?.status == DownloadStatus.FAILED.name &&
             existing.url == url &&
+            (
+                existing.expectedSha256 == null ||
+                    (existing.expectedSha256 == request.expectedSha256 && existing.variant == request.variant)
+                ) &&
             existing.destinationPath == destination.absolutePath &&
             withContext(dispatchers.io) { fileStore.hasResumablePartial(destination.absolutePath) }
         ) {
@@ -76,6 +80,8 @@ internal class DefaultDownloadManager @Inject constructor(
                 version = request.args.version,
                 key = request.args.key,
                 url = url,
+                expectedSha256 = request.expectedSha256,
+                variant = request.variant,
                 destinationPath = destination.absolutePath,
                 workId = workId.toString(),
                 status = DownloadStatus.QUEUED.name,

@@ -27,13 +27,15 @@ internal class InstallDownloadedFileHandoff @Inject constructor(
 ) : DownloadedFileHandoff {
     override suspend fun deliver(file: DownloadedFile): GameInstallationResult {
         val game = findGame(file.gameId)
-        val special = file.key?.let { (specialVersions.lookup(it) as? SpecialVersionLookup.Found)?.config }
+        val special = file.key
+            ?.takeIf { file.expectedSha256 == null }
+            ?.let { (specialVersions.lookup(it) as? SpecialVersionLookup.Found)?.config }
         val result = installer.install(
             GameInstallationRequest(
                 file = file,
                 catalogueId = game?.id,
-                expectedSha256 = special?.sha256 ?: game?.sha256,
-                variant = special?.type,
+                expectedSha256 = file.expectedSha256 ?: special?.sha256 ?: game?.sha256,
+                variant = file.variant ?: special?.type,
             ),
         )
         logger.info("Downloaded file handoff result for ${file.gameId}: $result.")

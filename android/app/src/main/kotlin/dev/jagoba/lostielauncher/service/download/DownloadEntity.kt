@@ -16,6 +16,9 @@ internal data class DownloadEntity(
     val version: String,
     val key: String?,
     val url: String,
+    @ColumnInfo(name = "expected_sha256")
+    val expectedSha256: String?,
+    val variant: String?,
     @ColumnInfo(name = "destination_path")
     val destinationPath: String,
     @ColumnInfo(name = "work_id")
