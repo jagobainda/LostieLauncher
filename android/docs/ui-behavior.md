@@ -50,7 +50,10 @@ can each have a visible modal.
 Dialog dimensions are capped to available space, with scrollable bodies. Back
 dismisses or declines and input actions follow the on-screen confirmation.
 Icon-only close controls have localized spoken labels. Key fields use saveable
-UI state, but open ViewModel prompts do not survive process death as durable data.
+UI state, and pending Library/My Games prompts, the post-storage-access action,
+the un-dismissed welcome dialog and FAQ search/expansion state survive process
+death via `SavedStateHandle` or DataStore. Transient update-check notices stay
+in memory.
 
 Key fields support Android's fullscreen keyboard editor on short landscape
 screens. The keyboard decides whether to use it. Done submits the current
@@ -65,8 +68,20 @@ installer. No holds for the process unless a manual update check resets the
 offer. The download-progress pill is visible across sections.
 
 Settings keeps appearance, games auto-update and launcher version/update checks.
-There is no Windows startup setting, tray setting or download-directory picker.
 The auto-update row can toggle as a whole and preserves switch semantics.
+
+## Desktop features not ported
+
+These omissions are deliberate. Do not port the Windows mechanism to Android.
+
+| Desktop feature | Android decision |
+| --- | --- |
+| Tray, start with Windows/minimized, window chrome and single-instance mutex | Android activity and task lifecycle |
+| Download-folder picker and OneDrive warning | Fixed archive root; installed games use the configured shared root |
+| Saved Games rail action, game-folder and help buttons | Omitted; there is no equivalent Explorer flow |
+| Playtime | Not tracked; see [game runtime](game-runtime-options.md#current-operations) |
+| Exit warning | Downloads continue as durable background work |
+| Permanent scrollbar | Omitted from the touch UI |
 
 ## Android visual adaptations
 
@@ -78,6 +93,8 @@ The auto-update row can toggle as a whole and preserves switch semantics.
   match. See [palette review](palette-review.md).
 - Icon-only controls have spoken labels, long titles ellipsize, and text scale
   must be exercised alongside narrow layouts.
+- Card buttons keep desktop dimensions as a touch-target compromise; do not
+  describe the interface as having uniform minimum touch targets.
 
 Storage access, Kirin and the installation pipeline are documented in
 [game runtime](game-runtime-options.md), including the difference between

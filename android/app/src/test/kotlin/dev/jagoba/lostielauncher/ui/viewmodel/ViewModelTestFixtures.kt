@@ -155,6 +155,7 @@ internal class TestInstallation : GameInstallationService {
     override val installedGames: StateFlow<InstalledGamesState> = current
     var uninstalls = 0
     var uninstallBarrier: CompletableDeferred<Unit>? = null
+    var uninstallResult = GameUninstallResult(GameUninstallOutcome.NOT_SUPPORTED_YET)
 
     override suspend fun install(request: GameInstallationRequest): GameInstallationResult =
         GameInstallationResult.NotSupportedYet
@@ -167,7 +168,7 @@ internal class TestInstallation : GameInstallationService {
     override suspend fun uninstall(game: GameTarget): GameUninstallResult {
         uninstalls++
         uninstallBarrier?.await()
-        return GameUninstallResult(GameUninstallOutcome.NOT_SUPPORTED_YET)
+        return uninstallResult
     }
 
     override suspend fun findInstalled(game: GameTarget): InstalledGameResult = InstalledGameResult.NotSupportedYet

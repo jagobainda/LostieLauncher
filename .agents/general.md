@@ -20,5 +20,6 @@
 
 The applications share product behavior, not an implementation. Desktop is the
 reference for the behavior being ported; deliberate Android differences are
-recorded in its [parity report](../android/docs/parity-report.md). Preserve
+recorded in its [UI behavior](../android/docs/ui-behavior.md) and
+[game runtime](../android/docs/game-runtime-options.md) documents. Preserve
 those decisions rather than copying Windows mechanisms into Android.

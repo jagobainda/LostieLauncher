@@ -203,16 +203,31 @@ class MainViewModelTest {
     }
 
     @Test
-    fun `first run opens the library, persists the flag and shows the welcome once`() = runTest(dispatcher) {
+    fun `first run opens the library, shows welcome and marks it seen only on dismissal`() = runTest(dispatcher) {
         settings.current.value = AppSettings(hasSeenWelcome = false)
         val sut = createSut()
         runCurrent()
         sut.state.value.section shouldBe LauncherSection.LIBRARY
         sut.state.value.isWelcomeVisible shouldBe true
-        settings.current.value.hasSeenWelcome shouldBe true
+        settings.current.value.hasSeenWelcome shouldBe false
+
         sut.dismissWelcome()
         runCurrent()
         sut.state.value.isWelcomeVisible shouldBe false
+        settings.current.value.hasSeenWelcome shouldBe true
+    }
+
+    @Test
+    fun `welcome dialog reappears after process death if it was not dismissed`() = runTest(dispatcher) {
+        settings.current.value = AppSettings(hasSeenWelcome = false)
+        val first = createSut()
+        runCurrent()
+        first.state.value.isWelcomeVisible shouldBe true
+
+        val recreated = createSut()
+        runCurrent()
+        recreated.state.value.isWelcomeVisible shouldBe true
+        recreated.state.value.section shouldBe LauncherSection.LIBRARY
     }
 
     @Test

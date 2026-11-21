@@ -1,8 +1,12 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameLaunchResult
+import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GameRunningSignal
+import dev.jagoba.lostielauncher.model.GameUninstallOutcome
+import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LocalGame
@@ -291,7 +295,61 @@ class GamesViewModelTest {
         sut.state.value.noticeGameName shouldBe "Test Game"
     }
 
-    private fun createSut() = GamesViewModel(
+    @Test
+    fun `pending uninstall confirmation survives process death and uninstalls when confirmed`() = runTest(dispatcher) {
+        val gameId = UUID.randomUUID()
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(gameId, "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        val saved = SavedStateHandle()
+        val original = createSut(saved)
+        runCurrent()
+        original.requestUninstall("Test Game")
+        runCurrent()
+
+        val restored = createSut(saved)
+        runCurrent()
+
+        restored.state.value.pendingUninstall?.name shouldBe "Test Game"
+        restored.state.value.pendingUninstall?.id shouldBe gameId
+        restored.confirmUninstall()
+        runCurrent()
+        installation.uninstalls shouldBe 1
+    }
+
+    @Test
+    fun `possibly running warning and blocking location notice survive process death`() = runTest(dispatcher) {
+        val gameId = UUID.randomUUID()
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(gameId, "Test Game", "v1", null)))
+        coordinator.refreshCatalogue()
+        launch.signal = GameRunningSignal.POSSIBLY_RUNNING
+        val saved = SavedStateHandle()
+        val original = createSut(saved)
+        runCurrent()
+        original.requestUninstall("Test Game")
+        runCurrent()
+
+        val afterWarning = createSut(saved)
+        runCurrent()
+        afterWarning.state.value.pendingUninstall?.name shouldBe "Test Game"
+        afterWarning.state.value.notice shouldBe GamesNotice.POSSIBLY_RUNNING
+
+        installation.uninstallResult = GameUninstallResult(
+            GameUninstallOutcome.FILES_LEFT_BEHIND,
+            GameLocationReference("token-1", "/games/test"),
+        )
+        afterWarning.confirmUninstall()
+        runCurrent()
+
+        val afterOutcome = createSut(saved)
+        runCurrent()
+        afterOutcome.state.value.notice shouldBe GamesNotice.FILES_LEFT_BEHIND
+        afterOutcome.state.value.noticeGameName shouldBe "Test Game"
+        afterOutcome.state.value.blockingLocation shouldBe GameLocationReference("token-1", "/games/test")
+    }
+
+    private fun createSut(savedState: SavedStateHandle = SavedStateHandle()) = GamesViewModel(
         installation,
         launch,
         locations,
@@ -299,5 +357,6 @@ class GamesViewModelTest {
         navigation,
         downloads,
         mockk<Logger>(relaxed = true),
+        savedState,
     )
 }

@@ -111,6 +111,58 @@ class FaqsViewModelTest {
     }
 
     @Test
+    fun `manual FAQ expansions survive process death through saved state`() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        val original = FaqsViewModel(settings, links, saved)
+        runCurrent()
+        val index = original.state.value.rows.first().index
+        original.toggleFaq(index)
+        runCurrent()
+
+        val restored = FaqsViewModel(settings, links, saved)
+        runCurrent()
+
+        restored.state.value.rows.first { it.index == index }.isExpanded shouldBe true
+        restored.state.value.rows.filter { it.index != index }.all { !it.isExpanded } shouldBe true
+    }
+
+    @Test
+    fun `manually collapsed search result survives process death and same-text sync`() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        val original = FaqsViewModel(settings, links, saved)
+        runCurrent()
+        original.setSearchText("instalacion")
+        runCurrent()
+        val index = original.state.value.rows.first().index
+        original.toggleFaq(index)
+        runCurrent()
+
+        val restored = FaqsViewModel(settings, links, saved)
+        runCurrent()
+        restored.setSearchText("instalacion")
+        runCurrent()
+
+        restored.state.value.searchText shouldBe "instalacion"
+        restored.state.value.rows.first { it.index == index }.isExpanded shouldBe false
+    }
+
+    @Test
+    fun `restored expansion overrides are discarded when language changed`() = runTest(dispatcher) {
+        val saved = SavedStateHandle()
+        val original = FaqsViewModel(settings, links, saved)
+        runCurrent()
+        val index = original.state.value.rows.first().index
+        original.toggleFaq(index)
+        runCurrent()
+        settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
+
+        val restored = FaqsViewModel(settings, links, saved)
+        runCurrent()
+
+        restored.state.value.rows.first { it.index == index }.isExpanded shouldBe false
+    }
+
+    @Test
     fun `all supported languages have the same FAQ count`() {
         AppLanguage.entries.map { faqsFor(it).size }.distinct().size shouldBe 1
     }
