@@ -53,6 +53,12 @@ class DialogMessagesTest {
             error(strings.hashMismatchTitle, strings.hashMismatchMessage)
         LibraryNotice.SPECIAL_KEY_MISMATCH.messageBox(strings) shouldBe
             error(strings.downloadKeyMismatchTitle, strings.downloadKeyMismatchMessage)
+        LibraryNotice.SPECIAL_VERSION_BUSY.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.updateCheckBusyTitle,
+            strings.specialVersionBusyMessage,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.INFORMATION,
+        )
         listOf(
             LibraryNotice.DOWNLOAD_BUSY,
             LibraryNotice.DOWNLOAD_INVALID,

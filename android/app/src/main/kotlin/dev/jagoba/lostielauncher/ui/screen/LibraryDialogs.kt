@@ -37,10 +37,11 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
             state = download,
             onViewPage = viewModel::openPendingGamePage,
             onConfirm = { key ->
-                requestNotifications()
-                viewModel.confirmDownload(key)
+                if (viewModel.confirmDownload(key)) requestNotifications()
             },
             onDismiss = viewModel::dismissPrompt,
+            keyError = strings.downloadKeyInvalidMessage.takeIf { state.isKeyInvalid },
+            onKeyChange = viewModel::clearKeyError,
         )
 
         state.isStorageAccessPromptVisible -> LauncherMessageBox(
@@ -61,6 +62,8 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
         state.pendingSpecialGameId != null -> SpecialVersionDialog(
             onConfirm = viewModel::submitSpecialVersionKey,
             onDismiss = viewModel::dismissPrompt,
+            keyError = strings.downloadKeyInvalidMessage.takeIf { state.isKeyInvalid },
+            onKeyChange = viewModel::clearKeyError,
         )
     }
 }
@@ -124,16 +127,17 @@ internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (
 
     LibraryNotice.INSTALLATION_HASH_MISMATCH -> errorMessageBox(strings.hashMismatchTitle, strings.hashMismatchMessage)
 
-    LibraryNotice.SPECIAL_KEY_INVALID -> errorMessageBox(
-        strings.downloadKeyInvalidTitle,
-        strings.downloadKeyInvalidMessage,
-    )
-
     LibraryNotice.SPECIAL_KEY_NOT_FOUND ->
         errorMessageBox(strings.downloadKeyNotFoundTitle, strings.downloadKeyNotFoundMessage)
 
     LibraryNotice.SPECIAL_KEY_MISMATCH ->
         errorMessageBox(strings.downloadKeyMismatchTitle, strings.downloadKeyMismatchMessage)
+
+    LibraryNotice.SPECIAL_VERSION_BUSY -> MessageBoxSpec(
+        strings.updateCheckBusyTitle,
+        strings.specialVersionBusyMessage,
+        icon = MessageBoxIcon.INFORMATION,
+    )
 }
 
 internal fun errorMessageBox(title: String, message: String, buttons: MessageBoxButtons = MessageBoxButtons.OK) =

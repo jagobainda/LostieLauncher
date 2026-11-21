@@ -46,6 +46,8 @@ fun DownloadConfirmDialog(
     onViewPage: () -> Unit,
     onConfirm: (key: String) -> Unit,
     onDismiss: () -> Unit,
+    keyError: String? = null,
+    onKeyChange: () -> Unit = {},
 ) {
     val strings = LocalStrings.current
     val colors = LocalLauncherColors.current
@@ -147,8 +149,14 @@ fun DownloadConfirmDialog(
                 DialogKeyField(
                     label = strings.downloadDialogKey,
                     value = key,
-                    onValueChange = { key = it },
+                    onValueChange = {
+                        if (it != key) {
+                            key = it
+                            onKeyChange()
+                        }
+                    },
                     onDone = { onConfirm(key) },
+                    error = keyError,
                 )
             }
         }
