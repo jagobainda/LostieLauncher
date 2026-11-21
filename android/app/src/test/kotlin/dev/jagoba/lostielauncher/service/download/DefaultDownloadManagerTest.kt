@@ -20,9 +20,11 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -228,6 +230,31 @@ class DefaultDownloadManagerTest {
             item.status shouldBe DownloadStatus.DOWNLOADING
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `reports an empty list when Room cannot read downloads`() = runTest {
+        val failure = IllegalStateException("Cannot open database")
+        every { dao.observeAll() } returns flow { throw failure }
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.downloads.test {
+            awaitItem() shouldBe emptyList()
+            awaitComplete()
+        }
+        verify { logger.error(any(), failure) }
+    }
+
+    @Test
+    fun `propagates cancellation while observing downloads`() = runTest {
+        val cancellation = CancellationException("Cancelled query")
+        every { dao.observeAll() } returns flow { throw cancellation }
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.downloads.test {
+            awaitError() shouldBe cancellation
+        }
+        verify(exactly = 0) { logger.error(any(), any()) }
     }
 
     @Test

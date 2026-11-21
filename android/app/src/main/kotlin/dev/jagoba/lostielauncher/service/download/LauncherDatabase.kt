@@ -1,9 +1,7 @@
-package dev.jagoba.lostielauncher.service.library
+package dev.jagoba.lostielauncher.service.download
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import dev.jagoba.lostielauncher.service.download.DownloadDao
-import dev.jagoba.lostielauncher.service.download.DownloadEntity
 
 @Database(
     entities = [DownloadEntity::class],

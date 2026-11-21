@@ -16,6 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,9 +34,13 @@ internal class DefaultDownloadManager @Inject constructor(
 ) : DownloadManager {
     private val commandGate = Mutex()
 
-    override val downloads: Flow<List<DownloadSnapshot>> = dao.observeAll().map { entities ->
-        entities.map(DownloadEntity::toSnapshot)
-    }
+    override val downloads: Flow<List<DownloadSnapshot>> = dao.observeAll()
+        .catch { cause ->
+            if (cause is CancellationException || cause !is Exception) throw cause
+            logger.error("Could not read downloads.", cause)
+            emit(emptyList())
+        }
+        .map { entities -> entities.map(DownloadEntity::toSnapshot) }
 
     override suspend fun start(request: DownloadRequest): DownloadCommandResult = commandGate.withLock {
         if (hasActiveDownload()) return@withLock DownloadCommandResult.BUSY
