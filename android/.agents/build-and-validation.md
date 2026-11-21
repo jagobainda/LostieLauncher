@@ -10,6 +10,9 @@ Run commands from `android/`, using the committed Gradle wrapper.
 ./gradlew assembleDebug testDebugUnitTest lintDebug assembleRelease
 ```
 
+CI runs the second command as three parallel jobs: `assembleDebug
+testDebugUnitTest`, `lintDebug` and `assembleRelease`. Keep the task set of
+those jobs equal to this command.
 On Windows PowerShell use `.\gradlew.bat` with the same task names.
 To apply formatting, run `spotlessApply`, then verify with `spotlessCheck`.
 Target one JVM suite while iterating with:

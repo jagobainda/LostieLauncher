@@ -99,6 +99,7 @@ secrets.json
 .claude/
 .codex/
 .kimi-code/
+.agents/skills/
 .docs/
 releases/
 brag-output/
