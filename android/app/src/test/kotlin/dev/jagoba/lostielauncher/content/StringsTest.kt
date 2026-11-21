@@ -14,7 +14,7 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 93 keys kept from the desktop and the 25 Android-only keys")
+    @DisplayName("declares the 92 keys kept from the desktop and the 26 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
@@ -46,6 +46,7 @@ class StringsTest {
                 "installationErrorMessage",
                 "installationCompleteMessage",
                 "statusInstallationPending",
+                "specialVersionBusyMessage",
             ),
         ) shouldBe true
     }

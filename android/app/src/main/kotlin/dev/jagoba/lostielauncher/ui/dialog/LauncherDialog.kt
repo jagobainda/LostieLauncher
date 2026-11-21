@@ -294,7 +294,13 @@ internal fun DialogLinkButton(
 }
 
 @Composable
-internal fun DialogKeyField(label: String, value: String, onValueChange: (String) -> Unit, onDone: () -> Unit) {
+internal fun DialogKeyField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onDone: () -> Unit,
+    error: String? = null,
+) {
     val colors = LocalLauncherColors.current
     val change by rememberUpdatedState(onValueChange)
     val confirm by rememberUpdatedState(onDone)
@@ -302,10 +308,11 @@ internal fun DialogKeyField(label: String, value: String, onValueChange: (String
     var focused by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     val imeBottom = WindowInsets.ime.getBottom(density)
-    LaunchedEffect(focused, imeBottom) {
-        if (focused && imeBottom > 0) requester.bringIntoView()
+    val shape = RoundedCornerShape(LauncherRadii.Small)
+    LaunchedEffect(focused, imeBottom, error) {
+        if ((focused && imeBottom > 0) || error != null) requester.bringIntoView()
     }
-    Column {
+    Column(Modifier.bringIntoViewRequester(requester)) {
         DialogFieldLabel(R.drawable.ic_dialog_key, label)
         AndroidView(
             factory = { context ->
@@ -351,9 +358,33 @@ internal fun DialogKeyField(label: String, value: String, onValueChange: (String
             modifier = Modifier
                 .padding(top = LauncherSpacing.ExtraSmall)
                 .fillMaxWidth()
-                .bringIntoViewRequester(requester)
-                .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small)),
+                .inputSurface(colors, shape)
+                .then(
+                    if (error != null) {
+                        Modifier.border(LauncherBorders.Thin, FixedColors.NotificationExclamation, shape)
+                    } else {
+                        Modifier
+                    },
+                ),
         )
+        if (error != null) {
+            Row(Modifier.padding(top = LauncherSpacing.Small), verticalAlignment = Alignment.Top) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_dialog_alert),
+                    contentDescription = null,
+                    tint = FixedColors.NotificationExclamation,
+                    modifier = Modifier
+                        .padding(top = LauncherSpacing.Hair)
+                        .size(LauncherSizes.DialogFieldIcon),
+                )
+                Text(
+                    text = error,
+                    color = colors.secondaryFg,
+                    fontSize = LauncherType.LabelSize,
+                    modifier = Modifier.padding(start = LauncherSpacing.Small),
+                )
+            }
+        }
     }
 }
 

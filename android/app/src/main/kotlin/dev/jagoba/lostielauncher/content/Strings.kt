@@ -69,7 +69,6 @@ interface Strings {
     val downloadDialogViewPage: String
     val downloadDialogNoDescription: String
     val downloadDialogKey: String
-    val downloadKeyInvalidTitle: String
     val downloadKeyInvalidMessage: String
     val downloadErrorTitle: String
     val downloadErrorMessage: String
@@ -103,6 +102,7 @@ interface Strings {
     val specialVersionDialogTitle: String
     val specialVersionDialogDescription: String
     val specialVersionDialogKeyLabel: String
+    val specialVersionBusyMessage: String
     val btnConfirm: String
     val downloadKeyNotFoundTitle: String
     val downloadKeyNotFoundMessage: String

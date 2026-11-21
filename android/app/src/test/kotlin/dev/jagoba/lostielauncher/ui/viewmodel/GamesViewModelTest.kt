@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
+import dev.jagoba.lostielauncher.service.presentation.PendingLibraryAction
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -69,7 +70,8 @@ class GamesViewModelTest {
         sut.state.value.games.single().canPlay shouldBe false
         sut.update(remote.name)
         navigation.state.value.section shouldBe LauncherSection.LIBRARY
-        navigation.state.value.libraryAction shouldBe LibraryNavigationAction.UPDATE
+        navigation.state.value.pendingLibraryAction shouldBe
+            PendingLibraryAction(remote.gameId, LibraryNavigationAction.UPDATE)
     }
 
     @Test

@@ -8,10 +8,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+data class PendingLibraryAction(val gameId: String, val action: LibraryNavigationAction)
+
 data class NavigationState(
     val section: LauncherSection = LauncherSection.HOME,
     val pendingLibraryGameId: String? = null,
-    val libraryAction: LibraryNavigationAction? = null,
+    val pendingLibraryAction: PendingLibraryAction? = null,
 )
 
 enum class LibraryNavigationAction {
@@ -25,24 +27,31 @@ class NavigationStore @Inject constructor() {
     val state: StateFlow<NavigationState> = mutableState.asStateFlow()
 
     fun navigate(section: LauncherSection, gameId: String? = null, action: LibraryNavigationAction? = null) {
-        mutableState.value = NavigationState(section, if (section == LauncherSection.LIBRARY) gameId else null, action)
+        val target = gameId.takeIf { section == LauncherSection.LIBRARY }
+        mutableState.value = NavigationState(
+            section = section,
+            pendingLibraryGameId = target,
+            pendingLibraryAction = if (target != null && action != null) PendingLibraryAction(target, action) else null,
+        )
     }
 
     fun consumeLibraryGame(gameId: String) {
         mutableState.update { current ->
-            if (current.pendingLibraryGameId ==
-                gameId
-            ) {
-                current.copy(pendingLibraryGameId = null, libraryAction = null)
-            } else {
-                current
-            }
+            if (current.pendingLibraryGameId == gameId) current.copy(pendingLibraryGameId = null) else current
         }
     }
 
-    fun consumeLibraryAction(gameId: String) {
+    fun consumeLibraryAction(gameId: String): Boolean {
+        var consumed = false
         mutableState.update { current ->
-            if (current.pendingLibraryGameId == gameId) current.copy(libraryAction = null) else current
+            if (current.pendingLibraryAction?.gameId == gameId) {
+                consumed = true
+                current.copy(pendingLibraryAction = null)
+            } else {
+                consumed = false
+                current
+            }
         }
+        return consumed
     }
 }

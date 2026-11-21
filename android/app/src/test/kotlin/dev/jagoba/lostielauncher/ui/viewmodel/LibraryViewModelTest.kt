@@ -396,7 +396,7 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `invalid special key is rejected before network lookup`() = runTest(dispatcher) {
+    fun `invalid special key keeps the dialog open with an error before network lookup`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
         val sut = createSut(backgroundScope)
@@ -405,8 +405,88 @@ class LibraryViewModelTest {
         runCurrent()
         sut.submitSpecialVersionKey("bad")
         runCurrent()
-        sut.state.value.notice shouldBe LibraryNotice.SPECIAL_KEY_INVALID
+        sut.state.value.pendingSpecialGameId shouldBe remote.gameId
+        sut.state.value.isKeyInvalid shouldBe true
+        sut.state.value.notice shouldBe null
         special.lookups shouldBe 0
+
+        sut.clearKeyError()
+        runCurrent()
+        sut.state.value.isKeyInvalid shouldBe false
+        sut.state.value.pendingSpecialGameId shouldBe remote.gameId
+    }
+
+    @Test
+    fun `special version key trims surrounding spaces in the view model`() = runTest(dispatcher) {
+        val remote = testGame()
+        val key = "ABCD-1234-EFGH-5678-IJKL"
+        content.games = listOf(remote)
+        special.result = SpecialVersionLookup.Found(
+            SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+        )
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestSpecialVersion(remote.gameId)
+        runCurrent()
+        sut.submitSpecialVersionKey("  $key  ")
+        runCurrent()
+
+        sut.state.value.pendingSpecialGameId shouldBe null
+        sut.state.value.isKeyInvalid shouldBe false
+        special.keys shouldBe listOf(key)
+        downloads.starts.single().args.key shouldBe key
+    }
+
+    @Test
+    fun `invalid download key keeps the confirm dialog open without requesting storage access`() = runTest(dispatcher) {
+        val remote = testGame()
+        val key = "ABCD-1234-EFGH-5678-IJKL"
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+
+        sut.confirmDownload("abc123") shouldBe false
+        runCurrent()
+        sut.state.value.pendingDownloadGameId shouldBe remote.gameId
+        sut.state.value.isKeyInvalid shouldBe true
+        sut.state.value.isStorageAccessPromptVisible shouldBe false
+        sut.state.value.notice shouldBe null
+        downloads.starts shouldBe emptyList()
+
+        sut.clearKeyError()
+        runCurrent()
+        sut.state.value.isKeyInvalid shouldBe false
+
+        sut.confirmDownload(" $key ") shouldBe true
+        runCurrent()
+        sut.state.value.pendingDownloadGameId shouldBe null
+        sut.state.value.isStorageAccessPromptVisible shouldBe true
+    }
+
+    @Test
+    fun `inline key error survives process death and clears when the dialog is dismissed`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val saved = SavedStateHandle()
+        val original = createSut(backgroundScope, saved)
+        runCurrent()
+        original.requestDownload(remote.gameId)
+        runCurrent()
+        original.confirmDownload("bad") shouldBe false
+        runCurrent()
+
+        val restored = createSut(backgroundScope, saved)
+        runCurrent()
+        restored.state.value.pendingDownloadGameId shouldBe remote.gameId
+        restored.state.value.isKeyInvalid shouldBe true
+
+        restored.dismissPrompt()
+        runCurrent()
+        restored.state.value.pendingDownloadGameId shouldBe null
+        restored.state.value.isKeyInvalid shouldBe false
     }
 
     @Test
@@ -429,7 +509,63 @@ class LibraryViewModelTest {
         runCurrent()
         downloads.starts.single().args.gameId shouldBe remote.gameId
         navigation.state.value.pendingLibraryGameId shouldBe remote.gameId
-        navigation.state.value.libraryAction shouldBe null
+        navigation.state.value.pendingLibraryAction shouldBe null
+    }
+
+    @Test
+    fun `special version navigation still opens the dialog after the scroll target is consumed`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.SPECIAL_VERSION)
+            navigation.consumeLibraryGame(remote.gameId)
+
+            val sut = createSut(backgroundScope)
+            runCurrent()
+
+            sut.state.value.pendingSpecialGameId shouldBe remote.gameId
+            navigation.state.value.pendingLibraryAction shouldBe null
+        }
+
+    @Test
+    fun `special version navigation waits while the catalogue reloads`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        val barrier = CompletableDeferred<Unit>()
+        content.gameBarrier = barrier
+        sut.refresh()
+        runCurrent()
+        navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.SPECIAL_VERSION)
+        runCurrent()
+
+        sut.state.value.pendingSpecialGameId shouldBe null
+        sut.state.value.notice shouldBe null
+
+        barrier.complete(Unit)
+        runCurrent()
+
+        sut.state.value.pendingSpecialGameId shouldBe remote.gameId
+        navigation.state.value.pendingLibraryAction shouldBe null
+    }
+
+    @Test
+    fun `special version navigation explains when another download is in progress`() = runTest(dispatcher) {
+        val active = testGame(name = "Downloading")
+        val target = testGame(name = "Installed")
+        content.games = listOf(active, target)
+        downloads.current.value = listOf(testDownload(active, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        navigation.navigate(LauncherSection.LIBRARY, target.gameId, LibraryNavigationAction.SPECIAL_VERSION)
+        runCurrent()
+
+        sut.state.value.pendingSpecialGameId shouldBe null
+        sut.state.value.notice shouldBe LibraryNotice.SPECIAL_VERSION_BUSY
+        navigation.state.value.pendingLibraryAction shouldBe null
     }
 
     @Test
