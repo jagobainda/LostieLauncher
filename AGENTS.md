@@ -39,4 +39,4 @@ platform documents relevant to the task. Paths are relative to this repository.
 | Product features and platform differences | [README.md](README.md) |
 | Platform setup, technical references and release packaging | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Reporting problems or suggesting improvements | [REPORTING.md](REPORTING.md) |
-| Android capabilities and remaining limitations | [Parity report](android/docs/parity-report.md), [game runtime](android/docs/game-runtime-options.md) |
+| Android capabilities, remaining limitations and deliberate omissions | [Game runtime](android/docs/game-runtime-options.md), [UI behavior](android/docs/ui-behavior.md) |
