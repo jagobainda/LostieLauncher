@@ -49,10 +49,13 @@ class DownloadWorkerRunnerTest {
     fun configureDefaults() {
         coEvery { dao.get(GAME_ID) } returns entity()
         coEvery { dao.setWorkerStatus(any(), any(), any(), any()) } returns 1
+        coEvery { dao.relocate(any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.finish(any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.complete(any(), any(), any(), any()) } returns 1
         coEvery { handoff.deliver(any()) } returns GameInstallationResult.Installed(INSTALLED_GAME)
+        every { fileStore.isManagedPath(any()) } returns true
+        every { fileStore.relocatePath(any()) } answers { firstArg() }
         every { fileStore.deleteArtifacts(any()) } returns 2
         every { runtime.canStartForeground() } returns true
         coEvery { runtime.setForeground(any(), any()) } returns Unit
@@ -351,6 +354,43 @@ class DownloadWorkerRunnerTest {
         verify(exactly = 0) { runtime.clearProgress(any()) }
     }
 
+    @ParameterizedTest
+    @MethodSource("activeStatuses")
+    fun `relocates an active legacy-path row to internal storage and downloads fresh`(status: DownloadStatus) =
+        runTest {
+            val legacyPath = "C:/external/downloads/demo.zip"
+            coEvery { dao.get(GAME_ID) } returns entity().copy(status = status.name, destinationPath = legacyPath)
+            every { fileStore.isManagedPath(legacyPath) } returns false
+            every { fileStore.relocatePath(legacyPath) } returns DESTINATION
+            coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
+            val sut = createSut()
+
+            sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+            verify(exactly = 1) { fileStore.deleteArtifacts(legacyPath) }
+            coVerifyOrder {
+                dao.relocate(GAME_ID, WORK_ID, DownloadStatus.ActiveNames, DESTINATION, DownloadStatus.QUEUED.name)
+                transfer.download(DownloadTransferRequest("https://cdn.test/demo.zip", DESTINATION), any())
+                handoff.deliver(match { it.path == DESTINATION })
+            }
+        }
+
+    @Test
+    fun `stops when relocating a legacy-path row loses a concurrent state change`() = runTest {
+        val legacyPath = "C:/external/downloads/demo.zip"
+        coEvery { dao.get(GAME_ID) } returns entity().copy(destinationPath = legacyPath)
+        every { fileStore.isManagedPath(legacyPath) } returns false
+        every { fileStore.relocatePath(legacyPath) } returns DESTINATION
+        coEvery { dao.relocate(any(), any(), any(), any(), any()) } returns 0
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        verify(exactly = 1) { fileStore.deleteArtifacts(legacyPath) }
+        coVerify(exactly = 0) { transfer.download(any(), any()) }
+        coVerify(exactly = 0) { handoff.deliver(any()) }
+    }
+
     @Test
     fun `ignores a stale worker without starting a transfer`() = runTest {
         coEvery { dao.get(GAME_ID) } returns entity().copy(workId = "newer-work")
@@ -545,6 +585,13 @@ class DownloadWorkerRunnerTest {
 
     private companion object {
         val INSTALLED_GAME = LocalGame(MissingGameId, "Demo", "1.0", null)
+
+        @JvmStatic
+        fun activeStatuses() = listOf(
+            DownloadStatus.QUEUED,
+            DownloadStatus.DOWNLOADING,
+            DownloadStatus.INSTALLING,
+        )
 
         @JvmStatic
         fun failedInstallations() = listOf(

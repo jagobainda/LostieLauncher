@@ -53,6 +53,27 @@ internal interface DownloadDao {
     @Query(
         """
         UPDATE downloads
+        SET destination_path = :destinationPath,
+            status = :status,
+            percent = 0,
+            bytes_per_second = 0,
+            downloaded_bytes = 0,
+            total_bytes = NULL,
+            error_message = NULL
+        WHERE game_id = :gameId AND work_id = :workId AND status IN (:expectedStatuses)
+        """,
+    )
+    suspend fun relocate(
+        gameId: String,
+        workId: String,
+        expectedStatuses: List<String>,
+        destinationPath: String,
+        status: String,
+    ): Int
+
+    @Query(
+        """
+        UPDATE downloads
         SET status = :status, bytes_per_second = 0
         WHERE game_id = :gameId AND work_id = :workId AND status IN (:expectedStatuses)
         """,
