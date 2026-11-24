@@ -54,8 +54,10 @@ class DownloadWorkerRunnerTest {
         coEvery { dao.complete(any(), any(), any(), any()) } returns 1
         coEvery { handoff.deliver(any()) } returns GameInstallationResult.Installed(INSTALLED_GAME)
         every { fileStore.deleteArtifacts(any()) } returns 2
+        every { runtime.canStartForeground() } returns true
         coEvery { runtime.setForeground(any(), any()) } returns Unit
-        coEvery { runtime.reportProgress(any(), any()) } returns Unit
+        coEvery { runtime.notifyProgress(any(), any()) } returns Unit
+        every { runtime.clearProgress(any()) } returns Unit
         coEvery { runtime.notifyResult(any(), any()) } returns Unit
         every { runtime.clearResult(any()) } returns Unit
         every { installer.observeInstallation(any()) } returns emptyFlow()
@@ -85,7 +87,13 @@ class DownloadWorkerRunnerTest {
                 100,
             )
         }
-        coVerify(exactly = 1) { runtime.reportProgress("Demo", progress) }
+        coVerify(exactly = 1) {
+            runtime.setForeground("Demo", DownloadNotificationPhase.Downloading(DownloadProgress(25.0, 0.0, 25, 100)))
+        }
+        coVerify(exactly = 1) {
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(progress))
+        }
+        verify(exactly = 0) { runtime.clearProgress(any()) }
         coVerifyOrder {
             dao.complete(GAME_ID, WORK_ID, DownloadStatus.DOWNLOADING.name, DownloadStatus.INSTALLING.name)
             runtime.clearResult("Demo")
@@ -191,25 +199,156 @@ class DownloadWorkerRunnerTest {
         sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
 
         coVerifyOrder {
-            runtime.setForeground("Demo", DownloadNotificationPhase.Verifying)
-            runtime.setForeground("Demo", DownloadNotificationPhase.Verifying)
-            runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(40))
-            runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(null))
+            runtime.setForeground("Demo", DownloadNotificationPhase.Downloading(DownloadProgress(25.0, 0.0, 25, 100)))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying)
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Extracting(40))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Extracting(null))
             handoff.deliver(any())
         }
-        coVerify(exactly = 0) { runtime.setForeground("Demo", DownloadNotificationPhase.Extracting(90)) }
+        coVerify(exactly = 1) { runtime.setForeground(any(), any()) }
+        coVerify(exactly = 1) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying) }
+        coVerify(exactly = 0) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Extracting(90)) }
+        verify(exactly = 0) { runtime.clearProgress(any()) }
     }
 
     @Test
     fun `still hands off the downloaded file when the notification cannot be updated`() = runTest {
         coEvery { transfer.download(any(), any()) } returns DownloadTransferResult.Success
-        coEvery { runtime.setForeground(any(), DownloadNotificationPhase.Verifying) } throws IllegalStateException("fg")
+        coEvery {
+            runtime.notifyProgress(any(), DownloadNotificationPhase.Verifying)
+        } throws IllegalStateException("notify")
         val sut = createSut()
 
         sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
 
         coVerify(exactly = 1) { handoff.deliver(any()) }
         verify(exactly = 1) { logger.error("Download notification could not be updated for demo.", any()) }
+        verify(exactly = 0) { runtime.clearProgress(any()) }
+    }
+
+    @Test
+    fun `uses a regular progress notification without setForeground while the app is in the background`() = runTest {
+        val progress = DownloadProgress(50.0, 10.0, 50, 100)
+        every { runtime.canStartForeground() } returns false
+        coEvery { transfer.download(any(), any()) } coAnswers {
+            secondArg<suspend (DownloadProgress) -> Unit>()(progress)
+            DownloadTransferResult.Success
+        }
+        every { installer.observeInstallation(GAME_ID) } returns flowOf(
+            GameInstallationState.NotStarted,
+            GameInstallationState.VerifyingIntegrity,
+            GameInstallationState.Extracting(40),
+        )
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerify(exactly = 0) { runtime.setForeground(any(), any()) }
+        coVerifyOrder {
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(DownloadProgress(25.0, 0.0, 25, 100)))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(progress))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying)
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Extracting(40))
+            runtime.clearProgress("Demo")
+            runtime.notifyResult("Demo", GameInstallationResult.Installed(INSTALLED_GAME))
+        }
+        coVerify(exactly = 1) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying) }
+        verify(exactly = 1) {
+            logger.info("Running download without foreground service while app is in background: demo.")
+        }
+    }
+
+    @Test
+    fun `promotes to a foreground service once the app enters the foreground during a background run`() = runTest {
+        var inForeground = false
+        val first = DownloadProgress(50.0, 10.0, 50, 100)
+        val second = DownloadProgress(75.0, 10.0, 75, 100)
+        every { runtime.canStartForeground() } answers { inForeground }
+        coEvery { transfer.download(any(), any()) } coAnswers {
+            val report = secondArg<suspend (DownloadProgress) -> Unit>()
+            report(first)
+            inForeground = true
+            report(second)
+            inForeground = false
+            DownloadTransferResult.Success
+        }
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerifyOrder {
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(DownloadProgress(25.0, 0.0, 25, 100)))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(first))
+            runtime.setForeground("Demo", DownloadNotificationPhase.Downloading(second))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying)
+        }
+        coVerify(exactly = 1) { runtime.setForeground(any(), any()) }
+        verify(exactly = 0) { runtime.clearProgress(any()) }
+    }
+
+    @Test
+    fun `does not retry setForeground after a foreground failure and falls back to regular notifications`() = runTest {
+        val first = DownloadProgress(50.0, 10.0, 50, 100)
+        val second = DownloadProgress(75.0, 10.0, 75, 100)
+        coEvery { runtime.setForeground(any(), any()) } throws IllegalStateException("fg denied")
+        coEvery { transfer.download(any(), any()) } coAnswers {
+            val report = secondArg<suspend (DownloadProgress) -> Unit>()
+            report(first)
+            report(second)
+            DownloadTransferResult.Success
+        }
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerify(exactly = 1) { runtime.setForeground(any(), any()) }
+        coVerify(exactly = 1) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(first)) }
+        coVerify(exactly = 1) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(second)) }
+        coVerify(exactly = 1) { runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying) }
+        verify(exactly = 1) { runtime.clearProgress("Demo") }
+        verify(exactly = 1) {
+            logger.error("Download notification could not be updated in foreground for demo.", any())
+        }
+        verify(exactly = 0) {
+            logger.info("Running download without foreground service while app is in background: demo.")
+        }
+    }
+
+    @Test
+    fun `clears the fallback progress notification when a background download is cancelled`() = runTest {
+        every { runtime.canStartForeground() } returns false
+        coEvery { dao.get(GAME_ID) } returnsMany listOf(entity(), entity().copy(status = DownloadStatus.PAUSED.name))
+        coEvery { transfer.download(any(), any()) } throws CancellationException("paused")
+        val sut = createSut()
+
+        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
+
+        (error is CancellationException) shouldBe true
+        coVerify(exactly = 0) { runtime.setForeground(any(), any()) }
+        verify(exactly = 1) { runtime.clearProgress("Demo") }
+    }
+
+    @Test
+    fun `updates the active foreground notification without calling setForeground again`() = runTest {
+        var inForeground = true
+        val progress = DownloadProgress(60.0, 10.0, 60, 100)
+        every { runtime.canStartForeground() } answers { inForeground }
+        coEvery { transfer.download(any(), any()) } coAnswers {
+            inForeground = false
+            secondArg<suspend (DownloadProgress) -> Unit>()(progress)
+            DownloadTransferResult.Success
+        }
+        val sut = createSut()
+
+        sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.SUCCESS
+
+        coVerifyOrder {
+            runtime.setForeground("Demo", DownloadNotificationPhase.Downloading(DownloadProgress(25.0, 0.0, 25, 100)))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(progress))
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Verifying)
+        }
+        coVerify(exactly = 1) { runtime.setForeground(any(), any()) }
+        verify(exactly = 0) { runtime.clearProgress(any()) }
     }
 
     @Test
@@ -246,7 +385,9 @@ class DownloadWorkerRunnerTest {
 
         sut.run(GAME_ID, WORK_ID, runtime) shouldBe DownloadWorkerOutcome.FAILURE
 
-        coVerify(exactly = 0) { runtime.reportProgress(any(), any()) }
+        coVerify(exactly = 0) {
+            runtime.notifyProgress("Demo", DownloadNotificationPhase.Downloading(progress))
+        }
     }
 
     @Test

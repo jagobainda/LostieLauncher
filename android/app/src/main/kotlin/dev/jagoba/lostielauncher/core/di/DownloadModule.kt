@@ -8,9 +8,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.jagoba.lostielauncher.core.lifecycle.ApplicationLifecycleObserver
 import dev.jagoba.lostielauncher.model.DownloadTransferOptions
 import dev.jagoba.lostielauncher.service.download.AndroidDownloadForegroundInfoFactory
 import dev.jagoba.lostielauncher.service.download.AndroidNotificationAccess
+import dev.jagoba.lostielauncher.service.download.AppForegroundState
 import dev.jagoba.lostielauncher.service.download.DefaultDownloadFileStore
 import dev.jagoba.lostielauncher.service.download.DefaultDownloadManager
 import dev.jagoba.lostielauncher.service.download.DownloadFileStore
@@ -92,4 +94,8 @@ internal abstract class DownloadBindingsModule {
     @Binds
     @Singleton
     internal abstract fun bindNotificationAccess(impl: AndroidNotificationAccess): NotificationAccess
+
+    @Binds
+    @Singleton
+    internal abstract fun bindForegroundState(impl: ApplicationLifecycleObserver): AppForegroundState
 }

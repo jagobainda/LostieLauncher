@@ -21,9 +21,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 internal interface DownloadWorkerRuntime {
+    fun canStartForeground(): Boolean = true
+
     suspend fun setForeground(displayName: String, phase: DownloadNotificationPhase)
 
-    suspend fun reportProgress(displayName: String, progress: DownloadProgress)
+    suspend fun notifyProgress(displayName: String, phase: DownloadNotificationPhase)
+
+    fun clearProgress(displayName: String)
 
     suspend fun notifyResult(displayName: String, result: GameInstallationResult)
 
@@ -51,10 +55,11 @@ internal class DownloadWorkerRunner @Inject constructor(
         workerGate.withLock {
             val entity = dao.get(gameId)
             if (entity?.workId != workId) return@withLock DownloadWorkerOutcome.SUCCESS
+            val notifications = NotificationSession(entity.gameId, entity.displayName, runtime)
             try {
                 when (entity.status) {
-                    DownloadStatus.INSTALLING.name -> install(entity, workId, runtime)
-                    in DownloadStatus.TransferringNames -> download(entity, workId, runtime)
+                    DownloadStatus.INSTALLING.name -> install(entity, workId, runtime, notifications)
+                    in DownloadStatus.TransferringNames -> download(entity, workId, runtime, notifications)
                     else -> DownloadWorkerOutcome.SUCCESS
                 }
             } catch (cancelled: CancellationException) {
@@ -74,6 +79,8 @@ internal class DownloadWorkerRunner @Inject constructor(
             } catch (error: Exception) {
                 logger.error("Download worker failed for $gameId.", error)
                 finish(entity, workId, DownloadStatus.FAILED, error.message)
+            } finally {
+                withContext(NonCancellable) { notifications.clearFallback() }
             }
         }
 
@@ -81,6 +88,7 @@ internal class DownloadWorkerRunner @Inject constructor(
         entity: DownloadEntity,
         workId: String,
         runtime: DownloadWorkerRuntime,
+        notifications: NotificationSession,
     ): DownloadWorkerOutcome {
         val changed = dao.setWorkerStatus(
             gameId = entity.gameId,
@@ -95,13 +103,13 @@ internal class DownloadWorkerRunner @Inject constructor(
             downloadedBytes = entity.downloadedBytes,
             totalBytes = entity.totalBytes,
         )
-        runtime.setForeground(entity.displayName, DownloadNotificationPhase.Downloading(initialProgress))
+        notifications.update(DownloadNotificationPhase.Downloading(initialProgress))
         return when (
             val result = transfer.download(
                 DownloadTransferRequest(entity.url, entity.destinationPath),
-            ) { progress -> updateProgress(entity, workId, progress, runtime) }
+            ) { progress -> updateProgress(entity, workId, progress, notifications) }
         ) {
-            DownloadTransferResult.Success -> complete(entity, workId, runtime)
+            DownloadTransferResult.Success -> complete(entity, workId, runtime, notifications)
 
             DownloadTransferResult.PermissionDenied -> {
                 deleteArtifacts(entity)
@@ -127,7 +135,7 @@ internal class DownloadWorkerRunner @Inject constructor(
         entity: DownloadEntity,
         workId: String,
         progress: DownloadProgress,
-        runtime: DownloadWorkerRuntime,
+        notifications: NotificationSession,
     ) {
         val changed = dao.setProgress(
             gameId = entity.gameId,
@@ -139,13 +147,14 @@ internal class DownloadWorkerRunner @Inject constructor(
             downloadedBytes = progress.downloadedBytes,
             totalBytes = progress.totalBytes,
         )
-        if (changed != 0) runtime.reportProgress(entity.displayName, progress)
+        if (changed != 0) notifications.update(DownloadNotificationPhase.Downloading(progress))
     }
 
     private suspend fun complete(
         entity: DownloadEntity,
         workId: String,
         runtime: DownloadWorkerRuntime,
+        notifications: NotificationSession,
     ): DownloadWorkerOutcome {
         val changed = dao.complete(
             gameId = entity.gameId,
@@ -155,18 +164,19 @@ internal class DownloadWorkerRunner @Inject constructor(
         )
         if (changed == 0) return DownloadWorkerOutcome.SUCCESS
         logger.info("Download complete: ${entity.gameId}.")
-        return install(entity, workId, runtime)
+        return install(entity, workId, runtime, notifications)
     }
 
     private suspend fun install(
         entity: DownloadEntity,
         workId: String,
         runtime: DownloadWorkerRuntime,
+        notifications: NotificationSession,
     ): DownloadWorkerOutcome {
         runtime.clearResult(entity.displayName)
-        showPhase(entity, DownloadNotificationPhase.Verifying, runtime)
+        notifications.update(DownloadNotificationPhase.Verifying)
         val result = try {
-            deliver(entity, runtime)
+            deliver(entity, notifications)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
@@ -182,6 +192,7 @@ internal class DownloadWorkerRunner @Inject constructor(
             errorMessage = result.takeUnless { installed }?.toString(),
             clearSensitiveData = installed,
         )
+        notifications.clearFallback()
         try {
             runtime.notifyResult(entity.displayName, result)
         } catch (cancelled: CancellationException) {
@@ -192,10 +203,10 @@ internal class DownloadWorkerRunner @Inject constructor(
         return if (installed) DownloadWorkerOutcome.SUCCESS else DownloadWorkerOutcome.FAILURE
     }
 
-    private suspend fun deliver(entity: DownloadEntity, runtime: DownloadWorkerRuntime) = coroutineScope {
+    private suspend fun deliver(entity: DownloadEntity, notifications: NotificationSession) = coroutineScope {
         val phases = launch(start = CoroutineStart.UNDISPATCHED) {
             installer.observeInstallation(entity.gameId).drop(1).collect { state ->
-                state.notificationPhase()?.let { showPhase(entity, it, runtime) }
+                state.notificationPhase()?.let { notifications.update(it) }
             }
         }
         try {
@@ -215,17 +226,56 @@ internal class DownloadWorkerRunner @Inject constructor(
         }
     }
 
-    private suspend fun showPhase(
-        entity: DownloadEntity,
-        phase: DownloadNotificationPhase,
-        runtime: DownloadWorkerRuntime,
+    private inner class NotificationSession(
+        private val gameId: String,
+        private val displayName: String,
+        private val runtime: DownloadWorkerRuntime,
     ) {
-        try {
-            runtime.setForeground(entity.displayName, phase)
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Exception) {
-            logger.error("Download notification could not be updated for ${entity.gameId}.", error)
+        private var foregroundActive = false
+        private var foregroundBlocked = false
+        private var fallbackActive = false
+        private var backgroundLogged = false
+        private var lastPhase: DownloadNotificationPhase? = null
+
+        suspend fun update(phase: DownloadNotificationPhase) {
+            val shouldPromote = !foregroundActive && !foregroundBlocked && runtime.canStartForeground()
+            if (phase == lastPhase && !shouldPromote) return
+            if (shouldPromote) {
+                try {
+                    runtime.setForeground(displayName, phase)
+                    foregroundActive = true
+                    fallbackActive = false
+                    lastPhase = phase
+                    return
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    foregroundBlocked = true
+                    logger.error("Download notification could not be updated in foreground for $gameId.", error)
+                }
+            } else if (!foregroundActive && !foregroundBlocked && !backgroundLogged) {
+                backgroundLogged = true
+                logger.info("Running download without foreground service while app is in background: $gameId.")
+            }
+            try {
+                runtime.notifyProgress(displayName, phase)
+                if (!foregroundActive) fallbackActive = true
+                lastPhase = phase
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Download notification could not be updated for $gameId.", error)
+            }
+        }
+
+        fun clearFallback() {
+            if (!fallbackActive) return
+            fallbackActive = false
+            try {
+                runtime.clearProgress(displayName)
+            } catch (error: Exception) {
+                logger.error("Download progress notification could not be cleared for $gameId.", error)
+            }
         }
     }
 

@@ -5,6 +5,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.service.settings.AppearanceStore
 
+internal interface AppForegroundState {
+    val isInForeground: Boolean
+}
+
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 internal interface DownloadWorkerEntryPoint {
@@ -13,4 +17,6 @@ internal interface DownloadWorkerEntryPoint {
     fun foregroundInfoFactory(): DownloadForegroundInfoFactory
 
     fun appearanceStore(): AppearanceStore
+
+    fun foregroundState(): AppForegroundState
 }

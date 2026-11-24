@@ -4,6 +4,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
+import dev.jagoba.lostielauncher.service.download.AppForegroundState
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
@@ -32,9 +33,14 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     private val launcherUpdate: LauncherUpdateService,
     private val logger: Logger,
     dispatchers: DispatcherProvider,
-) : DefaultLifecycleObserver {
+) : DefaultLifecycleObserver,
+    AppForegroundState {
     private val scope = CoroutineScope(dispatchers.io + SupervisorJob())
     private var startupStarted = false
+
+    @Volatile
+    override var isInForeground: Boolean = false
+        private set
 
     override fun onCreate(owner: LifecycleOwner) {
         scope.launch {
@@ -44,6 +50,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     }
 
     override fun onStart(owner: LifecycleOwner) {
+        isInForeground = true
         coordinator.setVisible(true)
         scope.launch { installation.refreshInstalled() }
         if (startupStarted) return
@@ -58,6 +65,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     }
 
     override fun onStop(owner: LifecycleOwner) {
+        isInForeground = false
         coordinator.setVisible(false)
         flushPendingSettings()
     }

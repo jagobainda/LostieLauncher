@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.model
 
 import java.io.File
+import kotlin.time.Duration
 
 data class KirinOptions(
     val gamesRoot: File,
@@ -14,4 +15,5 @@ data class KirinOptions(
     val archiveBufferSizeBytes: Int = DEFAULT_BUFFER_SIZE,
     val archiveExtractionWorkers: Int = 1,
     val archiveEntryCostBytes: Long = 0,
+    val archiveProgressInterval: Duration = Duration.ZERO,
 )

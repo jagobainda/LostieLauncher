@@ -19,6 +19,7 @@ import dev.jagoba.lostielauncher.service.library.FileLocalLibraryStore
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import java.io.File
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -55,6 +56,7 @@ internal object KirinModule {
             archiveBufferSizeBytes = 64 * 1024,
             archiveExtractionWorkers = 4,
             archiveEntryCostBytes = 64 * 1024,
+            archiveProgressInterval = 500.milliseconds,
         )
     }
 

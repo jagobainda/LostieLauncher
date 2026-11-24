@@ -23,8 +23,14 @@ bound implementations and remaining gaps.
   request must not become data loss. Keep managed-file and inactive-row checks.
 - Room schema changes need an exported schema and an appropriate migration.
   Durable download metadata and in-memory installation phases are different.
-- Keep the foreground notification through verification and extraction.
-  Its phase/content mapping is tested separately from the Android worker.
+- Keep the foreground notification through verification and extraction when
+  foreground service starts are allowed. On Android 12+ when the worker starts
+  in the background (such as after a reboot on Android 15+, where `dataSync`
+  from `BOOT_COMPLETED` is disallowed), post a regular progress notification
+  instead of calling `setForeground`, promote to a foreground service if the
+  app enters the foreground while the worker is running, and clear the fallback
+  notification when the worker stops. Its phase/content mapping is tested
+  separately from the Android worker.
 - Use the shared APK installer engine for Kirin and launcher APKs, with distinct
   target cache directories. Preserve package/version validation and the system
   installation flow. Game ZIP installation is a different operation.
