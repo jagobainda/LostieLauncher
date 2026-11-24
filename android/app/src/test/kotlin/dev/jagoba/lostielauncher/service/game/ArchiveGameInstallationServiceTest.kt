@@ -12,6 +12,7 @@ import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.file.LEGACY_ZIP_CHARSET
@@ -30,6 +31,8 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -59,7 +62,12 @@ class ArchiveGameInstallationServiceTest {
     private val archive get() = directory.resolve("downloads/demo.zip").toFile()
     private val noMediaMarker get() = File(gamesRoot, ".nomedia")
 
-    private fun createSut(entryCostBytes: Long = 0) = ArchiveGameInstallationService(
+    private fun createSut(
+        entryCostBytes: Long = 0,
+        extractionWorkers: Int = 4,
+        progressInterval: Duration = Duration.ZERO,
+        timeSource: MonotonicTimeSource = MonotonicTimeSource { 0L },
+    ) = ArchiveGameInstallationService(
         PendingGameInstallationService(logger),
         library,
         kirin,
@@ -73,10 +81,12 @@ class ArchiveGameInstallationServiceTest {
             "",
             "",
             archiveBufferSizeBytes = 64 * 1024,
-            archiveExtractionWorkers = 4,
+            archiveExtractionWorkers = extractionWorkers,
             archiveEntryCostBytes = entryCostBytes,
+            archiveProgressInterval = progressInterval,
         ),
         storageAccess,
+        timeSource,
         TestDispatcherProvider(dispatcher),
         logger,
     )
@@ -209,6 +219,34 @@ class ArchiveGameInstallationServiceTest {
             awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
         }
     }
+
+    @Test
+    fun `samples extraction progress at the configured interval while keeping initial zero and final hundred`() =
+        runTest(dispatcher) {
+            val entries = (1..8).map { "file-$it.bin" to "" }.toTypedArray()
+            val hash = writeArchive(*entries)
+            var nowMillis = -100L
+            val sut = createSut(
+                entryCostBytes = 1,
+                extractionWorkers = 1,
+                progressInterval = 500.milliseconds,
+                timeSource = MonotonicTimeSource {
+                    nowMillis += 100L
+                    nowMillis.milliseconds.inWholeNanoseconds
+                },
+            )
+
+            sut.observeInstallation("demo").test {
+                awaitItem() shouldBe GameInstallationState.NotStarted
+                sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+                awaitItem() shouldBe GameInstallationState.VerifyingIntegrity
+                awaitItem() shouldBe GameInstallationState.Extracting()
+                awaitItem() shouldBe GameInstallationState.Extracting(0)
+                awaitItem() shouldBe GameInstallationState.Extracting(62)
+                awaitItem() shouldBe GameInstallationState.Extracting(100)
+                awaitItem() shouldBe GameInstallationState.Finished(GameInstallationResult.Installed(installedGame))
+            }
+        }
 
     @Test
     fun `creates every directory in the archive, including empty ones and unlisted parents`() = runTest(dispatcher) {

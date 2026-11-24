@@ -55,8 +55,13 @@ installation keeps its archive, except after a hash failure. The card offers
 Retry, which installs the kept archive or downloads it again when it is gone,
 and Cancel, which deletes it; the cache purge removes an abandoned archive. The
 worker ends with a notification of the result: installed, failed or missing
-storage access. Desktop instead returns the card to Download and has no final
-notification.
+storage access. When a worker starts in the background on Android 12+ (for
+example after a reboot on Android 15+, where a `dataSync` foreground service
+cannot start from `BOOT_COMPLETED`), it posts a regular progress notification
+instead of promoting immediately, upgrades to a foreground service if the
+launcher enters the foreground while it is still running, and clears the
+fallback notification when it stops. Desktop instead returns the card to
+Download and has no final notification.
 
 Entry names are resolved by `ZipEntryNames` and follow desktop: a name flagged
 as UTF-8 is read as UTF-8, and the Info-ZIP Unicode Path extra field replaces

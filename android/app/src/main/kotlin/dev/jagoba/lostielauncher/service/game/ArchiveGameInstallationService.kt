@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.model.gameSlug
+import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.file.ZipEntryNames
@@ -51,6 +52,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
     private val kirin: KirinGameLibrary,
     private val options: KirinOptions,
     private val storageAccess: StorageAccess,
+    private val timeSource: MonotonicTimeSource,
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
 ) : GameInstallationService by pending {
@@ -221,7 +223,11 @@ internal class ArchiveGameInstallationService @Inject constructor(
         }
 
         val entryCost = options.archiveEntryCostBytes
-        val progress = ExtractionProgress(files.values.sumOf { it.size.coerceAtLeast(0) + entryCost }) {
+        val progress = ExtractionProgress(
+            total = files.values.sumOf { it.size.coerceAtLeast(0) + entryCost },
+            intervalNanos = options.archiveProgressInterval.inWholeNanoseconds,
+            timeSource = timeSource,
+        ) {
             setPhase(gameId, GameInstallationState.Extracting(it))
         }
         progress.advance(0)
@@ -346,23 +352,37 @@ internal class ArchiveGameInstallationService @Inject constructor(
         const val PREVIOUS_INSTALLATION_SUFFIX = ".old-"
     }
 
-    private class ExtractionProgress(private val total: Long, private val report: (Int) -> Unit) {
+    private class ExtractionProgress(
+        private val total: Long,
+        private val intervalNanos: Long,
+        private val timeSource: MonotonicTimeSource,
+        private val report: (Int) -> Unit,
+    ) {
         private val done = AtomicLong()
 
         @Volatile
         private var lastPercent = -1
 
+        @Volatile
+        private var lastReportedNanos = 0L
+
         fun advance(units: Long) {
             if (total <= 0) return
             val percent = (done.addAndGet(units) * FULL_PERCENT / total).toInt().coerceIn(0, FULL_PERCENT)
             if (percent <= lastPercent) return
+            val now = timeSource.readNanos()
+            if (!shouldReport(percent, now)) return
             synchronized(this) {
-                if (percent > lastPercent) {
+                if (percent > lastPercent && shouldReport(percent, now)) {
                     lastPercent = percent
+                    lastReportedNanos = now
                     report(percent)
                 }
             }
         }
+
+        private fun shouldReport(percent: Int, now: Long): Boolean =
+            lastPercent < 0 || percent == FULL_PERCENT || now - lastReportedNanos >= intervalNanos
 
         private companion object {
             const val FULL_PERCENT = 100

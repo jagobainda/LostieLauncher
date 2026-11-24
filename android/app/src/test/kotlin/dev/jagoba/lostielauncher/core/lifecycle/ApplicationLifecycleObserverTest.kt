@@ -12,6 +12,7 @@ import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.service.update.LauncherUpdateService
 import dev.jagoba.lostielauncher.util.log.LogMaintenance
 import dev.jagoba.lostielauncher.util.log.Logger
+import io.kotest.matchers.shouldBe
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
@@ -111,6 +112,22 @@ class ApplicationLifecycleObserverTest {
             coordinator.setVisible(false)
             coordinator.setVisible(true)
         }
+    }
+
+    @Test
+    fun `tracks whether the process is in the foreground across start and stop`() = runTest {
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.isInForeground shouldBe false
+
+        sut.onStart(owner)
+        sut.isInForeground shouldBe true
+
+        sut.onStop(owner)
+        sut.isInForeground shouldBe false
+
+        sut.onStart(owner)
+        sut.isInForeground shouldBe true
     }
 
     private fun createSut(dispatcher: CoroutineDispatcher) = ApplicationLifecycleObserver(

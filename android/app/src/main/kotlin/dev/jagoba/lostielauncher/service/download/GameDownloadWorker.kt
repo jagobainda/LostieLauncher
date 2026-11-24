@@ -1,13 +1,12 @@
 package dev.jagoba.lostielauncher.service.download
 
 import android.content.Context
+import android.os.Build
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import dagger.hilt.android.EntryPointAccessors
 import dev.jagoba.lostielauncher.content.Strings
 import dev.jagoba.lostielauncher.content.stringsFor
-import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import kotlinx.coroutines.flow.first
 
@@ -30,21 +29,21 @@ internal class GameDownloadWorker(appContext: Context, parameters: WorkerParamet
         DownloadWorkerRuntime {
         private var strings: Strings? = null
 
+        override fun canStartForeground(): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S || dependencies.foregroundState().isInForeground
+
         override suspend fun setForeground(displayName: String, phase: DownloadNotificationPhase) {
             this@GameDownloadWorker.setForeground(
-                dependencies.foregroundInfoFactory().create(id, displayName, phase, strings()),
+                dependencies.foregroundInfoFactory().create(displayName, phase, strings()),
             )
         }
 
-        override suspend fun reportProgress(displayName: String, progress: DownloadProgress) {
-            this@GameDownloadWorker.setProgress(
-                workDataOf(
-                    PROGRESS_PERCENT to progress.percent,
-                    PROGRESS_DOWNLOADED_BYTES to progress.downloadedBytes,
-                    PROGRESS_TOTAL_BYTES to (progress.totalBytes ?: UNKNOWN_TOTAL_BYTES),
-                ),
-            )
-            setForeground(displayName, DownloadNotificationPhase.Downloading(progress))
+        override suspend fun notifyProgress(displayName: String, phase: DownloadNotificationPhase) {
+            dependencies.foregroundInfoFactory().notifyProgress(displayName, phase, strings())
+        }
+
+        override fun clearProgress(displayName: String) {
+            dependencies.foregroundInfoFactory().clearProgress(displayName)
         }
 
         override suspend fun notifyResult(displayName: String, result: GameInstallationResult) {
@@ -62,9 +61,5 @@ internal class GameDownloadWorker(appContext: Context, parameters: WorkerParamet
 
     companion object {
         const val GAME_ID_INPUT = "game_id"
-        const val PROGRESS_PERCENT = "percent"
-        const val PROGRESS_DOWNLOADED_BYTES = "downloaded_bytes"
-        const val PROGRESS_TOTAL_BYTES = "total_bytes"
-        const val UNKNOWN_TOTAL_BYTES = -1L
     }
 }
