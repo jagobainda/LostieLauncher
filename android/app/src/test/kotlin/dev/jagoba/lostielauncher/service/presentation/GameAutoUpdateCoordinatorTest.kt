@@ -74,12 +74,12 @@ class GameAutoUpdateCoordinatorTest {
     fun `maintenance blocks automatic updates`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        content.blocked = true
         installation.current.value = InstalledGamesState.Available(
             listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
         )
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
+        content.blocked = true
         sut.start(backgroundScope)
         runCurrent()
         downloads.starts shouldBe emptyList()

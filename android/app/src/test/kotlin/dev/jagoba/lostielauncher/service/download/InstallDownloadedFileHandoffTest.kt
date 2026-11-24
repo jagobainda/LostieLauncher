@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
@@ -73,7 +74,7 @@ class InstallDownloadedFileHandoffTest {
             "downloads/demo.zip",
             expectedSha256 = game.sha256,
         )
-        coEvery { content.getGames() } returns listOf(game)
+        coEvery { content.getGames() } returns CatalogueResult.Loaded(listOf(game))
         val sut = createSut(CatalogueData())
 
         sut.deliver(file)
@@ -123,7 +124,7 @@ class InstallDownloadedFileHandoffTest {
     @Test
     fun `passes no hash when neither the catalogue nor a special version provides one`() = runTest {
         val file = DownloadedFile("demo", "Demo", "v1", "special", "downloads/demo.zip")
-        coEvery { content.getGames() } returns emptyList()
+        coEvery { content.getGames() } returns CatalogueResult.Failed
         coEvery { specialVersions.lookup("special") } returns SpecialVersionLookup.NotFound
         val sut = createSut(CatalogueData())
 

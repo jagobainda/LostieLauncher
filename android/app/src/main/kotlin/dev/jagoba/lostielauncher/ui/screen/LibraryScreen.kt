@@ -16,16 +16,22 @@ import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.ui.LocalStrings
+import dev.jagoba.lostielauncher.ui.component.ContentStatusBanner
 import dev.jagoba.lostielauncher.ui.component.EmptyState
 import dev.jagoba.lostielauncher.ui.component.LibraryCardActionsReserve
 import dev.jagoba.lostielauncher.ui.component.LibraryGameCard
 import dev.jagoba.lostielauncher.ui.component.LibraryGameCardState
+import dev.jagoba.lostielauncher.ui.dialog.DialogButton
+import dev.jagoba.lostielauncher.ui.dialog.DialogButtonStyle
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryViewModel
 import dev.jagoba.lostielauncher.util.format.DownloadSpeedFormatter
 
 private const val LIBRARY_SKELETON_COUNT = 6
+internal const val LIBRARY_BANNER_KEY = "banner"
+
+internal fun libraryGameKey(gameId: String): String = "game:$gameId"
 
 @Composable
 fun LibraryScreen(
@@ -38,11 +44,11 @@ fun LibraryScreen(
     val strings = LocalStrings.current
     val requestNotifications = rememberNotificationPermissionRequest()
     val listState = rememberLazyListState()
-    val targetIndex = state.games.indexOfFirst { it.game.gameId == scrollTarget }
+    val targetIndex = state.games.indexOfFirst { it.gameId == scrollTarget }
 
     LaunchedEffect(scrollTarget, targetIndex) {
         if (scrollTarget == null || targetIndex < 0) return@LaunchedEffect
-        listState.scrollToItem(targetIndex)
+        listState.scrollToItem(targetIndex + 1)
         onScrolledToTarget(scrollTarget)
     }
 
@@ -52,8 +58,14 @@ fun LibraryScreen(
             state = listState,
             contentPadding = PaddingValues(LauncherSpacing.Screen),
         ) {
-            items(state.games, key = { it.game.gameId }) { row ->
-                val gameId = row.game.gameId
+            item(key = LIBRARY_BANNER_KEY) {
+                ContentStatusBanner(
+                    isOffline = state.isOffline,
+                    isOutOfDate = state.isOutOfDateWarningVisible,
+                )
+            }
+            items(state.games, key = { libraryGameKey(it.gameId) }) { row ->
+                val gameId = row.gameId
                 LibraryGameCard(
                     state = row.toCardState(),
                     onDownload = { viewModel.requestDownload(gameId) },
@@ -70,7 +82,20 @@ fun LibraryScreen(
 
         state.isEmpty -> EmptyState(
             icon = R.drawable.ic_offline,
-            message = strings.libraryNoContent,
+            message = if (state.isContentStale || state.isOffline) {
+                strings.homeContentUnavailable
+            } else {
+                strings.libraryNoContent
+            },
+            detail = strings.serverMaintenanceNotificationMessage.takeIf { state.isOffline },
+            action = {
+                DialogButton(
+                    label = strings.btnRetry,
+                    style = DialogButtonStyle.ACCENT,
+                    onClick = viewModel::refresh,
+                    horizontalPadding = LauncherSpacing.Screen,
+                )
+            },
             modifier = modifier,
         )
 
@@ -81,7 +106,7 @@ fun LibraryScreen(
 internal fun LibraryGameUiState.toCardState() = LibraryGameCardState(
     title = game.name,
     logoUrl = game.logoUrl,
-    size = game.formattedSize,
+    size = formattedSize,
     version = game.version,
     status = status,
     progress = download?.percent?.toFloat() ?: 0f,

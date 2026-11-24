@@ -6,6 +6,7 @@ import dev.jagoba.lostielauncher.core.di.NetworkModule
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.ContentOptions
 import dev.jagoba.lostielauncher.model.NotificationType
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.DefaultContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -13,6 +14,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.mockk
 import java.time.Clock
 import java.time.Instant
@@ -57,7 +59,7 @@ class CdnPayloadTest {
         enqueueCatalogue(readResource("cdn/listado.json"))
         val sut = createSut()
 
-        val games = sut.getGames()
+        val games = sut.getGames().shouldBeInstanceOf<CatalogueResult.Loaded>().games
 
         games shouldHaveSize 7
         val anil = games.first()
@@ -75,7 +77,7 @@ class CdnPayloadTest {
     fun `resolves every logo in the live catalogue against the CDN base`() = runTest {
         enqueueCatalogue(readResource("cdn/listado.json"))
 
-        val games = createSut().getGames()
+        val games = createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>().games
 
         games.forEach { it.logoUrl shouldStartWith server.url("/").toString().removeSuffix("/") + "/public/imgs/" }
     }
@@ -130,31 +132,31 @@ class CdnPayloadTest {
     }
 
     @Test
-    fun `degrades to an empty catalogue when the server answers 500`() = runTest {
+    fun `reports a failure when the server answers 500`() = runTest {
         enqueueCatalogueStatus(500)
 
-        createSut().getGames().shouldBeEmpty()
+        createSut().getGames() shouldBe CatalogueResult.Failed
     }
 
     @Test
-    fun `degrades to an empty catalogue when the body is not JSON`() = runTest {
+    fun `reports a failure when the body is not JSON`() = runTest {
         enqueueCatalogue("<html>maintenance</html>")
 
-        createSut().getGames().shouldBeEmpty()
+        createSut().getGames() shouldBe CatalogueResult.Failed
     }
 
     @Test
-    fun `degrades to an empty catalogue when an entry has an explicit null name`() = runTest {
+    fun `reports a failure when an entry has an explicit null name`() = runTest {
         enqueueCatalogue("""[{"id":"11111111-1111-1111-1111-111111111111","nombre":null,"version":"1.0.0"}]""")
 
-        createSut().getGames().shouldBeEmpty()
+        createSut().getGames() shouldBe CatalogueResult.Failed
     }
 
     @Test
     fun `keeps an entry whose name is merely absent`() = runTest {
         enqueueCatalogue("""[{"id":"11111111-1111-1111-1111-111111111111","version":"1.0.0"}]""")
 
-        val games = createSut().getGames()
+        val games = createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>().games
 
         games shouldHaveSize 1
         games[0].name shouldBe ""
@@ -165,7 +167,7 @@ class CdnPayloadTest {
     fun `keeps reading a catalogue that has grown a field this build knows nothing about`() = runTest {
         enqueueCatalogue("""[{"nombre":"Demo","somethingNew":{"nested":true}}]""")
 
-        createSut().getGames() shouldHaveSize 1
+        createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>().games shouldHaveSize 1
     }
 
     @Test

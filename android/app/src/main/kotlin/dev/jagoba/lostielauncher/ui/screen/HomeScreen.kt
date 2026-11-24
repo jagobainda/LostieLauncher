@@ -1,30 +1,22 @@
 package dev.jagoba.lostielauncher.ui.screen
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -33,14 +25,12 @@ import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.NewsItem
 import dev.jagoba.lostielauncher.model.NotificationItem
 import dev.jagoba.lostielauncher.ui.LocalStrings
+import dev.jagoba.lostielauncher.ui.component.ContentStatusBanner
 import dev.jagoba.lostielauncher.ui.component.EmptyState
 import dev.jagoba.lostielauncher.ui.component.NewsCard
 import dev.jagoba.lostielauncher.ui.component.NewsCardSkeleton
 import dev.jagoba.lostielauncher.ui.component.NotificationCard
 import dev.jagoba.lostielauncher.ui.component.NotificationCardSkeleton
-import dev.jagoba.lostielauncher.ui.theme.FixedColors
-import dev.jagoba.lostielauncher.ui.theme.LauncherBorders
-import dev.jagoba.lostielauncher.ui.theme.LauncherRadii
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
@@ -183,57 +173,9 @@ private fun HomeColumnEmpty(@DrawableRes icon: Int, scrollable: Boolean = true) 
 
 @Composable
 private fun HomeBanner(state: HomeUiState) {
-    val strings = LocalStrings.current
-    when {
-        state.isLoading -> Unit
-
-        state.isOffline -> HomeBanner(
-            R.drawable.ic_offline,
-            strings.offlineModeLabel,
-            strings.serverMaintenanceNotificationMessage,
-        )
-
-        state.isOutOfDateWarningVisible -> HomeBanner(
-            R.drawable.ic_home_cloud_alert,
-            strings.contentOutOfDateLabel,
-            strings.contentOutOfDateMessage,
-        )
-    }
-}
-
-@Composable
-private fun HomeBanner(@DrawableRes icon: Int, title: String, message: String) {
-    val colors = LocalLauncherColors.current
-    val shape = RoundedCornerShape(LauncherRadii.Medium)
-    Row(
-        Modifier
-            .padding(bottom = LauncherSpacing.Card)
-            .fillMaxWidth()
-            .background(colors.overlaySubtle, shape)
-            .border(LauncherBorders.Thin, FixedColors.Warning, shape)
-            .padding(LauncherSpacing.ExtraLarge),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = FixedColors.Warning,
-            modifier = Modifier.size(LauncherSizes.HomeBannerIcon),
-        )
-        Spacer(Modifier.width(LauncherSpacing.Large))
-        Column {
-            Text(
-                text = title,
-                color = colors.secondaryFg,
-                fontSize = LauncherType.SectionSize,
-                fontWeight = LauncherType.SemiBold,
-            )
-            Text(
-                text = message,
-                color = colors.secondaryFgDim,
-                fontSize = LauncherType.CaptionSize,
-                modifier = Modifier.padding(top = LauncherSpacing.ExtraSmall),
-            )
-        }
-    }
+    if (state.isLoading) return
+    ContentStatusBanner(
+        isOffline = state.isOffline,
+        isOutOfDate = state.isOutOfDateWarningVisible,
+    )
 }

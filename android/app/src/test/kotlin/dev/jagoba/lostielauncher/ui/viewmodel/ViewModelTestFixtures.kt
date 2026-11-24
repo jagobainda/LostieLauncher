@@ -24,6 +24,7 @@ import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.InstalledGameResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
@@ -78,18 +79,21 @@ internal class TestSettingsStore : SettingsStore {
 
 internal class TestContentService : ContentService {
     var games = emptyList<GameInfo>()
+    var catalogueResult: CatalogueResult? = null
     var home = HomeContent()
     var blocked = false
     var homeCalls = 0
     var gameCalls = 0
     val homeForces = mutableListOf<Boolean>()
+    val gameForces = mutableListOf<Boolean>()
     val flagForces = mutableListOf<Boolean>()
     var gameBarrier: CompletableDeferred<Unit>? = null
 
-    override suspend fun getGames(): List<GameInfo> {
+    override suspend fun getGames(forceRefresh: Boolean): CatalogueResult {
         gameCalls++
+        gameForces += forceRefresh
         gameBarrier?.await()
-        return games
+        return catalogueResult ?: if (blocked) CatalogueResult.Blocked else CatalogueResult.Loaded(games)
     }
 
     override suspend fun getHomeContent(language: AppLanguage, forceRefresh: Boolean): HomeContent {

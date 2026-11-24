@@ -9,7 +9,9 @@ import dev.jagoba.lostielauncher.service.storage.StorageLocations
 import dev.jagoba.lostielauncher.util.download.DownloadCachePolicy
 import dev.jagoba.lostielauncher.util.download.DownloadPathUtils
 import java.io.File
+import java.time.Duration
 import java.time.Instant
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +20,12 @@ internal interface DownloadFileStore {
 
     fun deleteArtifacts(destinationPath: String): Int
 
-    fun purgeStale(knownGameIds: Set<String>, now: Instant): Int
+    fun purgeStale(
+        knownGameIds: Set<String>,
+        now: Instant,
+        protectedDestinationPaths: Set<String> = emptySet(),
+        retainedArchivePaths: Set<String> = emptySet(),
+    ): Int
 
     fun hasArtifacts(destinationPath: String): Boolean
 
@@ -50,13 +57,30 @@ internal class DefaultDownloadFileStore @Inject constructor(
     override fun deleteArtifacts(destinationPath: String): Int =
         artifactsOf(destinationPath).count { it.exists() && it.delete() }
 
-    override fun purgeStale(knownGameIds: Set<String>, now: Instant): Int {
+    override fun purgeStale(
+        knownGameIds: Set<String>,
+        now: Instant,
+        protectedDestinationPaths: Set<String>,
+        retainedArchivePaths: Set<String>,
+    ): Int {
+        val protectedNames = protectedDestinationPaths
+            .flatMap(::artifactsOf)
+            .mapTo(mutableSetOf()) { it.name.lowercase(Locale.ROOT) }
+        val retainedArchives = retainedArchivePaths
+            .mapTo(mutableSetOf()) { File(it).name.lowercase(Locale.ROOT) }
         val files = downloadsDirectory.listFiles()?.filter(File::isFile).orEmpty()
         val entries = files.map { file ->
             DownloadCacheEntry(file.name, Instant.ofEpochMilli(file.lastModified()))
         }
-        val staleNames = DownloadCachePolicy.selectStaleFiles(entries, knownGameIds, now, options.cacheMaxAge)
-        return staleNames.count { fileName -> File(downloadsDirectory, fileName).delete() }
+        val staleNames = DownloadCachePolicy.selectStaleFiles(entries, knownGameIds, now, options.cacheMaxAge).toSet()
+        return entries.count { entry ->
+            if (entry.fileName !in staleNames) return@count false
+            val lower = entry.fileName.lowercase(Locale.ROOT)
+            val keptByTransfer = lower in protectedNames
+            val keptByRecentArchive = lower in retainedArchives &&
+                Duration.between(entry.lastWriteTime, now) <= options.cacheMaxAge
+            !keptByTransfer && !keptByRecentArchive && File(downloadsDirectory, entry.fileName).delete()
+        }
     }
 
     override fun hasArtifacts(destinationPath: String): Boolean = artifactsOf(destinationPath).any(File::exists)

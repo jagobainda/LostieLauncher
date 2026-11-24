@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
@@ -10,6 +11,7 @@ import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
@@ -278,34 +280,37 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun `maintenance keeps action enabled and explains once until successful check`() = runTest(dispatcher) {
+    fun `maintenance keeps action enabled and explains every blocked attempt`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
         val sut = createSut(backgroundScope)
         runCurrent()
         content.blocked = true
         sut.state.value.games.single().canStart shouldBe true
+
         sut.requestDownload(remote.gameId)
         runCurrent()
         sut.state.value.notice shouldBe LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+
         sut.clearNotice()
         runCurrent()
         sut.requestDownload(remote.gameId)
         runCurrent()
-        sut.state.value.notice shouldBe null
+        sut.state.value.notice shouldBe LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+
+        sut.clearNotice()
+        sut.requestSpecialVersion(remote.gameId)
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+
         content.blocked = false
         sut.requestDownload(remote.gameId)
         runCurrent()
         sut.state.value.pendingDownloadGameId shouldBe remote.gameId
-        sut.dismissPrompt()
-        content.blocked = true
-        sut.requestDownload(remote.gameId)
-        runCurrent()
-        sut.state.value.notice shouldBe LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
     }
 
     @Test
-    fun `missing connection explains offline mode instead of maintenance`() = runTest(dispatcher) {
+    fun `missing connection explains offline mode on every blocked action`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
         val sut = createSut(backgroundScope)
@@ -315,9 +320,168 @@ class LibraryViewModelTest {
 
         sut.requestDownload(remote.gameId)
         runCurrent()
-
         downloads.starts.size shouldBe 0
         sut.state.value.notice shouldBe LibraryNotice.OFFLINE
+
+        sut.clearNotice()
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.OFFLINE
+
+        sut.clearNotice()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.PAUSED))
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        downloads.resumed shouldBe emptyList()
+        sut.state.value.notice shouldBe LibraryNotice.OFFLINE
+
+        sut.clearNotice()
+        sut.requestSpecialVersion(remote.gameId)
+        runCurrent()
+        sut.state.value.notice shouldBe LibraryNotice.OFFLINE
+    }
+
+    @Test
+    fun `stale catalogue preserves loaded cards and switches warning between offline and out of date`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            val sut = createSut(backgroundScope)
+            runCurrent()
+            sut.state.value.isContentStale shouldBe false
+            sut.state.value.isOutOfDateWarningVisible shouldBe false
+
+            content.catalogueResult = CatalogueResult.Failed
+            sut.refresh()
+            runCurrent()
+            sut.state.value.games.map { it.gameId } shouldBe listOf(remote.gameId)
+            sut.state.value.isContentStale shouldBe true
+            sut.state.value.isOffline shouldBe false
+            sut.state.value.isOutOfDateWarningVisible shouldBe true
+            content.gameForces.last() shouldBe true
+
+            content.blocked = true
+            network.isOnline.value = false
+            runCurrent()
+            sut.state.value.isOffline shouldBe true
+            sut.state.value.isOutOfDateWarningVisible shouldBe false
+            sut.state.value.games.map { it.gameId } shouldBe listOf(remote.gameId)
+
+            content.blocked = false
+            content.catalogueResult = null
+            network.isOnline.value = true
+            runCurrent()
+            sut.state.value.isOffline shouldBe false
+            sut.state.value.isContentStale shouldBe false
+            sut.state.value.isOutOfDateWarningVisible shouldBe false
+        }
+
+    @Test
+    fun `retrying the library after maintenance ends clears the offline banner immediately`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.blocked = true
+        content.catalogueResult = CatalogueResult.Blocked
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.state.value.isEmpty shouldBe true
+        sut.state.value.isOffline shouldBe true
+
+        content.blocked = false
+        content.catalogueResult = null
+        content.games = listOf(remote)
+        sut.refresh()
+        runCurrent()
+
+        sut.state.value.games.map { it.gameId } shouldBe listOf(remote.gameId)
+        sut.state.value.isContentStale shouldBe false
+        sut.state.value.isOffline shouldBe false
+        sut.state.value.isOutOfDateWarningVisible shouldBe false
+    }
+
+    @Test
+    fun `active or unfinished download missing from the catalogue keeps a manageable card`() = runTest(dispatcher) {
+        content.catalogueResult = CatalogueResult.Failed
+        val active = DownloadSnapshot(
+            gameId = "orphan-game",
+            displayName = "Orphan Game",
+            version = "v1.0",
+            status = DownloadStatus.DOWNLOADING,
+            percent = 40.0,
+            bytesPerSecond = 100.0,
+            downloadedBytes = 400,
+            totalBytes = 1000,
+            errorMessage = null,
+        )
+        val finished = DownloadSnapshot(
+            gameId = "done-game",
+            displayName = "Done Game",
+            version = "v1.0",
+            status = DownloadStatus.COMPLETED,
+            percent = 100.0,
+            bytesPerSecond = 0.0,
+            downloadedBytes = 1000,
+            totalBytes = 1000,
+            errorMessage = null,
+        )
+        downloads.current.value = listOf(active, finished)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        sut.state.value.isEmpty shouldBe false
+        sut.state.value.isListVisible shouldBe true
+        val row = sut.state.value.games.single()
+        row.gameId shouldBe "orphan-game"
+        row.game.name shouldBe "Orphan Game"
+        row.status shouldBe LibraryCardStatus.DOWNLOADING
+        row.canPause shouldBe true
+        row.canCancel shouldBe true
+        row.canSwitchSpecialVersion shouldBe false
+
+        sut.pause("orphan-game")
+        runCurrent()
+        downloads.paused shouldBe listOf("orphan-game")
+
+        sut.requestCancel("orphan-game")
+        runCurrent()
+        sut.state.value.pendingCancelGameId shouldBe "orphan-game"
+        sut.confirmCancel()
+        runCurrent()
+        downloads.cancelled shouldBe listOf("orphan-game")
+    }
+
+    @Test
+    fun `orphan download without total bytes omits size and supports resume and retry`() = runTest(dispatcher) {
+        content.catalogueResult = CatalogueResult.Failed
+        val paused = DownloadSnapshot(
+            gameId = "paused-orphan",
+            displayName = "Paused Orphan",
+            version = "v1.0",
+            status = DownloadStatus.PAUSED,
+            percent = 20.0,
+            bytesPerSecond = 0.0,
+            downloadedBytes = 200,
+            totalBytes = null,
+            errorMessage = null,
+        )
+        downloads.current.value = listOf(paused)
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        val pausedRow = sut.state.value.games.single()
+        pausedRow.formattedSize shouldBe ""
+        pausedRow.canStart shouldBe true
+        sut.requestDownload("paused-orphan")
+        runCurrent()
+        downloads.resumed shouldBe listOf("paused-orphan")
+
+        downloads.current.value = listOf(paused.copy(status = DownloadStatus.INSTALLATION_FAILED))
+        installation.installation = flowOf(GameInstallationState.NotStarted)
+        runCurrent()
+        sut.requestDownload("paused-orphan")
+        runCurrent()
+        downloads.retried shouldBe listOf("paused-orphan")
     }
 
     @Test

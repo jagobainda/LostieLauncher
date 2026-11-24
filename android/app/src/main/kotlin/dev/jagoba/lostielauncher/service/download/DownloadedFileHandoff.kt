@@ -4,6 +4,7 @@ import dev.jagoba.lostielauncher.model.DownloadedFile
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
@@ -44,5 +45,5 @@ internal class InstallDownloadedFileHandoff @Inject constructor(
 
     private suspend fun findGame(gameId: String): GameInfo? =
         coordinator.catalogue.value.games.firstOrNull { it.gameId == gameId }
-            ?: content.getGames().firstOrNull { it.gameId == gameId }
+            ?: (content.getGames() as? CatalogueResult.Loaded)?.games?.firstOrNull { it.gameId == gameId }
 }

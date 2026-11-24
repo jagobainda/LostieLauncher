@@ -70,6 +70,38 @@ class DownloadFileStoreTest {
     }
 
     @Test
+    fun `keeps attached transfers and recent failed archives while purging unrelated and expired files`() {
+        val sut = createSut()
+        val cache = directory.resolve("downloads").createDirectories()
+        val now = Instant.parse("2026-09-23T12:00:00Z")
+        val recent = FileTime.from(now.minus(Duration.ofDays(1)))
+        val ongoingDestination = cache.resolve("removed-ongoing.token.zip")
+        val ongoingPart = cache.resolve("removed-ongoing.token.zip.part").createFile()
+        val ongoingMeta = cache.resolve("removed-ongoing.token.zip.part.meta").createFile()
+        val previousVersionPart = cache.resolve("removed-ongoing.oldtoken.zip.part").createFile()
+        val recentFailedArchive = cache.resolve("removed-failed.token.zip").createFile()
+        val expiredFailedArchive = cache.resolve("demo.failed.zip").createFile()
+        val unprotected = cache.resolve("removed-stale.token.zip.part").createFile()
+        listOf(ongoingPart, ongoingMeta, previousVersionPart, recentFailedArchive, unprotected)
+            .forEach { Files.setLastModifiedTime(it, recent) }
+        Files.setLastModifiedTime(expiredFailedArchive, FileTime.from(now.minus(Duration.ofDays(30))))
+
+        sut.purgeStale(
+            knownGameIds = setOf("DEMO"),
+            now = now,
+            protectedDestinationPaths = setOf(ongoingDestination.toString()),
+            retainedArchivePaths = setOf(recentFailedArchive.toString(), expiredFailedArchive.toString()),
+        ) shouldBe 3
+
+        ongoingPart.exists() shouldBe true
+        ongoingMeta.exists() shouldBe true
+        recentFailedArchive.exists() shouldBe true
+        previousVersionPart.exists() shouldBe false
+        expiredFailedArchive.exists() shouldBe false
+        unprotected.exists() shouldBe false
+    }
+
+    @Test
     fun `recognizes a resumable partial only when its metadata exists`() {
         val sut = createSut()
         val destination = sut.destinationFor(GameDownloadArgs("demo", "1.0", "/demo.zip")).toPath()

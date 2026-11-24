@@ -4,12 +4,14 @@ import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
+import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
 import dev.jagoba.lostielauncher.service.link.TwitchLiveService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.util.log.Logger
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -36,7 +39,11 @@ data class HomeData(
     val isTwitchLive: Boolean = false,
 )
 
-data class CatalogueData(val isLoading: Boolean = true, val games: List<GameInfo> = emptyList())
+data class CatalogueData(
+    val isLoading: Boolean = true,
+    val games: List<GameInfo> = emptyList(),
+    val isStale: Boolean = false,
+)
 
 @Singleton
 class LauncherDataCoordinator @Inject constructor(
@@ -48,6 +55,9 @@ class LauncherDataCoordinator @Inject constructor(
     private val homeGate = Mutex()
     private val catalogueGate = Mutex()
     private val refreshGate = Mutex()
+    private val availabilityRevision = AtomicLong(0L)
+    private val offlineLock = Any()
+    private var latestOfflineRevision = 0L
     private val mutableHome = MutableStateFlow(HomeData())
     private val mutableCatalogue = MutableStateFlow(CatalogueData())
     private val mutableRefreshing = MutableStateFlow(false)
@@ -89,50 +99,98 @@ class LauncherDataCoordinator @Inject constructor(
                 delay(options.interval.inWholeMilliseconds)
                 visible.first { it }
                 refreshHome(settings.settings.first().language, showLoading = false)
+                if (mutableCatalogue.value.isStale) {
+                    refreshCatalogue(showLoading = false)
+                }
             }
         }
     }
 
     suspend fun refreshHome(language: AppLanguage, force: Boolean = true, showLoading: Boolean = true) {
+        loadHome(language, force, showLoading, checkAvailability = true)
+    }
+
+    private suspend fun loadHome(
+        language: AppLanguage,
+        force: Boolean,
+        showLoading: Boolean,
+        checkAvailability: Boolean,
+    ) {
         homeGate.withLock {
-            if (showLoading) mutableHome.value = mutableHome.value.copy(isLoading = true)
+            if (showLoading) mutableHome.update { it.copy(isLoading = true) }
             try {
                 coroutineScope {
                     val live = async { twitch.isLive() }
-                    val offline = content.isServerActionBlocked(force)
+                    if (checkAvailability) {
+                        val revision = availabilityRevision.incrementAndGet()
+                        publishOffline(content.isServerActionBlocked(force), revision)
+                    }
                     val feed = content.getHomeContent(language, force)
-                    mutableHome.value = HomeData(
-                        content = feed,
-                        isOffline = offline,
-                        isTwitchLive = live.await(),
-                        isLoading = false,
-                    )
+                    val isLive = live.await()
+                    mutableHome.update { current ->
+                        current.copy(
+                            content = feed,
+                            isTwitchLive = isLive,
+                            isLoading = false,
+                        )
+                    }
                     logger.debug(
                         "Home content loaded: ${feed.news.size} news, ${feed.notifications.size} notifications. " +
-                            "Offline mode: $offline. Stale: ${feed.isStale}.",
+                            "Offline mode: ${mutableHome.value.isOffline}. Stale: ${feed.isStale}.",
                     )
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 logger.error("Home content refresh failed.", error)
-                mutableHome.value = mutableHome.value.copy(isLoading = false)
+                mutableHome.update { it.copy(isLoading = false) }
             }
         }
     }
 
-    suspend fun refreshCatalogue() {
+    suspend fun refreshCatalogue(showLoading: Boolean = true, force: Boolean = false) {
+        loadCatalogue(showLoading, force, blockedOverride = null, availabilityRevisionOverride = null)
+    }
+
+    private suspend fun loadCatalogue(
+        showLoading: Boolean,
+        force: Boolean,
+        blockedOverride: Boolean?,
+        availabilityRevisionOverride: Long?,
+    ) {
         catalogueGate.withLock {
-            mutableCatalogue.value = mutableCatalogue.value.copy(isLoading = true)
+            if (showLoading) mutableCatalogue.update { it.copy(isLoading = true) }
             try {
-                val games = distinctGames(content.getGames())
-                mutableCatalogue.value = CatalogueData(isLoading = false, games = games)
-                purgeStaleDownloads()
+                val revision = availabilityRevisionOverride ?: availabilityRevision.incrementAndGet()
+                val result = if (blockedOverride == true) CatalogueResult.Blocked else content.getGames(force)
+                when (result) {
+                    is CatalogueResult.Loaded -> {
+                        val games = distinctGames(result.games)
+                        mutableCatalogue.value = CatalogueData(isLoading = false, games = games, isStale = false)
+                        publishOffline(false, revision)
+                        purgeStaleDownloads()
+                    }
+
+                    CatalogueResult.Blocked -> {
+                        mutableCatalogue.update { it.copy(isLoading = false, isStale = true) }
+                        publishOffline(true, revision)
+                    }
+
+                    CatalogueResult.Failed -> {
+                        mutableCatalogue.update { it.copy(isLoading = false, isStale = true) }
+                        if (mutableHome.value.isOffline) {
+                            publishOffline(
+                                blockedOverride ?: content.isServerActionBlocked(forceRefresh = false),
+                                revision,
+                            )
+                        }
+                    }
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 logger.error("Catalogue refresh failed.", error)
-                mutableCatalogue.value = mutableCatalogue.value.copy(isLoading = false)
+                mutableCatalogue.update { it.copy(isLoading = false, isStale = true) }
             }
         }
     }
@@ -154,13 +212,39 @@ class LauncherDataCoordinator @Inject constructor(
     }
 
     private suspend fun reload(language: AppLanguage, showLoading: Boolean = true) {
+        val revision = availabilityRevision.incrementAndGet()
+        val offline = try {
+            content.isServerActionBlocked(forceRefresh = true)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("Server availability check failed during reload.", error)
+            false
+        }
+        publishOffline(offline, revision)
         coroutineScope {
-            val homeRefresh = async { refreshHome(language, showLoading = showLoading) }
-            val catalogueRefresh = async { refreshCatalogue() }
+            val homeRefresh =
+                async { loadHome(language, force = true, showLoading = showLoading, checkAvailability = false) }
+            val catalogueRefresh = async {
+                loadCatalogue(
+                    showLoading = showLoading,
+                    force = false,
+                    blockedOverride = offline,
+                    availabilityRevisionOverride = revision,
+                )
+            }
             homeRefresh.await()
             catalogueRefresh.await()
         }
         mutableGamesRevision.value += 1
+    }
+
+    private fun publishOffline(offline: Boolean, revision: Long) {
+        synchronized(offlineLock) {
+            if (revision < latestOfflineRevision) return
+            latestOfflineRevision = revision
+            mutableHome.update { it.copy(isOffline = offline) }
+        }
     }
 
     fun setVisible(isVisible: Boolean) {

@@ -9,6 +9,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.testDownload
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.util.UUID
 import org.junit.jupiter.api.Test
 
@@ -62,6 +63,21 @@ class CardStateMappingTest {
 
         row.toCardState().extractionProgress shouldBe 37f
         row.copy(installation = GameInstallationState.Extracting()).toCardState().extractionProgress shouldBe null
+    }
+
+    @Test
+    fun `orphan download row without known size maps an empty size label`() {
+        val card = libraryRow(DownloadStatus.QUEUED, LibraryCardStatus.DOWNLOADING)
+            .copy(formattedSize = "")
+            .toCardState()
+        card.size shouldBe ""
+    }
+
+    @Test
+    fun `library card keys never collide with the status banner key`() {
+        libraryGameKey(testGame(name = "Library Status Banner").gameId) shouldNotBe LIBRARY_BANNER_KEY
+        libraryGameKey(testGame(name = "Banner").gameId) shouldNotBe LIBRARY_BANNER_KEY
+        libraryGameKey(LIBRARY_BANNER_KEY) shouldNotBe LIBRARY_BANNER_KEY
     }
 
     @Test

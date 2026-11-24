@@ -21,8 +21,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import retrofit2.HttpException
 
+sealed interface CatalogueResult {
+    data class Loaded(val games: List<GameInfo>) : CatalogueResult
+
+    data object Blocked : CatalogueResult
+
+    data object Failed : CatalogueResult
+}
+
 interface ContentService {
-    suspend fun getGames(): List<GameInfo>
+    suspend fun getGames(forceRefresh: Boolean = false): CatalogueResult
 
     suspend fun getHomeContent(language: AppLanguage, forceRefresh: Boolean = false): HomeContent
 
@@ -39,18 +47,17 @@ internal class DefaultContentService @Inject constructor(
     private val logger: Logger,
 ) : ContentService {
     private val homeContentGate = Mutex()
+    private val maintenanceFlagGate = Mutex()
 
     private var homeContentCache: HomeContentDto? = null
     private var homeContentIsStale = false
-
-    @Volatile
     private var maintenanceFlagCache: MaintenanceFlagCache? = null
 
-    override suspend fun getGames(): List<GameInfo> {
+    override suspend fun getGames(forceRefresh: Boolean): CatalogueResult {
         try {
-            if (isServerActionBlocked()) {
+            if (isServerActionBlocked(forceRefresh)) {
                 logger.info("Games list request skipped because server actions are blocked.")
-                return emptyList()
+                return CatalogueResult.Blocked
             }
 
             logger.debug("Fetching games list from remote.")
@@ -58,12 +65,12 @@ internal class DefaultContentService @Inject constructor(
                 .filterNotNull()
                 .map { CdnMappers.toDomain(it, options.cdnBaseUrl) }
             logger.info("Fetched ${games.size} games from remote.")
-            return games
+            return CatalogueResult.Loaded(games)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.error("Fetching the games list failed; the catalogue is empty for this call.", e)
-            return emptyList()
+            logger.error("Fetching the games list failed.", e)
+            return CatalogueResult.Failed
         }
     }
 
@@ -130,19 +137,23 @@ internal class DefaultContentService @Inject constructor(
             return true
         }
 
-        val cached = maintenanceFlagCache
-        if (!forceRefresh && cached != null && clock.instant() < cached.expiresAt) return cached.blocked
+        return maintenanceFlagGate.withLock {
+            val cached = maintenanceFlagCache
+            if (!forceRefresh && cached != null && clock.instant() < cached.expiresAt) {
+                return@withLock cached.blocked
+            }
 
-        return try {
-            val blocked = probeMaintenanceFlag()
-            cacheMaintenanceFlag(blocked)
-            blocked
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.error("The maintenance flag check failed; assuming server actions are not blocked.", e)
-            cacheMaintenanceFlag(blocked = false)
-            false
+            try {
+                val blocked = probeMaintenanceFlag()
+                cacheMaintenanceFlag(blocked)
+                blocked
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.error("The maintenance flag check failed; assuming server actions are not blocked.", e)
+                cacheMaintenanceFlag(blocked = false)
+                false
+            }
         }
     }
 

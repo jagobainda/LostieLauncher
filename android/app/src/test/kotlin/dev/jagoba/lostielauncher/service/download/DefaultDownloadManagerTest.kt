@@ -55,7 +55,7 @@ class DefaultDownloadManagerTest {
         every { fileStore.deleteArtifacts(any()) } returns 0
         every { fileStore.hasResumablePartial(any()) } returns false
         every { fileStore.hasArtifacts(any()) } returns true
-        every { fileStore.purgeStale(any(), any()) } returns 0
+        every { fileStore.purgeStale(any(), any(), any(), any()) } returns 0
         coEvery { dao.get(any()) } returns null
         coEvery { dao.countWithStatuses(any()) } returns 0
         coEvery { dao.getWithStatuses(any()) } returns emptyList()
@@ -309,10 +309,10 @@ class DefaultDownloadManagerTest {
         val completed = entity(
             DownloadStatus.COMPLETED,
         ).copy(gameId = "kept", destinationPath = keptDestinationPath)
-        every { fileStore.purgeStale(setOf("demo", "kept"), any()) } returns 2
+        every { fileStore.purgeStale(setOf("demo", "kept"), any(), emptySet(), emptySet()) } returns 2
         every { fileStore.hasArtifacts(destinationPath) } returns false
         every { fileStore.hasArtifacts(keptDestinationPath) } returns true
-        coEvery { dao.getWithStatuses(any()) } returns listOf(failed, completed)
+        coEvery { dao.getWithStatuses(DownloadStatus.PurgeableNames) } returns listOf(failed, completed)
         coEvery { dao.deleteByGameIds(listOf("demo")) } returns 1
         val sut = createSut(StandardTestDispatcher(testScheduler))
 
@@ -323,12 +323,46 @@ class DefaultDownloadManagerTest {
     }
 
     @Test
+    fun `protects ongoing transfers while letting failed installations follow archive expiry`() = runTest {
+        val paused = entity(DownloadStatus.PAUSED).copy(
+            gameId = "orphan-paused",
+            destinationPath = File("downloads/orphan-paused.zip").absolutePath,
+        )
+        val queued = entity(DownloadStatus.QUEUED).copy(
+            gameId = "orphan-queued",
+            destinationPath = File("downloads/orphan-queued.zip").absolutePath,
+        )
+        val failedInstall = entity(DownloadStatus.INSTALLATION_FAILED).copy(
+            gameId = "orphan-install-failed",
+            destinationPath = File("downloads/orphan-install-failed.zip").absolutePath,
+        )
+        val completed = entity(DownloadStatus.COMPLETED).copy(
+            gameId = "orphan-completed",
+            destinationPath = File("downloads/orphan-completed.zip").absolutePath,
+        )
+        val protectedPaths = setOf(paused.destinationPath, queued.destinationPath)
+        val retainedArchivePaths = setOf(failedInstall.destinationPath)
+        coEvery { dao.getWithStatuses(DownloadStatus.OngoingNames) } returns listOf(paused, queued, failedInstall)
+        coEvery { dao.getWithStatuses(DownloadStatus.PurgeableNames) } returns listOf(completed)
+        every { fileStore.purgeStale(setOf("catalogue-game"), any(), protectedPaths, retainedArchivePaths) } returns 0
+        coEvery { dao.deleteByGameIds(listOf("orphan-completed")) } returns 1
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.purgeStale(setOf("catalogue-game")) shouldBe 1
+
+        verify(exactly = 1) {
+            fileStore.purgeStale(setOf("catalogue-game"), any(), protectedPaths, retainedArchivePaths)
+        }
+        coVerify(exactly = 1) { dao.deleteByGameIds(listOf("orphan-completed")) }
+    }
+
+    @Test
     fun `does not purge when the catalogue is empty`() = runTest {
         val sut = createSut(StandardTestDispatcher(testScheduler))
 
         sut.purgeStale(emptySet()) shouldBe 0
 
-        verify(exactly = 0) { fileStore.purgeStale(any(), any()) }
+        verify(exactly = 0) { fileStore.purgeStale(any(), any(), any(), any()) }
         coVerify(exactly = 0) { dao.getWithStatuses(any()) }
     }
 

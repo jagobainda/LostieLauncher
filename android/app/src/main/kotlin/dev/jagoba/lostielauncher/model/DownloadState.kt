@@ -39,13 +39,17 @@ enum class DownloadStatus {
     val isActive: Boolean
         get() = isTransferring || this == INSTALLING
 
+    val isOngoing: Boolean
+        get() = isActive || this == PAUSED || this == INSTALLATION_FAILED
+
     val isFinished: Boolean
         get() = this == COMPLETED || this == CANCELLED
 
     companion object {
         val TransferringNames: List<String> = entries.filter { it.isTransferring }.map { it.name }
         val ActiveNames: List<String> = entries.filter { it.isActive }.map { it.name }
-        val InactiveNames: List<String> = entries.filterNot { it.isActive }.map { it.name }
+        val OngoingNames: List<String> = entries.filter { it.isOngoing }.map { it.name }
+        val PurgeableNames: List<String> = entries.filterNot { it.isOngoing }.map { it.name }
     }
 }
 
