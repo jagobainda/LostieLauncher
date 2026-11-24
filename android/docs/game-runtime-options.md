@@ -32,9 +32,11 @@ resolves the current user's shared storage root and configures:
 - local registry: `LostieLauncher/local_games.json`;
 - Kirin registry: `Kirin/game-library.json`.
 
-These shared files survive launcher uninstall. Archives use the separate,
-app-specific `StorageLocations.downloadsRoot/downloads`, which is removed with
-the app. Logs use private `noBackupFilesDir` storage.
+These shared files survive launcher uninstall. Archives use private
+`noBackupFilesDir` storage at `StorageLocations.downloadsRoot/downloads`, which
+is removed with the app and isolated from other apps on all supported Android
+versions; any legacy external cache is discarded during maintenance or before
+reusing a pre-upgrade row. Logs use private `noBackupFilesDir` storage.
 
 `InstallDownloadedFileHandoff`, in `service/download/DownloadedFileHandoff.kt`,
 resolves the catalogue GUID when a transfer completes. New downloads persist

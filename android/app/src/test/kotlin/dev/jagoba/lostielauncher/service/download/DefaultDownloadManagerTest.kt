@@ -52,6 +52,8 @@ class DefaultDownloadManagerTest {
         every { scheduler.enqueue(any(), any()) } returns Unit
         coEvery { scheduler.cancel(any()) } returns Unit
         every { fileStore.destinationFor(any()) } returns File(destinationPath)
+        every { fileStore.isManagedPath(any()) } returns true
+        every { fileStore.relocatePath(any()) } answers { firstArg() }
         every { fileStore.deleteArtifacts(any()) } returns 0
         every { fileStore.hasResumablePartial(any()) } returns false
         every { fileStore.hasArtifacts(any()) } returns true
@@ -137,6 +139,66 @@ class DefaultDownloadManagerTest {
         replacement.captured.expectedSha256 shouldBe request().expectedSha256
         replacement.captured.variant shouldBe request().variant
         verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @Test
+    fun `cleans up legacy artifacts when starting a fresh download over an unmanaged failed row`() = runTest {
+        val legacyPath = File("legacy/downloads/demo.zip").absolutePath
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.FAILED).copy(destinationPath = legacyPath)
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.start(request()) shouldBe DownloadCommandResult.ACCEPTED
+
+        verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
+        verify(exactly = 1) { fileStore.deleteArtifacts(legacyPath) }
+    }
+
+    @Test
+    fun `restarts a paused download in internal storage when its saved path is legacy`() = runTest {
+        val legacyPath = File("legacy/downloads/demo.zip").absolutePath
+        val updated = slot<DownloadEntity>()
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.PAUSED).copy(destinationPath = legacyPath)
+        every { fileStore.isManagedPath(legacyPath) } returns false
+        every { fileStore.relocatePath(legacyPath) } returns destinationPath
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.resume("demo") shouldBe DownloadCommandResult.ACCEPTED
+
+        verify(exactly = 1) { fileStore.deleteArtifacts(legacyPath) }
+        coVerify(exactly = 0) { dao.replaceWork(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { dao.upsert(capture(updated)) }
+        updated.captured shouldBe entity(DownloadStatus.QUEUED).copy(
+            destinationPath = destinationPath,
+            percent = 0.0,
+            bytesPerSecond = 0.0,
+            downloadedBytes = 0,
+            totalBytes = null,
+        )
+        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+    }
+
+    @Test
+    fun `redownloads into internal storage instead of reusing an archive at a legacy path`() = runTest {
+        val legacyPath = File("legacy/downloads/demo.zip").absolutePath
+        val updated = slot<DownloadEntity>()
+        coEvery { dao.get("demo") } returns
+            entity(DownloadStatus.INSTALLATION_FAILED).copy(destinationPath = legacyPath)
+        every { fileStore.isManagedPath(legacyPath) } returns false
+        every { fileStore.relocatePath(legacyPath) } returns destinationPath
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.retry("demo") shouldBe DownloadCommandResult.ACCEPTED
+
+        verify(exactly = 0) { fileStore.hasArchive(any()) }
+        verify(exactly = 1) { fileStore.deleteArtifacts(legacyPath) }
+        coVerify(exactly = 1) { dao.upsert(capture(updated)) }
+        updated.captured shouldBe entity(DownloadStatus.QUEUED).copy(
+            destinationPath = destinationPath,
+            percent = 0.0,
+            downloadedBytes = 0,
+            totalBytes = null,
+        )
         verify(exactly = 1) { scheduler.enqueue("demo", workId) }
     }
 

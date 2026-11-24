@@ -32,12 +32,17 @@ internal object StorageModule {
     @Provides
     @Singleton
     fun provideStorageLocations(@ApplicationContext context: Context): StorageLocations {
+        val downloadsRoot = File(context.noBackupFilesDir, GAMES_DIRECTORY)
         val external = context.getExternalFilesDir(null)
             ?.takeIf { Environment.getExternalStorageState(it) == Environment.MEDIA_MOUNTED }
-        val appStorage = external ?: context.filesDir
+        val legacyDownloadsRoots = listOfNotNull(
+            external?.let { File(it, GAMES_DIRECTORY) },
+            File(context.filesDir, GAMES_DIRECTORY),
+        ).filter { it != downloadsRoot }
         return FixedStorageLocations(
-            downloadsRoot = File(appStorage, GAMES_DIRECTORY),
+            downloadsRoot = downloadsRoot,
             logsDirectory = File(context.noBackupFilesDir, LOGS_DIRECTORY),
+            legacyDownloadsRoots = legacyDownloadsRoots,
         )
     }
 }

@@ -33,7 +33,10 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -63,6 +66,7 @@ class ArchiveGameInstallationServiceTest {
     private val noMediaMarker get() = File(gamesRoot, ".nomedia")
 
     private fun createSut(
+        bufferSizeBytes: Int = 64 * 1024,
         entryCostBytes: Long = 0,
         extractionWorkers: Int = 4,
         progressInterval: Duration = Duration.ZERO,
@@ -80,7 +84,7 @@ class ArchiveGameInstallationServiceTest {
             "",
             "",
             "",
-            archiveBufferSizeBytes = 64 * 1024,
+            archiveBufferSizeBytes = bufferSizeBytes,
             archiveExtractionWorkers = extractionWorkers,
             archiveEntryCostBytes = entryCostBytes,
             archiveProgressInterval = progressInterval,
@@ -418,6 +422,84 @@ class ArchiveGameInstallationServiceTest {
 
             coVerify(exactly = 0) { library.registerGame(any()) }
         }
+
+    @Test
+    fun `cancels integrity verification promptly without deleting the archive or modifying an existing installation`() =
+        runTest(dispatcher) {
+            File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+            writeArchive("Game.exe" to "new")
+            var installJob: Job? = null
+            every { storageAccess.isGranted() } answers {
+                installJob?.cancel()
+                true
+            }
+            val sut = createSut()
+
+            val deferred = async { sut.install(request("a".repeat(64))) }.also { installJob = it }
+            val error = runCatching { deferred.await() }.exceptionOrNull()
+
+            (error is CancellationException) shouldBe true
+            archive.exists() shouldBe true
+            File(gameDirectory, "Game.exe").readText() shouldBe "old"
+            sut.observeInstallation("demo").first() shouldBe GameInstallationState.VerifyingIntegrity
+            coVerify(exactly = 0) { kirin.register(any(), any()) }
+            coVerify(exactly = 0) { library.registerGame(any()) }
+        }
+
+    @Test
+    fun `cancels extraction inside a large entry without finishing the copy and cleans up the temp directory`() =
+        runTest(dispatcher) {
+            File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+            val hash = writeArchive("Data/large.bin" to "x".repeat(512 * 1024))
+            var installJob: Job? = null
+            var progressChecks = 0
+            val sut = createSut(
+                bufferSizeBytes = 8 * 1024,
+                extractionWorkers = 1,
+                timeSource = MonotonicTimeSource {
+                    progressChecks++
+                    if (progressChecks == 2) installJob?.cancel()
+                    0L
+                },
+            )
+
+            val deferred = async { sut.install(request(hash)) }.also { installJob = it }
+            val error = runCatching { deferred.await() }.exceptionOrNull()
+
+            (error is CancellationException) shouldBe true
+            progressChecks shouldBe 2
+            File("${gameDirectory.path}.tmp").exists() shouldBe false
+            File(gameDirectory, "Game.exe").readText() shouldBe "old"
+            archive.exists() shouldBe true
+            coVerify(exactly = 0) { kirin.register(any(), any()) }
+            coVerify(exactly = 0) { library.registerGame(any()) }
+        }
+
+    @Test
+    fun `cancels before swapping directories when cancelled at the end of extraction`() = runTest(dispatcher) {
+        File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+        val hash = writeArchive("Game.exe" to "new")
+        var installJob: Job? = null
+        var progressChecks = 0
+        val sut = createSut(
+            extractionWorkers = 1,
+            timeSource = MonotonicTimeSource {
+                progressChecks++
+                if (progressChecks == 2) installJob?.cancel()
+                0L
+            },
+        )
+
+        val deferred = async { sut.install(request(hash)) }.also { installJob = it }
+        val error = runCatching { deferred.await() }.exceptionOrNull()
+
+        (error is CancellationException) shouldBe true
+        File("${gameDirectory.path}.tmp").exists() shouldBe false
+        File(gameDirectory, "Game.exe").readText() shouldBe "old"
+        archive.exists() shouldBe true
+        coVerify(exactly = 0) { kirin.register(any(), any()) }
+        coVerify(exactly = 0) { library.registerGame(any()) }
+    }
 
     @Test
     fun `uninstall deletes the game directory and both registrations`() = runTest(dispatcher) {

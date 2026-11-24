@@ -34,6 +34,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -150,6 +151,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
             deleteInBackground(listOf(backup))
         } else if (existed) {
             for (entry in directory.walkBottomUp()) {
+                currentCoroutineContext().ensureActive()
                 if (entry.delete()) {
                     deleted++
                 } else if (blocking == null) {
@@ -193,6 +195,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         hideGamesFromMediaScanner()
         try {
             ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip -> extractEntries(zip, temp, gameId) }
+            currentCoroutineContext().ensureActive()
             swap(temp, directory)
         } catch (error: Exception) {
             temp.deleteRecursively()
@@ -206,6 +209,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         val files = linkedMapOf<File, ZipEntry>()
         val directories = mutableSetOf<Path>()
         for (entry in zip.entries()) {
+            currentCoroutineContext().ensureActive()
             val name = ZipEntryNames.resolve(entry)
             val target = root.resolve(name.replace('\\', '/')).normalize()
             if (!target.startsWith(root) || (target == root && !entry.isDirectory)) {
@@ -219,6 +223,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
             }
         }
         for (directory in directories.sorted()) {
+            currentCoroutineContext().ensureActive()
             if (!directory.toFile().mkdir()) throw IOException("Could not create '$directory'.")
         }
 
@@ -249,7 +254,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         logger.debug("Temp extraction complete: ${files.size} files.")
     }
 
-    private fun copyEntry(
+    private suspend fun copyEntry(
         zip: ZipFile,
         entry: ZipEntry,
         target: File,
@@ -260,6 +265,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
             target.outputStream().use { output ->
                 var filled = 0
                 while (true) {
+                    currentCoroutineContext().ensureActive()
                     val read = input.read(buffer, filled, buffer.size - filled)
                     if (read < 0) break
                     filled += read
@@ -270,6 +276,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
                     }
                 }
                 if (filled > 0) {
+                    currentCoroutineContext().ensureActive()
                     output.write(buffer, 0, filled)
                     progress.advance(filled.toLong())
                 }
@@ -321,11 +328,12 @@ internal class ArchiveGameInstallationService @Inject constructor(
         }
     }
 
-    private fun sha256(file: File): String {
+    private suspend fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
             val buffer = ByteArray(options.archiveBufferSizeBytes)
             while (true) {
+                currentCoroutineContext().ensureActive()
                 val read = input.read(buffer)
                 if (read < 0) break
                 digest.update(buffer, 0, read)

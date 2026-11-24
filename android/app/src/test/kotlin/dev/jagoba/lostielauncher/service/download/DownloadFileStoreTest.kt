@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.GameDownloadArgs
 import dev.jagoba.lostielauncher.service.storage.FixedStorageLocations
 import dev.jagoba.lostielauncher.util.download.DownloadPathUtils
 import io.kotest.matchers.shouldBe
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -127,8 +128,55 @@ class DownloadFileStoreTest {
         sut.hasArchive(destination.toString()) shouldBe true
     }
 
-    private fun createSut() = DefaultDownloadFileStore(
-        storageLocations = FixedStorageLocations(directory.toFile(), directory.resolve("logs").toFile()),
+    @Test
+    fun `recognizes managed paths inside the current cache and relocates legacy ones`() {
+        val sut = createSut()
+        val managed = sut.destinationFor(GameDownloadArgs("demo", "1.0", "/demo.zip"))
+        val legacy = directory.resolve("legacy/downloads/${managed.name}").toFile()
+        val escaped = directory.resolve("downloads/../other/${managed.name}").toFile()
+
+        sut.isManagedPath(managed.absolutePath) shouldBe true
+        sut.isManagedPath(legacy.absolutePath) shouldBe false
+        sut.isManagedPath(escaped.absolutePath) shouldBe false
+        sut.relocatePath(legacy.absolutePath) shouldBe managed.absolutePath
+    }
+
+    @Test
+    fun `purges managed artifacts from legacy download roots and removes empty legacy folders`() {
+        val legacyRoot = directory.resolve("external/games")
+        val legacyCache = legacyRoot.resolve("downloads").createDirectories()
+        val secondLegacyRoot = directory.resolve("internal-files/games")
+        val secondLegacyCache = secondLegacyRoot.resolve("downloads").createDirectories()
+        val legacyArchive = legacyCache.resolve("demo.token.zip").createFile()
+        val legacyPart = legacyCache.resolve("demo.token.zip.part").createFile()
+        val legacyMeta = legacyCache.resolve("demo.token.zip.part.meta").createFile()
+        val secondLegacyPart = secondLegacyCache.resolve("other.token.zip.part").createFile()
+        val unmanaged = secondLegacyCache.resolve("keep.txt").createFile()
+        val now = Instant.parse("2026-09-23T12:00:00Z")
+        val sut = createSut(legacyDownloadsRoots = listOf(legacyRoot.toFile(), secondLegacyRoot.toFile()))
+
+        sut.purgeStale(
+            knownGameIds = setOf("DEMO", "OTHER"),
+            now = now,
+            protectedDestinationPaths = setOf(legacyArchive.toString()),
+            retainedArchivePaths = setOf(legacyArchive.toString()),
+        ) shouldBe 4
+
+        legacyArchive.exists() shouldBe false
+        legacyPart.exists() shouldBe false
+        legacyMeta.exists() shouldBe false
+        legacyCache.exists() shouldBe false
+        legacyRoot.exists() shouldBe false
+        secondLegacyPart.exists() shouldBe false
+        unmanaged.exists() shouldBe true
+    }
+
+    private fun createSut(legacyDownloadsRoots: List<File> = emptyList()) = DefaultDownloadFileStore(
+        storageLocations = FixedStorageLocations(
+            directory.toFile(),
+            directory.resolve("logs").toFile(),
+            legacyDownloadsRoots,
+        ),
         options = DownloadTransferOptions(
             cacheDirectoryName = "downloads",
             cacheMaxAge = Duration.ofDays(14),

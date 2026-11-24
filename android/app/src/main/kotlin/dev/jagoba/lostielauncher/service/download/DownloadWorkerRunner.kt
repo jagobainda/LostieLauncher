@@ -57,9 +57,17 @@ internal class DownloadWorkerRunner @Inject constructor(
             if (entity?.workId != workId) return@withLock DownloadWorkerOutcome.SUCCESS
             val notifications = NotificationSession(entity.gameId, entity.displayName, runtime)
             try {
-                when (entity.status) {
-                    DownloadStatus.INSTALLING.name -> install(entity, workId, runtime, notifications)
-                    in DownloadStatus.TransferringNames -> download(entity, workId, runtime, notifications)
+                val activeEntity = when {
+                    entity.status !in DownloadStatus.ActiveNames -> return@withLock DownloadWorkerOutcome.SUCCESS
+
+                    !fileStore.isManagedPath(entity.destinationPath) ->
+                        relocateLegacy(entity, workId) ?: return@withLock DownloadWorkerOutcome.SUCCESS
+
+                    else -> entity
+                }
+                when (activeEntity.status) {
+                    DownloadStatus.INSTALLING.name -> install(activeEntity, workId, runtime, notifications)
+                    in DownloadStatus.TransferringNames -> download(activeEntity, workId, runtime, notifications)
                     else -> DownloadWorkerOutcome.SUCCESS
                 }
             } catch (cancelled: CancellationException) {
@@ -67,7 +75,7 @@ internal class DownloadWorkerRunner @Inject constructor(
                     val current = dao.get(gameId)
                     if (current?.workId != workId) return@withContext
                     when (current.status) {
-                        DownloadStatus.CANCELLED.name -> deleteArtifacts(entity)
+                        DownloadStatus.CANCELLED.name -> deleteArtifacts(current)
 
                         DownloadStatus.DOWNLOADING.name -> {
                             dao.setWorkerStatus(gameId, workId, DownloadStatus.QUEUED.name, listOf(current.status))
@@ -83,6 +91,29 @@ internal class DownloadWorkerRunner @Inject constructor(
                 withContext(NonCancellable) { notifications.clearFallback() }
             }
         }
+
+    private suspend fun relocateLegacy(entity: DownloadEntity, workId: String): DownloadEntity? {
+        deleteArtifacts(entity)
+        val destinationPath = fileStore.relocatePath(entity.destinationPath)
+        val changed = dao.relocate(
+            gameId = entity.gameId,
+            workId = workId,
+            expectedStatuses = DownloadStatus.ActiveNames,
+            destinationPath = destinationPath,
+            status = DownloadStatus.QUEUED.name,
+        )
+        if (changed == 0) return null
+        logger.info("Relocated download to internal storage: ${entity.gameId}.")
+        return entity.copy(
+            destinationPath = destinationPath,
+            status = DownloadStatus.QUEUED.name,
+            percent = 0.0,
+            bytesPerSecond = 0.0,
+            downloadedBytes = 0,
+            totalBytes = null,
+            errorMessage = null,
+        )
+    }
 
     private suspend fun download(
         entity: DownloadEntity,

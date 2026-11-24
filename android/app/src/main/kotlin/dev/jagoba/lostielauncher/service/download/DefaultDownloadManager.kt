@@ -72,7 +72,12 @@ internal class DefaultDownloadManager @Inject constructor(
             logger.info("Retrying download from its partial: ${request.args.gameId} ${request.args.version}.")
             return@withLock enqueue(request.args.gameId, workId)
         }
-        withContext(dispatchers.io) { fileStore.deleteArtifacts(destination.absolutePath) }
+        withContext(dispatchers.io) {
+            fileStore.deleteArtifacts(destination.absolutePath)
+            if (existing != null && existing.destinationPath != destination.absolutePath) {
+                fileStore.deleteArtifacts(existing.destinationPath)
+            }
+        }
         dao.upsert(
             DownloadEntity(
                 gameId = request.args.gameId,
@@ -111,6 +116,23 @@ internal class DefaultDownloadManager @Inject constructor(
         if (entity.status != DownloadStatus.PAUSED.name) return@withLock DownloadCommandResult.INVALID_STATE
         if (hasActiveDownload()) return@withLock DownloadCommandResult.BUSY
         val workId = scheduler.nextId()
+        if (!fileStore.isManagedPath(entity.destinationPath)) {
+            withContext(dispatchers.io) { fileStore.deleteArtifacts(entity.destinationPath) }
+            dao.upsert(
+                entity.copy(
+                    destinationPath = fileStore.relocatePath(entity.destinationPath),
+                    workId = workId.toString(),
+                    status = DownloadStatus.QUEUED.name,
+                    percent = 0.0,
+                    bytesPerSecond = 0.0,
+                    downloadedBytes = 0,
+                    totalBytes = null,
+                    errorMessage = null,
+                ),
+            )
+            logger.info("Restarting download in internal storage: $gameId.")
+            return@withLock enqueue(gameId, workId)
+        }
         val changed = dao.replaceWork(
             gameId = gameId,
             expectedStatus = DownloadStatus.PAUSED.name,
@@ -131,11 +153,23 @@ internal class DefaultDownloadManager @Inject constructor(
         }
         if (hasActiveDownload()) return@withLock DownloadCommandResult.BUSY
         val workId = scheduler.nextId()
-        val archived = withContext(dispatchers.io) { fileStore.hasArchive(entity.destinationPath) }
+        val managed = fileStore.isManagedPath(entity.destinationPath)
+        val archived = managed && withContext(dispatchers.io) { fileStore.hasArchive(entity.destinationPath) }
         val retried = if (archived) {
             entity.copy(status = DownloadStatus.INSTALLING.name)
         } else {
-            entity.copy(status = DownloadStatus.QUEUED.name, percent = 0.0, downloadedBytes = 0, totalBytes = null)
+            if (!managed) withContext(dispatchers.io) { fileStore.deleteArtifacts(entity.destinationPath) }
+            entity.copy(
+                destinationPath = if (managed) {
+                    entity.destinationPath
+                } else {
+                    fileStore.relocatePath(entity.destinationPath)
+                },
+                status = DownloadStatus.QUEUED.name,
+                percent = 0.0,
+                downloadedBytes = 0,
+                totalBytes = null,
+            )
         }
         dao.upsert(retried.copy(workId = workId.toString(), errorMessage = null))
         logger.info("Retrying ${if (archived) "installation" else "download"}: $gameId.")
