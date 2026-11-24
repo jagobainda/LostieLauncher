@@ -29,6 +29,7 @@ import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
+import dev.jagoba.lostielauncher.service.download.NotificationAccess
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.GameLaunchService
 import dev.jagoba.lostielauncher.service.game.GameLocationService
@@ -50,6 +51,10 @@ internal class TestNetworkMonitor(online: Boolean = true) : NetworkMonitor {
 }
 
 internal class TestStorageAccess(var granted: Boolean = true) : StorageAccess {
+    override fun isGranted(): Boolean = granted
+}
+
+internal class TestNotificationAccess(var granted: Boolean = true) : NotificationAccess {
     override fun isGranted(): Boolean = granted
 }
 

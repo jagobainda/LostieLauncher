@@ -121,6 +121,10 @@ internal object EngStrings : Strings {
     override val kirinUpdateRecommendedMessage = "You have Kirin {0} and Kirin {1} is recommended. Tap to update."
     override val kirinThanks = "Thanks to Max for helping with the integration and for creating Kirin, the emulator that lets us play these games on Android. More information at https://playkirin.com/"
     override val storageAccessTitle = "File access"
-    override val storageAccessMessage = "To install games, the launcher needs access to the files on this device, because games are stored in a shared folder that Kirin can read. Do you want to grant it now?"
+    override val storageAccessMessage = "To install games, the launcher needs access to all files on this device, because games are stored in shared folders that Kirin can read. Although Android grants broad access, the launcher only uses the LostieLauncher/ and Kirin/ folders. Do you want to grant it now?"
+    override val storageAccessSettingsMessage = "File access permission is blocked. To install games, enable it in the app settings. Do you want to open Settings now?"
     override val storageAccessDeniedMessage = "The game can't be installed without access to the files on this device. Grant it and try again."
+    override val notificationPermissionTitle = "Notifications"
+    override val notificationPermissionMessage = "The launcher can show notifications with download progress and let you know when a game finishes installing. If you don't enable them, downloads will still work in the background. Do you want to allow them now?"
+    override val notificationPermissionSettingsMessage = "Notifications are turned off for the launcher. You can enable them in system settings to see download progress. Do you want to open Settings now?"
 }

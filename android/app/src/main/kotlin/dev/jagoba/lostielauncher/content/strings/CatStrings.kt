@@ -121,6 +121,10 @@ internal object CatStrings : Strings {
     override val kirinUpdateRecommendedMessage = "Tens Kirin {0} i es recomana Kirin {1}. Prem per actualitzar."
     override val kirinThanks = "Gràcies a Max per la seva ajuda amb la integració i per crear Kirin, l'emulador que ens permet jugar a aquests jocs a Android. Més informació a https://playkirin.com/"
     override val storageAccessTitle = "Accés als fitxers"
-    override val storageAccessMessage = "Per instal·lar jocs, el launcher necessita accés als fitxers del dispositiu, perquè els jocs es desen en una carpeta compartida que Kirin pugui llegir. Vols concedir-lo ara?"
+    override val storageAccessMessage = "Per instal·lar jocs, el launcher necessita accés a tots els fitxers del dispositiu, perquè els jocs es desen en carpetes compartides que Kirin pugui llegir. Tot i que Android concedeix accés ampli, el launcher només fa servir les carpetes LostieLauncher/ i Kirin/. Vols concedir-lo ara?"
+    override val storageAccessSettingsMessage = "El permís d'accés als fitxers està bloquejat. Per instal·lar jocs, activa'l a la configuració de l'aplicació. Vols obrir la Configuració ara?"
     override val storageAccessDeniedMessage = "Sense accés als fitxers del dispositiu no es pot instal·lar el joc. Concedeix-lo i torna-ho a provar."
+    override val notificationPermissionTitle = "Notificacions"
+    override val notificationPermissionMessage = "El launcher pot mostrar notificacions amb el progrés de les descàrregues i avisar-te quan un joc acabi d'instal·lar-se. Si no les actives, les descàrregues continuaran funcionant en segon pla. Vols permetre-les ara?"
+    override val notificationPermissionSettingsMessage = "Les notificacions estan desactivades per al launcher. Pots activar-les a la configuració del sistema per veure el progrés de les descàrregues. Vols obrir la Configuració ara?"
 }

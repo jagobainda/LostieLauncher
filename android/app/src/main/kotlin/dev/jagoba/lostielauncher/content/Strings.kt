@@ -128,7 +128,11 @@ interface Strings {
     val kirinThanks: String
     val storageAccessTitle: String
     val storageAccessMessage: String
+    val storageAccessSettingsMessage: String
     val storageAccessDeniedMessage: String
+    val notificationPermissionTitle: String
+    val notificationPermissionMessage: String
+    val notificationPermissionSettingsMessage: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {

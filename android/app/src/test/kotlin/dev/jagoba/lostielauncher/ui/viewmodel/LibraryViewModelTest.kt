@@ -51,6 +51,7 @@ class LibraryViewModelTest {
     private val externalLinks = TestExternalLinkService()
     private val network = TestNetworkMonitor()
     private val storageAccess = TestStorageAccess()
+    private val notificationAccess = TestNotificationAccess()
     private val logger = mockk<Logger>(relaxed = true)
     private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
@@ -1155,6 +1156,251 @@ class LibraryViewModelTest {
             downloads.starts shouldBe emptyList()
         }
 
+    @Test
+    fun `permanently denied storage access offers app settings and continues once granted`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestStorageAccess()
+
+        sut.onStorageAccessResult(permanentlyDenied = true)
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.STORAGE_SETTINGS
+        sut.state.value.notice shouldBe null
+        downloads.starts shouldBe emptyList()
+
+        sut.requestStorageAccess()
+        storageAccess.granted = true
+        sut.onStorageAccessResult()
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe null
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+    }
+
+    @Test
+    fun `returning from storage settings without granting shows denied notice without looping`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestStorageAccess()
+        sut.onStorageAccessResult(permanentlyDenied = true)
+        runCurrent()
+
+        sut.requestStorageAccess()
+        sut.onStorageAccessResult(permanentlyDenied = false)
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe LibraryNotice.STORAGE_ACCESS_DENIED
+        downloads.starts shouldBe emptyList()
+    }
+
+    @Test
+    fun `declining storage settings prompt drops the pending download`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+        sut.requestDownload(remote.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestStorageAccess()
+        sut.onStorageAccessResult(permanentlyDenied = true)
+        runCurrent()
+
+        sut.dismissPrompt()
+        storageAccess.granted = true
+        sut.onStorageAccessResult()
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe null
+        downloads.starts shouldBe emptyList()
+    }
+
+    @Test
+    fun `missing notification permission explains itself before starting and starts once granted`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            notificationAccess.granted = false
+            val sut = createSut(backgroundScope)
+            runCurrent()
+            sut.requestDownload(remote.gameId)
+            runCurrent()
+
+            sut.confirmDownload()
+            runCurrent()
+
+            sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_RATIONALE
+            downloads.starts shouldBe emptyList()
+
+            sut.requestNotificationPermission()
+            notificationAccess.granted = true
+            sut.onNotificationPermissionResult()
+            runCurrent()
+
+            sut.state.value.permissionPrompt shouldBe null
+            sut.state.value.notice shouldBe null
+            downloads.starts.single().args.gameId shouldBe remote.gameId
+        }
+
+    @Test
+    fun `skipping or temporarily denying notifications still starts the download`() = runTest(dispatcher) {
+        val first = testGame(name = "First")
+        val second = testGame(name = "Second")
+        content.games = listOf(first, second)
+        notificationAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        sut.requestDownload(first.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        runCurrent()
+        sut.skipNotificationPermission()
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe null
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId)
+
+        sut.requestDownload(second.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        runCurrent()
+        sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_RATIONALE
+        sut.requestNotificationPermission()
+        sut.onNotificationPermissionResult(permanentlyDenied = false)
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe null
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId, second.gameId)
+    }
+
+    @Test
+    fun `permanently denied notifications offer settings and start the download either way`() = runTest(dispatcher) {
+        val first = testGame(name = "First")
+        val second = testGame(name = "Second")
+        content.games = listOf(first, second)
+        notificationAccess.granted = false
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        sut.requestDownload(first.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestNotificationPermission()
+        sut.onNotificationPermissionResult(permanentlyDenied = true)
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_SETTINGS
+        downloads.starts shouldBe emptyList()
+
+        sut.requestNotificationPermission()
+        sut.onNotificationPermissionResult(permanentlyDenied = false)
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        sut.state.value.notice shouldBe null
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId)
+
+        sut.requestDownload(second.gameId)
+        runCurrent()
+        sut.confirmDownload()
+        sut.requestNotificationPermission()
+        sut.onNotificationPermissionResult(permanentlyDenied = true)
+        runCurrent()
+        sut.skipNotificationPermission()
+        runCurrent()
+
+        sut.state.value.permissionPrompt shouldBe null
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId, second.gameId)
+    }
+
+    @Test
+    fun `storage access is requested before notifications and update follows the same sequence`() =
+        runTest(dispatcher) {
+            val remote = testGame(version = "v2.0")
+            content.games = listOf(remote)
+            installation.current.value =
+                InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+            storageAccess.granted = false
+            notificationAccess.granted = false
+            val sut = createSut(backgroundScope)
+            runCurrent()
+
+            sut.startUpdate(remote.gameId)
+            runCurrent()
+            sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.STORAGE_RATIONALE
+            downloads.starts shouldBe emptyList()
+
+            sut.requestStorageAccess()
+            storageAccess.granted = true
+            sut.onStorageAccessResult()
+            runCurrent()
+            sut.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_RATIONALE
+            downloads.starts shouldBe emptyList()
+
+            sut.skipNotificationPermission()
+            runCurrent()
+            sut.state.value.permissionPrompt shouldBe null
+            downloads.starts.single().args.gameId shouldBe remote.gameId
+        }
+
+    @Test
+    fun `storage and notification settings prompts survive process death`() = runTest(dispatcher) {
+        val remote = testGame()
+        content.games = listOf(remote)
+        storageAccess.granted = false
+        notificationAccess.granted = false
+        val saved = SavedStateHandle()
+        val original = createSut(backgroundScope, saved)
+        runCurrent()
+        original.requestDownload(remote.gameId)
+        runCurrent()
+        original.confirmDownload()
+        original.requestStorageAccess()
+        original.onStorageAccessResult(permanentlyDenied = true)
+        runCurrent()
+
+        val restoredStorage = createSut(backgroundScope, saved)
+        runCurrent()
+        restoredStorage.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.STORAGE_SETTINGS
+        restoredStorage.requestStorageAccess()
+        storageAccess.granted = true
+        restoredStorage.onStorageAccessResult()
+        runCurrent()
+        restoredStorage.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_RATIONALE
+        restoredStorage.requestNotificationPermission()
+        restoredStorage.onNotificationPermissionResult(permanentlyDenied = true)
+        runCurrent()
+
+        val restoredNotifications = createSut(backgroundScope, saved)
+        runCurrent()
+        restoredNotifications.state.value.permissionPrompt shouldBe LibraryPermissionPrompt.NOTIFICATION_SETTINGS
+        restoredNotifications.requestNotificationPermission()
+        restoredNotifications.onNotificationPermissionResult()
+        runCurrent()
+
+        downloads.starts.single().args.gameId shouldBe remote.gameId
+    }
+
     private fun createSut(
         scope: CoroutineScope,
         savedState: SavedStateHandle = SavedStateHandle(),
@@ -1171,6 +1417,7 @@ class LibraryViewModelTest {
             navigation,
             externalLinks,
             storageAccess,
+            notificationAccess,
             logger,
             savedState,
         )

@@ -22,6 +22,7 @@ import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionService
 import dev.jagoba.lostielauncher.service.download.DownloadManager
+import dev.jagoba.lostielauncher.service.download.NotificationAccess
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
@@ -87,6 +88,13 @@ enum class LibraryNotice {
     SPECIAL_VERSION_BUSY,
 }
 
+enum class LibraryPermissionPrompt {
+    STORAGE_RATIONALE,
+    STORAGE_SETTINGS,
+    NOTIFICATION_RATIONALE,
+    NOTIFICATION_SETTINGS,
+}
+
 private fun cardStatus(
     installed: LocalGame?,
     hasUpdate: Boolean,
@@ -127,9 +135,11 @@ data class LibraryUiState(
     val pendingCancelGameId: String? = null,
     val pendingSpecialGameId: String? = null,
     val isKeyInvalid: Boolean = false,
-    val isStorageAccessPromptVisible: Boolean = false,
+    val permissionPrompt: LibraryPermissionPrompt? = null,
     val notice: LibraryNotice? = null,
 ) {
+    val isStorageAccessPromptVisible: Boolean
+        get() = permissionPrompt == LibraryPermissionPrompt.STORAGE_RATIONALE
     val pendingDownloadGame: GameInfo?
         get() = pendingDownloadGameId?.let { id -> games.firstOrNull { it.gameId == id }?.game }
     val isEmpty: Boolean get() = !isLoading && games.isEmpty()
@@ -149,6 +159,7 @@ class LibraryViewModel @Inject constructor(
     private val navigation: NavigationStore,
     private val externalLinks: ExternalLinkService,
     private val storageAccess: StorageAccess,
+    private val notificationAccess: NotificationAccess,
     private val logger: Logger,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -327,18 +338,53 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun requestStorageAccess() {
-        updateTransient { it.copy(isStorageAccessPromptVisible = false) }
+        updateTransient { it.copy(permissionPrompt = null) }
     }
 
-    fun onStorageAccessResult() {
+    fun onStorageAccessResult(permanentlyDenied: Boolean = false) {
         val action = pendingStorageAction ?: return
-        setPendingStorageAction(null)
         if (storageAccess.isGranted()) {
             logger.info("Shared storage access granted.")
-            runStorageAction(action)
+            continueWithNotifications(action)
+        } else if (permanentlyDenied) {
+            logger.info("Shared storage access permanently denied; offering app settings.")
+            updateTransient { it.copy(permissionPrompt = LibraryPermissionPrompt.STORAGE_SETTINGS, notice = null) }
         } else {
+            setPendingStorageAction(null)
             logger.info("Shared storage access denied; the download was not started.")
             updateTransient { it.copy(notice = LibraryNotice.STORAGE_ACCESS_DENIED) }
+        }
+    }
+
+    fun requestNotificationPermission() {
+        updateTransient { it.copy(permissionPrompt = null) }
+    }
+
+    fun skipNotificationPermission() {
+        val action = pendingStorageAction
+        setPendingStorageAction(null)
+        updateTransient { it.copy(permissionPrompt = null) }
+        if (action != null) {
+            logger.info("Notification permission skipped; continuing with the download.")
+            runStorageAction(action)
+        }
+    }
+
+    fun onNotificationPermissionResult(permanentlyDenied: Boolean = false) {
+        val action = pendingStorageAction ?: return
+        if (notificationAccess.isGranted()) {
+            setPendingStorageAction(null)
+            logger.info("Notification permission granted.")
+            runStorageAction(action)
+        } else if (permanentlyDenied) {
+            logger.info("Notification permission permanently denied; offering notification settings.")
+            updateTransient {
+                it.copy(permissionPrompt = LibraryPermissionPrompt.NOTIFICATION_SETTINGS, notice = null)
+            }
+        } else {
+            setPendingStorageAction(null)
+            logger.info("Notification permission denied; continuing with the download.")
+            runStorageAction(action)
         }
     }
 
@@ -445,12 +491,23 @@ class LibraryViewModel @Inject constructor(
 
     private fun withStorageAccess(action: PendingStorageAction) {
         if (storageAccess.isGranted()) {
-            runStorageAction(action)
+            continueWithNotifications(action)
             return
         }
         logger.info("Shared storage access is missing; asking before the download starts.")
         setPendingStorageAction(action)
-        updateTransient { it.copy(isStorageAccessPromptVisible = true, notice = null) }
+        updateTransient { it.copy(permissionPrompt = LibraryPermissionPrompt.STORAGE_RATIONALE, notice = null) }
+    }
+
+    private fun continueWithNotifications(action: PendingStorageAction) {
+        if (notificationAccess.isGranted()) {
+            setPendingStorageAction(null)
+            runStorageAction(action)
+            return
+        }
+        logger.info("Notification permission is missing; explaining before the download starts.")
+        setPendingStorageAction(action)
+        updateTransient { it.copy(permissionPrompt = LibraryPermissionPrompt.NOTIFICATION_RATIONALE, notice = null) }
     }
 
     private fun runStorageAction(action: PendingStorageAction) {
@@ -493,7 +550,7 @@ class LibraryViewModel @Inject constructor(
         savedState[PENDING_CANCEL_GAME_ID_KEY] = updated.pendingCancelGameId
         savedState[PENDING_SPECIAL_GAME_ID_KEY] = updated.pendingSpecialGameId
         savedState[KEY_INVALID_KEY] = updated.isKeyInvalid
-        savedState[STORAGE_ACCESS_PROMPT_KEY] = updated.isStorageAccessPromptVisible
+        savedState[PERMISSION_PROMPT_KEY] = updated.permissionPrompt?.name
         savedState[NOTICE_KEY] = updated.notice?.name
     }
 
@@ -557,7 +614,7 @@ class LibraryViewModel @Inject constructor(
         const val PENDING_CANCEL_GAME_ID_KEY = "library.pendingCancelGameId"
         const val PENDING_SPECIAL_GAME_ID_KEY = "library.pendingSpecialGameId"
         const val KEY_INVALID_KEY = "library.isKeyInvalid"
-        const val STORAGE_ACCESS_PROMPT_KEY = "library.isStorageAccessPromptVisible"
+        const val PERMISSION_PROMPT_KEY = "library.permissionPrompt"
         const val NOTICE_KEY = "library.notice"
         const val STORAGE_ACTION_KIND_KEY = "library.storageAction.kind"
         const val STORAGE_ACTION_GAME_ID_KEY = "library.storageAction.gameId"
@@ -625,6 +682,7 @@ class LibraryViewModel @Inject constructor(
 
         fun restoreTransient(savedState: SavedStateHandle): LibraryUiState {
             val path = savedState.get<String>(DOWNLOAD_DESTINATION_PATH_KEY)
+            val permissionPromptName = savedState.get<String>(PERMISSION_PROMPT_KEY)
             val noticeName = savedState.get<String>(NOTICE_KEY)
             return LibraryUiState(
                 pendingDownloadGameId = savedState.get<String>(PENDING_DOWNLOAD_GAME_ID_KEY),
@@ -634,7 +692,7 @@ class LibraryViewModel @Inject constructor(
                 pendingCancelGameId = savedState.get<String>(PENDING_CANCEL_GAME_ID_KEY),
                 pendingSpecialGameId = savedState.get<String>(PENDING_SPECIAL_GAME_ID_KEY),
                 isKeyInvalid = savedState.get<Boolean>(KEY_INVALID_KEY) ?: false,
-                isStorageAccessPromptVisible = savedState.get<Boolean>(STORAGE_ACCESS_PROMPT_KEY) ?: false,
+                permissionPrompt = LibraryPermissionPrompt.entries.firstOrNull { it.name == permissionPromptName },
                 notice = LibraryNotice.entries.firstOrNull { it.name == noticeName },
             )
         }
