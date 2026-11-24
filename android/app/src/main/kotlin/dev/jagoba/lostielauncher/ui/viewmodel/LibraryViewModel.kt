@@ -16,6 +16,7 @@ import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import dev.jagoba.lostielauncher.model.LocalGame
+import dev.jagoba.lostielauncher.model.gameSlug
 import dev.jagoba.lostielauncher.model.hasActiveDownload
 import dev.jagoba.lostielauncher.service.ContentService
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
@@ -58,6 +59,8 @@ data class LibraryGameUiState(
     val canStart: Boolean,
     val canUpdate: Boolean,
     val canSwitchSpecialVersion: Boolean,
+    val gameId: String = game.gameId,
+    val formattedSize: String = game.formattedSize,
 ) {
     val canPause: Boolean get() = download?.status?.isTransferring == true
     val canResume: Boolean get() = canStart && download?.status == DownloadStatus.PAUSED
@@ -116,6 +119,8 @@ private fun cardStatus(
 
 data class LibraryUiState(
     val isLoading: Boolean = true,
+    val isOffline: Boolean = false,
+    val isContentStale: Boolean = false,
     val games: List<LibraryGameUiState> = emptyList(),
     val pendingDownloadGameId: String? = null,
     val downloadDestination: DownloadDestination? = null,
@@ -126,9 +131,10 @@ data class LibraryUiState(
     val notice: LibraryNotice? = null,
 ) {
     val pendingDownloadGame: GameInfo?
-        get() = pendingDownloadGameId?.let { id -> games.firstOrNull { it.game.gameId == id }?.game }
+        get() = pendingDownloadGameId?.let { id -> games.firstOrNull { it.gameId == id }?.game }
     val isEmpty: Boolean get() = !isLoading && games.isEmpty()
     val isListVisible: Boolean get() = !isLoading && games.isNotEmpty()
+    val isOutOfDateWarningVisible: Boolean get() = isContentStale && !isOffline
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -147,7 +153,6 @@ class LibraryViewModel @Inject constructor(
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
     private val transient = MutableStateFlow(restoreTransient(savedState))
-    private var maintenanceNoticeShown = false
     private var pendingStorageAction: PendingStorageAction? = restoreStorageAction(savedState)
 
     private val installationStates = downloads.downloads.flatMapLatest { rows ->
@@ -165,45 +170,63 @@ class LibraryViewModel @Inject constructor(
 
     private val cards = combine(
         coordinator.catalogue,
+        coordinator.home,
         downloads.downloads,
         installation.installedGames,
         installationStates,
-    ) { catalogue, downloadRows, installedState, phases ->
+    ) { catalogue, home, downloadRows, installedState, phases ->
         val installed = (installedState as? InstalledGamesState.Available)?.games.orEmpty()
         val active = downloadRows.hasActiveDownload
+        val catalogueIds = catalogue.games.mapTo(mutableSetOf()) { it.gameId }
+        val catalogueCards = catalogue.games.map { game ->
+            val local = GameIdentityMatcher.findLocal(game, installed)
+            val download = downloadRows.firstOrNull { it.gameId == game.gameId }
+            buildCardState(
+                game = game,
+                gameId = game.gameId,
+                formattedSize = game.formattedSize,
+                local = local,
+                installedStateKnown = installedState is InstalledGamesState.Available,
+                download = download,
+                phase = phases[game.gameId],
+                hasActiveDownload = active,
+                catalogueLoading = catalogue.isLoading,
+                inCatalogue = true,
+            )
+        }
+        val orphanCards = downloadRows
+            .filter { it.gameId !in catalogueIds && it.status.isOngoing }
+            .map { row ->
+                val fallback = fallbackGame(row)
+                val local = installed.firstOrNull { gameSlug(it.name) == row.gameId }
+                buildCardState(
+                    game = fallback,
+                    gameId = row.gameId,
+                    formattedSize = if (row.totalBytes != null && row.totalBytes > 0L) fallback.formattedSize else "",
+                    local = local,
+                    installedStateKnown = installedState is InstalledGamesState.Available,
+                    download = row,
+                    phase = phases[row.gameId],
+                    hasActiveDownload = active,
+                    catalogueLoading = catalogue.isLoading,
+                    inCatalogue = false,
+                )
+            }
         LibraryUiState(
             isLoading = catalogue.isLoading,
-            games = catalogue.games.map { game ->
-                val local = GameIdentityMatcher.findLocal(game, installed)
-                val download = downloadRows.firstOrNull { it.gameId == game.gameId }
-                val canAct = !active && !catalogue.isLoading
-                val hasUpdate = local != null && VersionUtils.isNewerVersion(game.version, local.version)
-                val phase = phases[game.gameId]
-                val status = cardStatus(local, hasUpdate, download, phase)
-                LibraryGameUiState(
-                    game = game,
-                    installed = local,
-                    installedStateKnown = installedState is InstalledGamesState.Available,
-                    hasUpdate = hasUpdate,
-                    download = download,
-                    installation = phase,
-                    status = status,
-                    remainingTime = download?.takeIf { it.status == DownloadStatus.DOWNLOADING }
-                        ?.let { row ->
-                            row.totalBytes?.let {
-                                RemainingTimeFormatter.format(it - row.downloadedBytes, row.bytesPerSecond)
-                            }
-                        },
-                    canStart = canAct && status in STARTABLE_STATUSES,
-                    canUpdate = canAct && status == LibraryCardStatus.UPDATE_AVAILABLE,
-                    canSwitchSpecialVersion = canAct,
-                )
-            },
+            isOffline = home.isOffline,
+            isContentStale = catalogue.isStale,
+            games = catalogueCards + orphanCards,
         )
     }
 
     val state: StateFlow<LibraryUiState> = combine(cards, transient) { base, prompts ->
-        prompts.copy(isLoading = base.isLoading, games = base.games)
+        prompts.copy(
+            isLoading = base.isLoading,
+            isOffline = base.isOffline,
+            isContentStale = base.isContentStale,
+            games = base.games,
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, transient.value)
 
     init {
@@ -236,7 +259,7 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             combine(navigation.state, state) { target, current -> target to current }.collect { (target, current) ->
                 val pending = target.pendingLibraryAction ?: return@collect
-                if (current.isLoading || current.games.none { it.game.gameId == pending.gameId }) return@collect
+                if (current.isLoading || current.games.none { it.gameId == pending.gameId }) return@collect
                 if (!navigation.consumeLibraryAction(pending.gameId)) return@collect
                 when (pending.action) {
                     LibraryNavigationAction.UPDATE -> startUpdate(pending.gameId)
@@ -248,7 +271,7 @@ class LibraryViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            coordinator.refreshCatalogue()
+            coordinator.refreshCatalogue(force = true)
         }
     }
 
@@ -454,7 +477,7 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private fun find(gameId: String): LibraryGameUiState? = state.value.games.firstOrNull { it.game.gameId == gameId }
+    private fun find(gameId: String): LibraryGameUiState? = state.value.games.firstOrNull { it.gameId == gameId }
 
     private suspend fun resolveGame(gameId: String): GameInfo? {
         find(gameId)?.game?.let { return it }
@@ -496,19 +519,13 @@ class LibraryViewModel @Inject constructor(
     }
 
     private suspend fun serverActionsAvailable(): Boolean {
-        if (!content.isServerActionBlocked()) {
-            maintenanceNoticeShown = false
-            return true
-        }
+        if (!content.isServerActionBlocked()) return true
         val offline = !network.isOnline.value
         logger.info(
             "Server-backed action blocked by ${if (offline) "missing internet connection" else "maintenance flag"}.",
         )
-        if (!maintenanceNoticeShown) {
-            val notice = if (offline) LibraryNotice.OFFLINE else LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
-            updateTransient { it.copy(notice = notice) }
-            maintenanceNoticeShown = true
-        }
+        val notice = if (offline) LibraryNotice.OFFLINE else LibraryNotice.SERVER_ACTIONS_UNAVAILABLE
+        updateTransient { it.copy(notice = notice) }
         return false
     }
 
@@ -554,6 +571,56 @@ class LibraryViewModel @Inject constructor(
             LibraryCardStatus.AVAILABLE,
             LibraryCardStatus.PAUSED,
             LibraryCardStatus.INSTALLATION_FAILED,
+        )
+        const val BYTES_PER_GIB = 1024.0 * 1024.0 * 1024.0
+
+        fun buildCardState(
+            game: GameInfo,
+            gameId: String,
+            formattedSize: String,
+            local: LocalGame?,
+            installedStateKnown: Boolean,
+            download: DownloadSnapshot?,
+            phase: GameInstallationState?,
+            hasActiveDownload: Boolean,
+            catalogueLoading: Boolean,
+            inCatalogue: Boolean,
+        ): LibraryGameUiState {
+            val canAct = !hasActiveDownload && !catalogueLoading
+            val hasUpdate = inCatalogue && local != null && VersionUtils.isNewerVersion(game.version, local.version)
+            val status = cardStatus(local, hasUpdate, download, phase)
+            return LibraryGameUiState(
+                game = game,
+                installed = local,
+                installedStateKnown = installedStateKnown,
+                hasUpdate = hasUpdate,
+                download = download,
+                installation = phase,
+                status = status,
+                remainingTime = download?.takeIf { it.status == DownloadStatus.DOWNLOADING }
+                    ?.let { row ->
+                        row.totalBytes?.let {
+                            RemainingTimeFormatter.format(it - row.downloadedBytes, row.bytesPerSecond)
+                        }
+                    },
+                canStart = canAct && status in STARTABLE_STATUSES,
+                canUpdate = canAct && status == LibraryCardStatus.UPDATE_AVAILABLE,
+                canSwitchSpecialVersion = inCatalogue && canAct,
+                gameId = gameId,
+                formattedSize = formattedSize,
+            )
+        }
+
+        fun fallbackGame(row: DownloadSnapshot): GameInfo = GameInfo(
+            id = null,
+            name = row.displayName,
+            version = row.version,
+            sizeGb = row.totalBytes?.takeIf { it > 0L }?.let { it.toDouble() / BYTES_PER_GIB } ?: 0.0,
+            description = "",
+            pageUrl = "",
+            logoUrl = null,
+            relativePath = "",
+            sha256 = "",
         )
 
         fun restoreTransient(savedState: SavedStateHandle): LibraryUiState {

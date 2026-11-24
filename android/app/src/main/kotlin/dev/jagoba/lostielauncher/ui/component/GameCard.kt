@@ -145,7 +145,7 @@ fun LibraryGameCard(
                 modifier = Modifier.padding(top = LauncherSpacing.Small),
                 horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.ExtraLarge),
             ) {
-                MetaItem(R.drawable.ic_card_harddisk, state.size)
+                if (state.size.isNotEmpty()) MetaItem(R.drawable.ic_card_harddisk, state.size)
                 MetaItem(R.drawable.ic_card_tag, state.version)
             }
         },

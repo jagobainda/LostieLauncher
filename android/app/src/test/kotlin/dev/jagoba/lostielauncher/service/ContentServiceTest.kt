@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -62,19 +63,29 @@ class ContentServiceTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(options.catalogueUrl) } returns listOf(GameDto(nombre = "Demo"))
 
-        val games = createSut().getGames()
+        val result = createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>()
 
-        games shouldHaveSize 1
-        games[0].name shouldBe "Demo"
+        result.games shouldHaveSize 1
+        result.games[0].name shouldBe "Demo"
+    }
+
+    @Test
+    fun `distinguishes an empty catalogue from a failure`() = runTest {
+        maintenanceOff()
+        coEvery { contentApi.catalogue(options.catalogueUrl) } returns emptyList()
+
+        val result = createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>()
+
+        result.games.shouldBeEmpty()
     }
 
     @Test
     fun `does not even ask for the catalogue while maintenance is on`() = runTest {
         coEvery { flagApi.head(any()) } returns 200
 
-        val games = createSut().getGames()
+        val result = createSut().getGames()
 
-        games.shouldBeEmpty()
+        result shouldBe CatalogueResult.Blocked
         coVerify(exactly = 0) { contentApi.catalogue(any()) }
     }
 
@@ -82,37 +93,51 @@ class ContentServiceTest {
     fun `does not even ask for the catalogue without an internet connection`() = runTest {
         network.isOnline.value = false
 
-        val games = createSut().getGames()
+        val result = createSut().getGames()
 
-        games.shouldBeEmpty()
+        result shouldBe CatalogueResult.Blocked
         coVerify(exactly = 0) { contentApi.catalogue(any()) }
     }
 
     @Test
-    fun `returns an empty catalogue and logs when the content server fails`() = runTest {
+    fun `rechecks the maintenance flag when a catalogue refresh is forced`() = runTest {
+        coEvery { flagApi.head(any()) } returns 200
+        coEvery { contentApi.catalogue(options.catalogueUrl) } returns listOf(GameDto(nombre = "Demo"))
+        val sut = createSut()
+        sut.getGames() shouldBe CatalogueResult.Blocked
+        coEvery { flagApi.head(any()) } returns 404
+
+        val result = sut.getGames(forceRefresh = true).shouldBeInstanceOf<CatalogueResult.Loaded>()
+
+        result.games shouldHaveSize 1
+        coVerify(exactly = 2) { flagApi.head(any()) }
+    }
+
+    @Test
+    fun `reports a failure and logs when the content server fails`() = runTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } throws IOException("boom")
 
-        val games = createSut().getGames()
+        val result = createSut().getGames()
 
-        games.shouldBeEmpty()
+        result shouldBe CatalogueResult.Failed
         verify(exactly = 1) { logger.error(any(), any()) }
     }
 
     @Test
-    fun `returns an empty catalogue when the payload cannot be read`() = runTest {
+    fun `reports a failure when the payload cannot be read`() = runTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } throws SerializationException("bad json")
 
-        createSut().getGames().shouldBeEmpty()
+        createSut().getGames() shouldBe CatalogueResult.Failed
     }
 
     @Test
-    fun `returns an empty catalogue when one entry has an unusable id`() = runTest {
+    fun `reports a failure when one entry has an unusable id`() = runTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } returns listOf(GameDto(id = "not-a-guid"))
 
-        createSut().getGames().shouldBeEmpty()
+        createSut().getGames() shouldBe CatalogueResult.Failed
     }
 
     @Test
@@ -120,10 +145,10 @@ class ContentServiceTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } returns listOf(null, GameDto(nombre = "Demo"))
 
-        val games = createSut().getGames()
+        val result = createSut().getGames().shouldBeInstanceOf<CatalogueResult.Loaded>()
 
-        games shouldHaveSize 1
-        games[0].name shouldBe "Demo"
+        result.games shouldHaveSize 1
+        result.games[0].name shouldBe "Demo"
     }
 
     @Test
@@ -196,6 +221,16 @@ class ContentServiceTest {
         sut.isServerActionBlocked(forceRefresh = true)
 
         coVerify(exactly = 2) { flagApi.head(any()) }
+    }
+
+    @Test
+    fun `probes the maintenance flag once when concurrent callers arrive on a cold cache`() = runTest {
+        maintenanceOff()
+        val sut = createSut()
+
+        List(4) { async { sut.isServerActionBlocked() } }.awaitAll()
+
+        coVerify(exactly = 1) { flagApi.head(any()) }
     }
 
     @Test

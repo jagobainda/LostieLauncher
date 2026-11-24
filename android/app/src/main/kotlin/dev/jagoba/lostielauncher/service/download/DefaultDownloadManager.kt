@@ -155,13 +155,19 @@ internal class DefaultDownloadManager @Inject constructor(
     override suspend fun purgeStale(knownGameIds: Set<String>): Int = commandGate.withLock {
         if (knownGameIds.isEmpty()) return@withLock 0
         try {
+            val ongoing = dao.getWithStatuses(DownloadStatus.OngoingNames)
+            val (failedInstallations, activeOrPaused) = ongoing.partition {
+                it.status == DownloadStatus.INSTALLATION_FAILED.name
+            }
+            val protectedPaths = activeOrPaused.mapTo(mutableSetOf()) { it.destinationPath }
+            val retainedArchivePaths = failedInstallations.mapTo(mutableSetOf()) { it.destinationPath }
             val known = knownGameIds.mapTo(mutableSetOf()) { it.lowercase(Locale.ROOT) }
             val purgedFiles = withContext(dispatchers.io) {
-                fileStore.purgeStale(knownGameIds, clock.instant())
+                fileStore.purgeStale(knownGameIds, clock.instant(), protectedPaths, retainedArchivePaths)
             }
-            val inactive = dao.getWithStatuses(DownloadStatus.InactiveNames)
+            val purgeable = dao.getWithStatuses(DownloadStatus.PurgeableNames)
             val staleRows = withContext(dispatchers.io) {
-                inactive.filter { entity ->
+                purgeable.filter { entity ->
                     entity.gameId.lowercase(Locale.ROOT) !in known || !fileStore.hasArtifacts(entity.destinationPath)
                 }
             }
