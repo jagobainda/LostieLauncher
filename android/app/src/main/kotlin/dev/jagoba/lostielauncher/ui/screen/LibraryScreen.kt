@@ -42,7 +42,6 @@ fun LibraryScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = LocalStrings.current
-    val requestNotifications = rememberNotificationPermissionRequest()
     val listState = rememberLazyListState()
     val targetIndex = state.games.indexOfFirst { it.gameId == scrollTarget }
 
@@ -71,10 +70,7 @@ fun LibraryScreen(
                     onDownload = { viewModel.requestDownload(gameId) },
                     onPause = { viewModel.pause(gameId) },
                     onCancel = { viewModel.requestCancel(gameId) },
-                    onUpdate = {
-                        requestNotifications()
-                        viewModel.startUpdate(gameId)
-                    },
+                    onUpdate = { viewModel.startUpdate(gameId) },
                     modifier = Modifier.padding(bottom = LauncherSpacing.MediumLarge),
                 )
             }

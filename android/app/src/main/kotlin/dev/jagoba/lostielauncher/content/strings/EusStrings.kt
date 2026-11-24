@@ -121,6 +121,10 @@ internal object EusStrings : Strings {
     override val kirinUpdateRecommendedMessage = "Kirin {0} duzu eta Kirin {1} gomendatzen da. Sakatu eguneratzeko."
     override val kirinThanks = "Eskerrik asko Max-i integrazioan emandako laguntzagatik eta Kirin sortzeagatik, Android-en joko hauetara jolasteko aukera ematen digun emulatzailea. Informazio gehiago: https://playkirin.com/"
     override val storageAccessTitle = "Fitxategietarako sarbidea"
-    override val storageAccessMessage = "Jokoak instalatzeko, launcher-ak gailuko fitxategietarako sarbidea behar du, jokoak Kirin-ek irakur dezakeen karpeta partekatu batean gordetzen direlako. Orain eman nahi duzu?"
+    override val storageAccessMessage = "Jokoak instalatzeko, launcher-ak gailuko fitxategi guztietarako sarbidea behar du, jokoak Kirin-ek irakur ditzakeen karpeta partekatuetan gordetzen direlako. Android-ek sarbide zabala ematen badu ere, launcher-ak LostieLauncher/ eta Kirin/ karpetak bakarrik erabiltzen ditu. Orain eman nahi duzu?"
+    override val storageAccessSettingsMessage = "Fitxategietarako sarbide-baimena blokeatuta dago. Jokoak instalatzeko, aktibatu aplikazioaren ezarpenetan. Ezarpenak orain ireki nahi dituzu?"
     override val storageAccessDeniedMessage = "Gailuko fitxategietarako sarbiderik gabe ezin da jokoa instalatu. Eman sarbidea eta saiatu berriro."
+    override val notificationPermissionTitle = "Jakinarazpenak"
+    override val notificationPermissionMessage = "Launcher-ak deskargen aurrerapenaren jakinarazpenak erakuts ditzake eta joko bat instalatzen amaitzean abisatu. Aktibatzen ez badituzu, deskargek atzeko planoan funtzionatzen jarraituko dute. Orain baimendu nahi dituzu?"
+    override val notificationPermissionSettingsMessage = "Jakinarazpenak desaktibatuta daude launcher-erako. Sistemaren ezarpenetan aktiba ditzakezu deskargen aurrerapena ikusteko. Ezarpenak orain ireki nahi dituzu?"
 }

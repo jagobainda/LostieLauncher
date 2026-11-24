@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 92 keys kept from the desktop and the 26 Android-only keys")
+    @DisplayName("declares the 92 keys kept from the desktop and the 30 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 118
+        keys.size shouldBe 122
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -40,7 +40,11 @@ class StringsTest {
                 "kirinThanks",
                 "storageAccessTitle",
                 "storageAccessMessage",
+                "storageAccessSettingsMessage",
                 "storageAccessDeniedMessage",
+                "notificationPermissionTitle",
+                "notificationPermissionMessage",
+                "notificationPermissionSettingsMessage",
                 "btnRetry",
                 "installationErrorTitle",
                 "installationErrorMessage",
@@ -170,6 +174,16 @@ class StringsTest {
 
         thanks.contains("Max") shouldBe true
         thanks.endsWith("https://playkirin.com/") shouldBe true
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(AppLanguage::class)
+    @DisplayName("names both shared folders in the storage access rationale in every language")
+    fun `the storage access rationale names LostieLauncher and Kirin`(language: AppLanguage) {
+        val message = stringsFor(language).storageAccessMessage
+
+        message.contains("LostieLauncher/") shouldBe true
+        message.contains("Kirin/") shouldBe true
     }
 
     @ParameterizedTest(name = "{0}")

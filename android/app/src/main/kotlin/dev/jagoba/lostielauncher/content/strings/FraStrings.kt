@@ -121,6 +121,10 @@ internal object FraStrings : Strings {
     override val kirinUpdateRecommendedMessage = "Vous avez Kirin {0} et Kirin {1} est recommandé. Appuyez pour mettre à jour."
     override val kirinThanks = "Merci à Max pour son aide avec l'intégration et pour avoir créé Kirin, l'émulateur qui nous permet de jouer à ces jeux sur Android. Plus d'informations sur https://playkirin.com/"
     override val storageAccessTitle = "Accès aux fichiers"
-    override val storageAccessMessage = "Pour installer des jeux, le launcher a besoin d'accéder aux fichiers de l'appareil, car les jeux sont enregistrés dans un dossier partagé que Kirin peut lire. Voulez-vous l'autoriser maintenant ?"
+    override val storageAccessMessage = "Pour installer des jeux, le launcher a besoin d'accéder à tous les fichiers de l'appareil, car les jeux sont enregistrés dans des dossiers partagés que Kirin peut lire. Bien qu'Android accorde un accès étendu, le launcher utilise uniquement les dossiers LostieLauncher/ et Kirin/. Voulez-vous l'autoriser maintenant ?"
+    override val storageAccessSettingsMessage = "L'autorisation d'accès aux fichiers est bloquée. Pour installer des jeux, activez-la dans les paramètres de l'application. Voulez-vous ouvrir les Paramètres maintenant ?"
     override val storageAccessDeniedMessage = "Sans accès aux fichiers de l'appareil, le jeu ne peut pas être installé. Autorisez-le et réessayez."
+    override val notificationPermissionTitle = "Notifications"
+    override val notificationPermissionMessage = "Le launcher peut afficher des notifications sur la progression des téléchargements et vous avertir lorsqu'un jeu a fini de s'installer. Si vous ne les activez pas, les téléchargements continueront en arrière-plan. Voulez-vous les autoriser maintenant ?"
+    override val notificationPermissionSettingsMessage = "Les notifications sont désactivées pour le launcher. Vous pouvez les activer dans les paramètres du système pour voir la progression des téléchargements. Voulez-vous ouvrir les Paramètres maintenant ?"
 }

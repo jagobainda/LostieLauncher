@@ -14,6 +14,7 @@ import dev.jagoba.lostielauncher.ui.dialog.MessageBoxIcon
 import dev.jagoba.lostielauncher.ui.dialog.MessageBoxSpec
 import dev.jagoba.lostielauncher.ui.dialog.SpecialVersionDialog
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryNotice
+import dev.jagoba.lostielauncher.ui.viewmodel.LibraryPermissionPrompt
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryViewModel
 import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
@@ -24,8 +25,9 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
     val strings = LocalStrings.current
     val notice = state.notice
     val download = downloadConfirmState(state)
-    val requestNotifications = rememberNotificationPermissionRequest()
-    val requestStorageAccess = rememberStorageAccessRequest(viewModel::onStorageAccessResult)
+    val permissionPrompt = state.permissionPrompt
+    val notifications = rememberNotificationPermissionRequest(viewModel::onNotificationPermissionResult)
+    val storageAccess = rememberStorageAccessRequest(viewModel::onStorageAccessResult)
     when {
         notice != null -> LauncherMessageBox(
             spec = notice.messageBox(strings),
@@ -36,21 +38,48 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
         download != null -> DownloadConfirmDialog(
             state = download,
             onViewPage = viewModel::openPendingGamePage,
-            onConfirm = { key ->
-                if (viewModel.confirmDownload(key)) requestNotifications()
-            },
+            onConfirm = { viewModel.confirmDownload(it) },
             onDismiss = viewModel::dismissPrompt,
             keyError = strings.downloadKeyInvalidMessage.takeIf { state.isKeyInvalid },
             onKeyChange = viewModel::clearKeyError,
         )
 
-        state.isStorageAccessPromptVisible -> LauncherMessageBox(
-            spec = storageAccessMessageBox(strings),
+        permissionPrompt != null -> LauncherMessageBox(
+            spec = permissionPrompt.messageBox(strings),
             onConfirm = {
-                viewModel.requestStorageAccess()
-                requestStorageAccess()
+                when (permissionPrompt) {
+                    LibraryPermissionPrompt.STORAGE_RATIONALE -> {
+                        viewModel.requestStorageAccess()
+                        storageAccess.requestPermission()
+                    }
+
+                    LibraryPermissionPrompt.STORAGE_SETTINGS -> {
+                        viewModel.requestStorageAccess()
+                        storageAccess.openSettings()
+                    }
+
+                    LibraryPermissionPrompt.NOTIFICATION_RATIONALE -> {
+                        viewModel.requestNotificationPermission()
+                        notifications.requestPermission()
+                    }
+
+                    LibraryPermissionPrompt.NOTIFICATION_SETTINGS -> {
+                        viewModel.requestNotificationPermission()
+                        notifications.openSettings()
+                    }
+                }
             },
-            onDismiss = viewModel::dismissPrompt,
+            onDismiss = {
+                when (permissionPrompt) {
+                    LibraryPermissionPrompt.STORAGE_RATIONALE,
+                    LibraryPermissionPrompt.STORAGE_SETTINGS,
+                    -> viewModel.dismissPrompt()
+
+                    LibraryPermissionPrompt.NOTIFICATION_RATIONALE,
+                    LibraryPermissionPrompt.NOTIFICATION_SETTINGS,
+                    -> viewModel.skipNotificationPermission()
+                }
+            },
         )
 
         state.pendingCancelGameId != null -> LauncherMessageBox(
@@ -89,12 +118,35 @@ internal fun cancelDownloadMessageBox(strings: Strings) = MessageBoxSpec(
     MessageBoxIcon.INFORMATION,
 )
 
-internal fun storageAccessMessageBox(strings: Strings) = MessageBoxSpec(
-    strings.storageAccessTitle,
-    strings.storageAccessMessage,
-    MessageBoxButtons.YES_NO,
-    MessageBoxIcon.INFORMATION,
-)
+internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpec = when (this) {
+    LibraryPermissionPrompt.STORAGE_RATIONALE -> MessageBoxSpec(
+        strings.storageAccessTitle,
+        strings.storageAccessMessage,
+        MessageBoxButtons.YES_NO,
+        MessageBoxIcon.INFORMATION,
+    )
+
+    LibraryPermissionPrompt.STORAGE_SETTINGS -> MessageBoxSpec(
+        strings.storageAccessTitle,
+        strings.storageAccessSettingsMessage,
+        MessageBoxButtons.YES_NO,
+        MessageBoxIcon.INFORMATION,
+    )
+
+    LibraryPermissionPrompt.NOTIFICATION_RATIONALE -> MessageBoxSpec(
+        strings.notificationPermissionTitle,
+        strings.notificationPermissionMessage,
+        MessageBoxButtons.YES_NO,
+        MessageBoxIcon.INFORMATION,
+    )
+
+    LibraryPermissionPrompt.NOTIFICATION_SETTINGS -> MessageBoxSpec(
+        strings.notificationPermissionTitle,
+        strings.notificationPermissionSettingsMessage,
+        MessageBoxButtons.YES_NO,
+        MessageBoxIcon.INFORMATION,
+    )
+}
 
 internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (this) {
     LibraryNotice.SERVER_ACTIONS_UNAVAILABLE -> MessageBoxSpec(

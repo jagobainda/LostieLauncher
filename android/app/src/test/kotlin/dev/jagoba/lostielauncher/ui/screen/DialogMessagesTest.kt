@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.GamesNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryNotice
+import dev.jagoba.lostielauncher.ui.viewmodel.LibraryPermissionPrompt
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.MainUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsNotice
@@ -76,10 +77,28 @@ class DialogMessagesTest {
     }
 
     @Test
-    fun `storage access explains itself and asks yes or no`() {
-        storageAccessMessageBox(strings) shouldBe MessageBoxSpec(
+    fun `permission prompts explain themselves and ask yes or no`() {
+        LibraryPermissionPrompt.STORAGE_RATIONALE.messageBox(strings) shouldBe MessageBoxSpec(
             strings.storageAccessTitle,
             strings.storageAccessMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+        )
+        LibraryPermissionPrompt.STORAGE_SETTINGS.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.storageAccessTitle,
+            strings.storageAccessSettingsMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+        )
+        LibraryPermissionPrompt.NOTIFICATION_RATIONALE.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.notificationPermissionTitle,
+            strings.notificationPermissionMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+        )
+        LibraryPermissionPrompt.NOTIFICATION_SETTINGS.messageBox(strings) shouldBe MessageBoxSpec(
+            strings.notificationPermissionTitle,
+            strings.notificationPermissionSettingsMessage,
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.INFORMATION,
         )
@@ -176,7 +195,7 @@ class DialogMessagesTest {
     fun `no produced message leaves a placeholder behind`(language: AppLanguage) {
         val localized = stringsFor(language)
         val specs = LibraryNotice.entries.map { it.messageBox(localized) } +
-            storageAccessMessageBox(localized) +
+            LibraryPermissionPrompt.entries.map { it.messageBox(localized) } +
             GamesNotice.entries.mapNotNull { notice ->
                 gamesMessage(
                     GamesUiState(notice = notice, noticeGameName = "Test Game", blockingLocation = location),
