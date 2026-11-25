@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -141,7 +140,7 @@ fun LibraryGameCard(
         fillStackedActions = false,
         modifier = modifier,
         text = {
-            CardTitle(state.title)
+            GameTitle(state.title)
             FlowRow(
                 modifier = Modifier.padding(top = LauncherSpacing.Small),
                 horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.ExtraLarge),
@@ -201,7 +200,7 @@ fun LibraryGameCard(
                     label = strings.btnDownloaded,
                     enabled = false,
                     disabledAlpha = LauncherOpacity.CARD_STATUS_CHIP,
-                    iconTint = LocalLauncherColors.current.success,
+                    opaqueIcon = true,
                     onClick = {},
                 )
 
@@ -238,7 +237,7 @@ fun InstalledGameCard(
         fillStackedActions = true,
         modifier = modifier,
         text = {
-            CardTitle(state.title)
+            GameTitle(state.title)
             FlowRow(
                 modifier = Modifier.padding(top = LauncherSpacing.Small),
                 itemVerticalAlignment = Alignment.CenterVertically,
@@ -411,13 +410,13 @@ internal fun GameLogo(
 }
 
 @Composable
-private fun CardTitle(title: String) {
+internal fun GameTitle(title: String) {
     Text(
         text = title,
         color = LocalLauncherColors.current.secondaryFg,
         fontSize = LauncherType.HeadingSize,
         fontWeight = LauncherType.Bold,
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis,
     )
 }
@@ -566,7 +565,7 @@ private fun CardButton(
     tooltip: String? = null,
     enabled: Boolean = true,
     disabledAlpha: Float = LauncherOpacity.CARD_BUTTON_DISABLED,
-    iconTint: Color = LocalLauncherColors.current.secondaryFg,
+    opaqueIcon: Boolean = false,
     iconSize: Dp = LauncherSizes.CardButtonIcon,
     minWidth: Dp = if (label != null) LauncherSizes.CardButtonMinWidth else LauncherSizes.CardIconButtonSize,
 ) {
@@ -596,17 +595,21 @@ private fun CardButton(
         style == CardButtonStyle.SUCCESS && hovered -> LauncherOpacity.SUCCESS_HOVER
         else -> 1f
     }
+    val layerAlpha = if (opaqueIcon) 1f else alpha
+    val partAlpha = if (opaqueIcon) alpha else 1f
     val labelled = label != null
     val description = label ?: tooltip
-    val secondary = style == CardButtonStyle.SECONDARY
-    val fontWeight = if (secondary) LauncherType.Normal else LauncherType.SemiBold
+    val fontWeight = if (style == CardButtonStyle.SECONDARY) LauncherType.Normal else LauncherType.SemiBold
     val button: @Composable () -> Unit = {
         Box(
             Modifier
-                .graphicsLayer { this.alpha = alpha }
+                .graphicsLayer { this.alpha = layerAlpha }
                 .height(LauncherSizes.CardButtonHeight)
                 .defaultMinSize(minWidth = minWidth)
-                .background(background, RoundedCornerShape(LauncherRadii.Small))
+                .background(
+                    background.copy(alpha = background.alpha * partAlpha),
+                    RoundedCornerShape(LauncherRadii.Small),
+                )
                 .semantics { description?.let { contentDescription = it } }
                 .clickable(
                     interactionSource = interactions,
@@ -615,29 +618,21 @@ private fun CardButton(
                     role = Role.Button,
                     onClick = onClick,
                 )
-                .then(
-                    if (secondary &&
-                        labelled
-                    ) {
-                        Modifier.padding(horizontal = LauncherSpacing.MediumLarge)
-                    } else {
-                        Modifier
-                    },
-                ),
+                .then(if (labelled) Modifier.padding(horizontal = LauncherSpacing.MediumLarge) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     painter = painterResource(icon),
                     contentDescription = null,
-                    tint = iconTint,
+                    tint = colors.secondaryFg,
                     modifier = Modifier.size(iconSize),
                 )
                 if (labelled) {
                     Spacer(Modifier.width(LauncherSpacing.Small))
                     Text(
                         text = label.orEmpty(),
-                        color = colors.secondaryFg,
+                        color = colors.secondaryFg.copy(alpha = partAlpha),
                         fontSize = LauncherType.CaptionSize,
                         fontWeight = fontWeight,
                         maxLines = 1,

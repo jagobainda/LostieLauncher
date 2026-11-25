@@ -58,6 +58,7 @@ internal object PorStrings : Strings {
     override val homeNoContent = "Sem conteúdo"
     override val downloadDialogTitle = "Confirmar download"
     override val downloadDialogPath = "Caminho de download"
+    override val downloadDialogPathHint = "Toque e segure para ver o caminho completo"
     override val downloadDialogGameSize = "Tamanho"
     override val downloadDialogFreeSpace = "Espaço livre"
     override val downloadDialogViewPage = "Ver página do jogo"

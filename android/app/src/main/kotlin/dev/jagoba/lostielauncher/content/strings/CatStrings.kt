@@ -58,6 +58,7 @@ internal object CatStrings : Strings {
     override val homeNoContent = "Sense contingut"
     override val downloadDialogTitle = "Confirmar descàrrega"
     override val downloadDialogPath = "Ruta de descàrrega"
+    override val downloadDialogPathHint = "Mantén premut per veure la ruta completa"
     override val downloadDialogGameSize = "Mida"
     override val downloadDialogFreeSpace = "Espai lliure"
     override val downloadDialogViewPage = "Veure pàgina del joc"

@@ -58,6 +58,7 @@ internal object EusStrings : Strings {
     override val homeNoContent = "Eduki gabe"
     override val downloadDialogTitle = "Deskarga berretsi"
     override val downloadDialogPath = "Deskarga bidea"
+    override val downloadDialogPathHint = "Luze sakatu bide osoa ikusteko"
     override val downloadDialogGameSize = "Tamaina"
     override val downloadDialogFreeSpace = "Leku librea"
     override val downloadDialogViewPage = "Jokoaren orria ikusi"

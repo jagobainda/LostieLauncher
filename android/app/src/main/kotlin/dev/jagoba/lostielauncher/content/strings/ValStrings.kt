@@ -58,6 +58,7 @@ internal object ValStrings : Strings {
     override val homeNoContent = "Sense contingut"
     override val downloadDialogTitle = "Confirmar descàrrega"
     override val downloadDialogPath = "Ruta de descàrrega"
+    override val downloadDialogPathHint = "Mantín premut per a veure la ruta completa"
     override val downloadDialogGameSize = "Grandària"
     override val downloadDialogFreeSpace = "Espai lliure"
     override val downloadDialogViewPage = "Veure pàgina del joc"

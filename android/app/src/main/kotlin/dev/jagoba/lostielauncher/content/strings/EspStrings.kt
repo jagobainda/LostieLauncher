@@ -58,6 +58,7 @@ internal object EspStrings : Strings {
     override val homeNoContent = "Sin contenido"
     override val downloadDialogTitle = "Confirmar descarga"
     override val downloadDialogPath = "Ruta de descarga"
+    override val downloadDialogPathHint = "Mantén pulsado para ver la ruta completa"
     override val downloadDialogGameSize = "Tamaño"
     override val downloadDialogFreeSpace = "Espacio libre"
     override val downloadDialogViewPage = "Ver página del juego"
