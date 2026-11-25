@@ -99,6 +99,7 @@ data class InstalledGameCardState(
     val canUpdate: Boolean = true,
     val canSwitchSpecialVersion: Boolean = true,
     val canUninstall: Boolean = true,
+    val isUpdating: Boolean = false,
     val isUninstalling: Boolean = false,
 )
 
@@ -275,7 +276,9 @@ fun InstalledGameCard(
                 }
             }
         },
-        status = {},
+        status = {
+            if (state.isUpdating) IndeterminateProgress()
+        },
         actions = {
             CardActions(
                 labelled = {
@@ -435,6 +438,16 @@ private fun MetaItem(@DrawableRes icon: Int, text: String, modifier: Modifier = 
 }
 
 @Composable
+private fun IndeterminateProgress() {
+    val colors = LocalLauncherColors.current
+    LinearProgressIndicator(
+        modifier = Modifier.fillMaxWidth().height(LauncherSizes.ProgressBarHeight),
+        color = colors.primaryFg,
+        trackColor = colors.overlayLight,
+    )
+}
+
+@Composable
 private fun DownloadProgress(state: LibraryGameCardState) {
     val colors = LocalLauncherColors.current
     val strings = LocalStrings.current
@@ -465,11 +478,7 @@ private fun DownloadProgress(state: LibraryGameCardState) {
     }
     Column {
         if (indeterminate) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().height(LauncherSizes.ProgressBarHeight),
-                color = colors.primaryFg,
-                trackColor = colors.overlayLight,
-            )
+            IndeterminateProgress()
         } else {
             Box(
                 Modifier

@@ -96,6 +96,7 @@ class CardStateMappingTest {
         card.canPlay shouldBe false
         card.canSwitchSpecialVersion shouldBe false
         card.canUninstall shouldBe true
+        card.isUpdating shouldBe true
     }
 
     private fun libraryRow(status: DownloadStatus?, cardStatus: LibraryCardStatus) = LibraryGameUiState(

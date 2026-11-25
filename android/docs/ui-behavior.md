@@ -23,6 +23,10 @@ Social labels are brand names; Twitch live status is a separate state signal.
 
 Game cards reserve action width before choosing side-by-side or stacked layout.
 The status/footer and skeleton reserves reduce movement when content changes.
+During an active update, Android's My Games card shows an indeterminate progress
+indicator; desktop only disables the affected actions. In the stacked layout,
+the indicator occupies its own full-width row above the actions, so the card
+grows while the update is active.
 Install/uninstall takeover animations respond to transitions, including a
 departing-game row so removal does not skip the visible exit feedback.
 
