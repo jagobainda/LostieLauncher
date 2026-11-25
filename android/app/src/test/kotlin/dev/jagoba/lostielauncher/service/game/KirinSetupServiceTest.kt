@@ -53,7 +53,9 @@ class KirinSetupServiceTest {
     private val responses = ConcurrentHashMap<String, MockResponse>()
     private val dispatcher = StandardTestDispatcher()
     private val transfer = mockk<DownloadTransfer>()
-    private val packages = mockk<ApkPackages>(relaxed = true)
+    private val packages = mockk<ApkPackages>(relaxed = true) {
+        every { canRequestPackageInstalls() } returns true
+    }
     private val logger = mockk<Logger>(relaxed = true)
     private val minimumVersionStore = InMemoryMinimumVersionStore()
     private val clock = AdjustableClock(Instant.parse("2026-11-25T00:00:00Z"))
@@ -518,7 +520,7 @@ class KirinSetupServiceTest {
         sut.install()
 
         observed shouldBe listOf(ApkDownloadState.Downloading(50))
-        sut.download.value shouldBe ApkDownloadState.Available
+        sut.download.value shouldBe ApkDownloadState.Installing
         coVerify(exactly = 1) {
             transfer.download(
                 DownloadTransferRequest(
@@ -531,6 +533,72 @@ class KirinSetupServiceTest {
             )
         }
         verify(exactly = 1) { packages.install(installer) }
+    }
+
+    @Test
+    fun `requests unknown-sources permission before downloading Kirin and continues once granted`() =
+        runTest(dispatcher) {
+            val sut = offeringRelease()
+            every { packages.canRequestPackageInstalls() } returns false
+            downloadSucceeds()
+            every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            coVerify(exactly = 0) { transfer.download(any(), any()) }
+
+            sut.dismissPermissionRequest()
+            sut.download.value shouldBe ApkDownloadState.Available
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            every { packages.canRequestPackageInstalls() } returns true
+            sut.onInstallPermissionResult()
+
+            sut.download.value shouldBe ApkDownloadState.Installing
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+            verify(exactly = 1) { packages.install(installer) }
+        }
+
+    @Test
+    fun `models cancelled Kirin installation, retries from cache and clears the offer once installed`() =
+        runTest(dispatcher) {
+            val sut = offeringRelease()
+            downloadSucceeds()
+            every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.Installing
+
+            sut.refresh()
+            sut.status.value shouldBe KirinStatus.UpdateRecommended("0.4.0", "0.4.2")
+            sut.download.value shouldBe ApkDownloadState.Cancelled
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.Installing
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+            verify(exactly = 2) { packages.install(installer) }
+
+            every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+            sut.refresh()
+
+            sut.status.value shouldBe KirinStatus.Ready
+            sut.download.value shouldBe ApkDownloadState.Unavailable
+            installer.parentFile?.exists() shouldBe false
+        }
+
+    @Test
+    fun `dismissing a cancelled Kirin installation returns to available`() = runTest(dispatcher) {
+        val sut = offeringRelease()
+        downloadSucceeds()
+        every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install()
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Cancelled
+
+        sut.dismissInstallCancelled()
+        sut.download.value shouldBe ApkDownloadState.Available
     }
 
     private suspend fun offeringRelease(): DefaultKirinSetupService {

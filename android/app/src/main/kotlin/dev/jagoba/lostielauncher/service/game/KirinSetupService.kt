@@ -40,6 +40,12 @@ interface KirinSetupService {
 
     suspend fun install()
 
+    suspend fun onInstallPermissionResult()
+
+    fun dismissPermissionRequest()
+
+    fun dismissInstallCancelled()
+
     fun acknowledgeFailure()
 }
 
@@ -102,6 +108,7 @@ internal class DefaultKirinSetupService @Inject constructor(
     private val minimumVersion get() = requirements?.minimumVersion ?: fallbackMinimumVersion
 
     override suspend fun refresh() {
+        val wasInstalling = installer.download.value == ApkDownloadState.Installing
         refreshGate.withLock {
             if (!persistedMinimumLoaded) {
                 persistedMinimumVersion = minimumVersionStore.read()
@@ -129,12 +136,28 @@ internal class DefaultKirinSetupService @Inject constructor(
                 ?.takeIf { ApkVersionPolicy.isOffered(it, installedVersion, minimumVersion) }
                 ?.let { ApkDownloadState.IncompatibleAbi }
                 ?: ApkDownloadState.Unavailable
-            installer.settle(installedVersion, minimumVersion, unavailableState)
+            installer.settle(installedVersion, minimumVersion, unavailableState, settleInstalling = wasInstalling)
         }
     }
 
     override suspend fun install() {
         if (status.value != KirinStatus.UntrustedSigner) installer.install()
+    }
+
+    override suspend fun onInstallPermissionResult() {
+        if (status.value != KirinStatus.UntrustedSigner) {
+            installer.onPermissionResult()
+        } else {
+            installer.dismissPermissionRequest()
+        }
+    }
+
+    override fun dismissPermissionRequest() {
+        installer.dismissPermissionRequest()
+    }
+
+    override fun dismissInstallCancelled() {
+        installer.dismissCancelled()
     }
 
     override suspend fun isOfficialKirinInstalled(): Boolean = isOfficial(installer.installedPackage())

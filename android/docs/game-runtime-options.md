@@ -124,10 +124,19 @@ uninstall that copy in Android settings before installing the official release.
 The launcher checks the installed signer again before handing a game to Kirin.
 A recommended update is nonblocking. Kirin and launcher updates use separate instances of the
 shared APK installer engine, followed by Android's system installation UI.
+Before downloading or opening the installer, the engine checks
+`PackageManager.canRequestPackageInstalls()`; if missing, the UI explains the
+requirement and opens Android's unknown-sources settings, resuming the
+installation automatically when permission is granted.
 The engine checks the package name, version and current signing certificates of
-both cached and newly downloaded APKs. Kirin must match its single pinned
-certificate. A launcher update must match the complete signer set of the
-running launcher. An APK with missing signing information is rejected.
+both cached and newly downloaded APKs, then targets the resolved system package
+installer explicitly with `setPackage` (failing closed if none resolves).
+Kirin must match its single pinned certificate. A launcher update must match the
+complete signer set of the running launcher. An APK with missing signing
+information is rejected. Opening the installer is not treated as success: when
+the activity resumes, the engine rechecks the installed version so cancelled or
+incomplete installations stay visible and retryable from the cached APK while
+completed installations clear the offer and delete the cached APK.
 
 ## Remaining limitations
 

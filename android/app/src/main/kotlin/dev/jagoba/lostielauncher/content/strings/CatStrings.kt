@@ -132,4 +132,9 @@ internal object CatStrings : Strings {
     override val notificationPermissionTitle = "Notificacions"
     override val notificationPermissionMessage = "El launcher pot mostrar notificacions amb el progrés de les descàrregues i avisar-te quan un joc acabi d'instal·lar-se. Si no les actives, les descàrregues continuaran funcionant en segon pla. Vols permetre-les ara?"
     override val notificationPermissionSettingsMessage = "Les notificacions estan desactivades per al launcher. Pots activar-les a la configuració del sistema per veure el progrés de les descàrregues. Vols obrir la Configuració ara?"
+    override val installPermissionTitle = "Instal·lar aplicacions desconegudes"
+    override val installPermissionMessage = "Per instal·lar Kirin i les actualitzacions del launcher, Android necessita permís per instal·lar aplicacions des d'aquesta font. Vols obrir la Configuració ara?"
+    override val apkInstallCancelledTitle = "Instal·lació no completada"
+    override val apkInstallCancelledMessage = "La instal·lació s'ha cancel·lat o no s'ha pogut completar. Vols tornar-ho a provar?"
+    override val apkInstallCancelledNotice = "La instal·lació s'ha cancel·lat o no s'ha pogut completar."
 }

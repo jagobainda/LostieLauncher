@@ -11,7 +11,13 @@ sealed interface ApkDownloadState {
 
     data object Available : ApkDownloadState
 
+    data object PermissionRequired : ApkDownloadState
+
     data class Downloading(val percent: Int) : ApkDownloadState
+
+    data object Installing : ApkDownloadState
+
+    data object Cancelled : ApkDownloadState
 
     data object Failed : ApkDownloadState
 }

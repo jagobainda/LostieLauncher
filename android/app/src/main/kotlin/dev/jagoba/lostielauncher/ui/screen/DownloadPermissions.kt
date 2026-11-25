@@ -71,6 +71,15 @@ internal fun rememberStorageAccessRequest(onResult: (permanentlyDenied: Boolean)
     )
 }
 
+@Composable
+internal fun rememberUnknownSourcesPermissionRequest(onResult: () -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        onResult()
+    }
+    return { settingsLauncher.launchFirst(context.unknownAppSourcesIntents(), onResult) }
+}
+
 private fun Activity?.isPermanentlyDenied(permission: String, granted: Boolean): Boolean =
     !granted && this != null && !ActivityCompat.shouldShowRequestPermissionRationale(this, permission)
 
@@ -102,4 +111,9 @@ private fun Context.appDetailsSettingsIntents(): Sequence<Intent> = sequenceOf(
 
 private fun Context.appNotificationSettingsIntents(): Sequence<Intent> = sequenceOf(
     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+) + appDetailsSettingsIntents()
+
+private fun Context.unknownAppSourcesIntents(): Sequence<Intent> = sequenceOf(
+    Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.fromParts("package", packageName, null)),
+    Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
 ) + appDetailsSettingsIntents()

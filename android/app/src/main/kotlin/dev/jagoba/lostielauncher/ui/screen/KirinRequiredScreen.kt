@@ -49,6 +49,7 @@ fun KirinRequirement(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val strings = LocalStrings.current
+    val openInstallSettings = rememberUnknownSourcesPermissionRequest(viewModel::onInstallPermissionResult)
     when {
         state.status == null -> Box(modifier.fillMaxSize().background(LocalLauncherColors.current.primaryBg))
 
@@ -61,8 +62,8 @@ fun KirinRequirement(
 
         else -> content()
     }
-    if (state.download == ApkDownloadState.Failed) {
-        LauncherMessageBox(
+    when {
+        state.download == ApkDownloadState.Failed -> LauncherMessageBox(
             spec = MessageBoxSpec(
                 strings.downloadErrorTitle,
                 strings.downloadErrorMessage,
@@ -70,6 +71,18 @@ fun KirinRequirement(
             ),
             onConfirm = viewModel::dismissDownloadFailure,
             onDismiss = viewModel::dismissDownloadFailure,
+        )
+
+        state.download == ApkDownloadState.PermissionRequired -> LauncherMessageBox(
+            spec = installPermissionMessageBox(strings),
+            onConfirm = openInstallSettings,
+            onDismiss = viewModel::dismissPermissionRequest,
+        )
+
+        !state.isBlocking && state.download == ApkDownloadState.Cancelled -> LauncherMessageBox(
+            spec = installCancelledMessageBox(strings),
+            onConfirm = viewModel::install,
+            onDismiss = viewModel::dismissInstallCancelled,
         )
     }
 }
@@ -113,15 +126,39 @@ private fun KirinRequiredScreen(
 
                         ApkDownloadState.IncompatibleAbi -> StatusNotice(strings.kirinIncompatibleDevice)
 
-                        ApkDownloadState.Available, ApkDownloadState.Failed -> DialogButton(
+                        ApkDownloadState.Available,
+                        ApkDownloadState.PermissionRequired,
+                        ApkDownloadState.Failed,
+                        -> DialogButton(
                             label = if (status is KirinStatus.Outdated) strings.btnUpdate else strings.btnDownload,
                             style = DialogButtonStyle.ACCENT,
                             onClick = onInstall,
                             horizontalPadding = LauncherSpacing.Screen,
                         )
 
+                        ApkDownloadState.Cancelled -> {
+                            StatusNotice(
+                                strings.apkInstallCancelledNotice,
+                                Modifier.padding(bottom = LauncherSpacing.Medium),
+                            )
+                            DialogButton(
+                                label = strings.btnRetry,
+                                style = DialogButtonStyle.ACCENT,
+                                onClick = onInstall,
+                                horizontalPadding = LauncherSpacing.Screen,
+                            )
+                        }
+
                         is ApkDownloadState.Downloading -> DialogButton(
                             label = strings.downloadingLabel(download.percent),
+                            style = DialogButtonStyle.ACCENT,
+                            onClick = {},
+                            horizontalPadding = LauncherSpacing.Screen,
+                            enabled = false,
+                        )
+
+                        ApkDownloadState.Installing -> DialogButton(
+                            label = strings.statusInstallationPending,
                             style = DialogButtonStyle.ACCENT,
                             onClick = {},
                             horizontalPadding = LauncherSpacing.Screen,

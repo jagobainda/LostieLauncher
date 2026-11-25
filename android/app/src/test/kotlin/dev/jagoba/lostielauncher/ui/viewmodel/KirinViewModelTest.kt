@@ -69,16 +69,23 @@ class KirinViewModelTest {
     }
 
     @Test
-    fun `installs and acknowledges failures through the service`() = runTest(dispatcher) {
-        val sut = createSut()
+    fun `installs, handles install permission and cancellation, and acknowledges failures through the service`() =
+        runTest(dispatcher) {
+            val sut = createSut()
 
-        sut.install()
-        sut.dismissDownloadFailure()
-        runCurrent()
+            sut.install()
+            sut.onInstallPermissionResult()
+            sut.dismissPermissionRequest()
+            sut.dismissInstallCancelled()
+            sut.dismissDownloadFailure()
+            runCurrent()
 
-        coVerify(exactly = 1) { kirin.install() }
-        verify(exactly = 1) { kirin.acknowledgeFailure() }
-    }
+            coVerify(exactly = 1) { kirin.install() }
+            coVerify(exactly = 1) { kirin.onInstallPermissionResult() }
+            verify(exactly = 1) { kirin.dismissPermissionRequest() }
+            verify(exactly = 1) { kirin.dismissInstallCancelled() }
+            verify(exactly = 1) { kirin.acknowledgeFailure() }
+        }
 
     @Test
     fun `opens a link from the thanks to Kirin's creator`() = runTest(dispatcher) {

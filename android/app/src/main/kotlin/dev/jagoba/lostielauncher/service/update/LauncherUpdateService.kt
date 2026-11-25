@@ -31,6 +31,10 @@ interface LauncherUpdateService {
 
     suspend fun install()
 
+    suspend fun onInstallPermissionResult()
+
+    fun dismissPermissionRequest()
+
     fun decline()
 
     fun acknowledgeFailure()
@@ -58,15 +62,15 @@ internal class DefaultLauncherUpdateService @Inject constructor(
     override val download: StateFlow<ApkDownloadState> = installer.download
 
     @Volatile
-    private var offered: String? = null
-
-    @Volatile
     private var answered: String? = null
 
+    private val currentOffered: String? get() = installer.offered?.versionName
+
     override suspend fun refresh() {
+        val wasInstalling = installer.download.value == ApkDownloadState.Installing
         gate.withLock {
             val read = installer.release == null && read(force = false)
-            val version = evaluate()
+            val version = evaluate(settleInstalling = wasInstalling)
             if (read) logOutcome(version)
         }
     }
@@ -74,25 +78,37 @@ internal class DefaultLauncherUpdateService @Inject constructor(
     override suspend fun check(): LauncherUpdateCheckResult = gate.withLock {
         if (!read(force = true)) return@withLock LauncherUpdateCheckResult.Failed
         answered = null
-        val version = evaluate()
+        installer.dismissCancelled()
+        val version = evaluate(settleInstalling = true)
         logOutcome(version)
         if (version == null) LauncherUpdateCheckResult.UpToDate else LauncherUpdateCheckResult.Available(version)
     }
 
     override suspend fun install() {
-        val version = offered ?: return
-        if (installer.install()) answer(version)
+        if (currentOffered == null) return
+        installer.install()
+    }
+
+    override suspend fun onInstallPermissionResult() {
+        if (currentOffered == null) return
+        installer.onPermissionResult()
+    }
+
+    override fun dismissPermissionRequest() {
+        installer.dismissPermissionRequest()
+        currentOffered?.let(::answer)
     }
 
     override fun decline() {
-        val version = offered ?: return
+        val version = currentOffered ?: return
         logger.info("Update to $version declined by user.")
+        installer.dismissCancelled()
         answer(version)
     }
 
     override fun acknowledgeFailure() {
         installer.acknowledgeFailure()
-        offered?.let(::answer)
+        currentOffered?.let(::answer)
     }
 
     private suspend fun read(force: Boolean): Boolean {
@@ -100,10 +116,13 @@ internal class DefaultLauncherUpdateService @Inject constructor(
         return installer.loadRelease(options.feedUrl, force) != null
     }
 
-    private suspend fun evaluate(): String? {
-        val version = installer.settle(installer.installedPackage()?.version, null)?.versionName
+    private suspend fun evaluate(settleInstalling: Boolean): String? {
+        val version = installer.settle(
+            installer.installedPackage()?.version,
+            null,
+            settleInstalling = settleInstalling,
+        )?.versionName
         if (version == null) installer.deleteInstaller()
-        offered = version
         publish()
         return version
     }
@@ -114,7 +133,7 @@ internal class DefaultLauncherUpdateService @Inject constructor(
     }
 
     private fun publish() {
-        mutableOfferedVersion.value = offered?.takeIf { it != answered }
+        mutableOfferedVersion.value = currentOffered?.takeIf { it != answered }
     }
 
     private fun logOutcome(version: String?) {

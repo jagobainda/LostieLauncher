@@ -95,6 +95,8 @@ fun LauncherShell(
         state = state,
         onAccept = viewModel::acceptLauncherUpdate,
         onDecline = viewModel::declineLauncherUpdate,
+        onInstallPermissionResult = viewModel::onLauncherInstallPermissionResult,
+        onDismissPermission = viewModel::dismissLauncherInstallPermission,
         onDismissFailure = viewModel::dismissLauncherUpdateFailure,
     )
     if (state.isWelcomeVisible) {
@@ -150,7 +152,11 @@ fun LauncherShellLayout(
     }
     val kirinUpdate = state.kirinUpdate?.let { update ->
         ShellPillContent(
-            label = update.downloadPercent?.let(strings::downloadingLabel) ?: strings.kirinUpdateRecommended,
+            label = when {
+                update.downloadPercent != null -> strings.downloadingLabel(update.downloadPercent)
+                update.isInstalling -> strings.statusInstallationPending
+                else -> strings.kirinUpdateRecommended
+            },
             tooltip = strings.kirinUpdateRecommendedMessage.withArgs(
                 update.installedVersion,
                 update.latestVersion,

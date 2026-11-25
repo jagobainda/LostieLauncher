@@ -132,4 +132,9 @@ internal object EngStrings : Strings {
     override val notificationPermissionTitle = "Notifications"
     override val notificationPermissionMessage = "The launcher can show notifications with download progress and let you know when a game finishes installing. If you don't enable them, downloads will still work in the background. Do you want to allow them now?"
     override val notificationPermissionSettingsMessage = "Notifications are turned off for the launcher. You can enable them in system settings to see download progress. Do you want to open Settings now?"
+    override val installPermissionTitle = "Install unknown apps"
+    override val installPermissionMessage = "To install Kirin and launcher updates, Android needs permission to install apps from this source. Do you want to open Settings now?"
+    override val apkInstallCancelledTitle = "Installation not completed"
+    override val apkInstallCancelledMessage = "The installation was cancelled or could not be completed. Do you want to try again?"
+    override val apkInstallCancelledNotice = "The installation was cancelled or could not be completed."
 }

@@ -132,4 +132,9 @@ internal object GalStrings : Strings {
     override val notificationPermissionTitle = "Notificacións"
     override val notificationPermissionMessage = "O launcher pode mostrar notificacións co progreso das descargas e avisarte cando un xogo remate de instalarse. Se non as activas, as descargas seguirán funcionando en segundo plano. Queres permitilas agora?"
     override val notificationPermissionSettingsMessage = "As notificacións están desactivadas para o launcher. Podes activalas nos axustes do sistema para ver o progreso das descargas. Queres abrir Axustes agora?"
+    override val installPermissionTitle = "Instalar aplicacións descoñecidas"
+    override val installPermissionMessage = "Para instalar Kirin e as actualizacións do launcher, Android necesita permiso para instalar aplicacións desde esta fonte. Queres abrir Axustes agora?"
+    override val apkInstallCancelledTitle = "Instalación non completada"
+    override val apkInstallCancelledMessage = "A instalación cancelouse ou non se puido completar. Queres tentalo de novo?"
+    override val apkInstallCancelledNotice = "A instalación cancelouse ou non se puido completar."
 }

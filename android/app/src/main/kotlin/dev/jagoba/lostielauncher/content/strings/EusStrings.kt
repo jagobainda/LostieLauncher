@@ -132,4 +132,9 @@ internal object EusStrings : Strings {
     override val notificationPermissionTitle = "Jakinarazpenak"
     override val notificationPermissionMessage = "Launcher-ak deskargen aurrerapenaren jakinarazpenak erakuts ditzake eta joko bat instalatzen amaitzean abisatu. Aktibatzen ez badituzu, deskargek atzeko planoan funtzionatzen jarraituko dute. Orain baimendu nahi dituzu?"
     override val notificationPermissionSettingsMessage = "Jakinarazpenak desaktibatuta daude launcher-erako. Sistemaren ezarpenetan aktiba ditzakezu deskargen aurrerapena ikusteko. Ezarpenak orain ireki nahi dituzu?"
+    override val installPermissionTitle = "Aplikazio ezezagunak instalatzea"
+    override val installPermissionMessage = "Kirin eta launcher-aren eguneraketak instalatzeko, Android-ek iturri honetatik aplikazioak instalatzeko baimena behar du. Ezarpenak orain ireki nahi dituzu?"
+    override val apkInstallCancelledTitle = "Instalazioa ez da osatu"
+    override val apkInstallCancelledMessage = "Instalazioa bertan behera utzi da edo ezin izan da osatu. Berriro saiatu nahi duzu?"
+    override val apkInstallCancelledNotice = "Instalazioa bertan behera utzi da edo ezin izan da osatu."
 }

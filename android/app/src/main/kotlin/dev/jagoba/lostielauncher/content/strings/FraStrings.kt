@@ -132,4 +132,9 @@ internal object FraStrings : Strings {
     override val notificationPermissionTitle = "Notifications"
     override val notificationPermissionMessage = "Le launcher peut afficher des notifications sur la progression des téléchargements et vous avertir lorsqu'un jeu a fini de s'installer. Si vous ne les activez pas, les téléchargements continueront en arrière-plan. Voulez-vous les autoriser maintenant ?"
     override val notificationPermissionSettingsMessage = "Les notifications sont désactivées pour le launcher. Vous pouvez les activer dans les paramètres du système pour voir la progression des téléchargements. Voulez-vous ouvrir les Paramètres maintenant ?"
+    override val installPermissionTitle = "Installer des applications inconnues"
+    override val installPermissionMessage = "Pour installer Kirin et les mises à jour du launcher, Android a besoin de l'autorisation d'installer des applications depuis cette source. Voulez-vous ouvrir les Paramètres maintenant ?"
+    override val apkInstallCancelledTitle = "Installation non terminée"
+    override val apkInstallCancelledMessage = "L'installation a été annulée ou n'a pas pu se terminer. Voulez-vous réessayer ?"
+    override val apkInstallCancelledNotice = "L'installation a été annulée ou n'a pas pu se terminer."
 }
