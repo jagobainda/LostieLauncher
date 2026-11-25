@@ -7,6 +7,8 @@ sealed interface ApkDownloadState {
 
     data object Unavailable : ApkDownloadState
 
+    data object IncompatibleAbi : ApkDownloadState
+
     data object Available : ApkDownloadState
 
     data class Downloading(val percent: Int) : ApkDownloadState

@@ -75,7 +75,9 @@ class MainViewModel @Inject constructor(
 ) : ViewModel() {
     private val welcome = MutableStateFlow(false)
     private val kirinUpdate = combine(kirin.status, kirin.download) { status, download ->
-        val offered = download != ApkDownloadState.Checking && download != ApkDownloadState.Unavailable
+        val offered = download == ApkDownloadState.Available ||
+            download is ApkDownloadState.Downloading ||
+            download == ApkDownloadState.Failed
         (status as? KirinStatus.UpdateRecommended)?.takeIf { offered }?.let {
             KirinUpdateUiState(
                 it.installedVersion,

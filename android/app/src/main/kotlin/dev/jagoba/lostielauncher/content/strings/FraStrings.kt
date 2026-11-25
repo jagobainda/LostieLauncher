@@ -117,6 +117,7 @@ internal object FraStrings : Strings {
     override val kirinMissingMessage = "Lostie Launcher ouvre les jeux avec Kirin, qui n'est pas installé sur cet appareil. Installez Kirin {0} ou une version ultérieure."
     override val kirinOutdatedMessage = "Vous avez Kirin {0}, mais Lostie Launcher a besoin de Kirin {1} ou d'une version ultérieure pour installer et ouvrir les jeux."
     override val kirinDownloadUnavailable = "La version requise de Kirin ne peut pas encore être téléchargée depuis le launcher."
+    override val kirinIncompatibleDevice = "Aucune version de Kirin n'est compatible avec l'architecture de cet appareil."
     override val kirinUpdateRecommended = "Mise à jour de Kirin recommandée"
     override val kirinUpdateRecommendedMessage = "Vous avez Kirin {0} et Kirin {1} est recommandé. Appuyez pour mettre à jour."
     override val kirinThanks = "Merci à Max pour son aide avec l'intégration et pour avoir créé Kirin, l'émulateur qui nous permet de jouer à ces jeux sur Android. Plus d'informations sur https://playkirin.com/"

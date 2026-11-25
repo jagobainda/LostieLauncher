@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.core.di
 
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import dagger.Binds
 import dagger.Module
@@ -12,7 +13,9 @@ import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.LocalLibraryOptions
 import dev.jagoba.lostielauncher.service.game.AndroidKirinShortcut
+import dev.jagoba.lostielauncher.service.game.DataStoreKirinMinimumVersionStore
 import dev.jagoba.lostielauncher.service.game.DefaultKirinSetupService
+import dev.jagoba.lostielauncher.service.game.KirinMinimumVersionStore
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.game.KirinShortcut
 import dev.jagoba.lostielauncher.service.library.FileLocalLibraryStore
@@ -20,6 +23,7 @@ import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import java.io.File
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -27,6 +31,10 @@ internal abstract class KirinBindingsModule {
     @Binds
     @Singleton
     internal abstract fun bindShortcut(impl: AndroidKirinShortcut): KirinShortcut
+
+    @Binds
+    @Singleton
+    internal abstract fun bindMinimumVersionStore(impl: DataStoreKirinMinimumVersionStore): KirinMinimumVersionStore
 
     @Binds
     @Singleton
@@ -67,6 +75,8 @@ internal object KirinModule {
         fallbackMinimumVersion = "0.4.0",
         installerFile = File(context.cacheDir, "apk/kirin/Kirin.apk"),
         signerSha256 = "a0033b292224df78a686a199eecf99bfbc45c2e0a23a311bfdeddbaad0cc20b2",
+        supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
+        feedRetryInterval = 5.minutes,
     )
 
     @Provides

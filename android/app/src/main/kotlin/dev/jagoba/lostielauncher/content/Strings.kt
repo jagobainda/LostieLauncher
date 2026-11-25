@@ -123,6 +123,7 @@ interface Strings {
     val kirinUntrustedSignerMessage: String
     val kirinOutdatedMessage: String
     val kirinDownloadUnavailable: String
+    val kirinIncompatibleDevice: String
     val kirinUpdateRecommended: String
     val kirinUpdateRecommendedMessage: String
     val kirinThanks: String

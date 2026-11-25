@@ -117,6 +117,7 @@ internal object EusStrings : Strings {
     override val kirinMissingMessage = "Lostie Launcher-ak Kirin-ekin irekitzen ditu jokoak, eta Kirin ez dago gailu honetan instalatuta. Instalatu Kirin {0} edo berriagoa."
     override val kirinOutdatedMessage = "Kirin {0} duzu, baina Lostie Launcher-ak Kirin {1} edo berriagoa behar du jokoak instalatu eta irekitzeko."
     override val kirinDownloadUnavailable = "Kirin-en beharrezko bertsioa ezin da oraindik launcher-etik deskargatu."
+    override val kirinIncompatibleDevice = "Ez dago gailu honen arkitekturarekin bateragarria den Kirin bertsiorik."
     override val kirinUpdateRecommended = "Kirin eguneratzea gomendatua"
     override val kirinUpdateRecommendedMessage = "Kirin {0} duzu eta Kirin {1} gomendatzen da. Sakatu eguneratzeko."
     override val kirinThanks = "Eskerrik asko Max-i integrazioan emandako laguntzagatik eta Kirin sortzeagatik, Android-en joko hauetara jolasteko aukera ematen digun emulatzailea. Informazio gehiago: https://playkirin.com/"
