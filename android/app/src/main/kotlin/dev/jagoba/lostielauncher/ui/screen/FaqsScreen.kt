@@ -48,7 +48,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jagoba.lostielauncher.R
@@ -151,8 +150,6 @@ private fun FaqsSearchBar(query: TextFieldState, modifier: Modifier = Modifier) 
                     strings.faqsSearchPlaceholder,
                     color = colors.secondaryFgDim,
                     fontSize = LauncherType.BodySize,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

@@ -6,10 +6,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -17,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.ui.LocalStrings
 import dev.jagoba.lostielauncher.ui.component.GameLogo
+import dev.jagoba.lostielauncher.ui.component.GameTitle
 import dev.jagoba.lostielauncher.ui.component.LauncherTooltip
 import dev.jagoba.lostielauncher.ui.theme.LauncherRadii
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
@@ -48,6 +55,7 @@ fun DownloadConfirmDialog(
 ) {
     val strings = LocalStrings.current
     val colors = LocalLauncherColors.current
+    var pathTruncated by remember(state.path) { mutableStateOf(false) }
     LauncherDialog(
         icon = R.drawable.ic_card_download,
         title = strings.downloadDialogTitle,
@@ -79,21 +87,15 @@ fun DownloadConfirmDialog(
                     placeholderSize = LauncherSizes.DownloadDialogLogoPlaceholder,
                 )
                 Column(Modifier.padding(start = LauncherSpacing.ExtraLarge)) {
-                    Text(
-                        text = state.title,
-                        color = colors.secondaryFg,
-                        fontSize = LauncherType.HeadingSize,
-                        fontWeight = LauncherType.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    GameTitle(state.title)
                     Text(
                         text = state.description.ifBlank { strings.downloadDialogNoDescription },
                         color = colors.secondaryFgDim,
                         fontSize = LauncherType.CaptionSize,
                         modifier = Modifier
                             .padding(top = LauncherSpacing.ExtraSmall)
-                            .heightIn(max = LauncherType.DownloadDescriptionMaxHeight),
+                            .heightIn(max = LauncherType.DownloadDescriptionMaxHeight)
+                            .verticalScroll(rememberScrollState()),
                     )
                     if (state.hasPage) {
                         DialogLinkButton(
@@ -119,10 +121,19 @@ fun DownloadConfirmDialog(
                     fontSize = LauncherType.CaptionSize,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { pathTruncated = it.hasVisualOverflow },
                     modifier = Modifier
                         .fillMaxWidth()
                         .inputSurface(colors, RoundedCornerShape(LauncherRadii.Small))
                         .padding(horizontal = LauncherSpacing.MediumLarge, vertical = LauncherSpacing.Medium),
+                )
+            }
+            if (pathTruncated) {
+                Text(
+                    text = strings.downloadDialogPathHint,
+                    color = colors.secondaryFgDim,
+                    fontSize = LauncherType.LabelSize,
+                    modifier = Modifier.padding(top = LauncherSpacing.ExtraSmall),
                 )
             }
             Row(Modifier.padding(top = LauncherSpacing.ExtraLarge), verticalAlignment = Alignment.CenterVertically) {

@@ -64,6 +64,7 @@ interface Strings {
     val homeNoContent: String
     val downloadDialogTitle: String
     val downloadDialogPath: String
+    val downloadDialogPathHint: String
     val downloadDialogGameSize: String
     val downloadDialogFreeSpace: String
     val downloadDialogViewPage: String

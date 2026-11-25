@@ -58,6 +58,7 @@ internal object FraStrings : Strings {
     override val homeNoContent = "Aucun contenu"
     override val downloadDialogTitle = "Confirmer le téléchargement"
     override val downloadDialogPath = "Chemin de téléchargement"
+    override val downloadDialogPathHint = "Appui long pour voir le chemin complet"
     override val downloadDialogGameSize = "Taille"
     override val downloadDialogFreeSpace = "Espace libre"
     override val downloadDialogViewPage = "Voir la page du jeu"

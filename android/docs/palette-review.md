@@ -29,6 +29,10 @@ constitute a new accessibility audit.
   changing the palette.
 - The port review accepted hover/pressed feedback and left palette changes for
   a deliberate design change across both applications.
+- The disabled «Downloaded» card button is an Android adaptation: its check uses
+  the label colour at full opacity instead of the dimmed success colour, which
+  computed at 1.06–1.34:1. Over the dimmed button it computes at 4.70:1
+  (Cefireon) to 9.73:1 (Zoroark); desktop keeps the green check.
 - `FixedColors` are explicit exceptions for semantic indicators and effects,
   not a reason to introduce arbitrary literal colors in components.
 

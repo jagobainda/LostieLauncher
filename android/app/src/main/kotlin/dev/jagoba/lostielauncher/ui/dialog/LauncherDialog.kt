@@ -21,13 +21,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
@@ -61,8 +61,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -199,7 +199,9 @@ internal fun LauncherDialog(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .height(if (compact) LauncherSizes.MinimumTouchTarget else LauncherSizes.DialogFooterHeight)
+                        .heightIn(
+                            min = if (compact) LauncherSizes.MinimumTouchTarget else LauncherSizes.DialogFooterHeight,
+                        )
                         .background(footerBackground),
                     horizontalArrangement = Arrangement.End,
                     content = footer,
@@ -219,7 +221,7 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
     Row(
         Modifier
             .fillMaxWidth()
-            .height(LauncherSizes.TitleBarHeight),
+            .heightIn(min = LauncherSizes.TitleBarHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.width(LauncherSpacing.Card))
@@ -234,10 +236,8 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
             color = colors.secondaryFg,
             fontSize = LauncherType.BodySize,
             fontWeight = LauncherType.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .padding(start = LauncherSpacing.Medium)
+                .padding(start = LauncherSpacing.Medium, top = LauncherSpacing.Small, bottom = LauncherSpacing.Small)
                 .weight(1f),
         )
         Box(
@@ -260,12 +260,12 @@ private fun DialogTitleBar(@DrawableRes icon: Int, title: String, onClose: () ->
 
 @Composable
 internal fun DialogFooterButtons(content: @Composable RowScope.() -> Unit) {
-    Row(
+    FlowRow(
         Modifier
-            .fillMaxSize()
-            .padding(start = LauncherSpacing.Screen, end = LauncherSpacing.Screen, top = LauncherSpacing.Small),
+            .fillMaxWidth()
+            .padding(horizontal = LauncherSpacing.Screen, vertical = LauncherSpacing.Small),
         horizontalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium, Alignment.End),
-        verticalAlignment = Alignment.Top,
+        verticalArrangement = Arrangement.spacedBy(LauncherSpacing.Medium),
         content = content,
     )
 }
@@ -276,7 +276,7 @@ internal fun DialogButton(
     style: DialogButtonStyle,
     onClick: () -> Unit,
     width: Dp = Dp.Unspecified,
-    horizontalPadding: Dp = 0.dp,
+    horizontalPadding: Dp = LauncherSpacing.MediumLarge,
     enabled: Boolean = true,
 ) {
     val colors = LocalLauncherColors.current
@@ -299,8 +299,8 @@ internal fun DialogButton(
     Box(
         Modifier
             .graphicsLayer { alpha = if (enabled) 1f else LauncherOpacity.CARD_BUTTON_DISABLED }
-            .width(width)
-            .height(LauncherSizes.DialogButtonHeight)
+            .widthIn(min = width)
+            .heightIn(min = LauncherSizes.DialogButtonHeight)
             .background(background, RoundedCornerShape(LauncherRadii.Small))
             .clickable(
                 interactionSource = interactions,
@@ -317,7 +317,7 @@ internal fun DialogButton(
             color = colors.secondaryFg,
             fontSize = LauncherType.BodySize,
             fontWeight = if (style == DialogButtonStyle.ACCENT) LauncherType.SemiBold else LauncherType.Normal,
-            maxLines = 1,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -579,25 +579,28 @@ internal fun DialogFieldLabel(
     trailing: String? = null,
 ) {
     val colors = LocalLauncherColors.current
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = colors.secondaryFgDim,
-            modifier = Modifier.size(iconSize),
-        )
-        Text(
-            text = text,
-            color = colors.secondaryFgDim,
-            fontSize = LauncherType.CaptionSize,
-            modifier = Modifier.padding(start = LauncherSpacing.Small),
-        )
+    FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = colors.secondaryFgDim,
+                modifier = Modifier.size(iconSize),
+            )
+            Text(
+                text = text,
+                color = colors.secondaryFgDim,
+                fontSize = LauncherType.CaptionSize,
+                modifier = Modifier.padding(start = LauncherSpacing.Small),
+            )
+        }
         if (trailing != null) {
             Text(
                 text = trailing,
                 color = colors.secondaryFg,
                 fontSize = LauncherType.CaptionSize,
                 fontWeight = LauncherType.SemiBold,
+                softWrap = false,
                 modifier = Modifier.padding(start = LauncherSpacing.ExtraSmall),
             )
         }

@@ -58,6 +58,7 @@ internal object GalStrings : Strings {
     override val homeNoContent = "Sen contido"
     override val downloadDialogTitle = "Confirmar descarga"
     override val downloadDialogPath = "Ruta de descarga"
+    override val downloadDialogPathHint = "Mantén premido para ver a ruta completa"
     override val downloadDialogGameSize = "Tamaño"
     override val downloadDialogFreeSpace = "Espazo libre"
     override val downloadDialogViewPage = "Ver páxina do xogo"

@@ -58,6 +58,7 @@ internal object EngStrings : Strings {
     override val homeNoContent = "No content"
     override val downloadDialogTitle = "Confirm download"
     override val downloadDialogPath = "Download path"
+    override val downloadDialogPathHint = "Long press to see the full path"
     override val downloadDialogGameSize = "Size"
     override val downloadDialogFreeSpace = "Free space"
     override val downloadDialogViewPage = "View game page"
