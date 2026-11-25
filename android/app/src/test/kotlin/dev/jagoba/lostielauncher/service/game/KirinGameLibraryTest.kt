@@ -33,8 +33,21 @@ class KirinGameLibraryTest {
     private val libraryFile get() = directory.resolve("Kirin/game-library.json").toFile()
     private val gameDirectory get() = directory.resolve("LostieLauncher/demo").toFile()
 
-    private fun createSut(ioDispatcher: CoroutineDispatcher = dispatcher) = KirinGameLibrary(
-        KirinOptions(directory.toFile(), libraryFile, "Game.exe", "auto", "", "", "", ""),
+    private fun createSut(
+        ioDispatcher: CoroutineDispatcher = dispatcher,
+        maxLibraryFileBytes: Long = KirinOptions.DEFAULT_MAX_LIBRARY_FILE_BYTES,
+    ) = KirinGameLibrary(
+        KirinOptions(
+            directory.toFile(),
+            libraryFile,
+            "Game.exe",
+            "auto",
+            "",
+            "",
+            "",
+            "",
+            maxLibraryFileBytes = maxLibraryFileBytes,
+        ),
         TestDispatcherProvider(ioDispatcher),
     )
 
@@ -140,5 +153,19 @@ class KirinGameLibraryTest {
         sut.unregister(gameDirectory)
 
         libraryFile.exists() shouldBe false
+    }
+
+    @Test
+    fun `rejects an oversized library file without modifying it`() = runTest(dispatcher) {
+        val oversized = "[" + " ".repeat(64) + "]"
+        libraryFile.parentFile?.mkdirs()
+        libraryFile.writeText(oversized)
+        val sut = createSut(maxLibraryFileBytes = 32)
+
+        shouldThrow<IOException> { sut.register("Demo", gameDirectory) }
+        shouldThrow<IOException> { sut.unregister(gameDirectory) }
+
+        libraryFile.readText() shouldBe oversized
+        File(libraryFile.parentFile, "${libraryFile.name}.tmp").exists() shouldBe false
     }
 }

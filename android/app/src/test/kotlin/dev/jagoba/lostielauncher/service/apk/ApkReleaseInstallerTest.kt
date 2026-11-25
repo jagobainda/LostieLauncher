@@ -56,10 +56,10 @@ class ApkReleaseInstallerTest {
         server.close()
     }
 
-    private fun createSut(): ApkReleaseInstaller {
+    private fun createSut(maxBytes: Long? = null): ApkReleaseInstaller {
         val dispatchers = TestDispatcherProvider(dispatcher)
         return ApkReleaseInstaller(
-            ApkTarget(PACKAGE, installer, "Target", "official"),
+            ApkTarget(PACKAGE, installer, "Target", "official", maxBytes),
             RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger),
             transfer,
             packages,
@@ -277,6 +277,24 @@ class ApkReleaseInstallerTest {
         sut.deleteInstaller()
 
         installer.parentFile?.exists() shouldBe false
+    }
+
+    @Test
+    fun `forwards maxBytes to the transfer and does not reuse an oversized cached APK`() = runTest(dispatcher) {
+        serveRelease("0.4.2")
+        val sut = createSut(maxBytes = 4).also {
+            it.loadRelease(feedUrl)
+            it.settle("0.4.0", null)
+        }
+        installer.parentFile?.mkdirs()
+        installer.writeText("oversized")
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+        downloadSucceeds()
+
+        sut.install() shouldBe true
+
+        coVerify(exactly = 1) { transfer.download(DownloadTransferRequest(APK_URL, installer.path, 4), any()) }
+        verify(exactly = 1) { packages.install(installer) }
     }
 
     private suspend fun offeringRelease(): ApkReleaseInstaller {

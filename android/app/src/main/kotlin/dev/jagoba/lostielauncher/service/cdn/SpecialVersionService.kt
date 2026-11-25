@@ -4,6 +4,8 @@ import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import dev.jagoba.lostielauncher.model.SpecialVersionOptions
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
+import dev.jagoba.lostielauncher.util.net.readBoundedText
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -45,13 +47,20 @@ internal class CdnSpecialVersionService @Inject constructor(
                     !response.isSuccessful -> SpecialVersionLookup.NetworkError
 
                     else -> {
-                        val config = SpecialVersionConfig.parse(response.body.string())
+                        val body = response.body.readBoundedText(
+                            options.maxConfigBytes,
+                            "Special version configuration",
+                        )
+                        val config = SpecialVersionConfig.parse(body)
                         if (config == null) SpecialVersionLookup.InvalidResponse else SpecialVersionLookup.Found(config)
                     }
                 }
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
+        } catch (error: ResponseTooLargeException) {
+            logger.error("Special version configuration exceeded the size limit.", error)
+            SpecialVersionLookup.InvalidResponse
         } catch (error: Exception) {
             logger.error("Special version configuration could not be loaded.", error)
             SpecialVersionLookup.NetworkError

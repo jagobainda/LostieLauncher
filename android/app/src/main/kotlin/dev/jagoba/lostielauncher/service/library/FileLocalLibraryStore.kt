@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.LocalLibraryOptions
 import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.util.file.AtomicFileWriter
+import dev.jagoba.lostielauncher.util.file.BoundedFiles
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.util.Locale
 import java.util.UUID
@@ -26,47 +27,38 @@ internal class FileLocalLibraryStore @Inject constructor(
 ) : LocalLibraryStore {
     private val gamesGate = Mutex()
 
-    override suspend fun getGames(): List<LocalGame> = withContext(dispatchers.io) {
+    override suspend fun getGames(): List<LocalGame> = guarded("Could not read the local game registry", emptyList()) {
+        deduplicateGames(readEntries().mapNotNull(::toLocalGame))
+    }
+
+    override suspend fun registerGame(game: LocalGame) = guarded("Could not register local game '${game.name}'", Unit) {
+        writeEntries(readEntries().filterNot { it.name.toNameKey() == game.name.toNameKey() } + game.toEntry())
+    }
+
+    override suspend fun removeGame(gameName: String) = guarded("Could not remove local game '$gameName'", Unit) {
+        if (options.registryFile.exists()) {
+            writeEntries(readEntries().filterNot { it.name.toNameKey() == gameName.toNameKey() })
+        }
+    }
+
+    private suspend fun <T> guarded(failure: String, fallback: T, block: () -> T): T = withContext(dispatchers.io) {
         gamesGate.withLock {
             try {
-                deduplicateGames(readEntries().mapNotNull(::toLocalGame))
+                block()
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Exception) {
-                logger.error("Could not read the local game registry", cause)
-                emptyList()
+                logger.error(failure, cause)
+                fallback
             }
         }
     }
 
-    override suspend fun registerGame(game: LocalGame) = withContext(dispatchers.io) {
-        gamesGate.withLock {
-            try {
-                writeEntries(readEntries().filterNot { it.name.toNameKey() == game.name.toNameKey() } + game.toEntry())
-            } catch (cause: CancellationException) {
-                throw cause
-            } catch (cause: Exception) {
-                logger.error("Could not register local game '${game.name}'", cause)
-            }
-        }
+    private fun readEntries(): List<LocalGameEntry> = if (options.registryFile.exists()) {
+        json.decodeFromString(BoundedFiles.readText(options.registryFile, options.maxRegistryBytes))
+    } else {
+        emptyList()
     }
-
-    override suspend fun removeGame(gameName: String) = withContext(dispatchers.io) {
-        gamesGate.withLock {
-            try {
-                if (options.registryFile.exists()) {
-                    writeEntries(readEntries().filterNot { it.name.toNameKey() == gameName.toNameKey() })
-                }
-            } catch (cause: CancellationException) {
-                throw cause
-            } catch (cause: Exception) {
-                logger.error("Could not remove local game '$gameName'", cause)
-            }
-        }
-    }
-
-    private fun readEntries(): List<LocalGameEntry> =
-        if (options.registryFile.exists()) json.decodeFromString(options.registryFile.readText()) else emptyList()
 
     private fun writeEntries(entries: List<LocalGameEntry>) =
         AtomicFileWriter.writeText(options.registryFile, json.encodeToString(entries))

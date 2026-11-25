@@ -80,6 +80,10 @@ class ArchiveGameInstallationServiceTest {
         progressInterval: Duration = Duration.ZERO,
         timeSource: MonotonicTimeSource = MonotonicTimeSource { 0L },
         manifestStore: InstalledGameManifestStore = manifests,
+        maxEntries: Int = KirinOptions.DEFAULT_ARCHIVE_MAX_ENTRIES,
+        maxUncompressedBytes: Long = KirinOptions.DEFAULT_ARCHIVE_MAX_UNCOMPRESSED_BYTES,
+        maxCompressionRatio: Int = KirinOptions.DEFAULT_ARCHIVE_MAX_COMPRESSION_RATIO,
+        compressionRatioThresholdBytes: Long = KirinOptions.DEFAULT_ARCHIVE_COMPRESSION_RATIO_THRESHOLD_BYTES,
     ) = ArchiveGameInstallationService(
         PendingGameInstallationService(logger),
         library,
@@ -98,6 +102,10 @@ class ArchiveGameInstallationServiceTest {
             archiveExtractionWorkers = extractionWorkers,
             archiveEntryCostBytes = entryCostBytes,
             archiveProgressInterval = progressInterval,
+            archiveMaxEntries = maxEntries,
+            archiveMaxUncompressedBytes = maxUncompressedBytes,
+            archiveMaxCompressionRatio = maxCompressionRatio,
+            archiveCompressionRatioThresholdBytes = compressionRatioThresholdBytes,
         ),
         storageAccess,
         timeSource,
@@ -620,4 +628,90 @@ class ArchiveGameInstallationServiceTest {
 
             sut.installedGames.value shouldBe InstalledGamesState.Available(listOf(installedGame, legacy))
         }
+
+    @Test
+    fun `rejects an archive with too many entries without replacing an existing installation`() = runTest(dispatcher) {
+        File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+        val hash = writeArchive("a.txt" to "1", "b.txt" to "2", "c.txt" to "3")
+        val sut = createSut(maxEntries = 2)
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+
+        File(gameDirectory, "Game.exe").readText() shouldBe "old"
+        File("${gameDirectory.path}.tmp").exists() shouldBe false
+        coVerify(exactly = 0) { kirin.register(any(), any()) }
+    }
+
+    @Test
+    fun `rejects an archive whose uncompressed size exceeds the limit`() = runTest(dispatcher) {
+        File(gameDirectory, "Game.exe").apply { parentFile?.mkdirs() }.writeText("old")
+        val hash = writeArchive("Data/big.bin" to "x".repeat(256))
+        val sut = createSut(maxUncompressedBytes = 128)
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+
+        File(gameDirectory, "Game.exe").readText() shouldBe "old"
+        File("${gameDirectory.path}.tmp").exists() shouldBe false
+        coVerify(exactly = 0) { kirin.register(any(), any()) }
+    }
+
+    @Test
+    fun `rejects an archive whose actual extracted bytes exceed the limit even with a spoofed entry size`() =
+        runTest(dispatcher) {
+            writeArchive("Data/big.bin" to "x".repeat(256))
+            val bytes = archive.readBytes()
+            val centralDirOffset = findCentralDirectorySignature(bytes)
+            for (offset in 24..27) bytes[centralDirOffset + offset] = 0
+            archive.writeBytes(bytes)
+            val hash = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+            val sut = createSut(bufferSizeBytes = 64, extractionWorkers = 1, maxUncompressedBytes = 128)
+
+            sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+
+            gameDirectory.exists() shouldBe false
+            File("${gameDirectory.path}.tmp").exists() shouldBe false
+            coVerify(exactly = 0) { kirin.register(any(), any()) }
+        }
+
+    @Test
+    fun `rejects a high compression ratio archive once uncompressed size exceeds the threshold`() =
+        runTest(dispatcher) {
+            val hash = writeArchive("Data/zeros.bin" to "0".repeat(256 * 1024))
+            val sut = createSut(
+                maxCompressionRatio = 20,
+                compressionRatioThresholdBytes = 64L * 1024,
+            )
+
+            sut.install(request(hash)) shouldBe GameInstallationResult.ExtractionFailed
+
+            gameDirectory.exists() shouldBe false
+            File("${gameDirectory.path}.tmp").exists() shouldBe false
+            coVerify(exactly = 0) { kirin.register(any(), any()) }
+        }
+
+    @Test
+    fun `allows a highly compressible archive below the compression ratio threshold`() = runTest(dispatcher) {
+        val hash = writeArchive("Data/zeros.bin" to "0".repeat(32 * 1024))
+        val sut = createSut(
+            maxCompressionRatio = 20,
+            compressionRatioThresholdBytes = 64L * 1024,
+        )
+
+        sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+
+        File(gameDirectory, "Data/zeros.bin").length() shouldBe 32L * 1024
+    }
+
+    private fun findCentralDirectorySignature(bytes: ByteArray): Int {
+        for (i in 0..bytes.size - 4) {
+            if (bytes[i] == 0x50.toByte() &&
+                bytes[i + 1] == 0x4b.toByte() &&
+                bytes[i + 2] == 0x01.toByte() &&
+                bytes[i + 3] == 0x02.toByte()
+            ) {
+                return i
+            }
+        }
+        error("Central directory header not found")
+    }
 }

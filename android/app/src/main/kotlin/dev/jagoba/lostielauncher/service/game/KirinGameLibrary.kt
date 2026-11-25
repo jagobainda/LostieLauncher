@@ -3,6 +3,7 @@ package dev.jagoba.lostielauncher.service.game
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.util.file.AtomicFileWriter
+import dev.jagoba.lostielauncher.util.file.BoundedFiles
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
@@ -56,7 +57,8 @@ internal class KirinGameLibrary @Inject constructor(
     }
 
     private fun read(file: File): MutableList<JsonElement> =
-        (json.parseToJsonElement(file.readText()) as? JsonArray)?.toMutableList()
+        (json.parseToJsonElement(BoundedFiles.readText(file, options.maxLibraryFileBytes)) as? JsonArray)
+            ?.toMutableList()
             ?: throw IOException("Kirin library '$file' is not a JSON array.")
 
     private val JsonElement.path: String? get() = ((this as? JsonObject)?.get(PATH) as? JsonPrimitive)?.content

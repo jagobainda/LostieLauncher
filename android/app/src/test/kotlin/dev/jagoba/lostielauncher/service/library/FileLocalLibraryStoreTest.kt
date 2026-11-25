@@ -134,12 +134,27 @@ class FileLocalLibraryStoreTest {
         verify(exactly = 1) { logger.error(any(), any()) }
     }
 
-    private fun TestScope.createSut() = FileLocalLibraryStore(
-        options = LocalLibraryOptions(registryFile),
-        json = Json { ignoreUnknownKeys = true },
-        logger = logger,
-        dispatchers = TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
-    )
+    @Test
+    fun `treats an oversized registry file as corrupt without crashing or overwriting it`() = runTest {
+        val oversized = "[" + " ".repeat(64) + "]"
+        writeRegistry(oversized)
+        val sut = createSut(maxRegistryBytes = 32)
+
+        sut.getGames().shouldBeEmpty()
+        sut.registerGame(game("Test"))
+        sut.removeGame("Test")
+
+        registryFile.readText() shouldBe oversized
+        verify(exactly = 3) { logger.error(any(), any()) }
+    }
+
+    private fun TestScope.createSut(maxRegistryBytes: Long = LocalLibraryOptions.DEFAULT_MAX_REGISTRY_BYTES) =
+        FileLocalLibraryStore(
+            options = LocalLibraryOptions(registryFile, maxRegistryBytes),
+            json = Json { ignoreUnknownKeys = true },
+            logger = logger,
+            dispatchers = TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
+        )
 
     private fun game(name: String, version: String = "v1.0.0", id: UUID = UUID.randomUUID()) = LocalGame(
         id = id,

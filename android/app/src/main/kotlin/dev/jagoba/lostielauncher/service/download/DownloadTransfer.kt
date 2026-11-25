@@ -3,7 +3,7 @@ package dev.jagoba.lostielauncher.service.download
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 
-internal data class DownloadTransferRequest(val url: String, val destinationPath: String)
+internal data class DownloadTransferRequest(val url: String, val destinationPath: String, val maxBytes: Long? = null)
 
 internal interface DownloadTransfer {
     suspend fun download(

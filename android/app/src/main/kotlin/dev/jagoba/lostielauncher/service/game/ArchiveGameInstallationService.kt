@@ -206,8 +206,11 @@ internal class ArchiveGameInstallationService @Inject constructor(
         temp.deleteRecursively()
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")
         hideGamesFromMediaScanner()
+        val archiveSize = archive.length().coerceAtLeast(1L)
         val digests = try {
-            ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip -> extractEntries(zip, temp, gameId) }.also {
+            ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip ->
+                extractEntries(zip, temp, gameId, archiveSize)
+            }.also {
                 currentCoroutineContext().ensureActive()
                 swap(temp, directory)
             }
@@ -223,12 +226,18 @@ internal class ArchiveGameInstallationService @Inject constructor(
         zip: ZipFile,
         temp: File,
         gameId: String,
+        archiveSize: Long,
     ): Map<String, InstalledGameFileDigest> {
         val root = temp.toPath().toAbsolutePath().normalize()
         val files = linkedMapOf<File, ZipEntry>()
         val directories = mutableSetOf<Path>()
+        var entryCount = 0
+        var declaredUncompressedBytes = 0L
         for (entry in zip.entries()) {
             currentCoroutineContext().ensureActive()
+            if (++entryCount > options.archiveMaxEntries) {
+                throw IOException("Archive exceeds the maximum entry count (${options.archiveMaxEntries}).")
+            }
             val name = ZipEntryNames.resolve(entry)
             val target = root.resolve(name.replace('\\', '/')).normalize()
             if (!target.startsWith(root) || (target == root && !entry.isDirectory)) {
@@ -237,6 +246,15 @@ internal class ArchiveGameInstallationService @Inject constructor(
             if (entry.isDirectory) {
                 directories.addWithAncestors(target, root)
             } else {
+                if (entry.size > 0L) {
+                    if (entry.size > options.archiveMaxUncompressedBytes - declaredUncompressedBytes) {
+                        throw IOException(
+                            "Archive exceeds the maximum uncompressed size (${options.archiveMaxUncompressedBytes} bytes).",
+                        )
+                    }
+                    declaredUncompressedBytes += entry.size
+                    checkCompressionRatio(declaredUncompressedBytes, archiveSize)
+                }
                 files[target.toFile()] = entry
                 target.parent?.let { directories.addWithAncestors(it, root) }
             }
@@ -257,6 +275,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         progress.advance(0)
         val queue = files.entries.sortedByDescending { it.value.size }
         val next = AtomicInteger()
+        val extractedBytes = AtomicLong()
         val digests = ConcurrentHashMap<String, InstalledGameFileDigest>(files.size)
         coroutineScope {
             repeat(options.archiveExtractionWorkers.coerceAtLeast(1)) {
@@ -266,7 +285,8 @@ internal class ArchiveGameInstallationService @Inject constructor(
                         ensureActive()
                         val (target, entry) = queue.getOrNull(next.getAndIncrement()) ?: break
                         val relativePath = root.relativize(target.toPath()).toString().replace('\\', '/')
-                        digests[relativePath] = copyEntry(zip, entry, target, buffer, progress)
+                        digests[relativePath] =
+                            copyEntry(zip, entry, target, buffer, progress, extractedBytes, archiveSize)
                         progress.advance(entryCost)
                     }
                 }
@@ -282,6 +302,8 @@ internal class ArchiveGameInstallationService @Inject constructor(
         target: File,
         buffer: ByteArray,
         progress: ExtractionProgress,
+        extractedBytes: AtomicLong,
+        archiveSize: Long,
     ): InstalledGameFileDigest {
         val digest = FileDigests.newSha256()
         var size = 0L
@@ -292,6 +314,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
                     currentCoroutineContext().ensureActive()
                     val read = input.read(buffer, filled, buffer.size - filled)
                     if (read < 0) break
+                    checkExtractionLimits(extractedBytes.addAndGet(read.toLong()), archiveSize)
                     filled += read
                     if (filled == buffer.size) {
                         output.write(buffer, 0, filled)
@@ -311,6 +334,25 @@ internal class ArchiveGameInstallationService @Inject constructor(
             }
         }
         return InstalledGameFileDigest(size, FileDigests.toHex(digest))
+    }
+
+    private fun checkExtractionLimits(totalExtracted: Long, archiveSize: Long) {
+        if (totalExtracted > options.archiveMaxUncompressedBytes) {
+            throw IOException(
+                "Archive exceeds the maximum uncompressed size (${options.archiveMaxUncompressedBytes} bytes).",
+            )
+        }
+        checkCompressionRatio(totalExtracted, archiveSize)
+    }
+
+    private fun checkCompressionRatio(uncompressedBytes: Long, archiveSize: Long) {
+        val maxRatio = options.archiveMaxCompressionRatio.toLong()
+        if (maxRatio > 0 &&
+            uncompressedBytes > options.archiveCompressionRatioThresholdBytes &&
+            (uncompressedBytes - 1L) / archiveSize >= maxRatio
+        ) {
+            throw IOException("Archive exceeds the maximum compression ratio (${options.archiveMaxCompressionRatio}x).")
+        }
     }
 
     private fun MutableSet<Path>.addWithAncestors(directory: Path, root: Path) {

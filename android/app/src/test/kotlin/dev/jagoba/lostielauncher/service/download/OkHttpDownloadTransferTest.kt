@@ -9,6 +9,8 @@ import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.readText
@@ -255,9 +257,74 @@ class OkHttpDownloadTransferTest {
         server.requestCount shouldBe 1
     }
 
-    private fun request(destination: Path) = DownloadTransferRequest(
+    @Test
+    fun `fails immediately without retrying when content length exceeds maxBytes`() = runTest {
+        server.enqueue(MockResponse.Builder().code(200).body("123456").build())
+        val destination = directory.resolve("app.apk")
+
+        val result = createSut().download(request(destination, maxBytes = 5)) {}
+
+        result.shouldBeInstanceOf<DownloadTransferResult.Failed>()
+        server.requestCount shouldBe 1
+        Files.exists(destination) shouldBe false
+        Files.exists(Path.of(DownloadPathUtils.getPartFilePath(destination.toString()))) shouldBe false
+        Files.exists(
+            Path.of(DownloadPathUtils.getMetaFilePath(DownloadPathUtils.getPartFilePath(destination.toString()))),
+        ) shouldBe false
+    }
+
+    @Test
+    fun `fails immediately without retrying when a chunked response exceeds maxBytes`() = runTest {
+        server.enqueue(MockResponse.Builder().code(200).chunkedBody("123456", maxChunkSize = 2).build())
+        val destination = directory.resolve("app.apk")
+
+        val result = createSut().download(request(destination, maxBytes = 5)) {}
+
+        result.shouldBeInstanceOf<DownloadTransferResult.Failed>()
+        server.requestCount shouldBe 1
+        Files.exists(destination) shouldBe false
+        Files.exists(Path.of(DownloadPathUtils.getPartFilePath(destination.toString()))) shouldBe false
+    }
+
+    @Test
+    fun `fails and removes partial files when a resumed response exceeds maxBytes`() = runTest {
+        val destination = directory.resolve("app.apk")
+        val part = Path.of(DownloadPathUtils.getPartFilePath(destination.toString()))
+        val metadata = Path.of(DownloadPathUtils.getMetaFilePath(part.toString()))
+        part.writeText("1234")
+        metadata.writeText("""{"etag":"\"v1\"","totalBytes":8}""")
+        server.enqueue(
+            MockResponse.Builder().code(206).addHeader("Content-Range", "bytes 4-7/8").body("5678").build(),
+        )
+
+        val result = createSut().download(request(destination, maxBytes = 6)) {}
+
+        result.shouldBeInstanceOf<DownloadTransferResult.Failed>()
+        server.requestCount shouldBe 1
+        Files.exists(part) shouldBe false
+        Files.exists(metadata) shouldBe false
+    }
+
+    @Test
+    fun `discards an existing partial file larger than maxBytes and downloads cleanly`() = runTest {
+        val destination = directory.resolve("app.apk")
+        val part = Path.of(DownloadPathUtils.getPartFilePath(destination.toString()))
+        val metadata = Path.of(DownloadPathUtils.getMetaFilePath(part.toString()))
+        part.writeText("123456789")
+        metadata.writeText("""{"etag":"\"v1\"","totalBytes":9}""")
+        server.enqueue(MockResponse.Builder().code(200).body("12345").build())
+
+        val result = createSut().download(request(destination, maxBytes = 5)) {}
+
+        result shouldBe DownloadTransferResult.Success
+        destination.readText() shouldBe "12345"
+        server.takeRequest().headers["Range"] shouldBe null
+    }
+
+    private fun request(destination: Path, maxBytes: Long? = null) = DownloadTransferRequest(
         url = server.url("/game.zip").toString(),
         destinationPath = destination.toString(),
+        maxBytes = maxBytes,
     )
 
     private fun createSut(

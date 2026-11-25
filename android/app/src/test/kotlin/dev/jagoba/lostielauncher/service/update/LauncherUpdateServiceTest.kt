@@ -9,9 +9,11 @@ import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
 import dev.jagoba.lostielauncher.service.apk.SignedApk
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
+import dev.jagoba.lostielauncher.service.download.DownloadTransferRequest
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -178,6 +180,12 @@ class LauncherUpdateServiceTest {
 
         sut.install()
 
+        coVerify(exactly = 1) {
+            transfer.download(
+                DownloadTransferRequest(APK_URL, installer.path, LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES),
+                any(),
+            )
+        }
         verify(exactly = 1) { packages.install(installer) }
         sut.offeredVersion.value shouldBe null
     }

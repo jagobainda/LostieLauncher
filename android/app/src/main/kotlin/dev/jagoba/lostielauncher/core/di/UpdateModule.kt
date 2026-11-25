@@ -31,5 +31,6 @@ internal object UpdateModule {
             packageName = context.packageName,
             feedUrl = "https://ericlostie-launcher.jagoba.dev/public/android/latest.json",
             installerFile = File(context.cacheDir, "apk/launcher/LostieLauncher.apk"),
+            maxInstallerBytes = LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES,
         )
 }

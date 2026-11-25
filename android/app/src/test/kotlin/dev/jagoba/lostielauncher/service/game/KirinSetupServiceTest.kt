@@ -303,7 +303,14 @@ class KirinSetupServiceTest {
         sut.install()
 
         coVerify(exactly = 1) {
-            transfer.download(DownloadTransferRequest("https://example.com/Kirin-arm64.apk", installer.path), any())
+            transfer.download(
+                DownloadTransferRequest(
+                    "https://example.com/Kirin-arm64.apk",
+                    installer.path,
+                    KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                ),
+                any(),
+            )
         }
     }
 
@@ -326,7 +333,14 @@ class KirinSetupServiceTest {
         sut.install()
 
         coVerify(exactly = 1) {
-            transfer.download(DownloadTransferRequest("https://example.com/Kirin-universal.apk", installer.path), any())
+            transfer.download(
+                DownloadTransferRequest(
+                    "https://example.com/Kirin-universal.apk",
+                    installer.path,
+                    KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                ),
+                any(),
+            )
         }
     }
 
@@ -444,7 +458,12 @@ class KirinSetupServiceTest {
 
         observed shouldBe listOf(ApkDownloadState.Downloading(50))
         sut.download.value shouldBe ApkDownloadState.Available
-        coVerify(exactly = 1) { transfer.download(DownloadTransferRequest(APK_URL, installer.path), any()) }
+        coVerify(exactly = 1) {
+            transfer.download(
+                DownloadTransferRequest(APK_URL, installer.path, KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES),
+                any(),
+            )
+        }
         verify(exactly = 1) { packages.install(installer) }
     }
 
