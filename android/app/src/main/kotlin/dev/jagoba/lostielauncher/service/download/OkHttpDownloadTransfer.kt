@@ -13,6 +13,7 @@ import dev.jagoba.lostielauncher.util.download.DownloadResumePolicy
 import dev.jagoba.lostielauncher.util.download.DownloadSpeedSampler
 import dev.jagoba.lostielauncher.util.file.FileMoveRetryPolicy
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.File
 import java.io.FileOutputStream
@@ -69,6 +70,11 @@ internal class OkHttpDownloadTransfer @Inject constructor(
                         return@withContext DownloadTransferResult.PermissionDenied
                     }
 
+                    is ResponseTooLargeException -> {
+                        logger.error("Download exceeded the size limit.", error)
+                        return@withContext DownloadTransferResult.Failed(error.message ?: DOWNLOAD_FAILED_MESSAGE)
+                    }
+
                     is IOException -> {
                         lastError = error
                         if (attempt < options.maximumAttempts) {
@@ -102,52 +108,67 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         val metadataFile = File(DownloadPathUtils.getMetaFilePath(partFile.path))
         val metadata = readMetadata(metadataFile)
         val validator = DownloadResumePolicy.validator(metadata)
+        val maxBytes = request.maxBytes
         var existingBytes = partFile.length()
-        if (existingBytes > 0 && validator == null) {
+        if (existingBytes > 0 && (validator == null || (maxBytes != null && existingBytes > maxBytes))) {
             Files.deleteIfExists(partFile.toPath())
             Files.deleteIfExists(metadataFile.toPath())
             existingBytes = 0
         }
-        while (true) {
-            val builder = Request.Builder().url(request.url)
-            if (existingBytes > 0 && validator != null) {
-                builder.header(RANGE_HEADER, "bytes=$existingBytes-")
-                builder.header(IF_RANGE_HEADER, validator)
-            }
-            val complete = client.newCall(builder.build()).useCancellableResponse({ awaitResponse(it) }) { response ->
-                when (
-                    DownloadResumePolicy.responseAction(
-                        response.code,
-                        existingBytes,
-                        metadata?.totalBytes,
-                        response.header("Content-Range"),
-                    )
-                ) {
-                    DownloadResponseAction.COMPLETE -> Unit
-
-                    DownloadResponseAction.INVALIDATE -> {
-                        Files.deleteIfExists(partFile.toPath())
-                        Files.deleteIfExists(metadataFile.toPath())
-                        if (response.code != 206 || existingBytes == 0L) throw IOException(INVALID_PARTIAL_MESSAGE)
-                        return@useCancellableResponse false
-                    }
-
-                    DownloadResponseAction.RESTART, DownloadResponseAction.WRITE -> {
-                        if (existingBytes > 0) Files.deleteIfExists(partFile.toPath())
-                        writeMetadata(metadataFile, buildMetadata(response))
-                        writeBody(response, partFile, 0, onProgress)
-                    }
-
-                    DownloadResponseAction.APPEND -> writeBody(response, partFile, existingBytes, onProgress)
-
-                    DownloadResponseAction.REJECT -> throw IOException(
-                        "Download server returned HTTP ${response.code}.",
-                    )
+        try {
+            while (true) {
+                val builder = Request.Builder().url(request.url)
+                if (existingBytes > 0 && validator != null) {
+                    builder.header(RANGE_HEADER, "bytes=$existingBytes-")
+                    builder.header(IF_RANGE_HEADER, validator)
                 }
-                true
+                val complete = client.newCall(builder.build()).useCancellableResponse({
+                    awaitResponse(it)
+                }) { response ->
+                    when (
+                        DownloadResumePolicy.responseAction(
+                            response.code,
+                            existingBytes,
+                            metadata?.totalBytes,
+                            response.header("Content-Range"),
+                        )
+                    ) {
+                        DownloadResponseAction.COMPLETE -> Unit
+
+                        DownloadResponseAction.INVALIDATE -> {
+                            Files.deleteIfExists(partFile.toPath())
+                            Files.deleteIfExists(metadataFile.toPath())
+                            if (response.code != 206 || existingBytes == 0L) throw IOException(INVALID_PARTIAL_MESSAGE)
+                            return@useCancellableResponse false
+                        }
+
+                        DownloadResponseAction.RESTART, DownloadResponseAction.WRITE -> {
+                            if (existingBytes > 0) Files.deleteIfExists(partFile.toPath())
+                            writeMetadata(metadataFile, buildMetadata(response))
+                            writeBody(response, partFile, 0, maxBytes, onProgress)
+                        }
+
+                        DownloadResponseAction.APPEND -> writeBody(
+                            response,
+                            partFile,
+                            existingBytes,
+                            maxBytes,
+                            onProgress,
+                        )
+
+                        DownloadResponseAction.REJECT -> throw IOException(
+                            "Download server returned HTTP ${response.code}.",
+                        )
+                    }
+                    true
+                }
+                if (complete) break
+                existingBytes = 0
             }
-            if (complete) break
-            existingBytes = 0
+        } catch (oversized: ResponseTooLargeException) {
+            Files.deleteIfExists(partFile.toPath())
+            Files.deleteIfExists(metadataFile.toPath())
+            throw oversized
         }
         currentCoroutineContext().ensureActive()
         finalize(partFile, destination)
@@ -182,11 +203,15 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         response: Response,
         partFile: File,
         existingBytes: Long,
+        maxBytes: Long?,
         onProgress: suspend (DownloadProgress) -> Unit,
     ) {
         val body = response.body
         val bodyLength = body.contentLength().takeIf { it >= 0 }
         val totalBytes = bodyLength?.plus(existingBytes)
+        if (maxBytes != null && totalBytes != null && totalBytes > maxBytes) {
+            throw ResponseTooLargeException(DOWNLOAD_LABEL, maxBytes)
+        }
         val source = body.source()
         val buffer = ByteArray(options.bufferSizeBytes)
         var totalRead = existingBytes
@@ -202,8 +227,11 @@ internal class OkHttpDownloadTransfer @Inject constructor(
                 source.timeout().timeout(options.inactivityTimeout.inWholeMilliseconds, TimeUnit.MILLISECONDS)
                 val read = source.read(buffer)
                 if (read == -1) break
-                output.write(buffer, 0, read)
                 totalRead += read
+                if (maxBytes != null && totalRead > maxBytes) {
+                    throw ResponseTooLargeException(DOWNLOAD_LABEL, maxBytes)
+                }
+                output.write(buffer, 0, read)
                 val speed = sampler.sample(totalRead, timeSource.readNanos())
                 if (speed != null) {
                     onProgress(DownloadProgressCalculator.calculate(totalRead, totalBytes, speed))
@@ -261,6 +289,7 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         const val ETAG_HEADER = "ETag"
         const val LAST_MODIFIED_HEADER = "Last-Modified"
         const val MAXIMUM_RETRIES_MESSAGE = "Download failed after maximum retries."
+        const val DOWNLOAD_LABEL = "Download"
         const val DOWNLOAD_FAILED_MESSAGE = "Download failed."
         const val INVALID_PARTIAL_MESSAGE = "Partial download is invalid and must restart."
         const val INACTIVITY_MESSAGE = "Download stalled because no data was received before the inactivity timeout."

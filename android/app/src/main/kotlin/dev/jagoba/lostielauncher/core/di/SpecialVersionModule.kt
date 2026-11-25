@@ -24,5 +24,9 @@ internal abstract class SpecialVersionBindingsModule {
 internal object SpecialVersionOptionsModule {
     @Provides
     internal fun provideSpecialVersionOptions(downloads: DownloadOptions): SpecialVersionOptions =
-        SpecialVersionOptions(downloads.baseUrl, "game.config")
+        SpecialVersionOptions(
+            baseUrl = downloads.baseUrl,
+            configFileName = "game.config",
+            maxConfigBytes = SpecialVersionOptions.DEFAULT_MAX_CONFIG_BYTES,
+        )
 }

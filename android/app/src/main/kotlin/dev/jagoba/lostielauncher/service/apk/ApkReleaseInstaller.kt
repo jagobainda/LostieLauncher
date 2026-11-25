@@ -113,7 +113,7 @@ internal class ApkReleaseInstaller(
         val apk = target.installerFile
         if (!isInstallable(apk, release.versionName)) {
             logger.info("${target.label} ${release.versionName} download started.")
-            val result = transfer.download(DownloadTransferRequest(release.downloadUrl, apk.path)) {
+            val result = transfer.download(DownloadTransferRequest(release.downloadUrl, apk.path, target.maxBytes)) {
                 mutableDownload.value = ApkDownloadState.Downloading(it.percent.roundToInt())
             }
             if (result != DownloadTransferResult.Success) {
@@ -138,6 +138,7 @@ internal class ApkReleaseInstaller(
 
     private suspend fun isInstallable(apk: File, version: String): Boolean = withContext(dispatchers.io) {
         if (!apk.isFile) return@withContext false
+        if (target.maxBytes != null && apk.length() > target.maxBytes) return@withContext false
         val archive = packages.archivePackage(apk, target.packageName) ?: return@withContext false
         val expected = target.pinnedSigner?.let { setOf(it) } ?: packages.installedPackage(target.packageName)?.signers
         archive.matches(expected) && ApkVersionPolicy.isSupported(archive.version, version)

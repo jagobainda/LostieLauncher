@@ -85,4 +85,16 @@ class RemoteJsonTest {
 
         verify(exactly = 0) { logger.error(any(), any()) }
     }
+
+    @Test
+    fun `returns nothing and logs when the response exceeds the size limit`() = runTest(dispatcher) {
+        val body = """{"versionName":"${"1".repeat(64)}"}"""
+        server.enqueue(MockResponse.Builder().body(body).build())
+        server.enqueue(MockResponse.Builder().chunkedBody(body, maxChunkSize = 8).build())
+        val sut = createSut()
+
+        sut.fetch(url, deserializer, "Feed", maxBytes = 32) shouldBe null
+        sut.fetch(url, deserializer, "Feed", maxBytes = 32) shouldBe null
+        verify(exactly = 2) { logger.error("Feed could not be read.", any()) }
+    }
 }

@@ -18,6 +18,7 @@ import dev.jagoba.lostielauncher.service.cdn.SecurityFlagClient
 import dev.jagoba.lostielauncher.service.cdn.TwitchPreviewClient
 import dev.jagoba.lostielauncher.service.network.ConnectivityNetworkMonitor
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
+import dev.jagoba.lostielauncher.util.net.BoundedResponseBodyInterceptor
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -40,6 +41,7 @@ object NetworkModule {
     private const val DOWNLOAD_BASE_URL = "$CDN_BASE_URL/games"
 
     private const val CONTENT_TIMEOUT_SECONDS = 10L
+    private const val CONTENT_MAX_RESPONSE_BYTES = 2L * 1024 * 1024
     private const val SECURITY_FLAG_TIMEOUT_SECONDS = 3L
     private const val TWITCH_PREVIEW_TIMEOUT_SECONDS = 5L
     private const val DOWNLOAD_CONNECT_TIMEOUT_SECONDS = 20L
@@ -82,6 +84,7 @@ object NetworkModule {
     @ContentClient
     fun provideContentClient(@BaseHttpClient base: OkHttpClient): OkHttpClient = base.newBuilder()
         .callTimeout(CONTENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .addInterceptor(BoundedResponseBodyInterceptor(CONTENT_MAX_RESPONSE_BYTES))
         .build()
 
     @Provides

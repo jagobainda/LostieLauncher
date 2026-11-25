@@ -23,4 +23,9 @@ data class KirinSetupOptions(
     val signerSha256: String,
     val supportedAbis: List<String> = emptyList(),
     val feedRetryInterval: Duration = 5.minutes,
-)
+    val maxInstallerBytes: Long = DEFAULT_MAX_INSTALLER_BYTES,
+) {
+    companion object {
+        const val DEFAULT_MAX_INSTALLER_BYTES: Long = 512L * 1024 * 1024
+    }
+}

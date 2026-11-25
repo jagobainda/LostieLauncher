@@ -42,7 +42,9 @@ internal class DefaultLauncherUpdateService @Inject constructor(
     private val options: LauncherUpdateOptions,
     private val logger: Logger,
 ) : LauncherUpdateService {
-    private val installer = installers.create(ApkTarget(options.packageName, options.installerFile, "Launcher"))
+    private val installer = installers.create(
+        ApkTarget(options.packageName, options.installerFile, "Launcher", maxBytes = options.maxInstallerBytes),
+    )
     private val gate = Mutex()
     private val mutableOfferedVersion = MutableStateFlow<String?>(null)
     override val offeredVersion: StateFlow<String?> = mutableOfferedVersion.asStateFlow()

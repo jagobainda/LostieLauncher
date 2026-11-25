@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.readBoundedText
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.IOException
 import javax.inject.Inject
@@ -18,18 +19,26 @@ internal class RemoteJson @Inject constructor(
     private val dispatchers: DispatcherProvider,
     private val logger: Logger,
 ) {
-    suspend fun <T> fetch(url: String, deserializer: DeserializationStrategy<T>, label: String): T? =
-        withContext(dispatchers.io) {
-            try {
-                client.newCall(Request.Builder().url(url).build()).useCancellableResponse { response ->
-                    if (!response.isSuccessful) throw IOException("$label returned HTTP ${response.code}.")
-                    json.decodeFromString(deserializer, response.body.string())
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                logger.error("$label could not be read.", error)
-                null
+    suspend fun <T> fetch(
+        url: String,
+        deserializer: DeserializationStrategy<T>,
+        label: String,
+        maxBytes: Long = DEFAULT_MAX_BYTES,
+    ): T? = withContext(dispatchers.io) {
+        try {
+            client.newCall(Request.Builder().url(url).build()).useCancellableResponse { response ->
+                if (!response.isSuccessful) throw IOException("$label returned HTTP ${response.code}.")
+                json.decodeFromString(deserializer, response.body.readBoundedText(maxBytes, label))
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("$label could not be read.", error)
+            null
         }
+    }
+
+    companion object {
+        const val DEFAULT_MAX_BYTES: Long = 512L * 1024
+    }
 }

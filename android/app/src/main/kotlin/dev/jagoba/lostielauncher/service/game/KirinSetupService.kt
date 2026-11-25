@@ -67,7 +67,7 @@ internal class DefaultKirinSetupService @Inject constructor(
     private val logger: Logger,
 ) : KirinSetupService {
     private val installer = installers.create(
-        ApkTarget(kirin.packageName, options.installerFile, "Kirin", options.signerSha256),
+        ApkTarget(kirin.packageName, options.installerFile, "Kirin", options.signerSha256, options.maxInstallerBytes),
     )
     private val refreshGate = Mutex()
     private val mutableStatus = MutableStateFlow<KirinStatus?>(null)

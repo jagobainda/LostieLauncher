@@ -72,6 +72,11 @@ internal object KirinModule {
             archiveExtractionWorkers = 4,
             archiveEntryCostBytes = 64 * 1024,
             archiveProgressInterval = 500.milliseconds,
+            maxLibraryFileBytes = KirinOptions.DEFAULT_MAX_LIBRARY_FILE_BYTES,
+            archiveMaxEntries = KirinOptions.DEFAULT_ARCHIVE_MAX_ENTRIES,
+            archiveMaxUncompressedBytes = KirinOptions.DEFAULT_ARCHIVE_MAX_UNCOMPRESSED_BYTES,
+            archiveMaxCompressionRatio = KirinOptions.DEFAULT_ARCHIVE_MAX_COMPRESSION_RATIO,
+            archiveCompressionRatioThresholdBytes = KirinOptions.DEFAULT_ARCHIVE_COMPRESSION_RATIO_THRESHOLD_BYTES,
         )
     }
 
@@ -84,12 +89,15 @@ internal object KirinModule {
         signerSha256 = "a0033b292224df78a686a199eecf99bfbc45c2e0a23a311bfdeddbaad0cc20b2",
         supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
         feedRetryInterval = 5.minutes,
+        maxInstallerBytes = KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
     )
 
     @Provides
     @Singleton
-    internal fun provideLocalLibraryOptions(kirin: KirinOptions): LocalLibraryOptions =
-        LocalLibraryOptions(File(kirin.gamesRoot, "local_games.json"))
+    internal fun provideLocalLibraryOptions(kirin: KirinOptions): LocalLibraryOptions = LocalLibraryOptions(
+        registryFile = File(kirin.gamesRoot, "local_games.json"),
+        maxRegistryBytes = LocalLibraryOptions.DEFAULT_MAX_REGISTRY_BYTES,
+    )
 
     @Provides
     @Singleton

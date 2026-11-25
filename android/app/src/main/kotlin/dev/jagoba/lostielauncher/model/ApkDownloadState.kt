@@ -21,6 +21,7 @@ data class ApkTarget(
     val installerFile: File,
     val label: String,
     val pinnedSigner: String? = null,
+    val maxBytes: Long? = null,
 )
 
 data class ApkInstallOptions(val fileProviderAuthority: String)

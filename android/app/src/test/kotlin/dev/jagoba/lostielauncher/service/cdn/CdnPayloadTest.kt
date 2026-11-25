@@ -10,6 +10,7 @@ import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.DefaultContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.BoundedResponseBodyInterceptor
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -225,6 +226,18 @@ class CdnPayloadTest {
         }
     }
 
+    @Test
+    fun `fails cleanly when a catalogue or home payload exceeds the response size limit`() = runTest {
+        enqueueCatalogue("""[{"nombre":"${"A".repeat(128)}"}]""")
+        enqueueHomeContent("""{"news":[],"notifications":[],"padding":"${"B".repeat(128)}"}""")
+        val sut = createSut(maxResponseBytes = 64)
+
+        sut.getGames() shouldBe CatalogueResult.Failed
+        val home = sut.getHomeContent(AppLanguage.ESP)
+        home.news.shouldBeEmpty()
+        home.isStale shouldBe true
+    }
+
     private fun enqueueCatalogue(body: String) {
         server.enqueue(MockResponse.Builder().code(404).build())
         server.enqueue(MockResponse.Builder().code(200).body(body).build())
@@ -244,7 +257,7 @@ class CdnPayloadTest {
             .bufferedReader()
             .use { it.readText() }
 
-    private fun createSut(clock: Clock = this.clock): DefaultContentService {
+    private fun createSut(clock: Clock = this.clock, maxResponseBytes: Long = 2L * 1024 * 1024): DefaultContentService {
         val base = server.url("/").toString().removeSuffix("/")
         val options = ContentOptions(
             cdnBaseUrl = base,
@@ -255,6 +268,7 @@ class CdnPayloadTest {
         )
         val client = OkHttpClient.Builder()
             .addInterceptor(NetworkModule.provideUserAgentInterceptor())
+            .addInterceptor(BoundedResponseBodyInterceptor(maxResponseBytes))
             .build()
         val contentApi = Retrofit.Builder()
             .baseUrl("$base/")

@@ -1,11 +1,16 @@
 package dev.jagoba.lostielauncher.core.di
 
+import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import okhttp3.Request
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
@@ -79,5 +84,20 @@ class NetworkModuleTest {
         NetworkModule.provideJson().configuration.coerceInputValues shouldBe false
         NetworkModule.provideJson().configuration.ignoreUnknownKeys shouldBe true
         NetworkModule.provideJson().configuration.isLenient shouldBe false
+    }
+
+    @Test
+    fun `rejects content responses larger than two mebibytes`() {
+        MockWebServer().use { server ->
+            server.start()
+            server.enqueue(MockResponse.Builder().body("a".repeat(2 * 1024 * 1024 + 1)).build())
+            val client = NetworkModule.provideContentClient(base)
+
+            shouldThrow<ResponseTooLargeException> {
+                client.newCall(Request.Builder().url(server.url("/listado.json")).build()).execute().use {
+                    it.body.string()
+                }
+            }
+        }
     }
 }
