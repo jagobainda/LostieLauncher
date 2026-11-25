@@ -138,6 +138,11 @@ interface Strings {
     val notificationPermissionTitle: String
     val notificationPermissionMessage: String
     val notificationPermissionSettingsMessage: String
+    val installPermissionTitle: String
+    val installPermissionMessage: String
+    val apkInstallCancelledTitle: String
+    val apkInstallCancelledMessage: String
+    val apkInstallCancelledNotice: String
 }
 
 fun stringsFor(language: AppLanguage): Strings = when (language) {

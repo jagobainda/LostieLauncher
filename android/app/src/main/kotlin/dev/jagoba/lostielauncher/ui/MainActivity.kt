@@ -60,6 +60,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        lifecycleObserver.refreshPackageInstallers()
+    }
+
     override fun onStop() {
         super.onStop()
         lifecycleObserver.flushPendingSettings()

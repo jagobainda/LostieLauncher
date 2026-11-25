@@ -42,6 +42,7 @@ class LauncherUpdateServiceTest {
     private val transfer = mockk<DownloadTransfer>()
     private val packages = mockk<ApkPackages>(relaxed = true) {
         every { installedPackage(PACKAGE) } returns SignedApk(INSTALLED, setOf("official"))
+        every { canRequestPackageInstalls() } returns true
     }
     private val logger = mockk<Logger>(relaxed = true)
     private val installer get() = directory.resolve("apk/launcher/LostieLauncher.apk").toFile()
@@ -201,33 +202,109 @@ class LauncherUpdateServiceTest {
     }
 
     @Test
-    fun `opening the system installer answers the offer`() = runTest(dispatcher) {
-        serveRelease("1.1.0")
-        coEvery { transfer.download(any(), any()) } coAnswers {
+    fun `opening the system installer keeps the offer until installation completes and models cancellation`() =
+        runTest(dispatcher) {
+            serveRelease("1.1.0")
+            coEvery { transfer.download(any(), any()) } coAnswers {
+                installer.parentFile?.mkdirs()
+                installer.writeText("apk")
+                DownloadTransferResult.Success
+            }
+            every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
+            val sut = createSut()
+            sut.refresh()
+
+            sut.install()
+
+            coVerify(exactly = 1) {
+                transfer.download(
+                    DownloadTransferRequest(
+                        APK_URL,
+                        installer.path,
+                        LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                        LauncherUpdateOptions.DEFAULT_ALLOWED_HOSTS,
+                    ),
+                    any(),
+                )
+            }
+            verify(exactly = 1) { packages.install(installer) }
+            sut.download.value shouldBe ApkDownloadState.Installing
+            sut.offeredVersion.value shouldBe "1.1.0"
+
+            sut.refresh()
+            sut.download.value shouldBe ApkDownloadState.Cancelled
+            sut.offeredVersion.value shouldBe "1.1.0"
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.Installing
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+            verify(exactly = 2) { packages.install(installer) }
+
+            every { packages.installedPackage(PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
+            sut.refresh()
+            sut.offeredVersion.value shouldBe null
+            sut.download.value shouldBe ApkDownloadState.Unavailable
+            installer.parentFile?.exists() shouldBe false
+        }
+
+    @Test
+    fun `declining after a cancelled install hides the offer and resets state for a manual check`() =
+        runTest(dispatcher) {
+            serveRelease("1.1.0")
+            serveRelease("1.1.0")
             installer.parentFile?.mkdirs()
             installer.writeText("apk")
-            DownloadTransferResult.Success
-        }
-        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
-        val sut = createSut()
-        sut.refresh()
+            every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
+            val sut = createSut()
+            sut.refresh()
 
-        sut.install()
+            sut.install()
+            sut.refresh()
+            sut.download.value shouldBe ApkDownloadState.Cancelled
 
-        coVerify(exactly = 1) {
-            transfer.download(
-                DownloadTransferRequest(
-                    APK_URL,
-                    installer.path,
-                    LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES,
-                    LauncherUpdateOptions.DEFAULT_ALLOWED_HOSTS,
-                ),
-                any(),
-            )
+            sut.decline()
+            sut.offeredVersion.value shouldBe null
+            sut.download.value shouldBe ApkDownloadState.Available
+
+            sut.check() shouldBe LauncherUpdateCheckResult.Available("1.1.0")
+            sut.offeredVersion.value shouldBe "1.1.0"
+            sut.download.value shouldBe ApkDownloadState.Available
         }
-        verify(exactly = 1) { packages.install(installer) }
-        sut.offeredVersion.value shouldBe null
-    }
+
+    @Test
+    fun `waits for unknown-sources permission and continues when granted or answers when dismissed`() =
+        runTest(dispatcher) {
+            serveRelease("1.1.0")
+            installer.parentFile?.mkdirs()
+            installer.writeText("apk")
+            every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("1.1.0", setOf("official"))
+            every { packages.canRequestPackageInstalls() } returns false
+            val sut = createSut()
+            sut.refresh()
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            sut.offeredVersion.value shouldBe "1.1.0"
+
+            sut.onInstallPermissionResult()
+            sut.download.value shouldBe ApkDownloadState.Available
+            sut.offeredVersion.value shouldBe "1.1.0"
+
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            every { packages.canRequestPackageInstalls() } returns true
+            sut.onInstallPermissionResult()
+            sut.download.value shouldBe ApkDownloadState.Installing
+            verify(exactly = 1) { packages.install(installer) }
+
+            sut.refresh()
+            every { packages.canRequestPackageInstalls() } returns false
+            sut.install()
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            sut.dismissPermissionRequest()
+            sut.download.value shouldBe ApkDownloadState.Available
+            sut.offeredVersion.value shouldBe null
+        }
 
     @Test
     fun `acknowledging a failed download answers the offer`() = runTest(dispatcher) {

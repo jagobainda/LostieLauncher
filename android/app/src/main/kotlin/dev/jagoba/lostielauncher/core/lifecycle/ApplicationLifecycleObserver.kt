@@ -60,6 +60,10 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     }
 
     override fun onResume(owner: LifecycleOwner) {
+        refreshPackageInstallers()
+    }
+
+    fun refreshPackageInstallers() {
         scope.launch { kirin.refresh() }
         scope.launch { launcherUpdate.refresh() }
     }

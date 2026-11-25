@@ -253,6 +253,19 @@ class MainViewModelTest {
         kirinDownload.value = ApkDownloadState.Downloading(42)
         runCurrent()
         sut.state.value.kirinUpdate?.downloadPercent shouldBe 42
+        sut.state.value.kirinUpdate?.isInstalling shouldBe false
+
+        kirinDownload.value = ApkDownloadState.PermissionRequired
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe KirinUpdateUiState("0.4.0", "0.4.2")
+
+        kirinDownload.value = ApkDownloadState.Installing
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe KirinUpdateUiState("0.4.0", "0.4.2", isInstalling = true)
+
+        kirinDownload.value = ApkDownloadState.Cancelled
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe KirinUpdateUiState("0.4.0", "0.4.2")
 
         kirinDownload.value = ApkDownloadState.Unavailable
         runCurrent()
@@ -329,10 +342,28 @@ class MainViewModelTest {
         sut.state.value.launcherUpdatePercent shouldBe 42
         sut.state.value.launcherUpdatePrompt shouldBe null
 
+        launcherDownload.value = ApkDownloadState.PermissionRequired
+        runCurrent()
+        sut.state.value.launcherUpdatePermissionRequired shouldBe true
+        sut.state.value.launcherUpdatePrompt shouldBe null
+        sut.state.value.launcherUpdateCancelled shouldBe false
+
+        launcherDownload.value = ApkDownloadState.Installing
+        runCurrent()
+        sut.state.value.launcherUpdatePermissionRequired shouldBe false
+        sut.state.value.launcherUpdatePrompt shouldBe null
+        sut.state.value.launcherUpdateCancelled shouldBe false
+
+        launcherDownload.value = ApkDownloadState.Cancelled
+        runCurrent()
+        sut.state.value.launcherUpdateCancelled shouldBe true
+        sut.state.value.launcherUpdatePrompt shouldBe null
+
         launcherDownload.value = ApkDownloadState.Failed
         runCurrent()
         sut.state.value.launcherUpdatePercent shouldBe null
         sut.state.value.launcherUpdateFailed shouldBe true
+        sut.state.value.launcherUpdateCancelled shouldBe false
         sut.state.value.launcherUpdatePrompt shouldBe null
     }
 
@@ -341,11 +372,15 @@ class MainViewModelTest {
         val sut = createSut()
 
         sut.acceptLauncherUpdate()
+        sut.onLauncherInstallPermissionResult()
+        sut.dismissLauncherInstallPermission()
         sut.declineLauncherUpdate()
         sut.dismissLauncherUpdateFailure()
         runCurrent()
 
         coVerify(exactly = 1) { launcherUpdate.install() }
+        coVerify(exactly = 1) { launcherUpdate.onInstallPermissionResult() }
+        verify(exactly = 1) { launcherUpdate.dismissPermissionRequest() }
         verify(exactly = 1) { launcherUpdate.decline() }
         verify(exactly = 1) { launcherUpdate.acknowledgeFailure() }
     }

@@ -30,6 +30,7 @@ data class KirinUpdateUiState(
     val installedVersion: String,
     val latestVersion: String,
     val downloadPercent: Int? = null,
+    val isInstalling: Boolean = false,
 )
 
 data class MainUiState(
@@ -43,6 +44,8 @@ data class MainUiState(
     val isWelcomeVisible: Boolean = false,
     val kirinUpdate: KirinUpdateUiState? = null,
     val launcherUpdatePrompt: String? = null,
+    val launcherUpdatePermissionRequired: Boolean = false,
+    val launcherUpdateCancelled: Boolean = false,
     val launcherUpdatePercent: Int? = null,
     val launcherUpdateFailed: Boolean = false,
 ) {
@@ -76,13 +79,17 @@ class MainViewModel @Inject constructor(
     private val welcome = MutableStateFlow(false)
     private val kirinUpdate = combine(kirin.status, kirin.download) { status, download ->
         val offered = download == ApkDownloadState.Available ||
+            download == ApkDownloadState.PermissionRequired ||
             download is ApkDownloadState.Downloading ||
+            download == ApkDownloadState.Installing ||
+            download == ApkDownloadState.Cancelled ||
             download == ApkDownloadState.Failed
         (status as? KirinStatus.UpdateRecommended)?.takeIf { offered }?.let {
             KirinUpdateUiState(
-                it.installedVersion,
-                it.latestVersion,
-                (download as? ApkDownloadState.Downloading)?.percent,
+                installedVersion = it.installedVersion,
+                latestVersion = it.latestVersion,
+                downloadPercent = (download as? ApkDownloadState.Downloading)?.percent,
+                isInstalling = download == ApkDownloadState.Installing,
             )
         }
     }
@@ -128,6 +135,13 @@ class MainViewModel @Inject constructor(
             launcherUpdatePrompt = updates.launcherOffer.takeIf {
                 launcherDownload == ApkDownloadState.Available && !downloading && !welcomeVisible
             },
+            launcherUpdatePermissionRequired = updates.launcherOffer != null &&
+                launcherDownload == ApkDownloadState.PermissionRequired &&
+                !welcomeVisible,
+            launcherUpdateCancelled = updates.launcherOffer != null &&
+                launcherDownload == ApkDownloadState.Cancelled &&
+                !downloading &&
+                !welcomeVisible,
             launcherUpdatePercent = (launcherDownload as? ApkDownloadState.Downloading)?.percent,
             launcherUpdateFailed = launcherDownload == ApkDownloadState.Failed,
         )
@@ -177,6 +191,14 @@ class MainViewModel @Inject constructor(
 
     fun acceptLauncherUpdate() {
         viewModelScope.launch { launcherUpdate.install() }
+    }
+
+    fun onLauncherInstallPermissionResult() {
+        viewModelScope.launch { launcherUpdate.onInstallPermissionResult() }
+    }
+
+    fun dismissLauncherInstallPermission() {
+        launcherUpdate.dismissPermissionRequest()
     }
 
     fun declineLauncherUpdate() {

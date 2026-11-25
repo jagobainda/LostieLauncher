@@ -44,6 +44,18 @@ class KirinViewModel @Inject constructor(
         viewModelScope.launch { kirin.install() }
     }
 
+    fun onInstallPermissionResult() {
+        viewModelScope.launch { kirin.onInstallPermissionResult() }
+    }
+
+    fun dismissPermissionRequest() {
+        kirin.dismissPermissionRequest()
+    }
+
+    fun dismissInstallCancelled() {
+        kirin.dismissInstallCancelled()
+    }
+
     fun dismissDownloadFailure() {
         kirin.acknowledgeFailure()
     }

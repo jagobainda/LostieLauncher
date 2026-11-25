@@ -82,7 +82,7 @@ class ApplicationLifecycleObserverTest {
         val sut = createSut(StandardTestDispatcher(testScheduler))
 
         sut.onResume(owner)
-        sut.onResume(owner)
+        sut.refreshPackageInstallers()
         advanceUntilIdle()
 
         coVerify(exactly = 2) { kirin.refresh() }

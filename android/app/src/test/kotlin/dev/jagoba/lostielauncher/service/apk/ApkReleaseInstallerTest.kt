@@ -41,7 +41,9 @@ class ApkReleaseInstallerTest {
     private lateinit var server: MockWebServer
     private val dispatcher = StandardTestDispatcher()
     private val transfer = mockk<DownloadTransfer>()
-    private val packages = mockk<ApkPackages>(relaxed = true)
+    private val packages = mockk<ApkPackages>(relaxed = true) {
+        every { canRequestPackageInstalls() } returns true
+    }
     private val logger = mockk<Logger>(relaxed = true)
     private val installer get() = directory.resolve("apk/target/Target.apk").toFile()
     private val feedUrl get() = server.url(FEED_PATH).toString()
@@ -139,9 +141,97 @@ class ApkReleaseInstallerTest {
         sut.install() shouldBe true
 
         observed shouldBe listOf(ApkDownloadState.Downloading(50))
-        sut.download.value shouldBe ApkDownloadState.Available
+        sut.download.value shouldBe ApkDownloadState.Installing
         coVerify(exactly = 1) { transfer.download(DownloadTransferRequest(APK_URL, installer.path), any()) }
         verify(exactly = 1) { packages.install(installer) }
+    }
+
+    @Test
+    fun `requests unknown-sources permission before downloading and resumes once granted`() = runTest(dispatcher) {
+        val sut = offeringRelease()
+        every { packages.canRequestPackageInstalls() } returns false
+        downloadSucceeds()
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install() shouldBe false
+        sut.download.value shouldBe ApkDownloadState.PermissionRequired
+        coVerify(exactly = 0) { transfer.download(any(), any()) }
+        verify(exactly = 0) { packages.install(any()) }
+
+        sut.settle("0.4.0", null)
+        sut.download.value shouldBe ApkDownloadState.PermissionRequired
+
+        every { packages.canRequestPackageInstalls() } returns true
+        sut.onPermissionResult() shouldBe true
+
+        sut.download.value shouldBe ApkDownloadState.Installing
+        coVerify(exactly = 1) { transfer.download(any(), any()) }
+        verify(exactly = 1) { packages.install(installer) }
+    }
+
+    @Test
+    fun `returns to available when returning from settings without unknown-sources permission`() = runTest(dispatcher) {
+        val sut = offeringRelease()
+        every { packages.canRequestPackageInstalls() } returns false
+
+        sut.install() shouldBe false
+        sut.download.value shouldBe ApkDownloadState.PermissionRequired
+
+        sut.onPermissionResult() shouldBe false
+        sut.download.value shouldBe ApkDownloadState.Available
+    }
+
+    @Test
+    fun `checks unknown-sources permission again before opening the installer if revoked during download`() =
+        runTest(dispatcher) {
+            val sut = offeringRelease()
+            every { packages.canRequestPackageInstalls() } returnsMany listOf(true, false, true)
+            downloadSucceeds()
+            every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+            sut.install() shouldBe false
+            sut.download.value shouldBe ApkDownloadState.PermissionRequired
+            verify(exactly = 0) { packages.install(any()) }
+
+            sut.onPermissionResult() shouldBe true
+            sut.download.value shouldBe ApkDownloadState.Installing
+            coVerify(exactly = 1) { transfer.download(any(), any()) }
+            verify(exactly = 1) { packages.install(installer) }
+        }
+
+    @Test
+    fun `marks an incomplete installation as cancelled and retries using the cached APK`() = runTest(dispatcher) {
+        val sut = offeringRelease()
+        downloadSucceeds()
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install() shouldBe true
+        sut.download.value shouldBe ApkDownloadState.Installing
+
+        sut.settle("0.4.0", null, settleInstalling = false)
+        sut.download.value shouldBe ApkDownloadState.Installing
+
+        sut.settle("0.4.0", null)
+        sut.download.value shouldBe ApkDownloadState.Cancelled
+
+        sut.install() shouldBe true
+        sut.download.value shouldBe ApkDownloadState.Installing
+        coVerify(exactly = 1) { transfer.download(any(), any()) }
+        verify(exactly = 2) { packages.install(installer) }
+    }
+
+    @Test
+    fun `clears installing and cancelled states once the offered version is installed`() = runTest(dispatcher) {
+        val sut = offeringRelease()
+        downloadSucceeds()
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install() shouldBe true
+        sut.download.value shouldBe ApkDownloadState.Installing
+
+        sut.settle("0.4.2", null) shouldBe null
+        sut.offered shouldBe null
+        sut.download.value shouldBe ApkDownloadState.Unavailable
     }
 
     @Test

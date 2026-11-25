@@ -132,4 +132,9 @@ internal object EspStrings : Strings {
     override val notificationPermissionTitle = "Notificaciones"
     override val notificationPermissionMessage = "El launcher puede mostrar notificaciones con el progreso de las descargas y avisarte cuando un juego termine de instalarse. Si no las activas, las descargas seguirán funcionando en segundo plano. ¿Quieres permitirlas ahora?"
     override val notificationPermissionSettingsMessage = "Las notificaciones están desactivadas para el launcher. Puedes activarlas en los ajustes del sistema para ver el progreso de las descargas. ¿Quieres abrir Ajustes ahora?"
+    override val installPermissionTitle = "Instalar aplicaciones desconocidas"
+    override val installPermissionMessage = "Para instalar Kirin y las actualizaciones del launcher, Android necesita permiso para instalar aplicaciones desde esta fuente. ¿Quieres abrir Ajustes ahora?"
+    override val apkInstallCancelledTitle = "Instalación no completada"
+    override val apkInstallCancelledMessage = "La instalación se canceló o no se pudo completar. ¿Quieres intentarlo de nuevo?"
+    override val apkInstallCancelledNotice = "La instalación se canceló o no se pudo completar."
 }

@@ -206,9 +206,38 @@ class DialogMessagesTest {
     @Test
     fun `a failed launcher update download shows the download error before any prompt`() {
         launcherUpdateMessageBox(
-            MainUiState(launcherUpdatePrompt = "1.1.0", launcherUpdateFailed = true),
+            MainUiState(
+                launcherUpdatePrompt = "1.1.0",
+                launcherUpdatePermissionRequired = true,
+                launcherUpdateCancelled = true,
+                launcherUpdateFailed = true,
+            ),
             strings,
         ) shouldBe error(strings.downloadErrorTitle, strings.downloadErrorMessage)
+    }
+
+    @Test
+    fun `unknown-sources permission and cancelled installation dialogs ask yes or no and protect against overlays`() {
+        launcherUpdateMessageBox(
+            MainUiState(launcherUpdatePrompt = "1.1.0", launcherUpdatePermissionRequired = true),
+            strings,
+        ) shouldBe MessageBoxSpec(
+            strings.installPermissionTitle,
+            strings.installPermissionMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
+        )
+        launcherUpdateMessageBox(
+            MainUiState(launcherUpdatePrompt = "1.1.0", launcherUpdateCancelled = true),
+            strings,
+        ) shouldBe MessageBoxSpec(
+            strings.apkInstallCancelledTitle,
+            strings.apkInstallCancelledMessage,
+            MessageBoxButtons.YES_NO,
+            MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
+        )
     }
 
     @Test
@@ -247,6 +276,8 @@ class DialogMessagesTest {
                 localized,
             )!!.spec +
             launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), localized)!! +
+            installPermissionMessageBox(localized) +
+            installCancelledMessageBox(localized) +
             SettingsNotice.entries.map { it.messageBox(localized) }
 
         specs.forEach { it.message shouldNotContain "{" }

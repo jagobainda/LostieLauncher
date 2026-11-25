@@ -132,4 +132,9 @@ internal object PorStrings : Strings {
     override val notificationPermissionTitle = "Notificações"
     override val notificationPermissionMessage = "O launcher pode mostrar notificações com o progresso dos downloads e avisar quando um jogo terminar de ser instalado. Se você não ativá-las, os downloads continuarão funcionando em segundo plano. Deseja permitir agora?"
     override val notificationPermissionSettingsMessage = "As notificações estão desativadas para o launcher. Você pode ativá-las nas configurações do sistema para ver o progresso dos downloads. Deseja abrir as Configurações agora?"
+    override val installPermissionTitle = "Instalar apps desconhecidos"
+    override val installPermissionMessage = "Para instalar o Kirin e as atualizações do launcher, o Android precisa de permissão para instalar aplicativos desta fonte. Deseja abrir as Configurações agora?"
+    override val apkInstallCancelledTitle = "Instalação não concluída"
+    override val apkInstallCancelledMessage = "A instalação foi cancelada ou não pôde ser concluída. Deseja tentar novamente?"
+    override val apkInstallCancelledNotice = "A instalação foi cancelada ou não pôde ser concluída."
 }

@@ -15,19 +15,39 @@ fun LauncherUpdateDialogs(
     state: MainUiState,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
+    onInstallPermissionResult: () -> Unit,
+    onDismissPermission: () -> Unit,
     onDismissFailure: () -> Unit,
 ) {
+    val openInstallSettings = rememberUnknownSourcesPermissionRequest(onInstallPermissionResult)
     val spec = launcherUpdateMessageBox(state, LocalStrings.current) ?: return
-    val failed = state.launcherUpdateFailed
-    LauncherMessageBox(
-        spec = spec,
-        onConfirm = if (failed) onDismissFailure else onAccept,
-        onDismiss = if (failed) onDismissFailure else onDecline,
-    )
+    when {
+        state.launcherUpdateFailed -> LauncherMessageBox(
+            spec = spec,
+            onConfirm = onDismissFailure,
+            onDismiss = onDismissFailure,
+        )
+
+        state.launcherUpdatePermissionRequired -> LauncherMessageBox(
+            spec = spec,
+            onConfirm = openInstallSettings,
+            onDismiss = onDismissPermission,
+        )
+
+        else -> LauncherMessageBox(
+            spec = spec,
+            onConfirm = onAccept,
+            onDismiss = onDecline,
+        )
+    }
 }
 
 internal fun launcherUpdateMessageBox(state: MainUiState, strings: Strings): MessageBoxSpec? = when {
     state.launcherUpdateFailed -> errorMessageBox(strings.downloadErrorTitle, strings.downloadErrorMessage)
+
+    state.launcherUpdatePermissionRequired -> installPermissionMessageBox(strings)
+
+    state.launcherUpdateCancelled -> installCancelledMessageBox(strings)
 
     state.launcherUpdatePrompt != null -> MessageBoxSpec(
         strings.updateAvailableTitle,
@@ -39,5 +59,21 @@ internal fun launcherUpdateMessageBox(state: MainUiState, strings: Strings): Mes
 
     else -> null
 }
+
+internal fun installPermissionMessageBox(strings: Strings) = MessageBoxSpec(
+    strings.installPermissionTitle,
+    strings.installPermissionMessage,
+    MessageBoxButtons.YES_NO,
+    MessageBoxIcon.INFORMATION,
+    protectFromOverlays = true,
+)
+
+internal fun installCancelledMessageBox(strings: Strings) = MessageBoxSpec(
+    strings.apkInstallCancelledTitle,
+    strings.apkInstallCancelledMessage,
+    MessageBoxButtons.YES_NO,
+    MessageBoxIcon.INFORMATION,
+    protectFromOverlays = true,
+)
 
 internal fun Strings.downloadingLabel(percent: Int) = "$statusDownloading $percent%"

@@ -18,6 +18,12 @@
 
     <queries>
         <package android:name="com.gmax.kirin" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data
+                android:mimeType="application/vnd.android.package-archive"
+                android:scheme="content" />
+        </intent>
     </queries>
 
     <application
