@@ -91,6 +91,8 @@ internal object EngStrings : Strings {
     override val gameExeNotFoundMessage = "The game executable was not found. Try reinstalling the game."
     override val hashMismatchTitle = "Integrity error"
     override val hashMismatchMessage = "The downloaded file is corrupted or has been tampered with. Please try again. If the problem persists, open an issue in the launcher's GitHub repository."
+    override val gameIntegrityMismatchMessage = "The files of {0} have been modified or are corrupted, so it cannot be launched. Reinstall it to play again."
+    override val gameIntegrityMismatchReinstallMessage = "The files of {0} have been modified or are corrupted, so it cannot be launched. Do you want to reinstall it now?"
     override val welcomeDialogTitle = "Welcome to Lostie Launcher!"
     override val welcomeDialogDescription = "Download, update, and play your favorite games in one place. Simple, fast, and hassle-free.\n\nYour privacy is important. We don't collect any information or data of any kind.\n\nThis project is open source. Questions about how it works? Check the source code"
     override val welcomeDialogContinue = "Continue"

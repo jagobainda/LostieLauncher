@@ -91,6 +91,8 @@ internal object ValStrings : Strings {
     override val gameExeNotFoundMessage = "No s'ha trobat l'executable del joc. Prova a reinstal·lar-lo."
     override val hashMismatchTitle = "Error d'integritat"
     override val hashMismatchMessage = "El fitxer descarregat està danyat o ha sigut modificat. Si us plau, intenta-ho de nou. Si el problema persisteix, obri un issue en el repositori de GitHub del launcher."
+    override val gameIntegrityMismatchMessage = "Els fitxers de {0} han sigut modificats o estan danyats, així que no es pot obrir. Reinstal·la'l per a tornar a jugar."
+    override val gameIntegrityMismatchReinstallMessage = "Els fitxers de {0} han sigut modificats o estan danyats, així que no es pot obrir. Vols reinstal·lar-lo ara?"
     override val welcomeDialogTitle = "Benvingut al Lostie Launcher!"
     override val welcomeDialogDescription = "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim cap tipus d'informació ni de dades.\n\nEst projecte és opensource. Dubtes sobre com funciona? Consulta el codi font"
     override val welcomeDialogContinue = "Continuar"

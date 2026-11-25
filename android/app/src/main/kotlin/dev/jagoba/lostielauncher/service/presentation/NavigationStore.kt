@@ -19,6 +19,7 @@ data class NavigationState(
 enum class LibraryNavigationAction {
     UPDATE,
     SPECIAL_VERSION,
+    REINSTALL,
 }
 
 @Singleton

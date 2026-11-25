@@ -71,6 +71,8 @@ sealed interface GameLaunchResult {
 
     data object GameNotFound : GameLaunchResult
 
+    data object IntegrityMismatch : GameLaunchResult
+
     data object LaunchFailed : GameLaunchResult
 
     data object NotSupportedYet : GameLaunchResult

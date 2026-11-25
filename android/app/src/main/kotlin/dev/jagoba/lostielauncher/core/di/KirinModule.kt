@@ -9,12 +9,15 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.jagoba.lostielauncher.model.InstalledGameManifestOptions
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.LocalLibraryOptions
 import dev.jagoba.lostielauncher.service.game.AndroidKirinShortcut
 import dev.jagoba.lostielauncher.service.game.DataStoreKirinMinimumVersionStore
 import dev.jagoba.lostielauncher.service.game.DefaultKirinSetupService
+import dev.jagoba.lostielauncher.service.game.FileInstalledGameManifestStore
+import dev.jagoba.lostielauncher.service.game.InstalledGameManifestStore
 import dev.jagoba.lostielauncher.service.game.KirinMinimumVersionStore
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
 import dev.jagoba.lostielauncher.service.game.KirinShortcut
@@ -43,6 +46,10 @@ internal abstract class KirinBindingsModule {
     @Binds
     @Singleton
     internal abstract fun bindLocalLibraryStore(impl: FileLocalLibraryStore): LocalLibraryStore
+
+    @Binds
+    @Singleton
+    internal abstract fun bindManifestStore(impl: FileInstalledGameManifestStore): InstalledGameManifestStore
 }
 
 @Module
@@ -83,4 +90,9 @@ internal object KirinModule {
     @Singleton
     internal fun provideLocalLibraryOptions(kirin: KirinOptions): LocalLibraryOptions =
         LocalLibraryOptions(File(kirin.gamesRoot, "local_games.json"))
+
+    @Provides
+    @Singleton
+    internal fun provideInstalledGameManifestOptions(@ApplicationContext context: Context) =
+        InstalledGameManifestOptions(File(context.noBackupFilesDir, "manifests"))
 }

@@ -737,6 +737,45 @@ class LibraryViewModelTest {
     }
 
     @Test
+    fun `reinstall navigation opens download confirmation even when the game is already downloaded`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            installation.current.value = InstalledGamesState.Available(
+                listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
+            )
+            val sut = createSut(backgroundScope)
+            runCurrent()
+            sut.state.value.games.single().status shouldBe LibraryCardStatus.DOWNLOADED
+
+            navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.REINSTALL)
+            runCurrent()
+
+            sut.state.value.pendingDownloadGameId shouldBe remote.gameId
+            navigation.state.value.pendingLibraryAction shouldBe null
+        }
+
+    @Test
+    fun `reinstall navigation reports busy when another download is in progress`() = runTest(dispatcher) {
+        val active = testGame(name = "Downloading")
+        val target = testGame(name = "Installed")
+        content.games = listOf(active, target)
+        installation.current.value = InstalledGamesState.Available(
+            listOf(LocalGame(target.id!!, target.name, target.version, null)),
+        )
+        downloads.current.value = listOf(testDownload(active, DownloadStatus.DOWNLOADING))
+        val sut = createSut(backgroundScope)
+        runCurrent()
+
+        navigation.navigate(LauncherSection.LIBRARY, target.gameId, LibraryNavigationAction.REINSTALL)
+        runCurrent()
+
+        sut.state.value.pendingDownloadGameId shouldBe null
+        sut.state.value.notice shouldBe LibraryNotice.DOWNLOAD_BUSY
+        navigation.state.value.pendingLibraryAction shouldBe null
+    }
+
+    @Test
     fun `a transfer that fails or is denied raises its notice once`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)

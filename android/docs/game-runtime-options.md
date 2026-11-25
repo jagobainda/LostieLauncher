@@ -10,11 +10,11 @@ This is a source review, not evidence of a fresh device run.
 
 | Operation | Implementation | Current behavior |
 | --- | --- | --- |
-| Install/update | `ArchiveGameInstallationService` | Validates SHA-256, extracts a ZIP, swaps directories, registers in Kirin and the local library |
-| Installed list | `ArchiveGameInstallationService.installedGames` | Publishes the local registry; refreshes at startup, on foreground entry and after install/uninstall |
-| Uninstall | `ArchiveGameInstallationService.uninstall` | Removes or moves the game directory aside, updates both registries, reports missing/blocked/partial removal |
+| Install/update | `ArchiveGameInstallationService` | Validates SHA-256, extracts a ZIP while hashing extracted files, swaps directories, writes an internal integrity manifest, and registers in Kirin and the local library |
+| Installed list | `ArchiveGameInstallationService.installedGames` | Reconciles `local_games.json` with internal integrity manifests (preferring manifest metadata over tampered shared entries while keeping legacy unmanifested entries); refreshes at startup, on foreground entry and after install/uninstall |
+| Uninstall | `ArchiveGameInstallationService.uninstall` | Removes or moves the game directory aside, removes the internal manifest, updates both registries, reports missing/blocked/partial removal |
 | Individual lookup | inherited `PendingGameInstallationService.findInstalled` | Returns `NotSupportedYet` |
-| Launch | `KirinGameLaunchService` and `AndroidKirinShortcut` | Checks the game directory and starts Kirin's explicit shortcut intent |
+| Launch | `KirinGameLaunchService` and `AndroidKirinShortcut` | Checks the game directory, Kirin's pinned signer, and full SHA-256 integrity of all manifest files (ignoring extra runtime files such as saves; allowing legacy installations without a manifest), then starts Kirin's explicit shortcut intent |
 | Running detection / active sessions | inherited `PendingGameLaunchService` | Reports unsupported, not a known stopped state |
 | Open a partial-uninstall blocker | `PendingGameLocationService` | Reports unsupported |
 | Playtime | no accounting implementation | Not tracked; there is no reliable supported session-end signal |
@@ -36,7 +36,27 @@ These shared files survive launcher uninstall. Archives use private
 `noBackupFilesDir` storage at `StorageLocations.downloadsRoot/downloads`, which
 is removed with the app and isolated from other apps on all supported Android
 versions; any legacy external cache is discarded during maintenance or before
-reusing a pre-upgrade row. Logs use private `noBackupFilesDir` storage.
+reusing a pre-upgrade row. Logs and per-game integrity manifests
+(`noBackupFilesDir/manifests/<gameId>.json`) also use private `noBackupFilesDir`
+storage.
+
+During extraction, `ArchiveGameInstallationService` hashes the exact bytes
+written to disk and stores each file's size and SHA-256 alongside the trusted
+`id`, `name`, `version` and `variant` in the internal manifest. When building
+the installed-games list, internal manifest metadata takes precedence over
+`local_games.json` so modifying shared registry fields (such as setting a higher
+version or a fake variant) cannot suppress mandatory updates or automatic
+updates; entries without an internal manifest (installed before this change or
+surviving a launcher reinstall) continue to fall back to `local_games.json`
+until updated or reinstalled. Before handing a game to Kirin,
+`KirinGameLaunchService` verifies every file recorded in the manifest by size
+and full SHA-256 (ignoring extra files created later such as saves or runtime
+caches), blocks launch on any mismatch or unreadable manifest, and offers to
+reinstall the game from the Library. Legacy installations without a manifest
+remain launchable. Because Kirin still opens games from shared storage by path,
+this check leaves a residual TOCTOU window between the launcher's verification
+and Kirin reading the files; closing that window completely would require a
+Kirin-side verified handoff or private runtime import.
 
 `InstallDownloadedFileHandoff`, in `service/download/DownloadedFileHandoff.kt`,
 resolves the catalogue GUID when a transfer completes. New downloads persist
@@ -119,8 +139,11 @@ running launcher. An APK with missing signing information is rejected.
   expected SHA-256 and special-version type stored for new downloads.
 - Per-game installed lookup, running detection and blocker opening remain
   unsupported as shown above.
-- Registry entries provide the installed-list projection; they are not a
-  filesystem validation of every game directory.
+- Registry entries (reconciled against internal manifests when present) provide
+  the installed-list projection; full file integrity verification runs on
+  launch rather than scanning every installed game directory at list time.
+- Shared-storage interoperability with Kirin leaves a residual TOCTOU window
+  between pre-launch manifest verification and Kirin opening the game files.
 
 The former document referred to eleven numbered runtime TODO markers. Those
 markers are no longer present in production source; use the bindings and the

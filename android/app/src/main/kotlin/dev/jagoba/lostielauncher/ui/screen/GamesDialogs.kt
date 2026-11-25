@@ -15,7 +15,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.GamesNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.GamesViewModel
 
-internal enum class GamesConfirmation { ACKNOWLEDGE, UNINSTALL, OPEN_BLOCKING_LOCATION }
+internal enum class GamesConfirmation { ACKNOWLEDGE, UNINSTALL, OPEN_BLOCKING_LOCATION, REINSTALL }
 
 internal data class GamesMessage(val spec: MessageBoxSpec, val confirmation: GamesConfirmation)
 
@@ -35,6 +35,8 @@ fun GamesDialogs(viewModel: GamesViewModel = hiltViewModel()) {
                     viewModel.dismissPrompt()
                     viewModel.openBlockingLocation()
                 }
+
+                GamesConfirmation.REINSTALL -> viewModel.confirmReinstall()
             }
         },
         onDismiss = viewModel::dismissPrompt,
@@ -75,6 +77,24 @@ internal fun gamesMessage(state: GamesUiState, strings: Strings): GamesMessage? 
 
         GamesNotice.GAME_NOT_FOUND, GamesNotice.LAUNCH_FAILED ->
             acknowledge(errorMessageBox(strings.gameExeNotFoundTitle, strings.gameExeNotFoundMessage))
+
+        GamesNotice.INTEGRITY_MISMATCH -> if (state.reinstallGameId != null) {
+            GamesMessage(
+                errorMessageBox(
+                    strings.hashMismatchTitle,
+                    strings.gameIntegrityMismatchReinstallMessage.withArgs(name),
+                    MessageBoxButtons.YES_NO,
+                ),
+                GamesConfirmation.REINSTALL,
+            )
+        } else {
+            acknowledge(
+                errorMessageBox(
+                    strings.hashMismatchTitle,
+                    strings.gameIntegrityMismatchMessage.withArgs(name),
+                ),
+            )
+        }
 
         GamesNotice.GAME_RUNNING -> acknowledge(
             errorMessageBox(strings.uninstallGameRunningTitle, strings.uninstallGameRunningMessage.withArgs(name)),
