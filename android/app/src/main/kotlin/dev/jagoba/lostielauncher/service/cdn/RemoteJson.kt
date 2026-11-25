@@ -1,7 +1,10 @@
 package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.DisallowedUrlException
+import dev.jagoba.lostielauncher.util.net.HttpsUrls
 import dev.jagoba.lostielauncher.util.net.readBoundedText
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.IOException
@@ -24,9 +27,17 @@ internal class RemoteJson @Inject constructor(
         deserializer: DeserializationStrategy<T>,
         label: String,
         maxBytes: Long = DEFAULT_MAX_BYTES,
+        allowedHosts: AllowedHosts? = null,
     ): T? = withContext(dispatchers.io) {
         try {
-            client.newCall(Request.Builder().url(url).build()).useCancellableResponse { response ->
+            if (allowedHosts != null && !HttpsUrls.isAllowedHttps(url, allowedHosts)) {
+                throw DisallowedUrlException("$label URL was rejected.")
+            }
+            val request = Request.Builder()
+                .url(url)
+                .apply { allowedHosts?.let { tag(AllowedHosts::class.java, it) } }
+                .build()
+            client.newCall(request).useCancellableResponse { response ->
                 if (!response.isSuccessful) throw IOException("$label returned HTTP ${response.code}.")
                 json.decodeFromString(deserializer, response.body.readBoundedText(maxBytes, label))
             }

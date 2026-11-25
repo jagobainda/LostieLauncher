@@ -1,9 +1,15 @@
 package dev.jagoba.lostielauncher.service.download
 
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 
-internal data class DownloadTransferRequest(val url: String, val destinationPath: String, val maxBytes: Long? = null)
+internal data class DownloadTransferRequest(
+    val url: String,
+    val destinationPath: String,
+    val maxBytes: Long? = null,
+    val allowedHosts: AllowedHosts? = null,
+)
 
 internal interface DownloadTransfer {
     suspend fun download(

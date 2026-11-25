@@ -22,6 +22,8 @@ data class ApkTarget(
     val label: String,
     val pinnedSigner: String? = null,
     val maxBytes: Long? = null,
+    val allowedFeedHosts: AllowedHosts? = null,
+    val allowedDownloadHosts: AllowedHosts? = null,
 )
 
 data class ApkInstallOptions(val fileProviderAuthority: String)

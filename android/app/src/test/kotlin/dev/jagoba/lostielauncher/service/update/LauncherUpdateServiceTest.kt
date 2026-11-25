@@ -59,10 +59,16 @@ class LauncherUpdateServiceTest {
 
     private fun createSut(): DefaultLauncherUpdateService {
         val dispatchers = TestDispatcherProvider(dispatcher)
-        val remoteJson = RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger)
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                chain.proceed(request.newBuilder().url(server.url(request.url.encodedPath)).build())
+            }
+            .build()
+        val remoteJson = RemoteJson(client, Json { ignoreUnknownKeys = true }, dispatchers, logger)
         return DefaultLauncherUpdateService(
             ApkReleaseInstallerFactory(remoteJson, transfer, packages, dispatchers, logger),
-            LauncherUpdateOptions(PACKAGE, server.url("/android/latest.json").toString(), installer),
+            LauncherUpdateOptions(PACKAGE, FEED_URL, installer),
             logger,
         )
     }
@@ -95,13 +101,41 @@ class LauncherUpdateServiceTest {
 
     @Test
     fun `does not offer a download that is not served over HTTPS`() = runTest(dispatcher) {
-        serveRelease("1.1.0", "http://example.com/LostieLauncher.apk")
+        serveRelease("1.1.0", "http://ericlostie-launcher.jagoba.dev/public/android/LostieLauncher.apk")
         val sut = createSut()
 
         sut.refresh()
 
         sut.offeredVersion.value shouldBe null
         sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "https://github.com/jagobainda/LostieLauncher.apk",
+            "https://evil.example/LostieLauncher.apk",
+        ],
+    )
+    fun `does not offer a launcher APK download from a disallowed host`(url: String) = runTest(dispatcher) {
+        serveRelease("1.1.0", url)
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.offeredVersion.value shouldBe null
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @Test
+    fun `offers a launcher APK download hosted on cdn jagoba dev`() = runTest(dispatcher) {
+        serveRelease("1.1.0", "https://cdn.jagoba.dev/ericlostie-launcher/LostieLauncher.apk")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.offeredVersion.value shouldBe "1.1.0"
+        sut.download.value shouldBe ApkDownloadState.Available
     }
 
     @Test
@@ -182,7 +216,12 @@ class LauncherUpdateServiceTest {
 
         coVerify(exactly = 1) {
             transfer.download(
-                DownloadTransferRequest(APK_URL, installer.path, LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES),
+                DownloadTransferRequest(
+                    APK_URL,
+                    installer.path,
+                    LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                    LauncherUpdateOptions.DEFAULT_ALLOWED_HOSTS,
+                ),
                 any(),
             )
         }
@@ -225,6 +264,7 @@ class LauncherUpdateServiceTest {
     private companion object {
         const val PACKAGE = "dev.jagoba.lostielauncher"
         const val INSTALLED = "1.0.0"
-        const val APK_URL = "https://example.com/LostieLauncher.apk"
+        const val FEED_URL = "https://ericlostie-launcher.jagoba.dev/public/android/latest.json"
+        const val APK_URL = "https://ericlostie-launcher.jagoba.dev/public/android/LostieLauncher.apk"
     }
 }

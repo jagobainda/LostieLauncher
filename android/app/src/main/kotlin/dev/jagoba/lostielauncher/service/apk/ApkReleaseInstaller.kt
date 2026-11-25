@@ -57,15 +57,24 @@ internal class ApkReleaseInstaller(
 
     suspend fun loadRelease(feedUrl: String, force: Boolean = false): ApkReleaseDto? {
         if (release == null || force) {
-            acceptRelease(remoteJson.fetch(feedUrl, ApkReleaseDto.serializer(), "${target.label} release feed"))
+            acceptRelease(
+                remoteJson.fetch(
+                    feedUrl,
+                    ApkReleaseDto.serializer(),
+                    "${target.label} release feed",
+                    allowedHosts = target.allowedFeedHosts,
+                ),
+            )
         }
         return release
     }
 
     fun acceptRelease(candidate: ApkReleaseDto?): ApkReleaseDto? {
-        release = candidate
-            ?.takeIf { HttpsUrls.parseOrNull(it.downloadUrl) != null }
-            ?.also { logger.info("${target.label} release feed offers ${it.versionName}.") }
+        val accepted = candidate?.takeIf { HttpsUrls.isAllowedHttps(it.downloadUrl, target.allowedDownloadHosts) }
+        if (candidate != null && accepted == null) {
+            logger.error("${target.label} release download URL was rejected.")
+        }
+        release = accepted?.also { logger.info("${target.label} release feed offers ${it.versionName}.") }
         return release
     }
 
@@ -113,7 +122,9 @@ internal class ApkReleaseInstaller(
         val apk = target.installerFile
         if (!isInstallable(apk, release.versionName)) {
             logger.info("${target.label} ${release.versionName} download started.")
-            val result = transfer.download(DownloadTransferRequest(release.downloadUrl, apk.path, target.maxBytes)) {
+            val result = transfer.download(
+                DownloadTransferRequest(release.downloadUrl, apk.path, target.maxBytes, target.allowedDownloadHosts),
+            ) {
                 mutableDownload.value = ApkDownloadState.Downloading(it.percent.roundToInt())
             }
             if (result != DownloadTransferResult.Success) {

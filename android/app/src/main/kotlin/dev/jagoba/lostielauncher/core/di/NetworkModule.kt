@@ -18,6 +18,8 @@ import dev.jagoba.lostielauncher.service.cdn.SecurityFlagClient
 import dev.jagoba.lostielauncher.service.cdn.TwitchPreviewClient
 import dev.jagoba.lostielauncher.service.network.ConnectivityNetworkMonitor
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
+import dev.jagoba.lostielauncher.util.net.AllowedHostRedirectInterceptor
+import dev.jagoba.lostielauncher.util.net.AllowedHostRequestInterceptor
 import dev.jagoba.lostielauncher.util.net.BoundedResponseBodyInterceptor
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
@@ -76,7 +78,10 @@ object NetworkModule {
     @Singleton
     @BaseHttpClient
     fun provideBaseHttpClient(userAgent: Interceptor): OkHttpClient = OkHttpClient.Builder()
+        .followSslRedirects(false)
         .addInterceptor(userAgent)
+        .addInterceptor(AllowedHostRequestInterceptor)
+        .addNetworkInterceptor(AllowedHostRedirectInterceptor)
         .build()
 
     @Provides
