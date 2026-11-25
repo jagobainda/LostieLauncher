@@ -1,6 +1,8 @@
 package dev.jagoba.lostielauncher.service.presentation
 
+import dev.jagoba.lostielauncher.model.DownloadCommandResult
 import dev.jagoba.lostielauncher.model.DownloadStatus
+import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.TestContentService
@@ -68,6 +70,99 @@ class GameAutoUpdateCoordinatorTest {
         downloads.current.value = listOf(testDownload(first, DownloadStatus.COMPLETED))
         runCurrent()
         downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId, second.gameId)
+        downloads.starts.all { it.requiresUnmeteredNetwork } shouldBe true
+    }
+
+    @Test
+    fun `disabling auto update cancels the active automatic update and stops remaining updates`() = runTest {
+        val first = testGame(name = "First")
+        val second = testGame(name = "Second")
+        content.games = listOf(first, second)
+        installation.current.value = InstalledGamesState.Available(listOf(localGame(first), localGame(second)))
+        settings.setAutoUpdate(true)
+        launcher.refreshCatalogue()
+        sut.start(backgroundScope)
+        runCurrent()
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId)
+
+        settings.setAutoUpdate(false)
+        runCurrent()
+        downloads.current.value = listOf(testDownload(first, DownloadStatus.CANCELLED))
+        runCurrent()
+
+        downloads.cancelled shouldBe listOf(first.gameId)
+        downloads.starts.map { it.args.gameId } shouldBe listOf(first.gameId)
+    }
+
+    @Test
+    fun `disabling auto update does not cancel an unrelated active download`() = runTest {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        downloads.result = DownloadCommandResult.BUSY
+        settings.setAutoUpdate(true)
+        launcher.refreshCatalogue()
+        sut.start(backgroundScope)
+        runCurrent()
+
+        settings.setAutoUpdate(false)
+        runCurrent()
+
+        downloads.cancelled shouldBe emptyList()
+    }
+
+    @Test
+    fun `disabling auto update after updates finish does not cancel completed games`() = runTest {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        settings.setAutoUpdate(true)
+        launcher.refreshCatalogue()
+        sut.start(backgroundScope)
+        runCurrent()
+        downloads.current.value = listOf(testDownload(remote, DownloadStatus.COMPLETED))
+        runCurrent()
+
+        settings.setAutoUpdate(false)
+        runCurrent()
+
+        downloads.cancelled shouldBe emptyList()
+    }
+
+    @Test
+    fun `enabling auto update during the session starts pending updates`() = runTest {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        launcher.refreshCatalogue()
+        sut.start(backgroundScope)
+        runCurrent()
+        downloads.starts shouldBe emptyList()
+
+        settings.setAutoUpdate(true)
+        runCurrent()
+
+        downloads.starts.map { it.args.gameId } shouldBe listOf(remote.gameId)
+        downloads.starts.single().requiresUnmeteredNetwork shouldBe true
+    }
+
+    @Test
+    fun `re-enabling auto update retries a previously cancelled update`() = runTest {
+        val remote = testGame()
+        content.games = listOf(remote)
+        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        settings.setAutoUpdate(true)
+        launcher.refreshCatalogue()
+        sut.start(backgroundScope)
+        runCurrent()
+
+        settings.setAutoUpdate(false)
+        runCurrent()
+        settings.setAutoUpdate(true)
+        runCurrent()
+
+        downloads.cancelled shouldBe listOf(remote.gameId)
+        downloads.starts.map { it.args.gameId } shouldBe listOf(remote.gameId, remote.gameId)
     }
 
     @Test
@@ -84,4 +179,6 @@ class GameAutoUpdateCoordinatorTest {
         runCurrent()
         downloads.starts shouldBe emptyList()
     }
+
+    private fun localGame(remote: GameInfo): LocalGame = LocalGame(requireNotNull(remote.id), remote.name, "v1.0", null)
 }

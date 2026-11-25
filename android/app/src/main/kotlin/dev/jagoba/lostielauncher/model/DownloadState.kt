@@ -5,6 +5,7 @@ data class DownloadRequest(
     val args: GameDownloadArgs,
     val expectedSha256: String,
     val variant: String? = null,
+    val requiresUnmeteredNetwork: Boolean = false,
 )
 
 data class DownloadDestination(val path: String, val freeBytes: Long?)

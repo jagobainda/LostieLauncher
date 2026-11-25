@@ -70,7 +70,7 @@ internal class DefaultDownloadManager @Inject constructor(
             )
             if (changed == 0) return@withLock DownloadCommandResult.INVALID_STATE
             logger.info("Retrying download from its partial: ${request.args.gameId} ${request.args.version}.")
-            return@withLock enqueue(request.args.gameId, workId)
+            return@withLock enqueue(request.args.gameId, workId, request.requiresUnmeteredNetwork)
         }
         withContext(dispatchers.io) {
             fileStore.deleteArtifacts(destination.absolutePath)
@@ -99,7 +99,7 @@ internal class DefaultDownloadManager @Inject constructor(
             ),
         )
         logger.info("Downloading: ${request.args.gameId} ${request.args.version}.")
-        enqueue(request.args.gameId, workId)
+        enqueue(request.args.gameId, workId, request.requiresUnmeteredNetwork)
     }
 
     override suspend fun pause(gameId: String): DownloadCommandResult = commandGate.withLock {
@@ -224,8 +224,12 @@ internal class DefaultDownloadManager @Inject constructor(
 
     private suspend fun hasActiveDownload(): Boolean = dao.countWithStatuses(DownloadStatus.ActiveNames) > 0
 
-    private suspend fun enqueue(gameId: String, workId: UUID): DownloadCommandResult = try {
-        scheduler.enqueue(gameId, workId)
+    private suspend fun enqueue(
+        gameId: String,
+        workId: UUID,
+        requiresUnmeteredNetwork: Boolean = false,
+    ): DownloadCommandResult = try {
+        scheduler.enqueue(gameId, workId, requiresUnmeteredNetwork)
         DownloadCommandResult.ACCEPTED
     } catch (error: Exception) {
         dao.setStatus(gameId, DownloadStatus.FAILED.name, error.message)

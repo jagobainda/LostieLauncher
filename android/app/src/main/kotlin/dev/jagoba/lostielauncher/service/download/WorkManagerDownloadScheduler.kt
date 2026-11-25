@@ -16,11 +16,11 @@ internal class WorkManagerDownloadScheduler @Inject constructor(private val work
     DownloadWorkScheduler {
     override fun nextId(): UUID = UUID.randomUUID()
 
-    override fun enqueue(gameId: String, workId: UUID) {
+    override fun enqueue(gameId: String, workId: UUID, requiresUnmeteredNetwork: Boolean) {
         val request = OneTimeWorkRequestBuilder<GameDownloadWorker>()
             .setId(workId)
             .setInputData(workDataOf(GameDownloadWorker.GAME_ID_INPUT to gameId))
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .setConstraints(constraintsFor(requiresUnmeteredNetwork))
             .build()
         workManager.enqueueUniqueWork(uniqueName(gameId), ExistingWorkPolicy.REPLACE, request)
     }
@@ -31,7 +31,13 @@ internal class WorkManagerDownloadScheduler @Inject constructor(private val work
 
     private fun uniqueName(gameId: String): String = "$UNIQUE_NAME_PREFIX$gameId"
 
-    private companion object {
-        const val UNIQUE_NAME_PREFIX = "game-download:"
+    internal companion object {
+        private const val UNIQUE_NAME_PREFIX = "game-download:"
+
+        fun constraintsFor(requiresUnmeteredNetwork: Boolean): Constraints = Constraints.Builder()
+            .setRequiredNetworkType(
+                if (requiresUnmeteredNetwork) NetworkType.UNMETERED else NetworkType.CONNECTED,
+            )
+            .build()
     }
 }

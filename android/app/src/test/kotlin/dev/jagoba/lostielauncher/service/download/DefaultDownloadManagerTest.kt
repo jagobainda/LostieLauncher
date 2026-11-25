@@ -49,7 +49,7 @@ class DefaultDownloadManagerTest {
     fun configureDefaults() {
         every { dao.observeAll() } returns flowOf(emptyList())
         every { scheduler.nextId() } returns workId
-        every { scheduler.enqueue(any(), any()) } returns Unit
+        every { scheduler.enqueue(any(), any(), any()) } returns Unit
         coEvery { scheduler.cancel(any()) } returns Unit
         every { fileStore.destinationFor(any()) } returns File(destinationPath)
         every { fileStore.isManagedPath(any()) } returns true
@@ -80,7 +80,28 @@ class DefaultDownloadManagerTest {
         entity.captured.expectedSha256 shouldBe "a".repeat(64)
         entity.captured.variant shouldBe null
         verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
+    }
+
+    @Test
+    fun `enqueues automatic downloads with an unmetered network requirement`() = runTest {
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.start(request(requiresUnmeteredNetwork = true)) shouldBe DownloadCommandResult.ACCEPTED
+
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, true) }
+    }
+
+    @Test
+    fun `keeps the unmetered network requirement when retrying a failed partial automatically`() = runTest {
+        coEvery { dao.get("demo") } returns entity(DownloadStatus.FAILED)
+        coEvery { dao.replaceWork(any(), any(), any(), any()) } returns 1
+        every { fileStore.hasResumablePartial(destinationPath) } returns true
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.start(request(requiresUnmeteredNetwork = true)) shouldBe DownloadCommandResult.ACCEPTED
+
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, true) }
     }
 
     @Test
@@ -97,7 +118,7 @@ class DefaultDownloadManagerTest {
         }
         coVerify(exactly = 0) { dao.upsert(any()) }
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -117,7 +138,7 @@ class DefaultDownloadManagerTest {
         }
         coVerify(exactly = 0) { dao.upsert(any()) }
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @ParameterizedTest
@@ -139,7 +160,7 @@ class DefaultDownloadManagerTest {
         replacement.captured.expectedSha256 shouldBe request().expectedSha256
         replacement.captured.variant shouldBe request().variant
         verify(exactly = 1) { fileStore.deleteArtifacts(destinationPath) }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -175,7 +196,7 @@ class DefaultDownloadManagerTest {
             downloadedBytes = 0,
             totalBytes = null,
         )
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -199,7 +220,7 @@ class DefaultDownloadManagerTest {
             downloadedBytes = 0,
             totalBytes = null,
         )
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -210,7 +231,7 @@ class DefaultDownloadManagerTest {
         sut.start(request()) shouldBe DownloadCommandResult.BUSY
 
         coVerify(exactly = 0) { dao.upsert(any()) }
-        verify(exactly = 0) { scheduler.enqueue(any(), any()) }
+        verify(exactly = 0) { scheduler.enqueue(any(), any(), any()) }
     }
 
     @Test
@@ -250,7 +271,7 @@ class DefaultDownloadManagerTest {
         coVerify(exactly = 1) { dao.upsert(capture(entity)) }
         entity.captured shouldBe entity(DownloadStatus.INSTALLING)
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -265,7 +286,7 @@ class DefaultDownloadManagerTest {
         coVerify(exactly = 1) { dao.upsert(capture(entity)) }
         entity.captured shouldBe
             entity(DownloadStatus.QUEUED).copy(percent = 0.0, downloadedBytes = 0, totalBytes = null)
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -281,7 +302,7 @@ class DefaultDownloadManagerTest {
         sut.retry("demo") shouldBe DownloadCommandResult.BUSY
 
         coVerify(exactly = 0) { dao.upsert(any()) }
-        verify(exactly = 0) { scheduler.enqueue(any(), any()) }
+        verify(exactly = 0) { scheduler.enqueue(any(), any(), any()) }
     }
 
     @Test
@@ -295,7 +316,7 @@ class DefaultDownloadManagerTest {
         coVerify(exactly = 1) {
             dao.replaceWork("demo", DownloadStatus.PAUSED.name, workId.toString(), DownloadStatus.QUEUED.name)
         }
-        verify(exactly = 1) { scheduler.enqueue("demo", workId) }
+        verify(exactly = 1) { scheduler.enqueue("demo", workId, false) }
     }
 
     @Test
@@ -438,10 +459,11 @@ class DefaultDownloadManagerTest {
         logger = logger,
     )
 
-    private fun request() = DownloadRequest(
+    private fun request(requiresUnmeteredNetwork: Boolean = false) = DownloadRequest(
         displayName = "Demo",
         args = GameDownloadArgs("demo", "1.0", "/demo/1.zip"),
         expectedSha256 = "a".repeat(64),
+        requiresUnmeteredNetwork = requiresUnmeteredNetwork,
     )
 
     private fun entity(status: DownloadStatus) = DownloadEntity(
