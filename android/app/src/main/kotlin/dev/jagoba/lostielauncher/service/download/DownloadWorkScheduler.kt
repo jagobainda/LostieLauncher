@@ -5,7 +5,7 @@ import java.util.UUID
 internal interface DownloadWorkScheduler {
     fun nextId(): UUID
 
-    fun enqueue(gameId: String, workId: UUID)
+    fun enqueue(gameId: String, workId: UUID, requiresUnmeteredNetwork: Boolean = false)
 
     suspend fun cancel(workId: UUID)
 }

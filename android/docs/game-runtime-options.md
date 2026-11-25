@@ -82,7 +82,12 @@ The implementation checks shared-storage access through `StorageAccess`:
 all-files access on Android 11+, or legacy write permission on older supported
 versions. User-started install/update and a retried installation wait for that
 access. Notification permission affects progress and result visibility and is a
-separate request.
+separate request. Automatic game updates observe the auto-update setting:
+enabling it checks for outdated regular games and enqueues them with an
+unmetered-network WorkManager constraint (`NetworkType.UNMETERED`), while
+disabling it stops remaining updates and cancels any automatic update in
+progress without affecting manual downloads. Manual downloads, resumes and
+retries use `NetworkType.CONNECTED`.
 
 `KirinSetupService` checks server requirements and the installed Kirin version.
 The last valid minimum version received from the server is persisted in
