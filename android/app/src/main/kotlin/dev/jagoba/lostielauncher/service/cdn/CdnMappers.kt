@@ -11,6 +11,7 @@ import dev.jagoba.lostielauncher.service.cdn.dto.HomeContentDto
 import java.time.Clock
 import java.time.LocalDateTime
 import java.util.UUID
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 internal object CdnMappers {
     private val EMPTY_UUID: UUID = UUID(0L, 0L)
@@ -24,7 +25,7 @@ internal object CdnMappers {
         sizeGb = dto.pesoGB,
         description = dto.descripcion,
         pageUrl = dto.url,
-        logoUrl = if (dto.logo.isEmpty()) null else cdnBaseUrl + dto.logo,
+        logoUrl = resolveLogoUrl(cdnBaseUrl, dto.logo),
         relativePath = dto.rutaRelativa,
         sha256 = dto.sha256,
     )
@@ -76,6 +77,15 @@ internal object CdnMappers {
             .sortedBy { it.key }
             .firstNotNullOfOrNull { it.value }
             ?: ""
+    }
+
+    private fun resolveLogoUrl(cdnBaseUrl: String, logo: String): String? {
+        if (logo.isBlank()) return null
+        val segments = logo.trim('/').split('/').filter(String::isNotEmpty)
+        if (segments.isEmpty() || segments.any { it == "." || it == ".." }) return null
+        val builder = cdnBaseUrl.toHttpUrlOrNull()?.newBuilder() ?: return null
+        segments.forEach(builder::addPathSegment)
+        return builder.build().toString()
     }
 
     private fun parseOptionalUuid(value: String): UUID? {

@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -96,5 +97,39 @@ class RemoteJsonTest {
         sut.fetch(url, deserializer, "Feed", maxBytes = 32) shouldBe null
         sut.fetch(url, deserializer, "Feed", maxBytes = 32) shouldBe null
         verify(exactly = 2) { logger.error("Feed could not be read.", any()) }
+    }
+
+    @Test
+    fun `rejects non-HTTPS and disallowed hosts before contacting the client when an allowlist is set`() =
+        runTest(dispatcher) {
+            val client = mockk<OkHttpClient>()
+            val allowed = AllowedHosts(exact = setOf("api.github.com"))
+            val sut = createSut(client)
+
+            sut.fetch("http://api.github.com/feed.json", deserializer, "Feed", allowedHosts = allowed) shouldBe null
+            sut.fetch("https://evil.example/feed.json", deserializer, "Feed", allowedHosts = allowed) shouldBe null
+
+            verify(exactly = 0) { client.newCall(any()) }
+            verify(exactly = 2) { logger.error("Feed could not be read.", any()) }
+        }
+
+    @Test
+    fun `attaches the host allowlist tag to outgoing requests`() = runTest(dispatcher) {
+        server.enqueue(MockResponse.Builder().body("""{"versionName":"1.0.0"}""").build())
+        val allowed = AllowedHosts(exact = setOf("api.github.com"))
+        var observedTag: AllowedHosts? = null
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                observedTag = request.tag(AllowedHosts::class.java)
+                chain.proceed(request.newBuilder().url(server.url(request.url.encodedPath)).build())
+            }
+            .build()
+        val sut = createSut(client)
+
+        val result = sut.fetch("https://api.github.com/feed.json", deserializer, "Feed", allowedHosts = allowed)
+
+        result shouldBe mapOf("versionName" to "1.0.0")
+        observedTag shouldBe allowed
     }
 }

@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.util.net
 
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -133,5 +134,48 @@ class HttpsUrlsTest {
         val uri = HttpsUrls.parseOrNull(url).shouldNotBeNull()
 
         HttpsUrls.canonicalUrl(uri) shouldBe expected
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "https://github.com/org/repo/releases/download/0.4.2/Kirin.apk",
+            "HTTPS://RELEASE-ASSETS.GITHUBUSERCONTENT.COM/asset/Kirin.apk",
+            "https://ericlostie-launcher.jagoba.dev/public/android/LostieLauncher.apk",
+        ],
+    )
+    fun `accepts HTTPS URLs whose host matches the allowlist`(url: String) {
+        val allowed = AllowedHosts(
+            exact = setOf("github.com", "ericlostie-launcher.jagoba.dev"),
+            suffixes = setOf("githubusercontent.com"),
+        )
+
+        HttpsUrls.isAllowedHttps(url, allowed) shouldBe true
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(
+        strings = [
+            "",
+            "   ",
+            "http://github.com/org/repo/Kirin.apk",
+            "file:///data/local/tmp/Kirin.apk",
+            "javascript:alert(1)",
+            "https://evil.example/Kirin.apk",
+            "https://evilgithub.com/Kirin.apk",
+            "https://githubusercontent.com/Kirin.apk",
+            "https://user@github.com/Kirin.apk",
+            "https://github.com@evil.example/Kirin.apk",
+            "https:///missing-host",
+        ],
+    )
+    fun `rejects non-HTTPS, malformed, credentialed or disallowed-host URLs`(url: String?) {
+        val allowed = AllowedHosts(
+            exact = setOf("github.com", "ericlostie-launcher.jagoba.dev"),
+            suffixes = setOf("githubusercontent.com"),
+        )
+
+        HttpsUrls.isAllowedHttps(url, allowed) shouldBe false
     }
 }

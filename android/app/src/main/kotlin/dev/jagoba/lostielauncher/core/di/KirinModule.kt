@@ -90,6 +90,8 @@ internal object KirinModule {
         supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
         feedRetryInterval = 5.minutes,
         maxInstallerBytes = KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+        allowedFeedHosts = KirinSetupOptions.DEFAULT_ALLOWED_FEED_HOSTS,
+        allowedDownloadHosts = KirinSetupOptions.DEFAULT_ALLOWED_DOWNLOAD_HOSTS,
     )
 
     @Provides

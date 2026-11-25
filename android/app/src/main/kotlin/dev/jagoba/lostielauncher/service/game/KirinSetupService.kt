@@ -10,6 +10,7 @@ import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
 import dev.jagoba.lostielauncher.service.apk.SignedApk
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.HttpsUrls
 import dev.jagoba.lostielauncher.util.policy.ApkAbiPolicy
 import dev.jagoba.lostielauncher.util.policy.ApkAsset
 import dev.jagoba.lostielauncher.util.policy.ApkAssetSelection
@@ -67,7 +68,15 @@ internal class DefaultKirinSetupService @Inject constructor(
     private val logger: Logger,
 ) : KirinSetupService {
     private val installer = installers.create(
-        ApkTarget(kirin.packageName, options.installerFile, "Kirin", options.signerSha256, options.maxInstallerBytes),
+        ApkTarget(
+            packageName = kirin.packageName,
+            installerFile = options.installerFile,
+            label = "Kirin",
+            pinnedSigner = options.signerSha256,
+            maxBytes = options.maxInstallerBytes,
+            allowedFeedHosts = options.allowedFeedHosts,
+            allowedDownloadHosts = options.allowedDownloadHosts,
+        ),
     )
     private val refreshGate = Mutex()
     private val mutableStatus = MutableStateFlow<KirinStatus?>(null)
@@ -104,6 +113,7 @@ internal class DefaultKirinSetupService @Inject constructor(
                     options.requirementsUrl,
                     KirinRequirementsDto.serializer(),
                     "Kirin requirements",
+                    allowedHosts = options.allowedFeedHosts,
                 )
                 if (fetched != null) {
                     requirements = fetched
@@ -140,8 +150,19 @@ internal class DefaultKirinSetupService @Inject constructor(
         val now = clock.instant()
         val retryAt = nextFeedAttemptAt
         if (retryAt != null && now < retryAt) return
+        if (!HttpsUrls.isAllowedHttps(feedUrl, options.allowedFeedHosts)) {
+            logger.error("Kirin release feed URL was rejected.")
+            incompatibleReleaseVersion = null
+            nextFeedAttemptAt = now.plus(options.feedRetryInterval.toJavaDuration())
+            return
+        }
 
-        val fetched = remoteJson.fetch(feedUrl, GitHubReleaseDto.serializer(), "Kirin release feed")
+        val fetched = remoteJson.fetch(
+            feedUrl,
+            GitHubReleaseDto.serializer(),
+            "Kirin release feed",
+            allowedHosts = options.allowedFeedHosts,
+        )
         if (fetched == null) {
             nextFeedAttemptAt = now.plus(options.feedRetryInterval.toJavaDuration())
             return

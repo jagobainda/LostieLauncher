@@ -1,6 +1,8 @@
 package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.core.di.NetworkModule
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadTransferOptions
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
@@ -321,11 +323,58 @@ class OkHttpDownloadTransferTest {
         server.takeRequest().headers["Range"] shouldBe null
     }
 
-    private fun request(destination: Path, maxBytes: Long? = null) = DownloadTransferRequest(
-        url = server.url("/game.zip").toString(),
-        destinationPath = destination.toString(),
-        maxBytes = maxBytes,
-    )
+    @Test
+    fun `fails immediately without retrying when a download redirects to a disallowed host`() = runTest {
+        server.enqueue(
+            MockResponse.Builder()
+                .code(302)
+                .addHeader("Location", "https://evil.example/Kirin.apk")
+                .build(),
+        )
+        val destination = directory.resolve("app.apk")
+        val client = NetworkModule.provideDownloadClient(
+            NetworkModule.provideBaseHttpClient(NetworkModule.provideUserAgentInterceptor()),
+        )
+        val allowed = AllowedHosts(exact = setOf(server.hostName))
+
+        val result = createSut(client = client).download(request(destination, allowedHosts = allowed)) {}
+
+        result.shouldBeInstanceOf<DownloadTransferResult.Failed>()
+        server.requestCount shouldBe 1
+        Files.exists(destination) shouldBe false
+    }
+
+    @Test
+    fun `follows a redirect to another host permitted by the allowlist`() = runTest {
+        MockWebServer().use { cdn ->
+            cdn.start()
+            server.enqueue(
+                MockResponse.Builder()
+                    .code(302)
+                    .addHeader("Location", cdn.url("/asset/Kirin.apk").toString())
+                    .build(),
+            )
+            cdn.enqueue(MockResponse.Builder().code(200).body("apk-bytes").build())
+            val destination = directory.resolve("app.apk")
+            val client = NetworkModule.provideDownloadClient(
+                NetworkModule.provideBaseHttpClient(NetworkModule.provideUserAgentInterceptor()),
+            )
+            val allowed = AllowedHosts(exact = setOf(server.hostName, cdn.hostName))
+
+            val result = createSut(client = client).download(request(destination, allowedHosts = allowed)) {}
+
+            result shouldBe DownloadTransferResult.Success
+            destination.readText() shouldBe "apk-bytes"
+        }
+    }
+
+    private fun request(destination: Path, maxBytes: Long? = null, allowedHosts: AllowedHosts? = null) =
+        DownloadTransferRequest(
+            url = server.url("/game.zip").toString(),
+            destinationPath = destination.toString(),
+            maxBytes = maxBytes,
+            allowedHosts = allowedHosts,
+        )
 
     private fun createSut(
         maximumAttempts: Int = 3,

@@ -79,14 +79,20 @@ class KirinSetupServiceTest {
         feedRetryInterval: Duration = 5.minutes,
     ): DefaultKirinSetupService {
         val dispatchers = TestDispatcherProvider(dispatcher)
-        val remoteJson = RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger)
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                chain.proceed(request.newBuilder().url(server.url(request.url.encodedPath)).build())
+            }
+            .build()
+        val remoteJson = RemoteJson(client, Json { ignoreUnknownKeys = true }, dispatchers, logger)
         return DefaultKirinSetupService(
             remoteJson,
             ApkReleaseInstallerFactory(remoteJson, transfer, packages, dispatchers, logger),
             minimumVersionStore,
             KirinOptions(File(""), File(""), "", "", KIRIN_PACKAGE, "", "", ""),
             KirinSetupOptions(
-                server.url(REQUIREMENTS_PATH).toString(),
+                REQUIREMENTS_URL,
                 FALLBACK_MINIMUM,
                 installer,
                 "official",
@@ -262,13 +268,66 @@ class KirinSetupServiceTest {
     fun `does not offer a download that is not served over HTTPS`() = runTest(dispatcher) {
         every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
         serveRequirements()
-        serveRelease("0.4.2", "http://example.com/Kirin.apk")
+        serveRelease("0.4.2", "http://github.com/shogun-drei/kirin-updates/releases/download/0.4.2/Kirin.apk")
         val sut = createSut()
 
         sut.refresh()
 
         sut.status.value shouldBe KirinStatus.Ready
         sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @Test
+    fun `does not fetch a Kirin release feed that is not served over HTTPS`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements(feedUrl = "http://api.github.com$FEED_PATH")
+        serveRelease("0.4.2")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+        server.requestCount shouldBe 1
+        verify(exactly = 1) { logger.error("Kirin release feed URL was rejected.") }
+    }
+
+    @Test
+    fun `does not fetch a Kirin release feed from a disallowed host`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements(feedUrl = "https://evil.example$FEED_PATH")
+        serveRelease("0.4.2")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+        server.requestCount shouldBe 1
+        verify(exactly = 1) { logger.error("Kirin release feed URL was rejected.") }
+    }
+
+    @Test
+    fun `does not offer a Kirin APK download from a disallowed host`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
+        serveRequirements()
+        serveRelease("0.4.2", "https://evil.example/Kirin.apk")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.status.value shouldBe KirinStatus.Ready
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @Test
+    fun `accepts a Kirin APK download hosted on a githubusercontent subdomain`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveRelease("0.4.2", "https://release-assets.githubusercontent.com/asset/Kirin-0.4.2.apk")
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.download.value shouldBe ApkDownloadState.Available
     }
 
     @Test
@@ -291,8 +350,8 @@ class KirinSetupServiceTest {
         serveReleaseAssets(
             version = "0.4.2",
             assets = listOf(
-                "Kirin-0.4.2-armeabi-v7a.apk" to "https://example.com/Kirin-v7a.apk",
-                "Kirin-0.4.2-arm64-v8a.apk" to "https://example.com/Kirin-arm64.apk",
+                "Kirin-0.4.2-armeabi-v7a.apk" to "https://github.com/shogun-drei/Kirin-v7a.apk",
+                "Kirin-0.4.2-arm64-v8a.apk" to "https://github.com/shogun-drei/Kirin-arm64.apk",
             ),
         )
         val sut = createSut(supportedAbis = listOf("arm64-v8a", "armeabi-v7a"))
@@ -305,9 +364,10 @@ class KirinSetupServiceTest {
         coVerify(exactly = 1) {
             transfer.download(
                 DownloadTransferRequest(
-                    "https://example.com/Kirin-arm64.apk",
+                    "https://github.com/shogun-drei/Kirin-arm64.apk",
                     installer.path,
                     KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                    KirinSetupOptions.DEFAULT_ALLOWED_DOWNLOAD_HOSTS,
                 ),
                 any(),
             )
@@ -321,8 +381,8 @@ class KirinSetupServiceTest {
         serveReleaseAssets(
             version = "0.4.2",
             assets = listOf(
-                "Kirin-0.4.2-arm64-v8a.apk" to "https://example.com/Kirin-arm64.apk",
-                "Kirin-0.4.2-universal.apk" to "https://example.com/Kirin-universal.apk",
+                "Kirin-0.4.2-arm64-v8a.apk" to "https://github.com/shogun-drei/Kirin-arm64.apk",
+                "Kirin-0.4.2-universal.apk" to "https://github.com/shogun-drei/Kirin-universal.apk",
             ),
         )
         val sut = createSut(supportedAbis = listOf("x86_64", "x86"))
@@ -335,9 +395,10 @@ class KirinSetupServiceTest {
         coVerify(exactly = 1) {
             transfer.download(
                 DownloadTransferRequest(
-                    "https://example.com/Kirin-universal.apk",
+                    "https://github.com/shogun-drei/Kirin-universal.apk",
                     installer.path,
                     KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                    KirinSetupOptions.DEFAULT_ALLOWED_DOWNLOAD_HOSTS,
                 ),
                 any(),
             )
@@ -460,7 +521,12 @@ class KirinSetupServiceTest {
         sut.download.value shouldBe ApkDownloadState.Available
         coVerify(exactly = 1) {
             transfer.download(
-                DownloadTransferRequest(APK_URL, installer.path, KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES),
+                DownloadTransferRequest(
+                    APK_URL,
+                    installer.path,
+                    KirinSetupOptions.DEFAULT_MAX_INSTALLER_BYTES,
+                    KirinSetupOptions.DEFAULT_ALLOWED_DOWNLOAD_HOSTS,
+                ),
                 any(),
             )
         }
@@ -484,8 +550,8 @@ class KirinSetupServiceTest {
         }
     }
 
-    private fun serveRequirements(minimum: String = "0.4.0") {
-        serve(REQUIREMENTS_PATH, """{"minimumVersion":"$minimum","releaseFeedUrl":"${server.url(FEED_PATH)}"}""")
+    private fun serveRequirements(minimum: String = "0.4.0", feedUrl: String = FEED_URL) {
+        serve(REQUIREMENTS_PATH, """{"minimumVersion":"$minimum","releaseFeedUrl":"$feedUrl"}""")
     }
 
     private fun serveRelease(
@@ -540,9 +606,11 @@ class KirinSetupServiceTest {
 
     private companion object {
         const val REQUIREMENTS_PATH = "/kirin-setup-options.json"
+        const val REQUIREMENTS_URL = "https://ericlostie-launcher.jagoba.dev$REQUIREMENTS_PATH"
         const val FEED_PATH = "/releases/latest"
+        const val FEED_URL = "https://api.github.com$FEED_PATH"
         const val FALLBACK_MINIMUM = "0.4.0"
         const val KIRIN_PACKAGE = "com.gmax.kirin"
-        const val APK_URL = "https://example.com/Kirin-0.4.2.apk"
+        const val APK_URL = "https://github.com/shogun-drei/kirin-updates/releases/download/0.4.2/Kirin-0.4.2.apk"
     }
 }

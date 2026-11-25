@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.service.apk
 
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.ApkTarget
 import dev.jagoba.lostielauncher.model.DownloadProgress
@@ -56,10 +57,14 @@ class ApkReleaseInstallerTest {
         server.close()
     }
 
-    private fun createSut(maxBytes: Long? = null): ApkReleaseInstaller {
+    private fun createSut(
+        maxBytes: Long? = null,
+        allowedFeedHosts: AllowedHosts? = null,
+        allowedDownloadHosts: AllowedHosts? = null,
+    ): ApkReleaseInstaller {
         val dispatchers = TestDispatcherProvider(dispatcher)
         return ApkReleaseInstaller(
-            ApkTarget(PACKAGE, installer, "Target", "official", maxBytes),
+            ApkTarget(PACKAGE, installer, "Target", "official", maxBytes, allowedFeedHosts, allowedDownloadHosts),
             RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger),
             transfer,
             packages,
@@ -295,6 +300,35 @@ class ApkReleaseInstallerTest {
 
         coVerify(exactly = 1) { transfer.download(DownloadTransferRequest(APK_URL, installer.path, 4), any()) }
         verify(exactly = 1) { packages.install(installer) }
+    }
+
+    @Test
+    fun `rejects releases whose feed or download host is not in the target allowlist`() = runTest(dispatcher) {
+        val allowedFeeds = AllowedHosts(exact = setOf("feeds.example"))
+        val allowedDownloads = AllowedHosts(exact = setOf("downloads.example"))
+        val sut = createSut(allowedFeedHosts = allowedFeeds, allowedDownloadHosts = allowedDownloads)
+
+        sut.loadRelease("https://evil.example/latest.json") shouldBe null
+        sut.acceptRelease(ApkReleaseDto("0.4.2", "https://evil.example/Target.apk")) shouldBe null
+        sut.acceptRelease(ApkReleaseDto("0.4.2", "https://downloads.example/Target.apk")) shouldBe
+            ApkReleaseDto("0.4.2", "https://downloads.example/Target.apk")
+        sut.settle("0.4.0", null)
+        downloadSucceeds()
+        every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install() shouldBe true
+
+        coVerify(exactly = 1) {
+            transfer.download(
+                DownloadTransferRequest(
+                    "https://downloads.example/Target.apk",
+                    installer.path,
+                    null,
+                    allowedDownloads,
+                ),
+                any(),
+            )
+        }
     }
 
     private suspend fun offeringRelease(): ApkReleaseInstaller {

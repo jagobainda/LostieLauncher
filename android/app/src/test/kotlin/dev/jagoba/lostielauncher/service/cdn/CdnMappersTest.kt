@@ -10,12 +10,14 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -199,6 +201,33 @@ class CdnMappersTest {
     @Test
     fun `leaves the logo null when the entry ships none`() {
         CdnMappers.toDomain(GameDto(logo = ""), cdnBase).logoUrl.shouldBeNull()
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "@evil.example/x.png",
+            ".evil.example/x.png",
+            ":8443/x.png",
+            "//evil.example/x.png",
+            "https://evil.example/x.png",
+            "/logos/x.png?extra=1#frag",
+        ],
+    )
+    fun `keeps crafted logo paths locked to the CDN host, port and path`(logo: String) {
+        val resolved = CdnMappers.toDomain(GameDto(logo = logo), cdnBase).logoUrl.shouldNotBeNull().toHttpUrl()
+
+        resolved.scheme shouldBe "https"
+        resolved.host shouldBe "content.test"
+        resolved.port shouldBe 443
+        resolved.query.shouldBeNull()
+        resolved.fragment.shouldBeNull()
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["   ", "/", "///", "/../secret.png", "/logos/../x.png", "/logos/./x.png"])
+    fun `rejects empty or dot-segment logo paths`(logo: String) {
+        CdnMappers.toDomain(GameDto(logo = logo), cdnBase).logoUrl.shouldBeNull()
     }
 
     @Test

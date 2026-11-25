@@ -1,8 +1,10 @@
 package dev.jagoba.lostielauncher.util.net
 
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.Locale
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 object HttpsUrls {
     private const val HTTPS_SCHEME = "https"
@@ -25,6 +27,12 @@ object HttpsUrls {
 
         if (!parsed.isAbsolute) return null
         return if (HTTPS_SCHEME.equals(parsed.scheme, ignoreCase = true)) parsed else null
+    }
+
+    fun isAllowedHttps(url: String?, allowedHosts: AllowedHosts? = null): Boolean {
+        val parsed = url?.takeIf(String::isNotBlank)?.toHttpUrlOrNull() ?: return false
+        if (!parsed.isHttps || parsed.username.isNotEmpty() || parsed.password.isNotEmpty()) return false
+        return allowedHosts == null || allowedHosts.allows(parsed.host)
     }
 
     private fun parseOrNullStrict(url: String): URI? = try {

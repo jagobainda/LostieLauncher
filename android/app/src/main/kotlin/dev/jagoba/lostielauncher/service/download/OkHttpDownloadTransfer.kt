@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.service.download
 
 import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadResumeMetadata
 import dev.jagoba.lostielauncher.model.DownloadTransferOptions
@@ -13,6 +14,7 @@ import dev.jagoba.lostielauncher.util.download.DownloadResumePolicy
 import dev.jagoba.lostielauncher.util.download.DownloadSpeedSampler
 import dev.jagoba.lostielauncher.util.file.FileMoveRetryPolicy
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.DisallowedUrlException
 import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.File
@@ -75,6 +77,11 @@ internal class OkHttpDownloadTransfer @Inject constructor(
                         return@withContext DownloadTransferResult.Failed(error.message ?: DOWNLOAD_FAILED_MESSAGE)
                     }
 
+                    is DisallowedUrlException -> {
+                        logger.error("Download URL was rejected.", error)
+                        return@withContext DownloadTransferResult.Failed(error.message ?: DOWNLOAD_FAILED_MESSAGE)
+                    }
+
                     is IOException -> {
                         lastError = error
                         if (attempt < options.maximumAttempts) {
@@ -118,6 +125,7 @@ internal class OkHttpDownloadTransfer @Inject constructor(
         try {
             while (true) {
                 val builder = Request.Builder().url(request.url)
+                request.allowedHosts?.let { builder.tag(AllowedHosts::class.java, it) }
                 if (existingBytes > 0 && validator != null) {
                     builder.header(RANGE_HEADER, "bytes=$existingBytes-")
                     builder.header(IF_RANGE_HEADER, validator)

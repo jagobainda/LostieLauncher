@@ -1,5 +1,7 @@
 package dev.jagoba.lostielauncher.core.di
 
+import dev.jagoba.lostielauncher.model.AllowedHosts
+import dev.jagoba.lostielauncher.util.net.DisallowedUrlException
 import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
@@ -97,6 +99,63 @@ class NetworkModuleTest {
                 client.newCall(Request.Builder().url(server.url("/listado.json")).build()).execute().use {
                     it.body.string()
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `disables cross-scheme redirects while keeping HTTPS redirects enabled on content and download clients`() {
+        val clients = listOf(
+            base,
+            NetworkModule.provideContentClient(base),
+            NetworkModule.provideSecurityFlagClient(base),
+            NetworkModule.provideDownloadClient(base),
+        )
+
+        clients.forEach { client ->
+            client.followSslRedirects shouldBe false
+            client.followRedirects shouldBe true
+        }
+        NetworkModule.provideTwitchPreviewClient(base).followRedirects shouldBe false
+    }
+
+    @Test
+    fun `does not follow a redirect that changes scheme`() {
+        MockWebServer().use { server ->
+            server.start()
+            server.enqueue(
+                MockResponse.Builder()
+                    .code(302)
+                    .addHeader("Location", "https://${server.hostName}:${server.port}/downgraded")
+                    .build(),
+            )
+            val client = NetworkModule.provideDownloadClient(base)
+
+            client.newCall(Request.Builder().url(server.url("/start")).build()).execute().use { response ->
+                response.code shouldBe 302
+            }
+            server.requestCount shouldBe 1
+        }
+    }
+
+    @Test
+    fun `blocks redirects to disallowed hosts on clients derived from the base client`() {
+        MockWebServer().use { server ->
+            server.start()
+            server.enqueue(
+                MockResponse.Builder()
+                    .code(302)
+                    .addHeader("Location", "https://evil.example/payload.apk")
+                    .build(),
+            )
+            val client = NetworkModule.provideDownloadClient(base)
+            val request = Request.Builder()
+                .url(server.url("/start.apk"))
+                .tag(AllowedHosts::class.java, AllowedHosts(exact = setOf(server.hostName)))
+                .build()
+
+            shouldThrow<DisallowedUrlException> {
+                client.newCall(request).execute().close()
             }
         }
     }
