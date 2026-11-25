@@ -1,7 +1,6 @@
 package dev.jagoba.lostielauncher.util.version
 
 import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotStartWith
 import org.junit.jupiter.api.DisplayName
@@ -30,16 +29,33 @@ class VersionUtilsTest {
         result shouldBe expected
     }
 
-    @Test
-    fun `strips a pre-release suffix before comparing`() {
-        val result = VersionUtils.isNewerVersion("1.2.0-beta", "1.1.0")
+    @ParameterizedTest
+    @CsvSource(
+        "1.2.0-beta, 1.1.0, true",
+        "0.4.0, 0.4.0-beta8, true",
+        "0.4.0-beta8, 0.4.0, false",
+        "0.4.0-beta10, 0.4.0-beta8, true",
+        "0.4.0-beta8, 0.4.0-beta10, false",
+        "0.4.0-rc1, 0.4.0-beta10, true",
+        "0.9.3-pre.10, 0.9.3-pre.2, true",
+        "0.4.0-beta.1, 0.4.0-beta, true",
+        "0.4.0-alpha, 0.4.0-1, true",
+        "0.4.0-beta8, 0.4.0-beta8, false",
+    )
+    fun `orders pre-release versions below the matching stable release`(
+        remote: String,
+        local: String,
+        expected: Boolean,
+    ) {
+        val result = VersionUtils.isNewerVersion(remote, local)
 
-        result.shouldBeTrue()
+        result shouldBe expected
     }
 
-    @Test
-    fun `when the base versions are equal but the pre-release suffix differs, is not newer`() {
-        val result = VersionUtils.isNewerVersion("1.0.0-beta", "1.0.0")
+    @ParameterizedTest
+    @CsvSource("0.4.0-, 0.4.0", "0.4.0, 0.4.0-", "0.4.0-beta..1, 0.4.0-beta.1")
+    fun `rejects malformed pre-release suffixes`(remote: String, local: String) {
+        val result = VersionUtils.isNewerVersion(remote, local)
 
         result.shouldBeFalse()
     }

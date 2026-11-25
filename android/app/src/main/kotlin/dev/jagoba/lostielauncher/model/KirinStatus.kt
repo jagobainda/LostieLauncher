@@ -1,6 +1,8 @@
 package dev.jagoba.lostielauncher.model
 
 import java.io.File
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 sealed interface KirinStatus {
     data object Ready : KirinStatus
@@ -19,4 +21,6 @@ data class KirinSetupOptions(
     val fallbackMinimumVersion: String,
     val installerFile: File,
     val signerSha256: String,
+    val supportedAbis: List<String> = emptyList(),
+    val feedRetryInterval: Duration = 5.minutes,
 )

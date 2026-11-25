@@ -22,7 +22,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.io.File
 import java.nio.file.Path
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -48,6 +55,8 @@ class KirinSetupServiceTest {
     private val transfer = mockk<DownloadTransfer>()
     private val packages = mockk<ApkPackages>(relaxed = true)
     private val logger = mockk<Logger>(relaxed = true)
+    private val minimumVersionStore = InMemoryMinimumVersionStore()
+    private val clock = AdjustableClock(Instant.parse("2026-11-25T00:00:00Z"))
     private val installer get() = directory.resolve("apk/kirin/Kirin.apk").toFile()
 
     @BeforeEach
@@ -65,14 +74,26 @@ class KirinSetupServiceTest {
         server.close()
     }
 
-    private fun createSut(): DefaultKirinSetupService {
+    private fun createSut(
+        supportedAbis: List<String> = listOf("arm64-v8a"),
+        feedRetryInterval: Duration = 5.minutes,
+    ): DefaultKirinSetupService {
         val dispatchers = TestDispatcherProvider(dispatcher)
         val remoteJson = RemoteJson(OkHttpClient(), Json { ignoreUnknownKeys = true }, dispatchers, logger)
         return DefaultKirinSetupService(
             remoteJson,
             ApkReleaseInstallerFactory(remoteJson, transfer, packages, dispatchers, logger),
+            minimumVersionStore,
             KirinOptions(File(""), File(""), "", "", KIRIN_PACKAGE, "", "", ""),
-            KirinSetupOptions(server.url(REQUIREMENTS_PATH).toString(), FALLBACK_MINIMUM, installer, "official"),
+            KirinSetupOptions(
+                server.url(REQUIREMENTS_PATH).toString(),
+                FALLBACK_MINIMUM,
+                installer,
+                "official",
+                supportedAbis,
+                feedRetryInterval,
+            ),
+            clock,
             logger,
         )
     }
@@ -86,6 +107,7 @@ class KirinSetupServiceTest {
         sut.refresh()
 
         sut.status.value shouldBe KirinStatus.Missing("0.4.1")
+        minimumVersionStore.stored shouldBe "0.4.1"
     }
 
     @Test
@@ -121,15 +143,29 @@ class KirinSetupServiceTest {
     }
 
     @Test
+    fun `blocks a pre-release installation below the stable minimum and offers the stable release`() =
+        runTest(dispatcher) {
+            every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0-beta8", setOf("official"))
+            serveRequirements(minimum = "0.4.0")
+            serveRelease("0.4.0")
+            val sut = createSut()
+
+            sut.refresh()
+
+            sut.status.value shouldBe KirinStatus.Outdated("0.4.0-beta8", "0.4.0")
+            sut.download.value shouldBe ApkDownloadState.Available
+        }
+
+    @Test
     fun `recommends the feed's release when it is newer than the installed Kirin`() = runTest(dispatcher) {
-        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0-beta8", setOf("official"))
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
         serveRequirements()
         serveRelease("0.4.2")
         val sut = createSut()
 
         sut.refresh()
 
-        sut.status.value shouldBe KirinStatus.UpdateRecommended("0.4.0-beta8", "0.4.2")
+        sut.status.value shouldBe KirinStatus.UpdateRecommended("0.4.0", "0.4.2")
         sut.download.value shouldBe ApkDownloadState.Available
     }
 
@@ -161,6 +197,41 @@ class KirinSetupServiceTest {
         serveRequirements(minimum = "0.3.0")
         sut.refresh()
         sut.status.value shouldBe KirinStatus.Ready
+    }
+
+    @Test
+    fun `uses the higher of the persisted last-known minimum and the built-in minimum when requirements fail`() =
+        runTest(dispatcher) {
+            every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.4.0", setOf("official"))
+            minimumVersionStore.stored = "0.5.0"
+            val sut = createSut()
+
+            sut.refresh()
+
+            sut.status.value shouldBe KirinStatus.Outdated("0.4.0", "0.5.0")
+        }
+
+    @Test
+    fun `prefers the built-in minimum over an older persisted minimum when requirements fail`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns SignedApk("0.3.5", setOf("official"))
+        minimumVersionStore.stored = "0.3.0"
+        val sut = createSut()
+
+        sut.refresh()
+
+        sut.status.value shouldBe KirinStatus.Outdated("0.3.5", FALLBACK_MINIMUM)
+    }
+
+    @Test
+    fun `does not persist an unparseable minimum version from the server`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        minimumVersionStore.stored = "0.4.1"
+        serveRequirements(minimum = "not-a-version")
+        val sut = createSut()
+
+        sut.refresh()
+
+        minimumVersionStore.stored shouldBe "0.4.1"
     }
 
     @Test
@@ -214,6 +285,142 @@ class KirinSetupServiceTest {
     }
 
     @Test
+    fun `selects the APK matching the device's preferred ABI regardless of asset order`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveReleaseAssets(
+            version = "0.4.2",
+            assets = listOf(
+                "Kirin-0.4.2-armeabi-v7a.apk" to "https://example.com/Kirin-v7a.apk",
+                "Kirin-0.4.2-arm64-v8a.apk" to "https://example.com/Kirin-arm64.apk",
+            ),
+        )
+        val sut = createSut(supportedAbis = listOf("arm64-v8a", "armeabi-v7a"))
+        sut.refresh()
+        downloadSucceeds()
+        every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install()
+
+        coVerify(exactly = 1) {
+            transfer.download(DownloadTransferRequest("https://example.com/Kirin-arm64.apk", installer.path), any())
+        }
+    }
+
+    @Test
+    fun `falls back to a universal APK when no ABI-specific asset matches the device`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveReleaseAssets(
+            version = "0.4.2",
+            assets = listOf(
+                "Kirin-0.4.2-arm64-v8a.apk" to "https://example.com/Kirin-arm64.apk",
+                "Kirin-0.4.2-universal.apk" to "https://example.com/Kirin-universal.apk",
+            ),
+        )
+        val sut = createSut(supportedAbis = listOf("x86_64", "x86"))
+        sut.refresh()
+        downloadSucceeds()
+        every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
+
+        sut.install()
+
+        coVerify(exactly = 1) {
+            transfer.download(DownloadTransferRequest("https://example.com/Kirin-universal.apk", installer.path), any())
+        }
+    }
+
+    @Test
+    fun `reports incompatible ABI and skips download when no APK matches the device`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveRelease("0.4.2", apkName = "Kirin-0.4.2-arm64-v8a.apk")
+        val sut = createSut(supportedAbis = listOf("x86_64", "x86"))
+
+        sut.refresh()
+
+        sut.status.value shouldBe KirinStatus.Missing("0.4.0")
+        sut.download.value shouldBe ApkDownloadState.IncompatibleAbi
+        sut.install()
+        coVerify(exactly = 0) { transfer.download(any(), any()) }
+    }
+
+    @Test
+    fun `reports unavailable rather than incompatible ABI when an incompatible release is below the minimum`() =
+        runTest(dispatcher) {
+            every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+            serveRequirements(minimum = "0.4.0")
+            serveRelease("0.3.5", apkName = "Kirin-0.3.5-arm64-v8a.apk")
+            val sut = createSut(supportedAbis = listOf("x86_64", "x86"))
+
+            sut.refresh()
+
+            sut.download.value shouldBe ApkDownloadState.Unavailable
+        }
+
+    @Test
+    fun `ignores prerelease and draft GitHub releases`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveRelease("0.4.2-beta1", prerelease = true)
+        val sut = createSut()
+
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+
+        clock.advance(5.minutes)
+        serveRelease("0.4.2", draft = true)
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+    }
+
+    @Test
+    fun `spaces out retries to the GitHub feed after a failed fetch`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        responses[FEED_PATH] = MockResponse.Builder().code(403).build()
+        val sut = createSut(feedRetryInterval = 5.minutes)
+
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+        server.requestCount shouldBe 2
+
+        serveRelease("0.4.2")
+        clock.advance(4.minutes)
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Unavailable
+        server.requestCount shouldBe 2
+
+        clock.advance(1.minutes)
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Available
+        server.requestCount shouldBe 3
+    }
+
+    @Test
+    fun `keeps incompatible ABI state during cooldown without repeating GitHub requests`() = runTest(dispatcher) {
+        every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+        serveRequirements()
+        serveRelease("0.4.2", apkName = "Kirin-0.4.2-arm64-v8a.apk")
+        val sut = createSut(supportedAbis = listOf("x86_64"), feedRetryInterval = 5.minutes)
+
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.IncompatibleAbi
+        server.requestCount shouldBe 2
+
+        clock.advance(2.minutes)
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.IncompatibleAbi
+        server.requestCount shouldBe 2
+
+        serveRelease("0.4.2", apkName = "Kirin-0.4.2-x86_64.apk")
+        clock.advance(3.minutes)
+        sut.refresh()
+        sut.download.value shouldBe ApkDownloadState.Available
+        server.requestCount shouldBe 3
+    }
+
+    @Test
     fun `asks nothing more of the network once the requirements and the feed are known`() = runTest(dispatcher) {
         every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()
@@ -262,17 +469,54 @@ class KirinSetupServiceTest {
         serve(REQUIREMENTS_PATH, """{"minimumVersion":"$minimum","releaseFeedUrl":"${server.url(FEED_PATH)}"}""")
     }
 
-    private fun serveRelease(version: String, url: String = APK_URL, apkName: String = "Kirin-$version-arm64-v8a.apk") {
+    private fun serveRelease(
+        version: String,
+        url: String = APK_URL,
+        apkName: String = "Kirin-$version-arm64-v8a.apk",
+        draft: Boolean = false,
+        prerelease: Boolean = false,
+    ) {
+        serveReleaseAssets(version, listOf(apkName to url), draft, prerelease)
+    }
+
+    private fun serveReleaseAssets(
+        version: String,
+        assets: List<Pair<String, String>>,
+        draft: Boolean = false,
+        prerelease: Boolean = false,
+    ) {
+        val serializedAssets = (listOf("checksums.txt" to "https://example.com/checksums.txt") + assets)
+            .joinToString(",") { (name, url) -> """{"name":"$name","browser_download_url":"$url"}""" }
         serve(
             FEED_PATH,
-            """{"tag_name":"$version","draft":false,"assets":[""" +
-                """{"name":"checksums.txt","browser_download_url":"https://example.com/checksums.txt"},""" +
-                """{"name":"$apkName","browser_download_url":"$url"}]}""",
+            """{"tag_name":"$version","draft":$draft,"prerelease":$prerelease,"assets":[$serializedAssets]}""",
         )
     }
 
     private fun serve(path: String, body: String) {
         responses[path] = MockResponse.Builder().body(body).build()
+    }
+
+    private class InMemoryMinimumVersionStore : KirinMinimumVersionStore {
+        var stored: String? = null
+
+        override suspend fun read(): String? = stored
+
+        override suspend fun write(version: String) {
+            stored = version
+        }
+    }
+
+    private class AdjustableClock(private var current: Instant) : Clock() {
+        fun advance(duration: Duration) {
+            current = current.plus(duration.toJavaDuration())
+        }
+
+        override fun getZone(): ZoneId = ZoneOffset.UTC
+
+        override fun withZone(zone: ZoneId): Clock = this
+
+        override fun instant(): Instant = current
     }
 
     private companion object {

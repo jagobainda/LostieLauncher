@@ -250,6 +250,25 @@ class ApkReleaseInstallerTest {
     }
 
     @Test
+    fun `reports a custom unavailable state when no release is offered`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.settle(null, "0.4.0", ApkDownloadState.IncompatibleAbi) shouldBe null
+
+        sut.download.value shouldBe ApkDownloadState.IncompatibleAbi
+    }
+
+    @Test
+    fun `accepts a pre-resolved HTTPS release and rejects a non-HTTPS one`() = runTest(dispatcher) {
+        val sut = createSut()
+
+        sut.acceptRelease(ApkReleaseDto("0.4.2", "http://example.com/Target.apk")) shouldBe null
+        sut.acceptRelease(ApkReleaseDto("0.4.2", APK_URL)) shouldBe ApkReleaseDto("0.4.2", APK_URL)
+        sut.settle("0.4.0", null) shouldBe ApkReleaseDto("0.4.2", APK_URL)
+        sut.download.value shouldBe ApkDownloadState.Available
+    }
+
+    @Test
     fun `deletes the target's installer directory`() = runTest(dispatcher) {
         installer.parentFile?.mkdirs()
         installer.writeText("apk")

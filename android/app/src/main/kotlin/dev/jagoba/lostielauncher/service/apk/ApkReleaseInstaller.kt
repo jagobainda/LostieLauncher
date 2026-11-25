@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -53,16 +52,20 @@ internal class ApkReleaseInstaller(
     @Volatile
     private var offered: ApkReleaseDto? = null
 
-    suspend fun loadRelease(
-        feedUrl: String,
-        force: Boolean = false,
-        format: DeserializationStrategy<ApkReleaseDto> = ApkReleaseDto.serializer(),
-    ): ApkReleaseDto? {
+    @Volatile
+    private var unavailableState: ApkDownloadState = ApkDownloadState.Unavailable
+
+    suspend fun loadRelease(feedUrl: String, force: Boolean = false): ApkReleaseDto? {
         if (release == null || force) {
-            release = remoteJson.fetch(feedUrl, format, "${target.label} release feed")
-                ?.takeIf { HttpsUrls.parseOrNull(it.downloadUrl) != null }
-                ?.also { logger.info("${target.label} release feed offers ${it.versionName}.") }
+            acceptRelease(remoteJson.fetch(feedUrl, ApkReleaseDto.serializer(), "${target.label} release feed"))
         }
+        return release
+    }
+
+    fun acceptRelease(candidate: ApkReleaseDto?): ApkReleaseDto? {
+        release = candidate
+            ?.takeIf { HttpsUrls.parseOrNull(it.downloadUrl) != null }
+            ?.also { logger.info("${target.label} release feed offers ${it.versionName}.") }
         return release
     }
 
@@ -70,7 +73,12 @@ internal class ApkReleaseInstaller(
         packages.installedPackage(target.packageName)
     }
 
-    fun settle(installedVersion: String?, minimumVersion: String?): ApkReleaseDto? {
+    fun settle(
+        installedVersion: String?,
+        minimumVersion: String?,
+        unavailableState: ApkDownloadState = ApkDownloadState.Unavailable,
+    ): ApkReleaseDto? {
+        this.unavailableState = unavailableState
         offered = release?.takeIf { ApkVersionPolicy.isOffered(it.versionName, installedVersion, minimumVersion) }
         mutableDownload.update { current ->
             if (current is ApkDownloadState.Downloading || current == ApkDownloadState.Failed) current else idle()
@@ -99,8 +107,7 @@ internal class ApkReleaseInstaller(
         withContext(dispatchers.io) { target.installerFile.parentFile?.deleteRecursively() }
     }
 
-    private fun idle(): ApkDownloadState =
-        if (offered == null) ApkDownloadState.Unavailable else ApkDownloadState.Available
+    private fun idle(): ApkDownloadState = if (offered == null) unavailableState else ApkDownloadState.Available
 
     private suspend fun openInstaller(release: ApkReleaseDto): Boolean {
         val apk = target.installerFile

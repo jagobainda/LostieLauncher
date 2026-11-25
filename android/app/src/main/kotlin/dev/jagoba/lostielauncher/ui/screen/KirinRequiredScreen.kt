@@ -111,6 +111,8 @@ private fun KirinRequiredScreen(
 
                         ApkDownloadState.Unavailable -> StatusNotice(strings.kirinDownloadUnavailable)
 
+                        ApkDownloadState.IncompatibleAbi -> StatusNotice(strings.kirinIncompatibleDevice)
+
                         ApkDownloadState.Available, ApkDownloadState.Failed -> DialogButton(
                             label = if (status is KirinStatus.Outdated) strings.btnUpdate else strings.btnDownload,
                             style = DialogButtonStyle.ACCENT,

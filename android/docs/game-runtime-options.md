@@ -85,6 +85,14 @@ access. Notification permission affects progress and result visibility and is a
 separate request.
 
 `KirinSetupService` checks server requirements and the installed Kirin version.
+The last valid minimum version received from the server is persisted in
+DataStore; when requirements cannot be fetched, the launcher falls back to the
+higher of the persisted minimum and the built-in default. Version comparisons
+rank pre-releases (such as `0.4.0-beta8`) below the matching stable release.
+Only stable, non-draft GitHub releases are accepted, retries against the GitHub
+feed are spaced out after failures or unusable responses, and the APK asset is
+selected according to `Build.SUPPORTED_ABIS` (with universal fallback and a
+clear incompatible-device notice before downloading when no asset matches).
 `KirinRequirement` blocks the shell when Kirin is missing, outdated or signed
 with another certificate. In the last case the screen asks the user to
 uninstall that copy in Android settings before installing the official release.

@@ -4,8 +4,8 @@ import dev.jagoba.lostielauncher.util.version.VersionUtils
 
 object ApkVersionPolicy {
     fun isSupported(version: String?, minimumVersion: String): Boolean {
-        val actual = VersionUtils.parseBaseVersion(version) ?: return false
-        val minimum = VersionUtils.parseBaseVersion(minimumVersion) ?: return false
+        val actual = VersionUtils.parseVersion(version) ?: return false
+        val minimum = VersionUtils.parseVersion(minimumVersion) ?: return false
         return actual >= minimum
     }
 

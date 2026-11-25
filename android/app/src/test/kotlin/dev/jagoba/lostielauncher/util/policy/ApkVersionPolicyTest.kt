@@ -11,7 +11,7 @@ class ApkVersionPolicyTest {
     @ParameterizedTest(name = "{0} -> {1}")
     @CsvSource(
         "0.4.0, true",
-        "0.4.0-beta8, true",
+        "0.4.0-beta8, false",
         "v0.4.1, true",
         "1.0, true",
         "0.3.5, false",
@@ -19,8 +19,22 @@ class ApkVersionPolicyTest {
         "not-a-version, false",
         "'', false",
     )
-    fun `supports the minimum version and later, ignoring a pre-release suffix`(version: String, supported: Boolean) {
+    fun `supports the minimum version and later, ranking pre-releases below stable`(
+        version: String,
+        supported: Boolean,
+    ) {
         ApkVersionPolicy.isSupported(version, MINIMUM) shouldBe supported
+    }
+
+    @ParameterizedTest(name = "{0} against 0.4.0-beta8 -> {1}")
+    @CsvSource(
+        "0.4.0-beta7, false",
+        "0.4.0-beta8, true",
+        "0.4.0-beta10, true",
+        "0.4.0, true",
+    )
+    fun `supports a pre-release minimum and later versions`(version: String, supported: Boolean) {
+        ApkVersionPolicy.isSupported(version, "0.4.0-beta8") shouldBe supported
     }
 
     @Test
@@ -33,6 +47,8 @@ class ApkVersionPolicyTest {
         "0.4.2, , true",
         "0.4.2, 0.3.5, true",
         "0.4.2, 0.4.0, true",
+        "0.4.0, 0.4.0-beta8, true",
+        "0.4.0-beta8, , false",
         "0.4.2, 0.4.2, false",
         "0.4.0, 0.4.2, false",
         "0.3.9, , false",
@@ -49,7 +65,8 @@ class ApkVersionPolicyTest {
     @CsvSource(
         "0.0.1, , true",
         "1.2.0, 1.1.9, true",
-        "1.2.0, 1.2.0-beta1, false",
+        "1.2.0, 1.2.0-beta1, true",
+        "1.2.0-beta1, 1.2.0, false",
         "1.2.0, 1.2.0, false",
         "1.1.0, 1.2.0, false",
         "not-a-version, 1.2.0, false",

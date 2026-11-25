@@ -257,6 +257,10 @@ class MainViewModelTest {
         kirinDownload.value = ApkDownloadState.Unavailable
         runCurrent()
         sut.state.value.kirinUpdate shouldBe null
+
+        kirinDownload.value = ApkDownloadState.IncompatibleAbi
+        runCurrent()
+        sut.state.value.kirinUpdate shouldBe null
     }
 
     @Test
