@@ -99,8 +99,7 @@ class MainViewModel @Inject constructor(
         settings.settings,
         coordinator.home,
         coordinator.catalogue,
-        coordinator.isGamesLoading,
-    ) { navigation, settings, home, catalogue, gamesLoading ->
+    ) { navigation, settings, home, catalogue ->
         val strings = stringsFor(settings.language)
         MainUiState(
             section = navigation.section,
@@ -113,7 +112,7 @@ class MainViewModel @Inject constructor(
             },
             isOffline = home.isOffline,
             isTwitchLive = home.isTwitchLive,
-            canRefresh = !home.isLoading && !catalogue.isLoading && !gamesLoading,
+            canRefresh = !home.isLoading && !catalogue.isLoading,
             pendingLibraryGameId = navigation.pendingLibraryGameId,
         )
     }

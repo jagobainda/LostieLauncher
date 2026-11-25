@@ -57,7 +57,7 @@ class LauncherDataCoordinatorTest {
     }
 
     @Test
-    fun `global refresh completes both fetches before advancing installed projection`() = runTest {
+    fun `global refresh completes both fetches before clearing the refresh state`() = runTest {
         val feed = CompletableDeferred<HomeContent>()
         val games = CompletableDeferred<CatalogueResult>()
         val content = object : ContentService {
@@ -72,13 +72,11 @@ class LauncherDataCoordinatorTest {
         val refresh = async { coordinator.refreshAll(AppLanguage.ESP) }
         runCurrent()
         coordinator.isRefreshing.value shouldBe true
-        coordinator.gamesRevision.value shouldBe 0
         games.complete(CatalogueResult.Loaded(emptyList()))
         runCurrent()
-        coordinator.gamesRevision.value shouldBe 0
+        coordinator.isRefreshing.value shouldBe true
         feed.complete(HomeContent())
         refresh.await()
-        coordinator.gamesRevision.value shouldBe 1
         coordinator.isRefreshing.value shouldBe false
     }
 
@@ -181,7 +179,6 @@ class LauncherDataCoordinatorTest {
         coordinator.catalogue.value.games.map { it.gameId } shouldBe listOf(testGame().gameId)
         content.flagForces.last() shouldBe true
         coordinator.isRefreshing.value shouldBe false
-        coordinator.gamesRevision.value shouldBe 1
     }
 
     @Test

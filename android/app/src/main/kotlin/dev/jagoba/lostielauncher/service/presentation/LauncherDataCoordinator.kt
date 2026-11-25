@@ -61,16 +61,12 @@ class LauncherDataCoordinator @Inject constructor(
     private val mutableHome = MutableStateFlow(HomeData())
     private val mutableCatalogue = MutableStateFlow(CatalogueData())
     private val mutableRefreshing = MutableStateFlow(false)
-    private val mutableGamesLoading = MutableStateFlow(false)
-    private val mutableGamesRevision = MutableStateFlow(0L)
     private val visible = MutableStateFlow(true)
     private var started = false
 
     val home: StateFlow<HomeData> = mutableHome.asStateFlow()
     val catalogue: StateFlow<CatalogueData> = mutableCatalogue.asStateFlow()
     val isRefreshing: StateFlow<Boolean> = mutableRefreshing.asStateFlow()
-    val isGamesLoading: StateFlow<Boolean> = mutableGamesLoading.asStateFlow()
-    val gamesRevision: StateFlow<Long> = mutableGamesRevision.asStateFlow()
 
     @Synchronized
     fun start(scope: CoroutineScope, settings: SettingsStore, network: NetworkMonitor, options: HomeRefreshOptions) {
@@ -236,7 +232,6 @@ class LauncherDataCoordinator @Inject constructor(
             homeRefresh.await()
             catalogueRefresh.await()
         }
-        mutableGamesRevision.value += 1
     }
 
     private fun publishOffline(offline: Boolean, revision: Long) {
@@ -258,13 +253,5 @@ class LauncherDataCoordinator @Inject constructor(
                 if (!unique) logger.info("Skipping duplicate catalogue entry: '${game.name}' (id: ${game.gameId}).")
             }
         }
-    }
-
-    fun setGamesLoading(loading: Boolean) {
-        mutableGamesLoading.value = loading
-    }
-
-    fun refreshGamesProjection() {
-        mutableGamesRevision.value += 1
     }
 }

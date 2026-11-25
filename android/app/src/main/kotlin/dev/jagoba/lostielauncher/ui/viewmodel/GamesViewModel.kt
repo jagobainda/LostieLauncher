@@ -30,8 +30,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 data class InstalledGameUiState(
@@ -75,6 +76,12 @@ data class GamesUiState(
     val isInstalledStateUnsupported: Boolean get() = !isLoading && !installedStateKnown
 }
 
+private data class GamesProjection(
+    val isLoading: Boolean,
+    val installedStateKnown: Boolean,
+    val games: List<InstalledGameUiState>,
+)
+
 @HiltViewModel
 class GamesViewModel @Inject constructor(
     private val installation: GameInstallationService,
@@ -96,35 +103,27 @@ class GamesViewModel @Inject constructor(
             combine(
                 installation.installedGames,
                 coordinator.catalogue,
-                coordinator.gamesRevision,
-                downloads.downloads,
+                downloads.downloads
+                    .map { rows -> rows.filter { it.status.isActive }.mapTo(mutableSetOf()) { it.gameId } }
+                    .distinctUntilChanged(),
                 uninstalling,
-            ) { installed, catalogue, _, downloadRows, uninstallingNames ->
-                Triple(installed, catalogue, downloadRows to uninstallingNames)
-            }.collectLatest { (installed, catalogue, activity) ->
-                coordinator.setGamesLoading(true)
-                mutableState.value = mutableState.value.copy(isLoading = true)
-                try {
-                    if (catalogue.isLoading) return@collectLatest
-                    val known = installed as? InstalledGamesState.Available
-                    val games = known?.games.orEmpty().map { local ->
-                        toUiState(local, catalogue.games, activity.first, activity.second)
-                    }
-                    mutableState.value = mutableState.value.copy(
-                        isLoading = false,
-                        installedStateKnown = known != null,
-                        games = games,
-                    )
-                    if (known != null) logger.debug("Installed games loaded: ${games.size} games.")
-                } finally {
-                    coordinator.setGamesLoading(false)
+            ) { installed, catalogue, activeGameIds, uninstallingNames ->
+                val known = installed as? InstalledGamesState.Available
+                val games = known?.games.orEmpty().map { local ->
+                    toUiState(local, catalogue.games, activeGameIds, uninstallingNames)
+                }
+                GamesProjection(catalogue.isLoading, known != null, games)
+            }.collect { projection ->
+                mutableState.value = mutableState.value.copy(
+                    isLoading = projection.isLoading,
+                    installedStateKnown = projection.installedStateKnown,
+                    games = projection.games,
+                )
+                if (!projection.isLoading && projection.installedStateKnown) {
+                    logger.debug("Installed games loaded: ${projection.games.size} games.")
                 }
             }
         }
-    }
-
-    fun refresh() {
-        coordinator.refreshGamesProjection()
     }
 
     fun navigateToLibrary() {
@@ -285,7 +284,7 @@ class GamesViewModel @Inject constructor(
     private fun toUiState(
         local: LocalGame,
         catalogue: List<GameInfo>,
-        downloadRows: List<dev.jagoba.lostielauncher.model.DownloadSnapshot>,
+        activeGameIds: Set<String>,
         uninstallingNames: Set<String>,
     ): InstalledGameUiState {
         val remote = GameIdentityMatcher.findRemote(local, catalogue)
@@ -293,9 +292,7 @@ class GamesViewModel @Inject constructor(
             game = local,
             remote = remote,
             hasUpdate = remote != null && VersionUtils.isNewerVersion(remote.version, local.version),
-            isUpdating = remote != null && downloadRows.any {
-                it.gameId == remote.gameId && it.status.isActive
-            },
+            isUpdating = remote != null && remote.gameId in activeGameIds,
             isUninstalling = local.name in uninstallingNames,
         )
     }

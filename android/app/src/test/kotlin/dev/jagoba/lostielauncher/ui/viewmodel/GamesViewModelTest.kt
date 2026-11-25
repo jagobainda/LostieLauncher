@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameLaunchResult
 import dev.jagoba.lostielauncher.model.GameLocationReference
@@ -17,6 +18,7 @@ import dev.jagoba.lostielauncher.service.presentation.PendingLibraryAction
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import io.mockk.verify
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +41,7 @@ class GamesViewModelTest {
     private val locations = TestLocations()
     private val navigation = NavigationStore()
     private val downloads = TestDownloads()
+    private val logger = mockk<Logger>(relaxed = true)
     private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
 
     @BeforeEach
@@ -219,6 +222,34 @@ class GamesViewModelTest {
         downloads.current.value = listOf(testDownload(remote, DownloadStatus.PAUSED))
         runCurrent()
         sut.state.value.games.single().isUpdating shouldBe false
+    }
+
+    @Test
+    fun `download progress does not emit a new installed games projection`() = runTest(dispatcher) {
+        val remote = testGame(version = "v2.0")
+        content.games = listOf(remote)
+        coordinator.refreshCatalogue()
+        installation.current.value = InstalledGamesState.Available(
+            listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
+        )
+        val sut = createSut()
+        runCurrent()
+        verify(exactly = 1) { logger.debug("Installed games loaded: 1 games.") }
+
+        sut.state.test {
+            awaitItem().games.single().isUpdating shouldBe false
+
+            downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
+            runCurrent()
+            awaitItem().games.single().isUpdating shouldBe true
+            verify(exactly = 2) { logger.debug("Installed games loaded: 1 games.") }
+
+            downloads.current.value = downloads.current.value.map { it.copy(percent = 75.0) }
+            runCurrent()
+            expectNoEvents()
+            verify(exactly = 2) { logger.debug("Installed games loaded: 1 games.") }
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -410,7 +441,7 @@ class GamesViewModelTest {
         coordinator,
         navigation,
         downloads,
-        mockk<Logger>(relaxed = true),
+        logger,
         savedState,
     )
 }

@@ -144,18 +144,29 @@ internal fun GameCardColumns(
                 val textPlaceable = textSlot.first().measure(fixed(width - logoPlaceable.width - inset))
                 val actionsPlaceable = actions.measure(if (fillStackedActions) fixed(width) else loose)
                 val reserve = maxOf(actionsReserve.roundToPx(), actionsPlaceable.width)
-                val statusPlaceable = statusSlot.first().measure(fixed(width - reserve - gap))
+                val statusWidth = if (fillStackedActions) width else width - reserve - gap
+                val statusPlaceable = statusSlot.first().measure(fixed(statusWidth))
                 val top = maxOf(logoPlaceable.height, textPlaceable.height)
                 val footer = maxOf(
                     LauncherSizes.CardButtonHeight.roundToPx(),
-                    statusPlaceable.height,
+                    if (fillStackedActions) 0 else statusPlaceable.height,
                     actionsPlaceable.height,
                 )
-                val footerTop = top + gap
+                val statusTop = top + gap
+                val footerTop = if (fillStackedActions && statusPlaceable.height > 0) {
+                    statusTop + statusPlaceable.height + gap
+                } else {
+                    statusTop
+                }
                 layout(width, footerTop + footer) {
                     logoPlaceable.place(0, (top - logoPlaceable.height) / 2)
                     textPlaceable.place(logoPlaceable.width + inset, (top - textPlaceable.height) / 2)
-                    statusPlaceable.place(0, footerTop + (footer - statusPlaceable.height) / 2)
+                    val statusY = if (fillStackedActions) {
+                        statusTop
+                    } else {
+                        footerTop + (footer - statusPlaceable.height) / 2
+                    }
+                    statusPlaceable.place(0, statusY)
                     actionsPlaceable.place(
                         width - actionsPlaceable.width,
                         footerTop + (footer - actionsPlaceable.height) / 2,

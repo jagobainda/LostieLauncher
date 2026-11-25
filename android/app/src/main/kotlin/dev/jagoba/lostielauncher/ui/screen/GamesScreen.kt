@@ -175,5 +175,6 @@ internal fun InstalledGameUiState.toCardState() = InstalledGameCardState(
     canUpdate = canUpdate,
     canSwitchSpecialVersion = canSwitchSpecialVersion,
     canUninstall = canUninstall,
+    isUpdating = isUpdating,
     isUninstalling = isUninstalling,
 )
