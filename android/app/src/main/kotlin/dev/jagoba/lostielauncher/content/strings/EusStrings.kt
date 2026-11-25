@@ -63,6 +63,8 @@ internal object EusStrings : Strings {
     override val downloadDialogViewPage = "Jokoaren orria ikusi"
     override val downloadDialogNoDescription = "Deskribapenik ez."
     override val downloadDialogKey = "Bertsio berezietarako gakoa (aukerakoa)"
+    override val showKey = "Gakoa erakutsi"
+    override val hideKey = "Gakoa ezkutatu"
     override val downloadKeyInvalidMessage = "Gakoaren formatua ez da baliozkoa. Formatua XXXX-XXXX-XXXX-XXXX-XXXX izan behar da."
     override val downloadErrorTitle = "Deskargetak huts egin du"
     override val downloadErrorMessage = "Deskargetak ezin izan du osatu. Mesedez, geroago saiatu. Arazoa jarraitzen badu, ireki issue bat launcher-aren GitHub biltegian."

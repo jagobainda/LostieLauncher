@@ -22,6 +22,7 @@ data class MessageBoxSpec(
     val message: String,
     val buttons: MessageBoxButtons = MessageBoxButtons.OK,
     val icon: MessageBoxIcon = MessageBoxIcon.UPDATE,
+    val protectFromOverlays: Boolean = false,
 )
 
 @Composable
@@ -39,6 +40,7 @@ fun LauncherMessageBox(spec: MessageBoxSpec, onConfirm: () -> Unit, onDismiss: (
         maxHeight = LauncherSizes.MessageBoxMaxHeight,
         onDismiss = onDismiss,
         centerBody = true,
+        protectFromOverlays = spec.protectFromOverlays,
         footer = {
             DialogFooterButtons {
                 when (spec.buttons) {

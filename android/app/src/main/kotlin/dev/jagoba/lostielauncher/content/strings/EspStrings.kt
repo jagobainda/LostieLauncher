@@ -63,6 +63,8 @@ internal object EspStrings : Strings {
     override val downloadDialogViewPage = "Ver página del juego"
     override val downloadDialogNoDescription = "Sin descripción disponible."
     override val downloadDialogKey = "Clave para versiones especiales (opcional)"
+    override val showKey = "Mostrar clave"
+    override val hideKey = "Ocultar clave"
     override val downloadKeyInvalidMessage = "El formato de la clave no es válido. Debe seguir el formato XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Error en la descarga"
     override val downloadErrorMessage = "No se pudo completar la descarga. Por favor, intenta más tarde. Si el problema persiste, abre un issue en el repositorio de GitHub del launcher."

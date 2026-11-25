@@ -10,10 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,15 +39,15 @@ data class DownloadConfirmState(
 @Composable
 fun DownloadConfirmDialog(
     state: DownloadConfirmState,
+    key: String,
+    onKeyChange: (String) -> Unit,
     onViewPage: () -> Unit,
-    onConfirm: (key: String) -> Unit,
+    onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     keyError: String? = null,
-    onKeyChange: () -> Unit = {},
 ) {
     val strings = LocalStrings.current
     val colors = LocalLauncherColors.current
-    var key by rememberSaveable { mutableStateOf("") }
     LauncherDialog(
         icon = R.drawable.ic_card_download,
         title = strings.downloadDialogTitle,
@@ -60,13 +56,15 @@ fun DownloadConfirmDialog(
         maxHeight = Dp.Infinity,
         onDismiss = onDismiss,
         centerBody = true,
+        secure = true,
+        protectFromOverlays = true,
         footer = {
             DialogFooterButtons {
                 DialogButton(
                     label = strings.btnDownload,
                     style = DialogButtonStyle.ACCENT,
                     width = LauncherSizes.DialogConfirmButtonWidth,
-                    onClick = { onConfirm(key) },
+                    onClick = onConfirm,
                 )
                 DialogCancelButton(onDismiss)
             }
@@ -149,13 +147,8 @@ fun DownloadConfirmDialog(
                 DialogKeyField(
                     label = strings.downloadDialogKey,
                     value = key,
-                    onValueChange = {
-                        if (it != key) {
-                            key = it
-                            onKeyChange()
-                        }
-                    },
-                    onDone = { onConfirm(key) },
+                    onValueChange = onKeyChange,
+                    onDone = onConfirm,
                     error = keyError,
                 )
             }

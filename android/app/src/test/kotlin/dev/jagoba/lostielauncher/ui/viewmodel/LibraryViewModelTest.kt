@@ -575,9 +575,10 @@ class LibraryViewModelTest {
         sut.state.value.notice shouldBe null
         special.lookups shouldBe 0
 
-        sut.clearKeyError()
+        sut.updatePendingKey("bad2")
         runCurrent()
         sut.state.value.isKeyInvalid shouldBe false
+        sut.state.value.pendingKey shouldBe "bad2"
         sut.state.value.pendingSpecialGameId shouldBe remote.gameId
     }
 
@@ -621,13 +622,15 @@ class LibraryViewModelTest {
         sut.state.value.notice shouldBe null
         downloads.starts shouldBe emptyList()
 
-        sut.clearKeyError()
+        sut.updatePendingKey(" $key ")
         runCurrent()
         sut.state.value.isKeyInvalid shouldBe false
+        sut.state.value.pendingKey shouldBe " $key "
 
-        sut.confirmDownload(" $key ") shouldBe true
+        sut.confirmDownload() shouldBe true
         runCurrent()
         sut.state.value.pendingDownloadGameId shouldBe null
+        sut.state.value.pendingKey shouldBe ""
         sut.state.value.isStorageAccessPromptVisible shouldBe true
     }
 
@@ -1062,33 +1065,66 @@ class LibraryViewModelTest {
         }
 
     @Test
-    fun `special key download survives storage access grant across process death`() = runTest(dispatcher) {
-        val remote = testGame()
-        val key = "ABCD-1234-EFGH-5678-IJKL"
-        content.games = listOf(remote)
-        special.result = SpecialVersionLookup.Found(
-            SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
-        )
-        storageAccess.granted = false
-        val saved = SavedStateHandle()
-        val original = createSut(backgroundScope, saved)
-        runCurrent()
-        original.requestDownload(remote.gameId)
-        runCurrent()
-        original.confirmDownload(" $key ")
-        runCurrent()
-        original.requestStorageAccess()
+    fun `pending key stays in memory without writing to saved state and clears on process death`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            val key = "ABCD-1234-EFGH-5678-IJKL"
+            content.games = listOf(remote)
+            val saved = SavedStateHandle()
+            val original = createSut(backgroundScope, saved)
+            runCurrent()
+            original.requestDownload(remote.gameId)
+            runCurrent()
+            original.updatePendingKey(key)
+            runCurrent()
 
-        val restored = createSut(backgroundScope, saved)
-        runCurrent()
-        storageAccess.granted = true
-        restored.onStorageAccessResult()
-        runCurrent()
+            original.state.value.pendingKey shouldBe key
+            saved.keys().none { saved.get<Any?>(it) == key } shouldBe true
 
-        downloads.starts.single().args.key shouldBe key
-        downloads.starts.single().args.version shouldBe "v1.5"
-        saved.get<String>("library.storageAction.key") shouldBe null
-    }
+            val restored = createSut(backgroundScope, saved)
+            runCurrent()
+            restored.state.value.pendingDownloadGameId shouldBe remote.gameId
+            restored.state.value.pendingKey shouldBe ""
+        }
+
+    @Test
+    fun `special key download continues after permission grant in memory but is dropped across process death`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            val key = "ABCD-1234-EFGH-5678-IJKL"
+            content.games = listOf(remote)
+            special.result = SpecialVersionLookup.Found(
+                SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+            )
+            storageAccess.granted = false
+            val saved = SavedStateHandle()
+            val original = createSut(backgroundScope, saved)
+            runCurrent()
+            original.requestDownload(remote.gameId)
+            runCurrent()
+            original.confirmDownload(" $key ")
+            runCurrent()
+
+            original.state.value.isStorageAccessPromptVisible shouldBe true
+            saved.keys().none { saved.get<Any?>(it) == key } shouldBe true
+            saved.get<String>("library.storageAction.kind") shouldBe null
+            saved.get<String>("library.storageAction.gameId") shouldBe null
+            saved.get<String>("library.permissionPrompt") shouldBe null
+
+            val afterKill = createSut(backgroundScope, saved)
+            runCurrent()
+            afterKill.state.value.permissionPrompt shouldBe null
+            storageAccess.granted = true
+            afterKill.onStorageAccessResult()
+            runCurrent()
+            downloads.starts shouldBe emptyList()
+
+            original.requestStorageAccess()
+            original.onStorageAccessResult()
+            runCurrent()
+            downloads.starts.single().args.key shouldBe key
+            downloads.starts.single().args.version shouldBe "v1.5"
+        }
 
     @Test
     fun `update and installation retry survive storage access grant across process death`() = runTest(dispatcher) {

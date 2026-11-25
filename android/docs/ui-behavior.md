@@ -49,11 +49,21 @@ can each have a visible modal.
 
 Dialog dimensions are capped to available space, with scrollable bodies. Back
 dismisses or declines and input actions follow the on-screen confirmation.
-Icon-only close controls have localized spoken labels. Key fields use saveable
-UI state, and pending Library/My Games prompts, the post-storage-access action,
-the un-dismissed welcome dialog and FAQ search/expansion state survive process
-death via `SavedStateHandle` or DataStore. Transient update-check notices stay
-in memory.
+Icon-only close controls have localized spoken labels. Pending Library/My Games
+prompts, non-keyed post-storage-access actions, the un-dismissed welcome dialog
+and FAQ search/expansion state survive process death via `SavedStateHandle` or
+DataStore. Special-version keys stay in ViewModel memory only (they survive
+rotation while the dialog is open, are never written to saved activity state,
+and a keyed download waiting for storage/notification permission is discarded
+across process death); transient update-check notices also stay in memory.
+
+Key dialogs set `SecureFlagPolicy.SecureOn` on their own window. Key fields
+mask input by default with a localized show/hide toggle, request password input
+with suggestions and personalized learning disabled, and opt out of autofill.
+Destructive confirmations (game uninstall, download cancel), key dialogs,
+launcher update confirmations and permission prompts protect against overlays
+by filtering obscured and partially obscured touches (API 29+) and hiding
+non-system overlays on API 31+ (`HIDE_OVERLAY_WINDOWS`).
 
 Key fields support Android's fullscreen keyboard editor on short landscape
 screens. The keyboard decides whether to use it. Done submits the current

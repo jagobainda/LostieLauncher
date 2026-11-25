@@ -104,6 +104,8 @@ object LauncherSizes {
     val DownloadDialogMetricIcon: Dp = 14.dp
     val DialogLinkIcon: Dp = 11.dp
     val DialogFieldIcon: Dp = 12.dp
+    val DialogKeyToggleButton: Dp = 32.dp
+    val DialogKeyToggleIcon: Dp = 16.dp
     val SpecialVersionDialogWidth: Dp = 440.dp
     val SpecialVersionDialogHeight: Dp = 250.dp
     val WelcomeDialogWidth: Dp = 480.dp
