@@ -34,6 +34,7 @@ internal fun launcherUpdateMessageBox(state: MainUiState, strings: Strings): Mes
         strings.updateAvailableMessage.withArgs(state.launcherUpdatePrompt),
         MessageBoxButtons.YES_NO,
         MessageBoxIcon.UPDATE,
+        protectFromOverlays = true,
     )
 
     else -> null

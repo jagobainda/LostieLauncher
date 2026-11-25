@@ -31,7 +31,7 @@ Apply the [shared architecture rules](../../.agents/architecture.md).
 - Room owns durable download command/state data; a composable or ViewModel
   must not become the owner of a transfer.
 - Rotation survival is not process-death persistence. Persist pending user
-  prompts, continuations and FAQ view state in `SavedStateHandle` (and mark
-  onboarding as seen only when dismissed). Keep documenting which state stays
-  in memory only, such as installation phases and transient update-check
-  notices. See [game runtime](../docs/game-runtime-options.md).
+  prompts, non-keyed continuations and FAQ view state in `SavedStateHandle`
+  (and mark onboarding as seen only when dismissed). Keep documenting which
+  state stays in memory only, such as special-version keys, installation phases
+  and transient update-check notices. See [game runtime](../docs/game-runtime-options.md).

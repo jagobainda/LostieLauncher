@@ -37,11 +37,12 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
 
         download != null -> DownloadConfirmDialog(
             state = download,
+            key = state.pendingKey,
+            onKeyChange = viewModel::updatePendingKey,
             onViewPage = viewModel::openPendingGamePage,
-            onConfirm = { viewModel.confirmDownload(it) },
+            onConfirm = { viewModel.confirmDownload() },
             onDismiss = viewModel::dismissPrompt,
             keyError = strings.downloadKeyInvalidMessage.takeIf { state.isKeyInvalid },
-            onKeyChange = viewModel::clearKeyError,
         )
 
         permissionPrompt != null -> LauncherMessageBox(
@@ -89,10 +90,11 @@ fun LibraryDialogs(viewModel: LibraryViewModel = hiltViewModel()) {
         )
 
         state.pendingSpecialGameId != null -> SpecialVersionDialog(
+            key = state.pendingKey,
+            onKeyChange = viewModel::updatePendingKey,
             onConfirm = viewModel::submitSpecialVersionKey,
             onDismiss = viewModel::dismissPrompt,
             keyError = strings.downloadKeyInvalidMessage.takeIf { state.isKeyInvalid },
-            onKeyChange = viewModel::clearKeyError,
         )
     }
 }
@@ -116,6 +118,7 @@ internal fun cancelDownloadMessageBox(strings: Strings) = MessageBoxSpec(
     strings.cancelDownloadConfirmMessage,
     MessageBoxButtons.YES_NO,
     MessageBoxIcon.INFORMATION,
+    protectFromOverlays = true,
 )
 
 internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpec = when (this) {
@@ -124,6 +127,7 @@ internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpe
         strings.storageAccessMessage,
         MessageBoxButtons.YES_NO,
         MessageBoxIcon.INFORMATION,
+        protectFromOverlays = true,
     )
 
     LibraryPermissionPrompt.STORAGE_SETTINGS -> MessageBoxSpec(
@@ -131,6 +135,7 @@ internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpe
         strings.storageAccessSettingsMessage,
         MessageBoxButtons.YES_NO,
         MessageBoxIcon.INFORMATION,
+        protectFromOverlays = true,
     )
 
     LibraryPermissionPrompt.NOTIFICATION_RATIONALE -> MessageBoxSpec(
@@ -138,6 +143,7 @@ internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpe
         strings.notificationPermissionMessage,
         MessageBoxButtons.YES_NO,
         MessageBoxIcon.INFORMATION,
+        protectFromOverlays = true,
     )
 
     LibraryPermissionPrompt.NOTIFICATION_SETTINGS -> MessageBoxSpec(
@@ -145,6 +151,7 @@ internal fun LibraryPermissionPrompt.messageBox(strings: Strings): MessageBoxSpe
         strings.notificationPermissionSettingsMessage,
         MessageBoxButtons.YES_NO,
         MessageBoxIcon.INFORMATION,
+        protectFromOverlays = true,
     )
 }
 

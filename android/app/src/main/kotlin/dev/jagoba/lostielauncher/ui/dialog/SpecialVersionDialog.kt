@@ -4,10 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import dev.jagoba.lostielauncher.R
@@ -19,14 +15,14 @@ import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
 
 @Composable
 fun SpecialVersionDialog(
-    onConfirm: (key: String) -> Unit,
+    key: String,
+    onKeyChange: (String) -> Unit,
+    onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     keyError: String? = null,
-    onKeyChange: () -> Unit = {},
 ) {
     val strings = LocalStrings.current
-    var key by rememberSaveable { mutableStateOf("") }
-    val confirm = { if (key.isNotBlank()) onConfirm(key) }
+    val confirm = { if (key.isNotBlank()) onConfirm() }
     LauncherDialog(
         icon = R.drawable.ic_dialog_key,
         title = strings.specialVersionDialogTitle,
@@ -35,6 +31,8 @@ fun SpecialVersionDialog(
         maxHeight = Dp.Infinity,
         onDismiss = onDismiss,
         centerBody = true,
+        secure = true,
+        protectFromOverlays = true,
         footer = {
             DialogFooterButtons {
                 DialogButton(
@@ -58,12 +56,7 @@ fun SpecialVersionDialog(
                 DialogKeyField(
                     label = strings.specialVersionDialogKeyLabel,
                     value = key,
-                    onValueChange = {
-                        if (it != key) {
-                            key = it
-                            onKeyChange()
-                        }
-                    },
+                    onValueChange = onKeyChange,
                     onDone = confirm,
                     error = keyError,
                 )

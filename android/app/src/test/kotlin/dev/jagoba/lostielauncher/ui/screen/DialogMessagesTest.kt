@@ -72,40 +72,47 @@ class DialogMessagesTest {
     }
 
     @Test
-    fun `cancelling a download asks yes or no`() {
-        cancelDownloadMessageBox(strings).buttons shouldBe MessageBoxButtons.YES_NO
+    fun `cancelling a download asks yes or no and protects against overlays`() {
+        val spec = cancelDownloadMessageBox(strings)
+
+        spec.buttons shouldBe MessageBoxButtons.YES_NO
+        spec.protectFromOverlays shouldBe true
     }
 
     @Test
-    fun `permission prompts explain themselves and ask yes or no`() {
+    fun `permission prompts explain themselves, ask yes or no and protect against overlays`() {
         LibraryPermissionPrompt.STORAGE_RATIONALE.messageBox(strings) shouldBe MessageBoxSpec(
             strings.storageAccessTitle,
             strings.storageAccessMessage,
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
         )
         LibraryPermissionPrompt.STORAGE_SETTINGS.messageBox(strings) shouldBe MessageBoxSpec(
             strings.storageAccessTitle,
             strings.storageAccessSettingsMessage,
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
         )
         LibraryPermissionPrompt.NOTIFICATION_RATIONALE.messageBox(strings) shouldBe MessageBoxSpec(
             strings.notificationPermissionTitle,
             strings.notificationPermissionMessage,
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
         )
         LibraryPermissionPrompt.NOTIFICATION_SETTINGS.messageBox(strings) shouldBe MessageBoxSpec(
             strings.notificationPermissionTitle,
             strings.notificationPermissionSettingsMessage,
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.INFORMATION,
+            protectFromOverlays = true,
         )
     }
 
     @Test
-    fun `uninstall confirmation names the game and switches to the warning when it may be running`() {
+    fun `uninstall confirmation names the game, protects against overlays and switches to warning when running`() {
         val confirm = gamesMessage(GamesUiState(pendingUninstall = target), strings)!!
         val warning = gamesMessage(
             GamesUiState(pendingUninstall = target, notice = GamesNotice.POSSIBLY_RUNNING),
@@ -115,10 +122,12 @@ class DialogMessagesTest {
         confirm.confirmation shouldBe GamesConfirmation.UNINSTALL
         confirm.spec.icon shouldBe MessageBoxIcon.INFORMATION
         confirm.spec.message shouldContain "Test Game"
+        confirm.spec.protectFromOverlays shouldBe true
         warning.confirmation shouldBe GamesConfirmation.UNINSTALL
         warning.spec.icon shouldBe MessageBoxIcon.ERROR
         warning.spec.title shouldBe strings.uninstallGameRunningTitle
         warning.spec.message shouldContain "Test Game"
+        warning.spec.protectFromOverlays shouldBe true
     }
 
     @Test
@@ -155,12 +164,13 @@ class DialogMessagesTest {
     }
 
     @Test
-    fun `a launcher update asks yes or no with the offered version`() {
+    fun `a launcher update asks yes or no with the offered version and protects against overlays`() {
         launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), strings) shouldBe MessageBoxSpec(
             strings.updateAvailableTitle,
             "New version 1.1.0 available. Download and install?",
             MessageBoxButtons.YES_NO,
             MessageBoxIcon.UPDATE,
+            protectFromOverlays = true,
         )
     }
 

@@ -49,6 +49,7 @@ internal fun gamesMessage(state: GamesUiState, strings: Strings): GamesMessage? 
                 strings.uninstallMaybeRunningMessage.withArgs(game.name),
                 MessageBoxButtons.YES_NO,
                 MessageBoxIcon.ERROR,
+                protectFromOverlays = true,
             )
         } else {
             MessageBoxSpec(
@@ -56,6 +57,7 @@ internal fun gamesMessage(state: GamesUiState, strings: Strings): GamesMessage? 
                 strings.uninstallConfirmMessage.withArgs(game.name),
                 MessageBoxButtons.YES_NO,
                 MessageBoxIcon.INFORMATION,
+                protectFromOverlays = true,
             )
         }
         return GamesMessage(spec, GamesConfirmation.UNINSTALL)

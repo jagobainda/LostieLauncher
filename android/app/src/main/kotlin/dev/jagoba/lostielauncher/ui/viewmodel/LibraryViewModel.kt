@@ -134,6 +134,7 @@ data class LibraryUiState(
     val downloadDestination: DownloadDestination? = null,
     val pendingCancelGameId: String? = null,
     val pendingSpecialGameId: String? = null,
+    val pendingKey: String = "",
     val isKeyInvalid: Boolean = false,
     val permissionPrompt: LibraryPermissionPrompt? = null,
     val notice: LibraryNotice? = null,
@@ -306,6 +307,7 @@ class LibraryViewModel @Inject constructor(
                     it.copy(
                         pendingDownloadGameId = gameId,
                         downloadDestination = destination,
+                        pendingKey = "",
                         isKeyInvalid = false,
                         notice = null,
                     )
@@ -314,11 +316,13 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun confirmDownload(key: String? = null): Boolean {
+    fun confirmDownload(key: String? = transient.value.pendingKey): Boolean {
         val gameId = transient.value.pendingDownloadGameId ?: return false
         val trimmedKey = key?.trim()?.takeIf(String::isNotEmpty)
         if (trimmedKey != null && !acceptKeyFormat(gameId, trimmedKey)) return false
-        updateTransient { it.copy(pendingDownloadGameId = null, downloadDestination = null, isKeyInvalid = false) }
+        updateTransient {
+            it.copy(pendingDownloadGameId = null, downloadDestination = null, pendingKey = "", isKeyInvalid = false)
+        }
         if (find(gameId) == null) return false
         withStorageAccess(PendingStorageAction.Download(gameId, trimmedKey))
         return true
@@ -397,16 +401,18 @@ class LibraryViewModel @Inject constructor(
         }
         viewModelScope.launch {
             if (serverActionsAvailable()) {
-                updateTransient { it.copy(pendingSpecialGameId = gameId, isKeyInvalid = false, notice = null) }
+                updateTransient {
+                    it.copy(pendingSpecialGameId = gameId, pendingKey = "", isKeyInvalid = false, notice = null)
+                }
             }
         }
     }
 
-    fun submitSpecialVersionKey(key: String) {
+    fun submitSpecialVersionKey(key: String = transient.value.pendingKey) {
         val gameId = transient.value.pendingSpecialGameId ?: return
         val trimmedKey = key.trim()
         if (!acceptKeyFormat(gameId, trimmedKey)) return
-        updateTransient { it.copy(pendingSpecialGameId = null, isKeyInvalid = false) }
+        updateTransient { it.copy(pendingSpecialGameId = null, pendingKey = "", isKeyInvalid = false) }
         viewModelScope.launch {
             if (!serverActionsAvailable()) return@launch
             val game = resolveGame(gameId) ?: return@launch
@@ -414,8 +420,9 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun clearKeyError() {
-        if (transient.value.isKeyInvalid) updateTransient { it.copy(isKeyInvalid = false) }
+    fun updatePendingKey(key: String) {
+        if (key == transient.value.pendingKey) return
+        updateTransient { it.copy(pendingKey = key, isKeyInvalid = false) }
     }
 
     private fun acceptKeyFormat(gameId: String, key: String): Boolean {
@@ -544,26 +551,27 @@ class LibraryViewModel @Inject constructor(
     private fun updateTransient(transform: (LibraryUiState) -> LibraryUiState) {
         val updated = transform(transient.value)
         transient.value = updated
+        val persistPermissionPrompt = (pendingStorageAction as? PendingStorageAction.Download)?.key.isNullOrEmpty()
         savedState[PENDING_DOWNLOAD_GAME_ID_KEY] = updated.pendingDownloadGameId
         savedState[DOWNLOAD_DESTINATION_PATH_KEY] = updated.downloadDestination?.path
         savedState[DOWNLOAD_DESTINATION_FREE_BYTES_KEY] = updated.downloadDestination?.freeBytes
         savedState[PENDING_CANCEL_GAME_ID_KEY] = updated.pendingCancelGameId
         savedState[PENDING_SPECIAL_GAME_ID_KEY] = updated.pendingSpecialGameId
         savedState[KEY_INVALID_KEY] = updated.isKeyInvalid
-        savedState[PERMISSION_PROMPT_KEY] = updated.permissionPrompt?.name
+        savedState[PERMISSION_PROMPT_KEY] = updated.permissionPrompt?.name.takeIf { persistPermissionPrompt }
         savedState[NOTICE_KEY] = updated.notice?.name
     }
 
     private fun setPendingStorageAction(action: PendingStorageAction?) {
         pendingStorageAction = action
-        savedState[STORAGE_ACTION_KIND_KEY] = when (action) {
+        val persisted = action?.takeUnless { it is PendingStorageAction.Download && !it.key.isNullOrEmpty() }
+        savedState[STORAGE_ACTION_KIND_KEY] = when (persisted) {
             is PendingStorageAction.Download -> ACTION_DOWNLOAD
             is PendingStorageAction.Update -> ACTION_UPDATE
             is PendingStorageAction.RetryInstallation -> ACTION_RETRY
             null -> null
         }
-        savedState[STORAGE_ACTION_GAME_ID_KEY] = action?.gameId
-        savedState[STORAGE_ACTION_KEY_KEY] = (action as? PendingStorageAction.Download)?.key
+        savedState[STORAGE_ACTION_GAME_ID_KEY] = persisted?.gameId
     }
 
     private suspend fun start(
@@ -618,7 +626,6 @@ class LibraryViewModel @Inject constructor(
         const val NOTICE_KEY = "library.notice"
         const val STORAGE_ACTION_KIND_KEY = "library.storageAction.kind"
         const val STORAGE_ACTION_GAME_ID_KEY = "library.storageAction.gameId"
-        const val STORAGE_ACTION_KEY_KEY = "library.storageAction.key"
         const val ACTION_DOWNLOAD = "DOWNLOAD"
         const val ACTION_UPDATE = "UPDATE"
         const val ACTION_RETRY = "RETRY"
@@ -700,7 +707,7 @@ class LibraryViewModel @Inject constructor(
         fun restoreStorageAction(savedState: SavedStateHandle): PendingStorageAction? {
             val gameId = savedState.get<String>(STORAGE_ACTION_GAME_ID_KEY) ?: return null
             return when (savedState.get<String>(STORAGE_ACTION_KIND_KEY)) {
-                ACTION_DOWNLOAD -> PendingStorageAction.Download(gameId, savedState.get<String>(STORAGE_ACTION_KEY_KEY))
+                ACTION_DOWNLOAD -> PendingStorageAction.Download(gameId)
                 ACTION_UPDATE -> PendingStorageAction.Update(gameId)
                 ACTION_RETRY -> PendingStorageAction.RetryInstallation(gameId)
                 else -> null

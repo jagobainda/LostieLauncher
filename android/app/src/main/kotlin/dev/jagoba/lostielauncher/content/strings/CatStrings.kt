@@ -63,6 +63,8 @@ internal object CatStrings : Strings {
     override val downloadDialogViewPage = "Veure pàgina del joc"
     override val downloadDialogNoDescription = "Sense descripció disponible."
     override val downloadDialogKey = "Clau per a versions especials (opcional)"
+    override val showKey = "Mostrar clau"
+    override val hideKey = "Ocultar clau"
     override val downloadKeyInvalidMessage = "El format de la clau no és vàlid. Ha de tenir el format XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Ha fallat la descàrrega"
     override val downloadErrorMessage = "No s'ha pogut completar la descàrrega. Si us plau, intenta-ho més tard. Si el problema persisteix, obre un issue al repositori de GitHub del launcher."

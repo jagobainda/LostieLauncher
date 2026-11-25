@@ -63,6 +63,8 @@ internal object EngStrings : Strings {
     override val downloadDialogViewPage = "View game page"
     override val downloadDialogNoDescription = "No description available."
     override val downloadDialogKey = "Access key for special versions (optional)"
+    override val showKey = "Show key"
+    override val hideKey = "Hide key"
     override val downloadKeyInvalidMessage = "The key format is invalid. It must follow the format XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Download failed"
     override val downloadErrorMessage = "The download could not be completed. Please try again later. If the problem persists, open an issue in the launcher's GitHub repository."

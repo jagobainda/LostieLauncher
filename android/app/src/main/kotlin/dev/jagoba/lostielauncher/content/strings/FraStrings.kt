@@ -63,6 +63,8 @@ internal object FraStrings : Strings {
     override val downloadDialogViewPage = "Voir la page du jeu"
     override val downloadDialogNoDescription = "Aucune description disponible."
     override val downloadDialogKey = "Clé pour les versions spéciales (optionnel)"
+    override val showKey = "Afficher la clé"
+    override val hideKey = "Masquer la clé"
     override val downloadKeyInvalidMessage = "Le format de la clé est invalide. Il doit suivre le format XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Échec du téléchargement"
     override val downloadErrorMessage = "Le téléchargement n'a pas pu être complété. Veuillez réessayer plus tard. Si le problème persiste, ouvrez une issue sur le dépôt GitHub du launcher."

@@ -63,6 +63,8 @@ internal object GalStrings : Strings {
     override val downloadDialogViewPage = "Ver páxina do xogo"
     override val downloadDialogNoDescription = "Sen descrición dispoñible."
     override val downloadDialogKey = "Clave para versións especiais (opcional)"
+    override val showKey = "Mostrar clave"
+    override val hideKey = "Ocultar clave"
     override val downloadKeyInvalidMessage = "O formato da clave non é válido. Debe ter o formato XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Erro na descarga"
     override val downloadErrorMessage = "Non foi posible completar a descarga. Inténtao de novo máis tarde. Se o problema persiste, abre unha issue no repositorio de GitHub do launcher."

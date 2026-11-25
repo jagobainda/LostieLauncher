@@ -63,6 +63,8 @@ internal object PorStrings : Strings {
     override val downloadDialogViewPage = "Ver página do jogo"
     override val downloadDialogNoDescription = "Sem descrição disponível."
     override val downloadDialogKey = "Chave para versões especiais (opcional)"
+    override val showKey = "Mostrar chave"
+    override val hideKey = "Ocultar chave"
     override val downloadKeyInvalidMessage = "O formato da chave é inválido. Deve seguir o formato XXXX-XXXX-XXXX-XXXX-XXXX."
     override val downloadErrorTitle = "Falha no download"
     override val downloadErrorMessage = "O download não pôde ser concluído. Por favor, tente mais tarde. Se o problema persistir, abra uma issue no repositório do launcher no GitHub."
