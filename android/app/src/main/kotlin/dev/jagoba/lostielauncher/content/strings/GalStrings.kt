@@ -91,6 +91,8 @@ internal object GalStrings : Strings {
     override val gameExeNotFoundMessage = "Non se atopou o executable do xogo. Intenta reinstalalo."
     override val hashMismatchTitle = "Erro de integridade"
     override val hashMismatchMessage = "O ficheiro descargado está danado ou foi modificado. Por favor, téntao de novo. Se o problema persiste, abre unha issue no repositorio de GitHub do launcher."
+    override val gameIntegrityMismatchMessage = "Os ficheiros de {0} foron modificados ou están danados, así que non se pode abrir. Reinstálao para volver xogar."
+    override val gameIntegrityMismatchReinstallMessage = "Os ficheiros de {0} foron modificados ou están danados, así que non se pode abrir. Queres reinstalalo agora?"
     override val welcomeDialogTitle = "Benvido ao Lostie Launcher!"
     override val welcomeDialogDescription = "Descarga, actualiza e xoga os teus xogos favoritos nun só lugar. Simple, rápido e sen complicacións.\n\nA túa privacidade é importante. Non recollemos ningún tipo de información nin de datos.\n\nEste proxecto é opensource. Dúbidas sobre como funciona? Consulta o código fonte"
     override val welcomeDialogContinue = "Continuar"

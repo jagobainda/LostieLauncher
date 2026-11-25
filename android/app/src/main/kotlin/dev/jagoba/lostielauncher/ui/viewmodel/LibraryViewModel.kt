@@ -276,6 +276,7 @@ class LibraryViewModel @Inject constructor(
                 when (pending.action) {
                     LibraryNavigationAction.UPDATE -> startUpdate(pending.gameId)
                     LibraryNavigationAction.SPECIAL_VERSION -> requestSpecialVersion(pending.gameId)
+                    LibraryNavigationAction.REINSTALL -> requestReinstall(pending.gameId)
                 }
             }
         }
@@ -302,17 +303,34 @@ class LibraryViewModel @Inject constructor(
             if (row.download?.status == DownloadStatus.PAUSED) {
                 record(downloads.resume(gameId))
             } else {
-                val destination = downloads.destination()
-                updateTransient {
-                    it.copy(
-                        pendingDownloadGameId = gameId,
-                        downloadDestination = destination,
-                        pendingKey = "",
-                        isKeyInvalid = false,
-                        notice = null,
-                    )
-                }
+                openDownloadConfirm(gameId)
             }
+        }
+    }
+
+    fun requestReinstall(gameId: String) {
+        val row = find(gameId) ?: return
+        if (!row.canSwitchSpecialVersion) {
+            logger.debug("Reinstall request blocked for $gameId: another download is active.")
+            updateTransient { it.copy(notice = LibraryNotice.DOWNLOAD_BUSY) }
+            return
+        }
+        viewModelScope.launch {
+            if (!serverActionsAvailable()) return@launch
+            openDownloadConfirm(gameId)
+        }
+    }
+
+    private suspend fun openDownloadConfirm(gameId: String) {
+        val destination = downloads.destination()
+        updateTransient {
+            it.copy(
+                pendingDownloadGameId = gameId,
+                downloadDestination = destination,
+                pendingKey = "",
+                isKeyInvalid = false,
+                notice = null,
+            )
         }
     }
 

@@ -50,6 +50,7 @@ data class InstalledGameUiState(
 enum class GamesNotice {
     NOT_SUPPORTED_YET,
     GAME_NOT_FOUND,
+    INTEGRITY_MISMATCH,
     LAUNCH_FAILED,
     GAME_RUNNING,
     POSSIBLY_RUNNING,
@@ -65,6 +66,7 @@ data class GamesUiState(
     val games: List<InstalledGameUiState> = emptyList(),
     val pendingUninstall: GameTarget? = null,
     val blockingLocation: GameLocationReference? = null,
+    val reinstallGameId: String? = null,
     val notice: GamesNotice? = null,
     val noticeGameName: String? = null,
 ) {
@@ -86,6 +88,7 @@ class GamesViewModel @Inject constructor(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(restoreUiState(savedState))
     private val uninstalling = MutableStateFlow<Set<String>>(emptySet())
+    private val launching = mutableSetOf<String>()
     val state: StateFlow<GamesUiState> = mutableState.asStateFlow()
 
     init {
@@ -146,17 +149,46 @@ class GamesViewModel @Inject constructor(
 
     fun play(gameName: String) {
         val row = find(gameName) ?: return
-        if (!row.canPlay) return
+        if (!row.canPlay || !launching.add(row.game.name)) return
         logger.debug("Launching game: $gameName.")
         viewModelScope.launch {
-            val notice = when (launch.launch(target(row.game))) {
-                GameLaunchResult.Launched -> null
-                GameLaunchResult.GameNotFound -> GamesNotice.GAME_NOT_FOUND
-                GameLaunchResult.LaunchFailed -> GamesNotice.LAUNCH_FAILED
-                GameLaunchResult.NotSupportedYet -> GamesNotice.NOT_SUPPORTED_YET
+            try {
+                when (launch.launch(target(row.game))) {
+                    GameLaunchResult.Launched -> updatePrompt {
+                        it.copy(notice = null, noticeGameName = null, reinstallGameId = null)
+                    }
+
+                    GameLaunchResult.GameNotFound -> updatePrompt {
+                        it.copy(notice = GamesNotice.GAME_NOT_FOUND, noticeGameName = null, reinstallGameId = null)
+                    }
+
+                    GameLaunchResult.IntegrityMismatch -> updatePrompt {
+                        it.copy(
+                            notice = GamesNotice.INTEGRITY_MISMATCH,
+                            noticeGameName = row.game.name,
+                            reinstallGameId = row.remote?.gameId,
+                        )
+                    }
+
+                    GameLaunchResult.LaunchFailed -> updatePrompt {
+                        it.copy(notice = GamesNotice.LAUNCH_FAILED, noticeGameName = null, reinstallGameId = null)
+                    }
+
+                    GameLaunchResult.NotSupportedYet -> updatePrompt {
+                        it.copy(notice = GamesNotice.NOT_SUPPORTED_YET, noticeGameName = null, reinstallGameId = null)
+                    }
+                }
+            } finally {
+                launching.remove(row.game.name)
             }
-            updatePrompt { it.copy(notice = notice) }
         }
+    }
+
+    fun confirmReinstall() {
+        val gameId = mutableState.value.reinstallGameId ?: return
+        dismissPrompt()
+        logger.debug("Reinstalling game after integrity mismatch: $gameId.")
+        navigation.navigate(LauncherSection.LIBRARY, gameId, LibraryNavigationAction.REINSTALL)
     }
 
     fun requestUninstall(gameName: String) {
@@ -222,6 +254,7 @@ class GamesViewModel @Inject constructor(
         updatePrompt {
             it.copy(
                 pendingUninstall = null,
+                reinstallGameId = null,
                 notice = null,
                 noticeGameName = null,
             )
@@ -244,6 +277,7 @@ class GamesViewModel @Inject constructor(
         savedState[PENDING_UNINSTALL_NAME_KEY] = updated.pendingUninstall?.name
         savedState[BLOCKING_LOCATION_TOKEN_KEY] = updated.blockingLocation?.token
         savedState[BLOCKING_LOCATION_DISPLAY_KEY] = updated.blockingLocation?.displayName
+        savedState[REINSTALL_GAME_ID_KEY] = updated.reinstallGameId
         savedState[NOTICE_KEY] = updated.notice?.name
         savedState[NOTICE_GAME_NAME_KEY] = updated.noticeGameName
     }
@@ -276,6 +310,7 @@ class GamesViewModel @Inject constructor(
         const val PENDING_UNINSTALL_NAME_KEY = "games.pendingUninstall.name"
         const val BLOCKING_LOCATION_TOKEN_KEY = "games.blockingLocation.token"
         const val BLOCKING_LOCATION_DISPLAY_KEY = "games.blockingLocation.displayName"
+        const val REINSTALL_GAME_ID_KEY = "games.reinstallGameId"
         const val NOTICE_KEY = "games.notice"
         const val NOTICE_GAME_NAME_KEY = "games.noticeGameName"
 
@@ -291,6 +326,7 @@ class GamesViewModel @Inject constructor(
                 blockingLocation = locationToken?.let {
                     GameLocationReference(it, savedState.get<String>(BLOCKING_LOCATION_DISPLAY_KEY))
                 },
+                reinstallGameId = savedState.get<String>(REINSTALL_GAME_ID_KEY),
                 notice = GamesNotice.entries.firstOrNull { it.name == noticeName },
                 noticeGameName = savedState.get<String>(NOTICE_GAME_NAME_KEY),
             )

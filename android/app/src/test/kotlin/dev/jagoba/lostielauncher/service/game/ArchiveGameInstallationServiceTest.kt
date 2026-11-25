@@ -9,12 +9,17 @@ import dev.jagoba.lostielauncher.model.GameInstallationState
 import dev.jagoba.lostielauncher.model.GameTarget
 import dev.jagoba.lostielauncher.model.GameUninstallOutcome
 import dev.jagoba.lostielauncher.model.GameUninstallResult
+import dev.jagoba.lostielauncher.model.InstalledGameFileDigest
+import dev.jagoba.lostielauncher.model.InstalledGameManifest
+import dev.jagoba.lostielauncher.model.InstalledGameManifestLookup
+import dev.jagoba.lostielauncher.model.InstalledGameManifestOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.storage.StorageAccess
+import dev.jagoba.lostielauncher.util.file.FileDigests
 import dev.jagoba.lostielauncher.util.file.LEGACY_ZIP_CHARSET
 import dev.jagoba.lostielauncher.util.file.unicodePathField
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -41,6 +46,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -56,12 +62,14 @@ class ArchiveGameInstallationServiceTest {
     private val dispatcher = StandardTestDispatcher()
     private val logger = mockk<Logger>(relaxed = true)
     private val library = mockk<LocalLibraryStore>(relaxed = true)
+    private val manifests = mockk<InstalledGameManifestStore>(relaxed = true)
     private val kirin = mockk<KirinGameLibrary>(relaxed = true)
     private val storageAccess = mockk<StorageAccess> { every { isGranted() } returns true }
     private val gameId = UUID.fromString("11111111-2222-3333-4444-555555555555")
     private val installedGame = LocalGame(gameId, "Demo", "v1", null)
     private val gamesRoot get() = directory.resolve("LostieLauncher").toFile()
     private val gameDirectory get() = File(gamesRoot, "demo")
+    private val manifestsDirectory get() = directory.resolve("no_backup/manifests").toFile()
     private val archive get() = directory.resolve("downloads/demo.zip").toFile()
     private val noMediaMarker get() = File(gamesRoot, ".nomedia")
 
@@ -71,9 +79,11 @@ class ArchiveGameInstallationServiceTest {
         extractionWorkers: Int = 4,
         progressInterval: Duration = Duration.ZERO,
         timeSource: MonotonicTimeSource = MonotonicTimeSource { 0L },
+        manifestStore: InstalledGameManifestStore = manifests,
     ) = ArchiveGameInstallationService(
         PendingGameInstallationService(logger),
         library,
+        manifestStore,
         kirin,
         KirinOptions(
             gamesRoot,
@@ -545,6 +555,69 @@ class ArchiveGameInstallationServiceTest {
         sut.uninstall(GameTarget(null, "!!!")) shouldBe GameUninstallResult(GameUninstallOutcome.NOTHING_DELETED)
 
         File(gamesRoot, "other/Game.exe").exists() shouldBe true
+        coVerify(exactly = 0) { manifests.remove(any()) }
         coVerify(exactly = 0) { library.removeGame(any()) }
     }
+
+    @Test
+    fun `writes an internal integrity manifest with file digests during installation and removes it on uninstall`() =
+        runTest(dispatcher) {
+            val store = FileInstalledGameManifestStore(
+                InstalledGameManifestOptions(manifestsDirectory),
+                Json { ignoreUnknownKeys = true },
+                logger,
+                TestDispatcherProvider(dispatcher),
+            )
+            val hash = writeArchive("Game.exe" to "exe", "Data/Scripts.rxdata" to "data")
+            coEvery { library.getGames() } returns listOf(installedGame)
+            val sut = createSut(manifestStore = store)
+
+            sut.install(request(hash)) shouldBe GameInstallationResult.Installed(installedGame)
+
+            val expectedExe = FileDigests.sha256(File(gameDirectory, "Game.exe"), 4 * 1024)
+            val expectedData = FileDigests.sha256(File(gameDirectory, "Data/Scripts.rxdata"), 4 * 1024)
+            store.read("demo") shouldBe InstalledGameManifestLookup.Found(
+                InstalledGameManifest(
+                    gameId = "demo",
+                    id = gameId,
+                    name = "Demo",
+                    version = "v1",
+                    variant = null,
+                    files = mapOf(
+                        "Data/Scripts.rxdata" to InstalledGameFileDigest(expectedData.size, expectedData.sha256),
+                        "Game.exe" to InstalledGameFileDigest(expectedExe.size, expectedExe.sha256),
+                    ),
+                ),
+            )
+
+            coEvery { library.getGames() } returns emptyList()
+            sut.uninstall(GameTarget(gameId, "Demo")) shouldBe GameUninstallResult(GameUninstallOutcome.COMPLETED)
+            store.read("demo") shouldBe InstalledGameManifestLookup.NotFound
+        }
+
+    @Test
+    fun `reports a registry failure without registering locally when writing the manifest fails`() =
+        runTest(dispatcher) {
+            val hash = writeArchive("Game.exe" to "exe")
+            coEvery { manifests.write(any()) } throws IOException("disk full")
+            val sut = createSut()
+
+            sut.install(request(hash)) shouldBe GameInstallationResult.RegistryFailed
+
+            coVerify(exactly = 0) { library.registerGame(any()) }
+        }
+
+    @Test
+    fun `prefers internal manifest metadata over tampered version and variant in the shared registry`() =
+        runTest(dispatcher) {
+            val legacy = LocalGame(UUID.randomUUID(), "Legacy", "v1.0", null)
+            coEvery { library.getGames() } returns listOf(LocalGame(gameId, "Demo", "999", "fake"), legacy)
+            coEvery { manifests.readAll() } returns listOf(
+                InstalledGameManifest("demo", gameId, "Demo", "v1", null, emptyMap()),
+            )
+            val sut = createSut()
+            advanceUntilIdle()
+
+            sut.installedGames.value shouldBe InstalledGamesState.Available(listOf(installedGame, legacy))
+        }
 }

@@ -91,6 +91,8 @@ internal object EusStrings : Strings {
     override val gameExeNotFoundMessage = "Jokoaren exekutagarria ez da aurkitu. Saiatu berrinstalatzea."
     override val hashMismatchTitle = "Osotasun errorea"
     override val hashMismatchMessage = "Deskargatutako fitxategia hondatuta edo aldatuta dago. Mesedez, saiatu berriro. Arazoa jarraitzen badu, ireki issue bat launcher-aren GitHub biltegian."
+    override val gameIntegrityMismatchMessage = "{0} jokoaren fitxategiak aldatuta edo hondatuta daude, beraz ezin da ireki. Berrinstalatu berriro jolasteko."
+    override val gameIntegrityMismatchReinstallMessage = "{0} jokoaren fitxategiak aldatuta edo hondatuta daude, beraz ezin da ireki. Orain berrinstalatu nahi duzu?"
     override val welcomeDialogTitle = "Ongi etorri Lostie Launcher-era!"
     override val welcomeDialogDescription = "Deskargatu, eguneratu eta jolastu zure joko gogokoak leku batean. Sinplea, azkarra eta konplikazio gabe.\n\nZure pribatutasuna garrantzitsua da. Ez dugu inolako informaziorik ez daturik biltzen.\n\nProiektu hau opensource. Zalantzak nola funtzionatzen duen jakin nahi? Bilatu iturburu kodea"
     override val welcomeDialogContinue = "Jarraitu"

@@ -351,6 +351,58 @@ class GamesViewModelTest {
         afterOutcome.state.value.blockingLocation shouldBe GameLocationReference("token-1", "/games/test")
     }
 
+    @Test
+    fun `integrity mismatch offers reinstall, survives process death and navigates to library on confirmation`() =
+        runTest(dispatcher) {
+            val remote = testGame()
+            content.games = listOf(remote)
+            coordinator.refreshCatalogue()
+            installation.current.value =
+                InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, remote.version, null)))
+            launch.launchResult = GameLaunchResult.IntegrityMismatch
+            val saved = SavedStateHandle()
+            val sut = createSut(saved)
+            runCurrent()
+
+            sut.play(remote.name)
+            runCurrent()
+
+            sut.state.value.notice shouldBe GamesNotice.INTEGRITY_MISMATCH
+            sut.state.value.noticeGameName shouldBe remote.name
+            sut.state.value.reinstallGameId shouldBe remote.gameId
+
+            val restored = createSut(saved)
+            runCurrent()
+            restored.state.value.notice shouldBe GamesNotice.INTEGRITY_MISMATCH
+            restored.state.value.noticeGameName shouldBe remote.name
+            restored.state.value.reinstallGameId shouldBe remote.gameId
+
+            restored.confirmReinstall()
+            runCurrent()
+            restored.state.value.notice shouldBe null
+            restored.state.value.reinstallGameId shouldBe null
+            navigation.state.value.section shouldBe LauncherSection.LIBRARY
+            navigation.state.value.pendingLibraryAction shouldBe
+                PendingLibraryAction(remote.gameId, LibraryNavigationAction.REINSTALL)
+        }
+
+    @Test
+    fun `integrity mismatch without a catalogue entry does not set a reinstall target`() = runTest(dispatcher) {
+        coordinator.refreshCatalogue()
+        installation.current.value =
+            InstalledGamesState.Available(listOf(LocalGame(UUID.randomUUID(), "Offline Game", "v1", null)))
+        launch.launchResult = GameLaunchResult.IntegrityMismatch
+        val sut = createSut()
+        runCurrent()
+
+        sut.play("Offline Game")
+        runCurrent()
+
+        sut.state.value.notice shouldBe GamesNotice.INTEGRITY_MISMATCH
+        sut.state.value.noticeGameName shouldBe "Offline Game"
+        sut.state.value.reinstallGameId shouldBe null
+    }
+
     private fun createSut(savedState: SavedStateHandle = SavedStateHandle()) = GamesViewModel(
         installation,
         launch,

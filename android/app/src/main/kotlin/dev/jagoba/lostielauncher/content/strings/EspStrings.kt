@@ -91,6 +91,8 @@ internal object EspStrings : Strings {
     override val gameExeNotFoundMessage = "No se encontró el ejecutable del juego. Intenta reinstalarlo."
     override val hashMismatchTitle = "Error de integridad"
     override val hashMismatchMessage = "El archivo descargado está dañado o ha sido modificado. Por favor, intenta de nuevo. Si el problema persiste, abre un issue en el repositorio de GitHub del launcher."
+    override val gameIntegrityMismatchMessage = "Los archivos de {0} han sido modificados o están dañados, así que no se puede abrir. Reinstálalo para poder volver a jugar."
+    override val gameIntegrityMismatchReinstallMessage = "Los archivos de {0} han sido modificados o están dañados, así que no se puede abrir. ¿Quieres reinstalarlo ahora?"
     override val welcomeDialogTitle = "¡Bienvenido al Lostie Launcher!"
     override val welcomeDialogDescription = "Descarga, actualiza y juega tus títulos favoritos en un solo lugar. Simple, rápido y sin complicaciones.\n\nTu privacidad es importante. No recopilamos ninguna información ni dato de ningún tipo.\n\nEste proyecto es opensource. ¿Dudas sobre cómo funciona? Consulta el código fuente"
     override val welcomeDialogContinue = "Continuar"

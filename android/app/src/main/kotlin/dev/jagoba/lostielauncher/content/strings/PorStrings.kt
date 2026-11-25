@@ -91,6 +91,8 @@ internal object PorStrings : Strings {
     override val gameExeNotFoundMessage = "O executável do jogo não foi encontrado. Tente reinstalá-lo."
     override val hashMismatchTitle = "Erro de integridade"
     override val hashMismatchMessage = "O arquivo baixado está corrompido ou foi modificado. Por favor, tente novamente. Se o problema persistir, abra uma issue no repositório do launcher no GitHub."
+    override val gameIntegrityMismatchMessage = "Os arquivos de {0} foram modificados ou estão corrompidos, portanto não é possível abri-lo. Reinstale-o para jogar novamente."
+    override val gameIntegrityMismatchReinstallMessage = "Os arquivos de {0} foram modificados ou estão corrompidos, portanto não é possível abri-lo. Deseja reinstalá-lo agora?"
     override val welcomeDialogTitle = "Bem-vindo ao Lostie Launcher!"
     override val welcomeDialogDescription = "Baixe, atualize e jogue seus jogos favoritos em um único lugar. Simples, rápido e sem complicações.\n\nSua privacidade é importante. Não coletamos nenhum tipo de informação ou dado.\n\nEste projeto é open source. Dúvidas sobre como funciona? Consulte o código-fonte"
     override val welcomeDialogContinue = "Continuar"

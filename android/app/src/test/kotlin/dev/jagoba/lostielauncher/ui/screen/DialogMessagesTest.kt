@@ -148,6 +148,35 @@ class DialogMessagesTest {
     }
 
     @Test
+    fun `integrity mismatch offers reinstall when a catalogue entry is known and falls back to ok otherwise`() {
+        val reinstall = gamesMessage(
+            GamesUiState(
+                notice = GamesNotice.INTEGRITY_MISMATCH,
+                noticeGameName = "Test Game",
+                reinstallGameId = "test-game",
+            ),
+            strings,
+        )!!
+        val inform = gamesMessage(
+            GamesUiState(
+                notice = GamesNotice.INTEGRITY_MISMATCH,
+                noticeGameName = "Test Game",
+            ),
+            strings,
+        )!!
+
+        reinstall.confirmation shouldBe GamesConfirmation.REINSTALL
+        reinstall.spec.buttons shouldBe MessageBoxButtons.YES_NO
+        reinstall.spec.icon shouldBe MessageBoxIcon.ERROR
+        reinstall.spec.title shouldBe strings.hashMismatchTitle
+        reinstall.spec.message shouldContain "Test Game"
+        inform.confirmation shouldBe GamesConfirmation.ACKNOWLEDGE
+        inform.spec.buttons shouldBe MessageBoxButtons.OK
+        inform.spec.icon shouldBe MessageBoxIcon.ERROR
+        inform.spec.message shouldContain "Test Game"
+    }
+
+    @Test
     fun `unsupported explains itself`() {
         gamesMessage(GamesUiState(notice = GamesNotice.NOT_SUPPORTED_YET), strings)!!.spec shouldBe MessageBoxSpec(
             strings.statusNotSupportedYet,

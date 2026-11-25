@@ -97,6 +97,8 @@ interface Strings {
     val gameExeNotFoundMessage: String
     val hashMismatchTitle: String
     val hashMismatchMessage: String
+    val gameIntegrityMismatchMessage: String
+    val gameIntegrityMismatchReinstallMessage: String
     val welcomeDialogTitle: String
     val welcomeDialogDescription: String
     val welcomeDialogContinue: String

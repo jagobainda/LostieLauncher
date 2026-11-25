@@ -8,6 +8,8 @@ import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GameTarget
 import dev.jagoba.lostielauncher.model.GameUninstallOutcome
 import dev.jagoba.lostielauncher.model.GameUninstallResult
+import dev.jagoba.lostielauncher.model.InstalledGameFileDigest
+import dev.jagoba.lostielauncher.model.InstalledGameManifest
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.LocalGame
@@ -16,14 +18,14 @@ import dev.jagoba.lostielauncher.model.gameSlug
 import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.library.LocalLibraryStore
 import dev.jagoba.lostielauncher.service.storage.StorageAccess
+import dev.jagoba.lostielauncher.util.file.FileDigests
 import dev.jagoba.lostielauncher.util.file.ZipEntryNames
 import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
 import java.io.IOException
 import java.nio.file.Path
-import java.security.MessageDigest
-import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.ZipEntry
@@ -50,6 +52,7 @@ import kotlinx.coroutines.withContext
 internal class ArchiveGameInstallationService @Inject constructor(
     pending: PendingGameInstallationService,
     private val library: LocalLibraryStore,
+    private val manifests: InstalledGameManifestStore,
     private val kirin: KirinGameLibrary,
     private val options: KirinOptions,
     private val storageAccess: StorageAccess,
@@ -105,12 +108,13 @@ internal class ArchiveGameInstallationService @Inject constructor(
 
         setPhase(file.gameId, GameInstallationState.VerifyingIntegrity)
         val expectedHash = request.expectedSha256
-        if (expectedHash == null || !SHA256_FORMAT.matches(expectedHash)) {
+        if (expectedHash == null || !FileDigests.SHA256_FORMAT.matches(expectedHash)) {
             logger.error("Integrity verification refused for ${file.gameId}: no valid SHA-256 available.")
             deleteArchive(archive)
             return GameInstallationResult.InvalidHash
         }
-        if (!sha256(archive).equals(expectedHash, ignoreCase = true)) {
+        val actualHash = FileDigests.sha256(archive, options.archiveBufferSizeBytes).sha256
+        if (!actualHash.equals(expectedHash, ignoreCase = true)) {
             logger.error("Hash mismatch for ${file.gameId}. Expected: $expectedHash")
             deleteArchive(archive)
             return GameInstallationResult.HashMismatch
@@ -119,7 +123,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         setPhase(file.gameId, GameInstallationState.Extracting())
         val directory = gameDirectory(file.gameId)
             ?: throw IOException("Invalid game directory: '${file.gameId}' escapes the games root.")
-        extract(archive, directory, file.gameId)
+        val digests = extract(archive, directory, file.gameId)
         deleteArchive(archive)
 
         val game = LocalGame(request.catalogueId ?: MissingGameId, file.displayName, file.version, request.variant)
@@ -129,6 +133,14 @@ internal class ArchiveGameInstallationService @Inject constructor(
             throw cancelled
         } catch (error: Exception) {
             logger.error("Kirin registration failed for ${file.gameId}.", error)
+            return GameInstallationResult.RegistryFailed
+        }
+        try {
+            manifests.write(InstalledGameManifest(file.gameId, game.id, game.name, game.version, game.type, digests))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            logger.error("Game integrity manifest could not be written for ${file.gameId}.", error)
             return GameInstallationResult.RegistryFailed
         }
         library.registerGame(game)
@@ -171,6 +183,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         } catch (error: Exception) {
             logger.error("Kirin unregistration failed for ${game.name}.", error)
         }
+        manifests.remove(gameSlug(game.name))
         library.removeGame(game.name)
         refreshInstalled()
         when {
@@ -188,23 +201,29 @@ internal class ArchiveGameInstallationService @Inject constructor(
     private fun gameDirectory(gameId: String): File? =
         File(options.gamesRoot, gameId).takeIf { it.canonicalFile.parentFile == options.gamesRoot.canonicalFile }
 
-    private suspend fun extract(archive: File, directory: File, gameId: String) {
+    private suspend fun extract(archive: File, directory: File, gameId: String): Map<String, InstalledGameFileDigest> {
         val temp = File("${directory.path}.tmp")
         temp.deleteRecursively()
         if (!temp.mkdirs()) throw IOException("Could not create '$temp'.")
         hideGamesFromMediaScanner()
-        try {
-            ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip -> extractEntries(zip, temp, gameId) }
-            currentCoroutineContext().ensureActive()
-            swap(temp, directory)
+        val digests = try {
+            ZipFile(archive, ZipEntryNames.LEGACY_CHARSET).use { zip -> extractEntries(zip, temp, gameId) }.also {
+                currentCoroutineContext().ensureActive()
+                swap(temp, directory)
+            }
         } catch (error: Exception) {
             temp.deleteRecursively()
             throw error
         }
         deleteInBackground(previousInstallations(directory))
+        return digests
     }
 
-    private suspend fun extractEntries(zip: ZipFile, temp: File, gameId: String) {
+    private suspend fun extractEntries(
+        zip: ZipFile,
+        temp: File,
+        gameId: String,
+    ): Map<String, InstalledGameFileDigest> {
         val root = temp.toPath().toAbsolutePath().normalize()
         val files = linkedMapOf<File, ZipEntry>()
         val directories = mutableSetOf<Path>()
@@ -238,6 +257,7 @@ internal class ArchiveGameInstallationService @Inject constructor(
         progress.advance(0)
         val queue = files.entries.sortedByDescending { it.value.size }
         val next = AtomicInteger()
+        val digests = ConcurrentHashMap<String, InstalledGameFileDigest>(files.size)
         coroutineScope {
             repeat(options.archiveExtractionWorkers.coerceAtLeast(1)) {
                 launch {
@@ -245,13 +265,15 @@ internal class ArchiveGameInstallationService @Inject constructor(
                     while (true) {
                         ensureActive()
                         val (target, entry) = queue.getOrNull(next.getAndIncrement()) ?: break
-                        copyEntry(zip, entry, target, buffer, progress)
+                        val relativePath = root.relativize(target.toPath()).toString().replace('\\', '/')
+                        digests[relativePath] = copyEntry(zip, entry, target, buffer, progress)
                         progress.advance(entryCost)
                     }
                 }
             }
         }
         logger.debug("Temp extraction complete: ${files.size} files.")
+        return digests.toMap()
     }
 
     private suspend fun copyEntry(
@@ -260,7 +282,9 @@ internal class ArchiveGameInstallationService @Inject constructor(
         target: File,
         buffer: ByteArray,
         progress: ExtractionProgress,
-    ) {
+    ): InstalledGameFileDigest {
+        val digest = FileDigests.newSha256()
+        var size = 0L
         zip.getInputStream(entry).use { input ->
             target.outputStream().use { output ->
                 var filled = 0
@@ -271,6 +295,8 @@ internal class ArchiveGameInstallationService @Inject constructor(
                     filled += read
                     if (filled == buffer.size) {
                         output.write(buffer, 0, filled)
+                        digest.update(buffer, 0, filled)
+                        size += filled
                         progress.advance(filled.toLong())
                         filled = 0
                     }
@@ -278,10 +304,13 @@ internal class ArchiveGameInstallationService @Inject constructor(
                 if (filled > 0) {
                     currentCoroutineContext().ensureActive()
                     output.write(buffer, 0, filled)
+                    digest.update(buffer, 0, filled)
+                    size += filled
                     progress.advance(filled.toLong())
                 }
             }
         }
+        return InstalledGameFileDigest(size, FileDigests.toHex(digest))
     }
 
     private fun MutableSet<Path>.addWithAncestors(directory: Path, root: Path) {
@@ -328,26 +357,28 @@ internal class ArchiveGameInstallationService @Inject constructor(
         }
     }
 
-    private suspend fun sha256(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        file.inputStream().use { input ->
-            val buffer = ByteArray(options.archiveBufferSizeBytes)
-            while (true) {
-                currentCoroutineContext().ensureActive()
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        return digest.digest().joinToString("") { String.format(Locale.ROOT, "%02x", it) }
-    }
-
     private fun deleteArchive(archive: File) {
         if (!archive.delete()) logger.error("Downloaded archive could not be deleted: ${archive.path}.")
     }
 
     override suspend fun refreshInstalled() {
-        installed.value = InstalledGamesState.Available(library.getGames())
+        val registryGames = library.getGames()
+        val manifestList = manifests.readAll()
+        val reconciled = withContext(dispatchers.io) {
+            InstalledGameIntegrity.reconcileInstalledGames(
+                registryGames = registryGames,
+                manifests = manifestList,
+                directoryExists = { gameId -> storageAccess.isGranted() && gameDirectory(gameId)?.isDirectory == true },
+                onMismatch = { manifest, entry ->
+                    logger.info(
+                        "Local registry entry for ${manifest.gameId} (${entry.version}, variant=${entry.type}) " +
+                            "differed from the internal manifest (${manifest.version}, variant=${manifest.variant}); " +
+                            "using trusted manifest metadata.",
+                    )
+                },
+            )
+        }
+        installed.value = InstalledGamesState.Available(reconciled)
     }
 
     private fun setPhase(gameId: String, state: GameInstallationState) {
@@ -355,7 +386,6 @@ internal class ArchiveGameInstallationService @Inject constructor(
     }
 
     private companion object {
-        val SHA256_FORMAT = Regex("[0-9a-fA-F]{64}")
         const val NO_MEDIA_FILE_NAME = ".nomedia"
         const val PREVIOUS_INSTALLATION_SUFFIX = ".old-"
     }
