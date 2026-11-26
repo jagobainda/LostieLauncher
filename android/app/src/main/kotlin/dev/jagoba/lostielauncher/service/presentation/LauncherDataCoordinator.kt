@@ -62,6 +62,9 @@ class LauncherDataCoordinator @Inject constructor(
     private val mutableCatalogue = MutableStateFlow(CatalogueData())
     private val mutableRefreshing = MutableStateFlow(false)
     private val visible = MutableStateFlow(true)
+
+    @Volatile
+    private var settingsStore: SettingsStore? = null
     private var started = false
 
     val home: StateFlow<HomeData> = mutableHome.asStateFlow()
@@ -72,9 +75,16 @@ class LauncherDataCoordinator @Inject constructor(
     fun start(scope: CoroutineScope, settings: SettingsStore, network: NetworkMonitor, options: HomeRefreshOptions) {
         if (started) return
         started = true
+        settingsStore = settings
         scope.launch {
             settings.settings.map { it.language }.distinctUntilChanged().collect { language ->
                 refreshHome(language, force = false)
+            }
+        }
+        scope.launch {
+            if (!settings.settings.first().hasSeenWelcome) {
+                settings.settings.first { it.hasSeenWelcome }
+                refreshTwitchLive()
             }
         }
         scope.launch { refreshCatalogue() }
@@ -115,18 +125,19 @@ class LauncherDataCoordinator @Inject constructor(
         homeGate.withLock {
             if (showLoading) mutableHome.update { it.copy(isLoading = true) }
             try {
+                val allowTwitch = settingsStore?.settings?.first()?.hasSeenWelcome ?: true
                 coroutineScope {
-                    val live = async { twitch.isLive() }
+                    val live = if (allowTwitch) async { twitch.isLive() } else null
                     if (checkAvailability) {
                         val revision = availabilityRevision.incrementAndGet()
                         publishOffline(content.isServerActionBlocked(force), revision)
                     }
                     val feed = content.getHomeContent(language, force)
-                    val isLive = live.await()
+                    val isLive = live?.await()
                     mutableHome.update { current ->
                         current.copy(
                             content = feed,
-                            isTwitchLive = isLive,
+                            isTwitchLive = isLive ?: current.isTwitchLive,
                             isLoading = false,
                         )
                     }
@@ -140,6 +151,19 @@ class LauncherDataCoordinator @Inject constructor(
             } catch (error: Exception) {
                 logger.error("Home content refresh failed.", error)
                 mutableHome.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    private suspend fun refreshTwitchLive() {
+        homeGate.withLock {
+            try {
+                val isLive = twitch.isLive()
+                mutableHome.update { it.copy(isTwitchLive = isLive) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Twitch live status refresh failed.", error)
             }
         }
     }

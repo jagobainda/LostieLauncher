@@ -95,7 +95,7 @@ internal object EngStrings : Strings {
     override val gameIntegrityMismatchMessage = "The files of {0} have been modified or are corrupted, so it cannot be launched. Reinstall it to play again."
     override val gameIntegrityMismatchReinstallMessage = "The files of {0} have been modified or are corrupted, so it cannot be launched. Do you want to reinstall it now?"
     override val welcomeDialogTitle = "Welcome to Lostie Launcher!"
-    override val welcomeDialogDescription = "Download, update, and play your favorite games in one place. Simple, fast, and hassle-free.\n\nYour privacy is important. We don't collect any information or data of any kind.\n\nThis project is open source. Questions about how it works? Check the source code"
+    override val welcomeDialogDescription = "Download, update, and play your favorite games in one place. Simple, fast, and hassle-free.\n\nNo accounts, analytics, or tracking. Using the launcher sends requests to our servers (including the key if you download a special version), to Twitch to check whether the channel is live, and to GitHub for Kirin releases, where each service receives technical connection data such as your IP address. Diagnostic logs are stored only on your device for up to 6 months.\n\nThis project is open source. Questions about how it works? Check the source code"
     override val welcomeDialogContinue = "Continue"
     override val repositoryUrl = "https://github.com/jagobainda/LostieLauncher"
     override val specialVersionDialogTitle = "Switch to special version"

@@ -95,7 +95,7 @@ internal object EspStrings : Strings {
     override val gameIntegrityMismatchMessage = "Los archivos de {0} han sido modificados o están dañados, así que no se puede abrir. Reinstálalo para poder volver a jugar."
     override val gameIntegrityMismatchReinstallMessage = "Los archivos de {0} han sido modificados o están dañados, así que no se puede abrir. ¿Quieres reinstalarlo ahora?"
     override val welcomeDialogTitle = "¡Bienvenido al Lostie Launcher!"
-    override val welcomeDialogDescription = "Descarga, actualiza y juega tus títulos favoritos en un solo lugar. Simple, rápido y sin complicaciones.\n\nTu privacidad es importante. No recopilamos ninguna información ni dato de ningún tipo.\n\nEste proyecto es opensource. ¿Dudas sobre cómo funciona? Consulta el código fuente"
+    override val welcomeDialogDescription = "Descarga, actualiza y juega tus títulos favoritos en un solo lugar. Simple, rápido y sin complicaciones.\n\nSin cuentas, analíticas ni rastreo. Al usar el lanzador se realizan peticiones a nuestros servidores (incluyendo la clave si descargas una versión especial), a Twitch para comprobar si el canal está en directo y a GitHub para las versiones de Kirin, donde cada servicio recibe los datos técnicos de conexión como tu dirección IP. Los registros de diagnóstico se guardan solo en tu dispositivo durante un máximo de 6 meses.\n\nEste proyecto es opensource. ¿Dudas sobre cómo funciona? Consulta el código fuente"
     override val welcomeDialogContinue = "Continuar"
     override val repositoryUrl = "https://github.com/jagobainda/LostieLauncher"
     override val specialVersionDialogTitle = "Cambiar a versión especial"

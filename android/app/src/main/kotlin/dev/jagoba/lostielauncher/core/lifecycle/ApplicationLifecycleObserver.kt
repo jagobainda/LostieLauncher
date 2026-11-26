@@ -18,6 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Singleton
@@ -57,6 +58,12 @@ internal class ApplicationLifecycleObserver @Inject constructor(
         startupStarted = true
         coordinator.start(scope, settingsStore, network, homeRefreshOptions)
         gameAutoUpdates.start(scope)
+        scope.launch {
+            if (!settingsStore.settings.first().hasSeenWelcome) {
+                settingsStore.settings.first { it.hasSeenWelcome }
+                kirin.refresh(allowReleaseFeed = true)
+            }
+        }
     }
 
     override fun onResume(owner: LifecycleOwner) {
@@ -64,7 +71,7 @@ internal class ApplicationLifecycleObserver @Inject constructor(
     }
 
     fun refreshPackageInstallers() {
-        scope.launch { kirin.refresh() }
+        scope.launch { kirin.refresh(allowReleaseFeed = settingsStore.settings.first().hasSeenWelcome) }
         scope.launch { launcherUpdate.refresh() }
     }
 
