@@ -32,8 +32,6 @@ android {
 
         versionCode = 802
         versionName = "0.8.2"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -43,6 +41,7 @@ android {
                 storePassword = keystoreProperty("storePassword")
                 keyAlias = keystoreProperty("keyAlias")
                 keyPassword = keystoreProperty("keyPassword")
+                enableV3Signing = true
             }
         }
     }
@@ -64,12 +63,6 @@ android {
         }
     }
 
-    compileOptions {
-        val java = JavaVersion.toVersion(libs.versions.javaTarget.get())
-        sourceCompatibility = java
-        targetCompatibility = java
-    }
-
     kotlin {
         compilerOptions {
             allWarningsAsErrors = true
@@ -86,14 +79,8 @@ android {
         abortOnError = true
         checkDependencies = true
         checkReleaseBuilds = false
-    }
-
-    packaging {
-        resources.excludes += setOf(
-            "/META-INF/{AL2.0,LGPL2.1}",
-            "/META-INF/LICENSE.md",
-            "/META-INF/LICENSE-notice.md",
-        )
+        // Dependabot tracks AGP updates; keeping this check enabled fails CI on every upstream release.
+        disable += "AndroidGradlePluginVersion"
     }
 }
 
