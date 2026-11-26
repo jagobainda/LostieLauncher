@@ -95,7 +95,7 @@ internal object CatStrings : Strings {
     override val gameIntegrityMismatchMessage = "Els fitxers de {0} han estat modificats o estan danyats, així que no es pot obrir. Reinstal·la'l per tornar a jugar."
     override val gameIntegrityMismatchReinstallMessage = "Els fitxers de {0} han estat modificats o estan danyats, així que no es pot obrir. Vols reinstal·lar-lo ara?"
     override val welcomeDialogTitle = "Benvingut al Lostie Launcher!"
-    override val welcomeDialogDescription = "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nLa teva privacitat és important. No recollim cap tipus d'informació ni de dades.\n\nAquest projecte és opensource. Dubtes sobre com funciona? Consulta el codi font"
+    override val welcomeDialogDescription = "Descarrega, actualitza i juga els teus jocs favorits en un sol lloc. Simple, ràpid i sense complicacions.\n\nSense comptes, analítiques ni seguiment. En fer servir el llançador es fan peticions als nostres servidors (incloent-hi la clau si descarregues una versió especial), a Twitch per comprovar si el canal és en directe i a GitHub per a les versions de Kirin, on cada servei rep les dades tècniques de connexió com la teva adreça IP. Els registres de diagnòstic es guarden només al teu dispositiu durant un màxim de 6 mesos.\n\nAquest projecte és opensource. Dubtes sobre com funciona? Consulta el codi font"
     override val welcomeDialogContinue = "Continuar"
     override val repositoryUrl = "https://github.com/jagobainda/LostieLauncher"
     override val specialVersionDialogTitle = "Canviar a versió especial"

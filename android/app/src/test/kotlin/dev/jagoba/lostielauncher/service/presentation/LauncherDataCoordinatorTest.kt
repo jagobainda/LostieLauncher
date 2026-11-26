@@ -128,6 +128,64 @@ class LauncherDataCoordinatorTest {
     }
 
     @Test
+    fun `delays Twitch live checks until the welcome dialog is dismissed and checks immediately afterwards`() =
+        runTest {
+            var twitchCalls = 0
+            val settings = TestSettingsStore()
+            val coordinator = LauncherDataCoordinator(
+                TestContentService(),
+                TestDownloads(),
+                {
+                    twitchCalls++
+                    true
+                },
+                mockk<Logger>(relaxed = true),
+            )
+            coordinator.start(backgroundScope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
+            runCurrent()
+
+            settings.setLanguage(AppLanguage.ENG)
+            runCurrent()
+            advanceTimeBy(2.minutes.inWholeMilliseconds)
+            runCurrent()
+            coordinator.refreshAll(AppLanguage.ENG)
+
+            twitchCalls shouldBe 0
+            coordinator.home.value.isTwitchLive shouldBe false
+
+            settings.setHasSeenWelcome(true)
+            runCurrent()
+
+            twitchCalls shouldBe 1
+            coordinator.home.value.isTwitchLive shouldBe true
+
+            advanceTimeBy(2.minutes.inWholeMilliseconds)
+            runCurrent()
+
+            twitchCalls shouldBe 2
+        }
+
+    @Test
+    fun `checks Twitch live status once on startup when welcome was already completed`() = runTest {
+        var twitchCalls = 0
+        val settings = TestSettingsStore().apply { current.value = current.value.copy(hasSeenWelcome = true) }
+        val coordinator = LauncherDataCoordinator(
+            TestContentService(),
+            TestDownloads(),
+            {
+                twitchCalls++
+                true
+            },
+            mockk<Logger>(relaxed = true),
+        )
+        coordinator.start(backgroundScope, settings, TestNetworkMonitor(), HomeRefreshOptions(2.minutes))
+        runCurrent()
+
+        twitchCalls shouldBe 1
+        coordinator.home.value.isTwitchLive shouldBe true
+    }
+
+    @Test
     fun `home timer waits while nothing is visible and refreshes on return`() = runTest {
         val content = TestContentService()
         val coordinator = LauncherDataCoordinator(content, TestDownloads(), { false }, mockk<Logger>(relaxed = true))

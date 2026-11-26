@@ -22,9 +22,13 @@ Apply the [shared architecture rules](../../.agents/architecture.md).
   ViewModels do not refer to one another.
 - `LauncherDataCoordinator` owns shared Home/catalogue data. Process foreground
   startup starts its loads and timer even if no screen ViewModel exists yet.
+  Third-party Twitch live checks wait until welcome is completed
+  (`hasSeenWelcome`) and run once it is dismissed.
 - `ApplicationLifecycleObserver` starts auto-update once, refreshes installed
-  games on foreground entry, refreshes Kirin/launcher updates on resume, and
-  flushes pending settings when the process stops.
+  games on foreground entry, refreshes Kirin/launcher updates on resume
+  (withholding the third-party Kirin GitHub release feed until `hasSeenWelcome`
+  is true and refreshing once welcome is dismissed), and flushes pending
+  settings when the process stops.
 - `SettingsStore` owns appearance, welcome and game auto-update preferences.
   Changes are immediately observable; persistence is debounced using injected
   options. Activity/process stop flushes the pending snapshot.

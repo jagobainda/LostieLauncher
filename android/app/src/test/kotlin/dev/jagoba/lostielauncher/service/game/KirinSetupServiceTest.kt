@@ -255,6 +255,26 @@ class KirinSetupServiceTest {
     }
 
     @Test
+    fun `skips the GitHub release feed and keeps checking state until the release feed is allowed`() =
+        runTest(dispatcher) {
+            every { packages.installedPackage(KIRIN_PACKAGE) } returns null
+            serveRequirements(minimum = "0.4.1")
+            serveRelease("0.4.2")
+            val sut = createSut()
+
+            sut.refresh(allowReleaseFeed = false)
+
+            sut.status.value shouldBe KirinStatus.Missing("0.4.1")
+            sut.download.value shouldBe ApkDownloadState.Checking
+            server.requestCount shouldBe 1
+
+            sut.refresh(allowReleaseFeed = true)
+
+            sut.download.value shouldBe ApkDownloadState.Available
+            server.requestCount shouldBe 2
+        }
+
+    @Test
     fun `does not offer a release below the minimum version`() = runTest(dispatcher) {
         every { packages.installedPackage(KIRIN_PACKAGE) } returns null
         serveRequirements()

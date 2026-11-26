@@ -2,6 +2,7 @@ package dev.jagoba.lostielauncher.core.lifecycle
 
 import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
+import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
@@ -14,12 +15,14 @@ import dev.jagoba.lostielauncher.util.log.LogMaintenance
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -29,7 +32,10 @@ import org.junit.jupiter.api.Test
 @DisplayName("ApplicationLifecycleObserver")
 @OptIn(ExperimentalCoroutinesApi::class)
 class ApplicationLifecycleObserverTest {
-    private val settingsStore = mockk<SettingsStore>(relaxed = true)
+    private val settingsFlow = MutableStateFlow(AppSettings(hasSeenWelcome = true))
+    private val settingsStore = mockk<SettingsStore>(relaxed = true) {
+        every { settings } returns settingsFlow
+    }
     private val logMaintenance = mockk<LogMaintenance>(relaxed = true)
     private val network = mockk<NetworkMonitor>()
     private val owner = mockk<LifecycleOwner>()
@@ -85,8 +91,37 @@ class ApplicationLifecycleObserverTest {
         sut.refreshPackageInstallers()
         advanceUntilIdle()
 
-        coVerify(exactly = 2) { kirin.refresh() }
+        coVerify(exactly = 2) { kirin.refresh(allowReleaseFeed = true) }
         coVerify(exactly = 2) { launcherUpdate.refresh() }
+    }
+
+    @Test
+    fun `withholds the Kirin release feed until welcome is dismissed and refreshes it once dismissed`() = runTest {
+        settingsFlow.value = AppSettings(hasSeenWelcome = false)
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.onStart(owner)
+        sut.onResume(owner)
+        sut.refreshPackageInstallers()
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { kirin.refresh(allowReleaseFeed = false) }
+        coVerify(exactly = 0) { kirin.refresh(allowReleaseFeed = true) }
+
+        settingsFlow.value = AppSettings(hasSeenWelcome = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { kirin.refresh(allowReleaseFeed = true) }
+    }
+
+    @Test
+    fun `does not trigger an extra Kirin refresh on startup when welcome was already completed`() = runTest {
+        val sut = createSut(StandardTestDispatcher(testScheduler))
+
+        sut.onStart(owner)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { kirin.refresh(any()) }
     }
 
     @Test

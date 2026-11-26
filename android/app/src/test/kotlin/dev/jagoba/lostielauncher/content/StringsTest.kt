@@ -201,6 +201,19 @@ class StringsTest {
 
     @ParameterizedTest(name = "{0}")
     @EnumSource(AppLanguage::class)
+    @DisplayName("discloses third-party requests, IP exposure and local log retention in welcome text")
+    fun `the welcome description discloses Twitch, GitHub, Kirin, IP and 6-month local logs`(language: AppLanguage) {
+        val description = stringsFor(language).welcomeDialogDescription
+
+        description.contains("Twitch") shouldBe true
+        description.contains("GitHub") shouldBe true
+        description.contains("Kirin") shouldBe true
+        description.contains("IP") shouldBe true
+        description.contains("6") shouldBe true
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(AppLanguage::class)
     @DisplayName("holds the same repository URL in every language, over HTTPS")
     fun `the repository url does not vary`(language: AppLanguage) {
         val url = stringsFor(language).repositoryUrl

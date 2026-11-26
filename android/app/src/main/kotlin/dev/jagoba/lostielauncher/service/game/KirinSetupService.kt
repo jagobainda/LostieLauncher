@@ -34,7 +34,7 @@ interface KirinSetupService {
     val status: StateFlow<KirinStatus?>
     val download: StateFlow<ApkDownloadState>
 
-    suspend fun refresh()
+    suspend fun refresh(allowReleaseFeed: Boolean = true)
 
     suspend fun isOfficialKirinInstalled(): Boolean
 
@@ -107,7 +107,7 @@ internal class DefaultKirinSetupService @Inject constructor(
 
     private val minimumVersion get() = requirements?.minimumVersion ?: fallbackMinimumVersion
 
-    override suspend fun refresh() {
+    override suspend fun refresh(allowReleaseFeed: Boolean) {
         val wasInstalling = installer.download.value == ApkDownloadState.Installing
         refreshGate.withLock {
             if (!persistedMinimumLoaded) {
@@ -130,13 +130,17 @@ internal class DefaultKirinSetupService @Inject constructor(
                     }
                 }
             }
-            requirements?.releaseFeedUrl?.let { loadRelease(it) }
+            if (allowReleaseFeed) {
+                requirements?.releaseFeedUrl?.let { loadRelease(it) }
+            }
             val installedVersion = updateStatus()
-            val unavailableState = incompatibleReleaseVersion
-                ?.takeIf { ApkVersionPolicy.isOffered(it, installedVersion, minimumVersion) }
-                ?.let { ApkDownloadState.IncompatibleAbi }
-                ?: ApkDownloadState.Unavailable
-            installer.settle(installedVersion, minimumVersion, unavailableState, settleInstalling = wasInstalling)
+            if (allowReleaseFeed || installer.release != null) {
+                val unavailableState = incompatibleReleaseVersion
+                    ?.takeIf { ApkVersionPolicy.isOffered(it, installedVersion, minimumVersion) }
+                    ?.let { ApkDownloadState.IncompatibleAbi }
+                    ?: ApkDownloadState.Unavailable
+                installer.settle(installedVersion, minimumVersion, unavailableState, settleInstalling = wasInstalling)
+            }
         }
     }
 

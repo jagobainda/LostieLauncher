@@ -95,7 +95,7 @@ internal object EusStrings : Strings {
     override val gameIntegrityMismatchMessage = "{0} jokoaren fitxategiak aldatuta edo hondatuta daude, beraz ezin da ireki. Berrinstalatu berriro jolasteko."
     override val gameIntegrityMismatchReinstallMessage = "{0} jokoaren fitxategiak aldatuta edo hondatuta daude, beraz ezin da ireki. Orain berrinstalatu nahi duzu?"
     override val welcomeDialogTitle = "Ongi etorri Lostie Launcher-era!"
-    override val welcomeDialogDescription = "Deskargatu, eguneratu eta jolastu zure joko gogokoak leku batean. Sinplea, azkarra eta konplikazio gabe.\n\nZure pribatutasuna garrantzitsua da. Ez dugu inolako informaziorik ez daturik biltzen.\n\nProiektu hau opensource. Zalantzak nola funtzionatzen duen jakin nahi? Bilatu iturburu kodea"
+    override val welcomeDialogDescription = "Deskargatu, eguneratu eta jolastu zure joko gogokoak leku batean. Sinplea, azkarra eta konplikazio gabe.\n\nKonturik, analitikarik eta jarraipenik gabe. Launcher-a erabiltzean eskaerak egiten zaizkie gure zerbitzariei (bertsio berezi bat deskargatzean gakoa barne), Twitch-i kanala zuzenean dagoen egiaztatzeko eta GitHub-i Kirin-en bertsioetarako, eta zerbitzu bakoitzak konexio-datu teknikoak jasotzen ditu, hala nola zure IP helbidea. Diagnostiko-erregistroak zure gailuan soilik gordetzen dira gehienez 6 hilabetez.\n\nProiektu hau opensource. Zalantzak nola funtzionatzen duen jakin nahi? Bilatu iturburu kodea"
     override val welcomeDialogContinue = "Jarraitu"
     override val repositoryUrl = "https://github.com/jagobainda/LostieLauncher"
     override val specialVersionDialogTitle = "Bertsio berezira aldatu"

@@ -32,7 +32,14 @@ resolves the current user's shared storage root and configures:
 - local registry: `LostieLauncher/local_games.json`;
 - Kirin registry: `Kirin/game-library.json`.
 
-These shared files survive launcher uninstall. Archives use private
+These shared files survive launcher uninstall. Special-version builds are
+extracted into the same `LostieLauncher/<slug>` directory so Kirin can open
+them by path; once installed, their game files live outside the app's private
+sandbox and can be read by any app with shared-storage access. The
+special-version download key itself is never written to shared storage, archive
+names (which use a truncated SHA-256 token) or `local_games.json` (which stores
+only the variant type), and is cleared from Room once the transfer ends or is
+cancelled. Archives use private
 `noBackupFilesDir` storage at `StorageLocations.downloadsRoot/downloads`, which
 is removed with the app and isolated from other apps on all supported Android
 versions; any legacy external cache is discarded during maintenance or before
@@ -114,10 +121,13 @@ The last valid minimum version received from the server is persisted in
 DataStore; when requirements cannot be fetched, the launcher falls back to the
 higher of the persisted minimum and the built-in default. Version comparisons
 rank pre-releases (such as `0.4.0-beta8`) below the matching stable release.
-Only stable, non-draft GitHub releases are accepted, retries against the GitHub
-feed are spaced out after failures or unusable responses, and the APK asset is
-selected according to `Build.SUPPORTED_ABIS` (with universal fallback and a
-clear incompatible-device notice before downloading when no asset matches).
+Only stable, non-draft GitHub releases are accepted, requests to the
+third-party GitHub release feed wait until the welcome dialog has been
+completed (and trigger automatically once it is dismissed), retries against the
+GitHub feed are spaced out after failures or unusable responses, and the APK
+asset is selected according to `Build.SUPPORTED_ABIS` (with universal fallback
+and a clear incompatible-device notice before downloading when no asset
+matches).
 `KirinRequirement` blocks the shell when Kirin is missing, outdated or signed
 with another certificate. In the last case the screen asks the user to
 uninstall that copy in Android settings before installing the official release.
@@ -138,7 +148,28 @@ the activity resumes, the engine rechecks the installed version so cancelled or
 incomplete installations stay visible and retryable from the cached APK while
 completed installations clear the offer and delete the cached APK.
 
+## Android version differences
+
+Supported SDK levels are declared in
+[libs.versions.toml](../gradle/libs.versions.toml). Keeping support down to
+Android 8.0 (`minSdk` 26) retains compatibility with older releases that no
+longer receive platform security patches and changes several storage and
+platform boundaries:
+
+| Area | Lower API levels | Newer API levels |
+| --- | --- | --- |
+| Shared game storage (`LostieLauncher/`, `Kirin/game-library.json`) | API 26–29: accessed via `WRITE_EXTERNAL_STORAGE` (`maxSdkVersion="29"` in [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)); any other app with that standard permission can read or modify those shared paths | API 30+: accessed via the special *All files access* grant (`MANAGE_EXTERNAL_STORAGE`); other apps need that special access to read or modify them |
+| Private staging, manifests and logs (`noBackupFilesDir`) | API 26+: isolated in private internal storage and excluded from backups on every supported version | Same |
+| APK signing verification ([ApkPackages.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/apk/ApkPackages.kt)) | API 26–27: reads certificates through `PackageManager.GET_SIGNATURES` | API 28+: reads signing history through `PackageManager.GET_SIGNING_CERTIFICATES` |
+| Overlay / tapjacking defense ([LauncherDialog.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/ui/dialog/LauncherDialog.kt)) | API 26–28: filters `FLAG_WINDOW_IS_OBSCURED`; API 29–30 adds `FLAG_WINDOW_IS_PARTIALLY_OBSCURED` | API 31+: also hides non-system overlays with `Window.setHideOverlayWindows(true)` |
+| Backup and transfer rules ([backup_rules.xml](../app/src/main/res/xml/backup_rules.xml), [data_extraction_rules.xml](../app/src/main/res/xml/data_extraction_rules.xml)) | API 26–30: governed by `fullBackupContent` (restricted to `datastore/`); `adb backup` remains available to USB debugging | API 31+: governed by `dataExtractionRules` (restricted to `datastore/`); `adb backup` excludes non-debuggable apps |
+| Notifications and foreground workers ([NotificationAccess.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/download/NotificationAccess.kt), [GameDownloadWorker.kt](../app/src/main/kotlin/dev/jagoba/lostielauncher/service/download/GameDownloadWorker.kt)) | API 26–30: no runtime notification prompt and background `dataSync` foreground starts are permitted; API 31–32 restricts background foreground starts | API 33+: requires runtime `POST_NOTIFICATIONS` permission in addition to the API 31+ background foreground-service restrictions |
+| TLS defaults | API 26–28: TLS 1.3 is not enabled by default (TLS 1.2 is still negotiated and cleartext is disabled) | API 29+: TLS 1.3 enabled by default |
+
 ## Remaining limitations
+
+- Installed special-version builds reside in shared storage outside the app's
+  private sandbox so Kirin can launch them by path.
 
 - Installation phases and terminal results are held in memory. After process
   recreation the row still says whether an installation is pending or failed,
