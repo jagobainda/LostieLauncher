@@ -288,9 +288,6 @@ class DialogMessagesTest {
         val game = testGame().copy(description = "About", pageUrl = "")
         val row = LibraryGameUiState(
             game = game,
-            installed = null,
-            installedStateKnown = false,
-            hasUpdate = false,
             download = null,
             installation = null,
             status = LibraryCardStatus.AVAILABLE,

@@ -50,9 +50,6 @@ import kotlinx.coroutines.launch
 
 data class LibraryGameUiState(
     val game: GameInfo,
-    val installed: LocalGame?,
-    val installedStateKnown: Boolean,
-    val hasUpdate: Boolean,
     val download: DownloadSnapshot?,
     val installation: GameInstallationState?,
     val status: LibraryCardStatus,
@@ -64,11 +61,7 @@ data class LibraryGameUiState(
     val formattedSize: String = game.formattedSize,
 ) {
     val canPause: Boolean get() = download?.status?.isTransferring == true
-    val canResume: Boolean get() = canStart && download?.status == DownloadStatus.PAUSED
     val canCancel: Boolean get() = download != null && !download.status.isFinished
-    val installationUnsupported: Boolean
-        get() = installation ==
-            GameInstallationState.Finished(dev.jagoba.lostielauncher.model.GameInstallationResult.NotSupportedYet)
 }
 
 enum class LibraryNotice {
@@ -198,7 +191,6 @@ class LibraryViewModel @Inject constructor(
                 gameId = game.gameId,
                 formattedSize = game.formattedSize,
                 local = local,
-                installedStateKnown = installedState is InstalledGamesState.Available,
                 download = download,
                 phase = phases[game.gameId],
                 hasActiveDownload = active,
@@ -216,7 +208,6 @@ class LibraryViewModel @Inject constructor(
                     gameId = row.gameId,
                     formattedSize = if (row.totalBytes != null && row.totalBytes > 0L) fallback.formattedSize else "",
                     local = local,
-                    installedStateKnown = installedState is InstalledGamesState.Available,
                     download = row,
                     phase = phases[row.gameId],
                     hasActiveDownload = active,
@@ -661,7 +652,6 @@ class LibraryViewModel @Inject constructor(
             gameId: String,
             formattedSize: String,
             local: LocalGame?,
-            installedStateKnown: Boolean,
             download: DownloadSnapshot?,
             phase: GameInstallationState?,
             hasActiveDownload: Boolean,
@@ -673,9 +663,6 @@ class LibraryViewModel @Inject constructor(
             val status = cardStatus(local, hasUpdate, download, phase)
             return LibraryGameUiState(
                 game = game,
-                installed = local,
-                installedStateKnown = installedStateKnown,
-                hasUpdate = hasUpdate,
                 download = download,
                 installation = phase,
                 status = status,

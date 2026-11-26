@@ -24,7 +24,6 @@ internal object FraStrings : Strings {
     override val btnUpdate = "Mettre à jour"
     override val btnPlay = "Jouer"
     override val tooltipUninstall = "Désinstaller le jeu"
-    override val tooltipRefresh = "Actualiser"
     override val uninstallConfirmTitle = "Désinstaller le jeu"
     override val uninstallConfirmMessage = "Êtes-vous sûr de vouloir désinstaller {0} ? Vos sauvegardes ne seront pas perdues."
     override val uninstallNotFoundTitle = "Fichiers non trouvés"

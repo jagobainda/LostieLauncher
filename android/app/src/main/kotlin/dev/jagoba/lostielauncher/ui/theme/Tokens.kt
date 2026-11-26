@@ -44,10 +44,8 @@ object LauncherSpacing {
 object LauncherSizes {
     val ShellInset: Dp = 15.dp
     val TitleBarHeight: Dp = 50.dp
-    val NavigationRailWidth: Dp = 90.dp
     val NavigationItemSize: Dp = 60.dp
     val DialogFooterHeight: Dp = 60.dp
-    val ScrollbarWidth: Dp = 8.dp
     val TitleBarIcon: Dp = 22.dp
     val TitleBarButton: Dp = 50.dp
     val TitleBarButtonIcon: Dp = 14.dp
@@ -152,7 +150,6 @@ object LauncherBorders {
 object LauncherElevation {
     val PopupShadow: Dp = 8.dp
     const val POPUP_SHADOW_OPACITY = 0.3f
-    val PopupShadowOffset: Dp = 2.dp
 }
 
 object LauncherOpacity {

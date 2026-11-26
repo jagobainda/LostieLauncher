@@ -1,6 +1,5 @@
 package dev.jagoba.lostielauncher.service.game
 
-import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
@@ -53,8 +52,6 @@ internal class PendingGameInstallationService @Inject constructor(private val lo
 
 @Singleton
 internal class PendingGameLaunchService @Inject constructor(private val logger: Logger) : GameLaunchService {
-    override val activeSessions: StateFlow<GameActivityState> = MutableStateFlow(GameActivityState.NotSupportedYet)
-
     override suspend fun launch(game: GameTarget): GameLaunchResult {
         logger.info("Game launch requested for ${game.name}; Android launch is not supported yet.")
         return GameLaunchResult.NotSupportedYet

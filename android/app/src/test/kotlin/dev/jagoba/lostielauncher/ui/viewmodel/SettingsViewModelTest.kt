@@ -88,23 +88,6 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `welcome is marked seen through store`() = runTest(dispatcher) {
-        val sut = createSut()
-        runCurrent()
-        sut.markWelcomeSeen()
-        runCurrent()
-        sut.state.value?.hasSeenWelcome shouldBe true
-    }
-
-    @Test
-    fun `stored welcome flag is published on first load`() = runTest(dispatcher) {
-        store.current.value = store.current.value.copy(hasSeenWelcome = true)
-        val sut = createSut()
-        runCurrent()
-        sut.state.value?.hasSeenWelcome shouldBe true
-    }
-
-    @Test
     fun `published settings include the installed app version`() = runTest(dispatcher) {
         val sut = createSut()
         runCurrent()

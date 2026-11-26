@@ -30,7 +30,6 @@ interface Strings {
     val btnUpdate: String
     val btnPlay: String
     val tooltipUninstall: String
-    val tooltipRefresh: String
     val uninstallConfirmTitle: String
     val uninstallConfirmMessage: String
     val uninstallNotFoundTitle: String

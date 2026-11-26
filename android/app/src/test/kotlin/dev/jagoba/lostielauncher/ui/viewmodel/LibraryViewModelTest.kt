@@ -86,7 +86,6 @@ class LibraryViewModelTest {
             InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
         val sut = createSut(backgroundScope)
         runCurrent()
-        sut.state.value.games.single().hasUpdate shouldBe true
         sut.state.value.games.single().status shouldBe LibraryCardStatus.UPDATE_AVAILABLE
     }
 
@@ -270,7 +269,6 @@ class LibraryViewModelTest {
         runCurrent()
         sut.state.value.games.single().installation shouldBe
             GameInstallationState.Finished(GameInstallationResult.NotSupportedYet)
-        sut.state.value.games.single().installationUnsupported shouldBe true
         sut.state.value.games.single().status shouldBe LibraryCardStatus.INSTALLATION_UNSUPPORTED
     }
 

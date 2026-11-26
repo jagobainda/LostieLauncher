@@ -24,7 +24,6 @@ data class FaqsUiState(
     val rows: List<FaqRow> = emptyList(),
 ) {
     val hasNoResults: Boolean get() = rows.isEmpty()
-    val canClearSearch: Boolean get() = searchText.isNotEmpty()
 }
 
 @HiltViewModel

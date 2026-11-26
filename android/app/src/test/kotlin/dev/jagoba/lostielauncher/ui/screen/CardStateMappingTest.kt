@@ -101,9 +101,6 @@ class CardStateMappingTest {
 
     private fun libraryRow(status: DownloadStatus?, cardStatus: LibraryCardStatus) = LibraryGameUiState(
         game = game,
-        installed = null,
-        installedStateKnown = false,
-        hasUpdate = false,
         download = testDownload(game, status ?: DownloadStatus.PAUSED),
         installation = null,
         status = cardStatus,
