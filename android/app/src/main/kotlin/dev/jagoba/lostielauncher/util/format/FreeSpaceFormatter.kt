@@ -9,11 +9,12 @@ object FreeSpaceFormatter {
 
     fun format(bytes: Long?): String {
         if (bytes == null) return UNKNOWN
-        val gigabytes = bytes / BYTES_PER_GIB
-        return if (gigabytes >= 1) {
-            String.format(Locale.ROOT, "%.1f", gigabytes).removeSuffix(".0") + " GB"
-        } else {
-            String.format(Locale.ROOT, "%.0f", gigabytes * MIB_PER_GIB) + " MB"
-        }
+        return formatGigabytes(bytes / BYTES_PER_GIB)
+    }
+
+    fun formatGigabytes(gigabytes: Double): String = if (gigabytes >= 1) {
+        String.format(Locale.ROOT, "%.1f", gigabytes).removeSuffix(".0") + " GB"
+    } else {
+        String.format(Locale.ROOT, "%.0f", gigabytes * MIB_PER_GIB) + " MB"
     }
 }

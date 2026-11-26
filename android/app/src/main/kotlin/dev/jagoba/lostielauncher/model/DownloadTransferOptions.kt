@@ -4,7 +4,7 @@ import kotlin.time.Duration
 
 data class DownloadTransferOptions(
     val cacheDirectoryName: String,
-    val cacheMaxAge: java.time.Duration,
+    val cacheMaxAge: Duration,
     val bufferSizeBytes: Int,
     val maximumAttempts: Int,
     val retryBaseDelay: Duration,

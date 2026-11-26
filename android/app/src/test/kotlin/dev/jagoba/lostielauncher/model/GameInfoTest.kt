@@ -9,49 +9,17 @@ import org.junit.jupiter.params.provider.CsvSource
 
 @DisplayName("GameInfo")
 class GameInfoTest {
-    private fun createGame(name: String = "Demo", sizeGb: Double = 1.0) = GameInfo(
+    private fun createGame(name: String = "Demo") = GameInfo(
         id = null,
         name = name,
         version = "v1.0.0",
-        sizeGb = sizeGb,
+        sizeGb = 1.0,
         description = "",
         pageUrl = "",
         logoUrl = null,
         relativePath = "",
         sha256 = "",
     )
-
-    @Test
-    fun `reports a size of one gigabyte or more in gigabytes`() {
-        createGame(sizeGb = 1.5).formattedSize shouldBe "1.5 GB"
-    }
-
-    @Test
-    fun `reports a size below one gigabyte in megabytes`() {
-        createGame(sizeGb = 0.25).formattedSize shouldBe "256 MB"
-    }
-
-    @Test
-    fun `formats the size with a dot whatever the device locale is`() {
-        val original = Locale.getDefault()
-        Locale.setDefault(Locale.forLanguageTag("es-ES"))
-        try {
-            createGame(sizeGb = 1.5).formattedSize shouldBe "1.5 GB"
-            createGame(sizeGb = 1.0).formattedSize shouldBe "1 GB"
-        } finally {
-            Locale.setDefault(original)
-        }
-    }
-
-    @Test
-    fun `drops the trailing zero of a whole number of gigabytes`() {
-        createGame(sizeGb = 1.0).formattedSize shouldBe "1 GB"
-    }
-
-    @Test
-    fun `converts gigabytes to megabytes with a 1024 divisor, not 1000`() {
-        createGame(sizeGb = 0.5889).formattedSize shouldBe "603 MB"
-    }
 
     @Test
     fun `slugs a name with capitals and spaces to lowercase kebab case`() {

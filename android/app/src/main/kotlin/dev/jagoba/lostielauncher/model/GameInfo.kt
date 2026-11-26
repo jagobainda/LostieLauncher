@@ -16,19 +16,6 @@ data class GameInfo(
 ) {
     val gameId: String
         get() = gameSlug(name)
-
-    val formattedSize: String
-        get() = if (sizeGb >= 1) {
-            trimTrailingZero(String.format(Locale.ROOT, "%.1f", sizeGb)) + " GB"
-        } else {
-            String.format(Locale.ROOT, "%.0f", sizeGb * BYTES_PER_KIB) + " MB"
-        }
-
-    private companion object {
-        const val BYTES_PER_KIB = 1024
-
-        fun trimTrailingZero(value: String) = value.removeSuffix(".0")
-    }
 }
 
 private val SLUG_SEPARATORS = Regex("[^a-z0-9]+")

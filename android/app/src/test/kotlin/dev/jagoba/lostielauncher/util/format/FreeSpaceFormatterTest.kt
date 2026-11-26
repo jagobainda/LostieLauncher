@@ -1,12 +1,13 @@
 package dev.jagoba.lostielauncher.util.format
 
 import io.kotest.matchers.shouldBe
+import java.util.Locale
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
-@DisplayName("FreeSpaceFormatter.format")
+@DisplayName("FreeSpaceFormatter")
 class FreeSpaceFormatterTest {
     @ParameterizedTest
     @CsvSource(
@@ -34,5 +35,29 @@ class FreeSpaceFormatterTest {
         val text = FreeSpaceFormatter.format(null)
 
         text shouldBe "—"
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "1.0, 1 GB",
+        "1.5, 1.5 GB",
+        "0.25, 256 MB",
+        "0.5889, 603 MB",
+        "0.0, 0 MB",
+    )
+    fun `formats gigabyte sizes with a 1024 factor and optional decimal`(gigabytes: Double, expected: String) {
+        FreeSpaceFormatter.formatGigabytes(gigabytes) shouldBe expected
+    }
+
+    @Test
+    fun `formats gigabyte sizes with a dot whatever the device locale is`() {
+        val original = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag("es-ES"))
+        try {
+            FreeSpaceFormatter.formatGigabytes(1.5) shouldBe "1.5 GB"
+            FreeSpaceFormatter.formatGigabytes(1.0) shouldBe "1 GB"
+        } finally {
+            Locale.setDefault(original)
+        }
     }
 }

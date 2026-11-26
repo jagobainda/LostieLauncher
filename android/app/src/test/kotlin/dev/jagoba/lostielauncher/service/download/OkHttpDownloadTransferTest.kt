@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
@@ -384,7 +385,7 @@ class OkHttpDownloadTransferTest {
         client = client,
         options = DownloadTransferOptions(
             cacheDirectoryName = "downloads",
-            cacheMaxAge = java.time.Duration.ofDays(14),
+            cacheMaxAge = 14.days,
             bufferSizeBytes = 4,
             maximumAttempts = maximumAttempts,
             retryBaseDelay = 1.milliseconds,

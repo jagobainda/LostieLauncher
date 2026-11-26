@@ -50,7 +50,7 @@ class DownloadWorkerRunnerTest {
         coEvery { dao.get(GAME_ID) } returns entity()
         coEvery { dao.setWorkerStatus(any(), any(), any(), any()) } returns 1
         coEvery { dao.relocate(any(), any(), any(), any(), any()) } returns 1
-        coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any(), any()) } returns 1
+        coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.finish(any(), any(), any(), any(), any(), any()) } returns 1
         coEvery { dao.complete(any(), any(), any(), any()) } returns 1
         coEvery { handoff.deliver(any()) } returns GameInstallationResult.Installed(INSTALLED_GAME)
@@ -82,7 +82,6 @@ class DownloadWorkerRunnerTest {
             dao.setProgress(
                 GAME_ID,
                 WORK_ID,
-                DownloadStatus.DOWNLOADING.name,
                 DownloadStatus.DOWNLOADING.name,
                 80.0,
                 10.0,
@@ -416,7 +415,7 @@ class DownloadWorkerRunnerTest {
     @Test
     fun `drops progress after a concurrent state transition`() = runTest {
         val progress = DownloadProgress(50.0, 10.0, 50, 100)
-        coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any(), any()) } returns 0
+        coEvery { dao.setProgress(any(), any(), any(), any(), any(), any(), any()) } returns 0
         coEvery { transfer.download(any(), any()) } coAnswers {
             secondArg<suspend (DownloadProgress) -> Unit>()(progress)
             DownloadTransferResult.Failed("network")

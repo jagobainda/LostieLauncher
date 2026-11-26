@@ -51,7 +51,7 @@ internal class CdnSpecialVersionService @Inject constructor(
                             options.maxConfigBytes,
                             "Special version configuration",
                         )
-                        val config = SpecialVersionConfig.parse(body)
+                        val config = SpecialVersionConfigParser.parse(body)
                         if (config == null) SpecialVersionLookup.InvalidResponse else SpecialVersionLookup.Found(config)
                     }
                 }

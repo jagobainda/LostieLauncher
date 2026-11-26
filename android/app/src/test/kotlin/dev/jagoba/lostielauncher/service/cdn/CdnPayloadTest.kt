@@ -9,6 +9,7 @@ import dev.jagoba.lostielauncher.model.NotificationType
 import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.DefaultContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
+import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.net.BoundedResponseBodyInterceptor
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -68,7 +69,7 @@ class CdnPayloadTest {
         anil.name shouldBe "Pokémon Añil"
         anil.version shouldBe "v4.13.0"
         anil.sizeGb shouldBe 0.5889
-        anil.formattedSize shouldBe "603 MB"
+        FreeSpaceFormatter.formatGigabytes(anil.sizeGb) shouldBe "603 MB"
         anil.gameId shouldBe "pok-mon-a-il"
         anil.relativePath shouldBe "/pokemon-anil/4-13-0.zip"
         anil.sha256 shouldBe "e379a48072c42942fd4f3f99b6aed0c4d1aff3d1f691448d65af76e035e17ac5"

@@ -9,11 +9,13 @@ import dev.jagoba.lostielauncher.service.storage.StorageLocations
 import dev.jagoba.lostielauncher.util.download.DownloadCachePolicy
 import dev.jagoba.lostielauncher.util.download.DownloadPathUtils
 import java.io.File
-import java.time.Duration
+import java.time.Duration as JavaDuration
 import java.time.Instant
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
+import kotlin.time.toKotlinDuration
 
 internal interface DownloadFileStore {
     fun destinationFor(args: GameDownloadArgs): File
@@ -92,7 +94,7 @@ internal class DefaultDownloadFileStore @Inject constructor(
             val lower = entry.fileName.lowercase(Locale.ROOT)
             val keptByTransfer = lower in protectedNames
             val keptByRecentArchive = lower in retainedArchives &&
-                Duration.between(entry.lastWriteTime, now) <= options.cacheMaxAge
+                JavaDuration.between(entry.lastWriteTime, now).toKotlinDuration() <= options.cacheMaxAge
             !keptByTransfer && !keptByRecentArchive && File(downloadsDirectory, entry.fileName).delete()
         }
         return purgedCurrent + purgeLegacyCaches(now)

@@ -3,19 +3,21 @@ package dev.jagoba.lostielauncher.util.download
 import dev.jagoba.lostielauncher.model.DownloadCacheEntry
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.toJavaDuration
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @DisplayName("DownloadCachePolicy.selectStaleFiles")
 class DownloadCachePolicyTest {
     private val now: Instant = Instant.parse("2026-09-09T12:00:00Z")
-    private val maxAge: Duration = Duration.ofDays(14)
+    private val maxAge: Duration = 14.days
     private val knownGames = setOf("demo-game")
 
     private fun entry(fileName: String, ageInDays: Long = 0) =
-        DownloadCacheEntry(fileName, now.minus(Duration.ofDays(ageInDays)))
+        DownloadCacheEntry(fileName, now.minus(ageInDays.days.toJavaDuration()))
 
     private fun select(vararg entries: DownloadCacheEntry) =
         DownloadCachePolicy.selectStaleFiles(entries.asList(), knownGames, now, maxAge)

@@ -1,7 +1,6 @@
 package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
-import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import dev.jagoba.lostielauncher.model.SpecialVersionOptions
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.net.BoundedResponseBodyInterceptor
@@ -78,7 +77,7 @@ class SpecialVersionServiceTest {
         val id = UUID.randomUUID()
         val oversized =
             "sha256=${"a".repeat(64)}\ntipo=special\njuego-principal=$id\nvers=${"v".repeat(64)}\narchivo=game.zip"
-        SpecialVersionConfig.parse(oversized).shouldNotBeNull()
+        SpecialVersionConfigParser.parse(oversized).shouldNotBeNull()
         server.enqueue(MockResponse.Builder().body(oversized).build())
         server.enqueue(MockResponse.Builder().chunkedBody(oversized, maxChunkSize = 16).build())
         val service = createService(maxConfigBytes = 128)

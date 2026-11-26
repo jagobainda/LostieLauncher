@@ -31,6 +31,7 @@ import dev.jagoba.lostielauncher.service.presentation.LibraryNavigationAction
 import dev.jagoba.lostielauncher.service.presentation.NavigationStore
 import dev.jagoba.lostielauncher.service.storage.StorageAccess
 import dev.jagoba.lostielauncher.util.download.SpecialVersionPolicy
+import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
 import dev.jagoba.lostielauncher.util.format.RemainingTimeFormatter
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.policy.GameIdentityMatcher
@@ -58,7 +59,7 @@ data class LibraryGameUiState(
     val canUpdate: Boolean,
     val canSwitchSpecialVersion: Boolean,
     val gameId: String = game.gameId,
-    val formattedSize: String = game.formattedSize,
+    val formattedSize: String = FreeSpaceFormatter.formatGigabytes(game.sizeGb),
 ) {
     val canPause: Boolean get() = download?.status?.isTransferring == true
     val canCancel: Boolean get() = download != null && !download.status.isFinished
@@ -189,7 +190,7 @@ class LibraryViewModel @Inject constructor(
             buildCardState(
                 game = game,
                 gameId = game.gameId,
-                formattedSize = game.formattedSize,
+                formattedSize = FreeSpaceFormatter.formatGigabytes(game.sizeGb),
                 local = local,
                 download = download,
                 phase = phases[game.gameId],
@@ -206,7 +207,11 @@ class LibraryViewModel @Inject constructor(
                 buildCardState(
                     game = fallback,
                     gameId = row.gameId,
-                    formattedSize = if (row.totalBytes != null && row.totalBytes > 0L) fallback.formattedSize else "",
+                    formattedSize = if (row.totalBytes != null && row.totalBytes > 0L) {
+                        FreeSpaceFormatter.format(row.totalBytes)
+                    } else {
+                        ""
+                    },
                     local = local,
                     download = row,
                     phase = phases[row.gameId],

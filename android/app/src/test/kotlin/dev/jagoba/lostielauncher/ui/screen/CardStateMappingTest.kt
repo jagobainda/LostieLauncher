@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.LibraryGameUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.testDownload
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
+import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.util.UUID
@@ -20,7 +21,7 @@ class CardStateMappingTest {
     fun `downloading library row carries progress speed and remaining time`() {
         val card = libraryRow(DownloadStatus.DOWNLOADING, LibraryCardStatus.DOWNLOADING).toCardState()
         card.title shouldBe game.name
-        card.size shouldBe game.formattedSize
+        card.size shouldBe FreeSpaceFormatter.formatGigabytes(game.sizeGb)
         card.version shouldBe "v2.0"
         card.progress shouldBe 50f
         card.speed shouldBe "0.0 KB/s"
