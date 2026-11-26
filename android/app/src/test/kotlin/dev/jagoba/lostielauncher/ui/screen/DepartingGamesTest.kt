@@ -4,8 +4,10 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.InstalledGameUiState
 import io.kotest.matchers.shouldBe
 import java.util.UUID
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("DepartingGames")
 class DepartingGamesTest {
     private val first = row("First")
     private val second = row("Second")

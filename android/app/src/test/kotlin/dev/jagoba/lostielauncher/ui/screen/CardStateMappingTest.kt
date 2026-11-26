@@ -12,8 +12,10 @@ import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.util.UUID
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("CardStateMapping")
 class CardStateMappingTest {
     private val game = testGame(version = "v2.0")
 

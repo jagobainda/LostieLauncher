@@ -9,7 +9,6 @@ import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
-import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.cdn.SpecialVersionLookup
@@ -34,12 +33,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.MethodSource
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("LibraryViewModel")
 class LibraryViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val content = TestContentService()
@@ -82,8 +83,7 @@ class LibraryViewModelTest {
     fun `older installed version is marked update available`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         val sut = createSut(backgroundScope)
         runCurrent()
         sut.state.value.games.single().status shouldBe LibraryCardStatus.UPDATE_AVAILABLE
@@ -93,9 +93,7 @@ class LibraryViewModelTest {
     fun `installed current game has downloaded status and no start action`() = runTest(dispatcher) {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         val sut = createSut(backgroundScope)
         runCurrent()
         sut.state.value.games.single().status shouldBe LibraryCardStatus.DOWNLOADED
@@ -202,8 +200,7 @@ class LibraryViewModelTest {
     fun `an update asks for storage access too`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         storageAccess.granted = false
         val sut = createSut(backgroundScope)
         runCurrent()
@@ -497,7 +494,7 @@ class LibraryViewModelTest {
         content.games = listOf(remote)
         val key = "ABCD-1234-EFGH-5678-IJKL"
         special.result = SpecialVersionLookup.Found(
-            SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+            SpecialVersionConfig("a".repeat(64), "special", requireNotNull(remote.id), "v1.5", "special.zip"),
         )
         val sut = createSut(backgroundScope)
         runCurrent()
@@ -516,14 +513,14 @@ class LibraryViewModelTest {
     fun `special version logs never contain the entered key`() = runTest(dispatcher) {
         val remote = testGame()
         val key = "ABCD-1234-EFGH-5678-IJKL"
-        val config = SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip")
+        val config = SpecialVersionConfig("a".repeat(64), "special", requireNotNull(remote.id), "v1.5", "special.zip")
         content.games = listOf(remote)
         val sut = createSut(backgroundScope)
         runCurrent()
         val results = listOf(
             SpecialVersionLookup.Found(config),
             SpecialVersionLookup.Found(config.copy(sha256 = "bad")),
-            SpecialVersionLookup.Found(config.copy(mainGameId = testGame(name = "Other").id!!)),
+            SpecialVersionLookup.Found(config.copy(mainGameId = requireNotNull(testGame(name = "Other").id))),
             SpecialVersionLookup.NotFound,
             SpecialVersionLookup.NetworkError,
             SpecialVersionLookup.InvalidResponse,
@@ -559,7 +556,7 @@ class LibraryViewModelTest {
         sut.requestSpecialVersion(remote.gameId)
         runCurrent()
         special.result = SpecialVersionLookup.Found(
-            SpecialVersionConfig("bad", "special", remote.id!!, "v1", "special.zip"),
+            SpecialVersionConfig("bad", "special", requireNotNull(remote.id), "v1", "special.zip"),
         )
         sut.submitSpecialVersionKey("ABCD-1234-EFGH-5678-IJKL")
         runCurrent()
@@ -594,7 +591,7 @@ class LibraryViewModelTest {
         val key = "ABCD-1234-EFGH-5678-IJKL"
         content.games = listOf(remote)
         special.result = SpecialVersionLookup.Found(
-            SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+            SpecialVersionConfig("a".repeat(64), "special", requireNotNull(remote.id), "v1.5", "special.zip"),
         )
         val sut = createSut(backgroundScope)
         runCurrent()
@@ -676,8 +673,7 @@ class LibraryViewModelTest {
     fun `navigation update waits for catalogue and preserves scroll target`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         navigation.navigate(LauncherSection.LIBRARY, remote.gameId, LibraryNavigationAction.UPDATE)
         createSut(backgroundScope)
         runCurrent()
@@ -747,9 +743,7 @@ class LibraryViewModelTest {
         runTest(dispatcher) {
             val remote = testGame()
             content.games = listOf(remote)
-            installation.current.value = InstalledGamesState.Available(
-                listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-            )
+            installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
             val sut = createSut(backgroundScope)
             runCurrent()
             sut.state.value.games.single().status shouldBe LibraryCardStatus.DOWNLOADED
@@ -766,9 +760,7 @@ class LibraryViewModelTest {
         val active = testGame(name = "Downloading")
         val target = testGame(name = "Installed")
         content.games = listOf(active, target)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(target.id!!, target.name, target.version, null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(target)))
         downloads.current.value = listOf(testDownload(active, DownloadStatus.DOWNLOADING))
         val sut = createSut(backgroundScope)
         runCurrent()
@@ -970,9 +962,7 @@ class LibraryViewModelTest {
         sut.state.value.games.single().status shouldBe LibraryCardStatus.AVAILABLE
         sut.state.value.games.single().canStart shouldBe true
 
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         runCurrent()
         sut.state.value.games.single().status shouldBe LibraryCardStatus.DOWNLOADED
     }
@@ -1147,7 +1137,7 @@ class LibraryViewModelTest {
             val key = "ABCD-1234-EFGH-5678-IJKL"
             content.games = listOf(remote)
             special.result = SpecialVersionLookup.Found(
-                SpecialVersionConfig("a".repeat(64), "special", remote.id!!, "v1.5", "special.zip"),
+                SpecialVersionConfig("a".repeat(64), "special", requireNotNull(remote.id), "v1.5", "special.zip"),
             )
             storageAccess.granted = false
             val saved = SavedStateHandle()
@@ -1183,8 +1173,7 @@ class LibraryViewModelTest {
     fun `update and installation retry survive storage access grant across process death`() = runTest(dispatcher) {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         storageAccess.granted = false
         val updateSaved = SavedStateHandle()
         val originalUpdate = createSut(backgroundScope, updateSaved)
@@ -1427,8 +1416,7 @@ class LibraryViewModelTest {
         runTest(dispatcher) {
             val remote = testGame(version = "v2.0")
             content.games = listOf(remote)
-            installation.current.value =
-                InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+            installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
             storageAccess.granted = false
             notificationAccess.granted = false
             val sut = createSut(backgroundScope)

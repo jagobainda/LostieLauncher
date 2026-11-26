@@ -2,8 +2,10 @@ package dev.jagoba.lostielauncher.service.presentation
 
 import dev.jagoba.lostielauncher.model.LauncherSection
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("NavigationStore")
 class NavigationStoreTest {
     @Test
     fun `library target and action are consumed independently`() {

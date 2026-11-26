@@ -10,6 +10,7 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.MissingGameId
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.util.log.Logger
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -176,9 +177,7 @@ class DownloadWorkerRunnerTest {
         coEvery { handoff.deliver(any()) } throws CancellationException("stopped")
         val sut = createSut()
 
-        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
-
-        (error is CancellationException) shouldBe true
+        shouldThrow<CancellationException> { sut.run(GAME_ID, WORK_ID, runtime) }
         coVerify(exactly = 0) { dao.finish(any(), any(), any(), any(), any(), any()) }
         coVerify(exactly = 0) { dao.setWorkerStatus(any(), any(), any(), any()) }
         coVerify(exactly = 0) { runtime.notifyResult(any(), any()) }
@@ -323,9 +322,7 @@ class DownloadWorkerRunnerTest {
         coEvery { transfer.download(any(), any()) } throws CancellationException("paused")
         val sut = createSut()
 
-        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
-
-        (error is CancellationException) shouldBe true
+        shouldThrow<CancellationException> { sut.run(GAME_ID, WORK_ID, runtime) }
         coVerify(exactly = 0) { runtime.setForeground(any(), any()) }
         verify(exactly = 1) { runtime.clearProgress("Demo") }
     }
@@ -467,9 +464,7 @@ class DownloadWorkerRunnerTest {
         coEvery { transfer.download(any(), any()) } throws CancellationException("paused")
         val sut = createSut()
 
-        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
-
-        (error is CancellationException) shouldBe true
+        shouldThrow<CancellationException> { sut.run(GAME_ID, WORK_ID, runtime) }
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
     }
 
@@ -479,9 +474,7 @@ class DownloadWorkerRunnerTest {
         coEvery { transfer.download(any(), any()) } throws CancellationException("cancelled")
         val sut = createSut()
 
-        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
-
-        (error is CancellationException) shouldBe true
+        shouldThrow<CancellationException> { sut.run(GAME_ID, WORK_ID, runtime) }
         verify(exactly = 1) { fileStore.deleteArtifacts(DESTINATION) }
     }
 
@@ -494,9 +487,7 @@ class DownloadWorkerRunnerTest {
         coEvery { transfer.download(any(), any()) } throws CancellationException("constraints not met")
         val sut = createSut()
 
-        val error = runCatching { sut.run(GAME_ID, WORK_ID, runtime) }.exceptionOrNull()
-
-        (error is CancellationException) shouldBe true
+        shouldThrow<CancellationException> { sut.run(GAME_ID, WORK_ID, runtime) }
         verify(exactly = 0) { fileStore.deleteArtifacts(any()) }
         coVerify(exactly = 1) {
             dao.setWorkerStatus(

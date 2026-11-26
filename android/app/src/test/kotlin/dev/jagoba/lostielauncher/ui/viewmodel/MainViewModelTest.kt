@@ -31,9 +31,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("MainViewModel")
 class MainViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val content = TestContentService()

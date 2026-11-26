@@ -38,9 +38,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("LauncherDataCoordinator")
 class LauncherDataCoordinatorTest {
     @Test
     fun `process startup loads home and catalogue without screen ViewModels`() = runTest {

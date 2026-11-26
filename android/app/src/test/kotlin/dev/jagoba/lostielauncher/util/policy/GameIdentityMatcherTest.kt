@@ -4,8 +4,10 @@ import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import io.kotest.matchers.shouldBe
 import java.util.UUID
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("GameIdentityMatcher")
 class GameIdentityMatcherTest {
     private val firstId = UUID.randomUUID()
     private val secondId = UUID.randomUUID()

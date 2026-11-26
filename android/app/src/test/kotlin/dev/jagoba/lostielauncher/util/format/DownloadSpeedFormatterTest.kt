@@ -2,8 +2,10 @@ package dev.jagoba.lostielauncher.util.format
 
 import io.kotest.matchers.shouldBe
 import java.util.Locale
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("DownloadSpeedFormatter")
 class DownloadSpeedFormatterTest {
     @Test
     fun `formats megabytes kilobytes and zero like the desktop`() {

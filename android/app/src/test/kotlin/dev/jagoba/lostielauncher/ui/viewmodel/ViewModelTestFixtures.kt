@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.model.DownloadCommandResult
 import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
+import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
@@ -22,6 +23,7 @@ import dev.jagoba.lostielauncher.model.GameUninstallResult
 import dev.jagoba.lostielauncher.model.HomeContent
 import dev.jagoba.lostielauncher.model.InstalledGameResult
 import dev.jagoba.lostielauncher.model.InstalledGamesState
+import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.model.OpenGameLocationResult
 import dev.jagoba.lostielauncher.service.CatalogueResult
 import dev.jagoba.lostielauncher.service.ContentService
@@ -235,5 +237,8 @@ internal class TestExternalLinkService : ExternalLinkService {
 internal fun testGame(id: UUID? = UUID.randomUUID(), name: String = "Test Game", version: String = "v2.0"): GameInfo =
     GameInfo(id, name, version, 1.0, "", "", null, "/test.zip", "a".repeat(64))
 
-internal fun testDownload(game: GameInfo, status: dev.jagoba.lostielauncher.model.DownloadStatus): DownloadSnapshot =
+internal fun testDownload(game: GameInfo, status: DownloadStatus): DownloadSnapshot =
     DownloadSnapshot(game.gameId, game.name, game.version, status, 50.0, 10.0, 100, 200, null)
+
+internal fun installedAs(game: GameInfo, version: String = game.version, type: String? = null): LocalGame =
+    LocalGame(requireNotNull(game.id), game.name, version, type)
