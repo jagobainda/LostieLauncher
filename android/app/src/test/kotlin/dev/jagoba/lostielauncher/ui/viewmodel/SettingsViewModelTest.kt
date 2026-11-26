@@ -2,13 +2,10 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 
 import dev.jagoba.lostielauncher.content.stringsFor
 import dev.jagoba.lostielauncher.model.AppLanguage
-import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.model.AppVersion
-import dev.jagoba.lostielauncher.model.Appearance
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.InstalledGamesState
-import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import dev.jagoba.lostielauncher.service.update.LauncherUpdateCheckResult
 import dev.jagoba.lostielauncher.service.update.LauncherUpdateService
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -21,9 +18,6 @@ import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -38,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val store = FakeSettingsStore()
+    private val store = TestSettingsStore()
     private val installation = TestInstallation()
     private val downloads = TestDownloads()
     private val launcherUpdate = mockk<LauncherUpdateService>(relaxed = true)
@@ -174,30 +168,6 @@ class SettingsViewModelTest {
 
     private fun createSut() =
         SettingsViewModel(store, AppVersion("1.2.3"), installation, downloads, launcherUpdate, logger)
-
-    private class FakeSettingsStore : SettingsStore {
-        val current = MutableStateFlow(AppSettings())
-        override val settings: Flow<AppSettings> = current
-        override val appearance: Flow<Appearance> = current.map { it.appearance }
-
-        override suspend fun setTheme(theme: AppTheme) {
-            current.value = current.value.copy(theme = theme)
-        }
-
-        override suspend fun setLanguage(language: AppLanguage) {
-            current.value = current.value.copy(language = language)
-        }
-
-        override suspend fun setHasSeenWelcome(hasSeenWelcome: Boolean) {
-            current.value = current.value.copy(hasSeenWelcome = hasSeenWelcome)
-        }
-
-        override suspend fun setAutoUpdate(autoUpdate: Boolean) {
-            current.value = current.value.copy(autoUpdate = autoUpdate)
-        }
-
-        override suspend fun flush() = Unit
-    }
 
     private companion object {
         @JvmStatic

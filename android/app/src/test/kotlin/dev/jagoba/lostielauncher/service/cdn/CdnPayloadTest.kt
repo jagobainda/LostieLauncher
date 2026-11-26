@@ -1,7 +1,7 @@
 package dev.jagoba.lostielauncher.service.cdn
 
 import dev.jagoba.lostielauncher.BuildConfig
-import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.core.di.NetworkModule
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.ContentOptions
@@ -277,18 +277,12 @@ class CdnPayloadTest {
             .addConverterFactory(NetworkModule.provideJson().asConverterFactory(JSON_MEDIA_TYPE))
             .build()
             .create(ContentApi::class.java)
-        val flagApi = OkHttpMaintenanceFlagApi(client, TestDispatchers)
+        val flagApi = OkHttpMaintenanceFlagApi(client, TestDispatcherProvider(Dispatchers.IO))
 
         return DefaultContentService(contentApi, flagApi, TestNetworkMonitor(), options, clock, logger)
     }
 
     private companion object {
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
-    }
-
-    private object TestDispatchers : DispatcherProvider {
-        override val io = Dispatchers.IO
-        override val default = Dispatchers.Default
-        override val main = Dispatchers.Unconfined
     }
 }
