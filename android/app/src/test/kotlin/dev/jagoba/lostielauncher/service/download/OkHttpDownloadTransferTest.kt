@@ -1,10 +1,9 @@
 package dev.jagoba.lostielauncher.service.download
 
-import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
+import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.core.di.NetworkModule
 import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.DownloadProgress
-import dev.jagoba.lostielauncher.model.DownloadTransferOptions
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.util.download.DownloadPathUtils
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -18,7 +17,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
@@ -383,18 +381,8 @@ class OkHttpDownloadTransferTest {
         client: OkHttpClient = OkHttpClient(),
     ): OkHttpDownloadTransfer = OkHttpDownloadTransfer(
         client = client,
-        options = DownloadTransferOptions(
-            cacheDirectoryName = "downloads",
-            cacheMaxAge = 14.days,
-            bufferSizeBytes = 4,
-            maximumAttempts = maximumAttempts,
-            retryBaseDelay = 1.milliseconds,
-            inactivityTimeout = inactivityTimeout,
-            progressSampleInterval = 1.milliseconds,
-            finalizationMaximumAttempts = 3,
-            finalizationBaseDelay = 1.milliseconds,
-        ),
-        dispatchers = RealIoDispatchers,
+        options = testTransferOptions(maximumAttempts = maximumAttempts, inactivityTimeout = inactivityTimeout),
+        dispatchers = TestDispatcherProvider(Dispatchers.IO),
         timeSource = MonotonicTimeSource {
             nanos += 1_000_000
             nanos
@@ -402,10 +390,4 @@ class OkHttpDownloadTransferTest {
         json = Json,
         logger = logger,
     )
-
-    private object RealIoDispatchers : DispatcherProvider {
-        override val io = Dispatchers.IO
-        override val default = Dispatchers.Default
-        override val main = Dispatchers.Unconfined
-    }
 }

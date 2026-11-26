@@ -4,7 +4,6 @@ import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.ApkTarget
-import dev.jagoba.lostielauncher.model.DownloadProgress
 import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
@@ -135,7 +134,7 @@ class ApkReleaseInstallerTest {
     fun `downloads the release, verifies it and opens the system installer`() = runTest(dispatcher) {
         val sut = offeringRelease()
         val observed = mutableListOf<ApkDownloadState>()
-        downloadSucceeds { observed += sut.download.value }
+        transfer.succeedsWriting(installer) { observed += sut.download.value }
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe true
@@ -150,7 +149,7 @@ class ApkReleaseInstallerTest {
     fun `requests unknown-sources permission before downloading and resumes once granted`() = runTest(dispatcher) {
         val sut = offeringRelease()
         every { packages.canRequestPackageInstalls() } returns false
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe false
@@ -186,7 +185,7 @@ class ApkReleaseInstallerTest {
         runTest(dispatcher) {
             val sut = offeringRelease()
             every { packages.canRequestPackageInstalls() } returnsMany listOf(true, false, true)
-            downloadSucceeds()
+            transfer.succeedsWriting(installer)
             every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
             sut.install() shouldBe false
@@ -202,7 +201,7 @@ class ApkReleaseInstallerTest {
     @Test
     fun `marks an incomplete installation as cancelled and retries using the cached APK`() = runTest(dispatcher) {
         val sut = offeringRelease()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe true
@@ -223,7 +222,7 @@ class ApkReleaseInstallerTest {
     @Test
     fun `clears installing and cancelled states once the offered version is installed`() = runTest(dispatcher) {
         val sut = offeringRelease()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe true
@@ -256,7 +255,7 @@ class ApkReleaseInstallerTest {
             SignedApk("0.4.1", setOf("official")),
             SignedApk("0.4.2", setOf("official")),
         )
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
 
         sut.install()
 
@@ -267,7 +266,7 @@ class ApkReleaseInstallerTest {
     @Test
     fun `rejects and deletes a download that is not the released package`() = runTest(dispatcher) {
         val sut = offeringRelease()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns null
 
         sut.install() shouldBe false
@@ -285,7 +284,7 @@ class ApkReleaseInstallerTest {
             installer.parentFile?.mkdirs()
             installer.writeText("cached")
             every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", signers)
-            downloadSucceeds()
+            transfer.succeedsWriting(installer)
 
             sut.install() shouldBe false
 
@@ -312,7 +311,7 @@ class ApkReleaseInstallerTest {
     @Test
     fun `reports a failure when the system installer cannot be opened`() = runTest(dispatcher) {
         val sut = offeringRelease()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
         every { packages.install(any()) } throws IllegalStateException("No activity")
 
@@ -384,7 +383,7 @@ class ApkReleaseInstallerTest {
         installer.parentFile?.mkdirs()
         installer.writeText("oversized")
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
 
         sut.install() shouldBe true
 
@@ -403,7 +402,7 @@ class ApkReleaseInstallerTest {
         sut.acceptRelease(ApkReleaseDto("0.4.2", "https://downloads.example/Target.apk")) shouldBe
             ApkReleaseDto("0.4.2", "https://downloads.example/Target.apk")
         sut.settle("0.4.0", null)
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install() shouldBe true
@@ -426,16 +425,6 @@ class ApkReleaseInstallerTest {
         return createSut().also {
             it.loadRelease(feedUrl)
             it.settle("0.4.0", null)
-        }
-    }
-
-    private fun downloadSucceeds(onProgress: () -> Unit = {}) {
-        coEvery { transfer.download(any(), any()) } coAnswers {
-            secondArg<suspend (DownloadProgress) -> Unit>()(DownloadProgress(50.0, 0.0, 1, 2))
-            onProgress()
-            installer.parentFile?.mkdirs()
-            installer.writeText("apk")
-            DownloadTransferResult.Success
         }
     }
 

@@ -2,20 +2,18 @@ package dev.jagoba.lostielauncher.service.game
 
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.ApkDownloadState
-import dev.jagoba.lostielauncher.model.DownloadProgress
-import dev.jagoba.lostielauncher.model.DownloadTransferResult
 import dev.jagoba.lostielauncher.model.KirinOptions
 import dev.jagoba.lostielauncher.model.KirinSetupOptions
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.service.apk.ApkPackages
 import dev.jagoba.lostielauncher.service.apk.ApkReleaseInstallerFactory
 import dev.jagoba.lostielauncher.service.apk.SignedApk
+import dev.jagoba.lostielauncher.service.apk.succeedsWriting
 import dev.jagoba.lostielauncher.service.cdn.RemoteJson
 import dev.jagoba.lostielauncher.service.download.DownloadTransfer
 import dev.jagoba.lostielauncher.service.download.DownloadTransferRequest
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -378,7 +376,7 @@ class KirinSetupServiceTest {
         )
         val sut = createSut(supportedAbis = listOf("arm64-v8a", "armeabi-v7a"))
         sut.refresh()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
@@ -409,7 +407,7 @@ class KirinSetupServiceTest {
         )
         val sut = createSut(supportedAbis = listOf("x86_64", "x86"))
         sut.refresh()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
@@ -534,7 +532,7 @@ class KirinSetupServiceTest {
     fun `downloads the release, verifies it and opens the system installer end to end`() = runTest(dispatcher) {
         val sut = offeringRelease()
         val observed = mutableListOf<ApkDownloadState>()
-        downloadSucceeds { observed += sut.download.value }
+        transfer.succeedsWriting(installer) { observed += sut.download.value }
         every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
@@ -560,7 +558,7 @@ class KirinSetupServiceTest {
         runTest(dispatcher) {
             val sut = offeringRelease()
             every { packages.canRequestPackageInstalls() } returns false
-            downloadSucceeds()
+            transfer.succeedsWriting(installer)
             every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
             sut.install()
@@ -584,7 +582,7 @@ class KirinSetupServiceTest {
     fun `models cancelled Kirin installation, retries from cache and clears the offer once installed`() =
         runTest(dispatcher) {
             val sut = offeringRelease()
-            downloadSucceeds()
+            transfer.succeedsWriting(installer)
             every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
             sut.install()
@@ -610,7 +608,7 @@ class KirinSetupServiceTest {
     @Test
     fun `dismissing a cancelled Kirin installation returns to available`() = runTest(dispatcher) {
         val sut = offeringRelease()
-        downloadSucceeds()
+        transfer.succeedsWriting(installer)
         every { packages.archivePackage(installer, KIRIN_PACKAGE) } returns SignedApk("0.4.2", setOf("official"))
 
         sut.install()
@@ -626,16 +624,6 @@ class KirinSetupServiceTest {
         serveRequirements()
         serveRelease("0.4.2")
         return createSut().also { it.refresh() }
-    }
-
-    private fun downloadSucceeds(onProgress: () -> Unit = {}) {
-        coEvery { transfer.download(any(), any()) } coAnswers {
-            secondArg<suspend (DownloadProgress) -> Unit>()(DownloadProgress(50.0, 0.0, 1, 2))
-            onProgress()
-            installer.parentFile?.mkdirs()
-            installer.writeText("apk")
-            DownloadTransferResult.Success
-        }
     }
 
     private fun serveRequirements(minimum: String = "0.4.0", feedUrl: String = FEED_URL) {

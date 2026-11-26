@@ -1,6 +1,5 @@
 package dev.jagoba.lostielauncher.service.download
 
-import dev.jagoba.lostielauncher.model.DownloadTransferOptions
 import dev.jagoba.lostielauncher.model.GameDownloadArgs
 import dev.jagoba.lostielauncher.service.storage.FixedStorageLocations
 import dev.jagoba.lostielauncher.util.download.DownloadPathUtils
@@ -14,8 +13,6 @@ import java.time.Instant
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.milliseconds
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -178,16 +175,6 @@ class DownloadFileStoreTest {
             directory.resolve("logs").toFile(),
             legacyDownloadsRoots,
         ),
-        options = DownloadTransferOptions(
-            cacheDirectoryName = "downloads",
-            cacheMaxAge = 14.days,
-            bufferSizeBytes = 4,
-            maximumAttempts = 3,
-            retryBaseDelay = 1.milliseconds,
-            inactivityTimeout = 1.milliseconds,
-            progressSampleInterval = 1.milliseconds,
-            finalizationMaximumAttempts = 3,
-            finalizationBaseDelay = 1.milliseconds,
-        ),
+        options = testTransferOptions(),
     )
 }
