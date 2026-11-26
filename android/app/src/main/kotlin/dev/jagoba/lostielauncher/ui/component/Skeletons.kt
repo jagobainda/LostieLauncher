@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -69,6 +70,7 @@ fun GameCardSkeleton(actionsReserve: Dp, modifier: Modifier = Modifier) {
         },
         actionsReserve = actionsReserve,
         modifier = modifier
+            .widthIn(max = LauncherSizes.GameCardMaxWidth)
             .clearAndSetSemantics {}
             .background(LocalLauncherColors.current.secondaryBg, RoundedCornerShape(LauncherRadii.Medium))
             .padding(LauncherSpacing.Card),

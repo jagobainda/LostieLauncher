@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,7 +47,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -136,7 +136,7 @@ private fun FaqsSearchBar(query: TextFieldState, modifier: Modifier = Modifier) 
             BasicTextField(
                 state = query,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                textStyle = TextStyle(color = colors.secondaryFg, fontSize = LauncherType.BodySize),
+                textStyle = LocalTextStyle.current.merge(color = colors.secondaryFg, fontSize = LauncherType.BodySize),
                 cursorBrush = SolidColor(colors.secondaryFg),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 onKeyboardAction = { focusManager.clearFocus() },

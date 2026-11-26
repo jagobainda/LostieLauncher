@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -77,6 +78,7 @@ internal fun GamesContent(state: GamesUiState, actions: GamesActions, modifier: 
         state.isListVisible || games.size > state.games.size -> LazyColumn(
             modifier.fillMaxSize(),
             contentPadding = PaddingValues(LauncherSpacing.Screen),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             items(games, key = { it.game.name }) { row ->
                 val name = row.game.name
@@ -160,6 +162,7 @@ internal fun GameCardSkeletons(count: Int, actionsReserve: Dp, modifier: Modifie
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(LauncherSpacing.Screen),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         repeat(count) { GameCardSkeleton(actionsReserve, Modifier.padding(bottom = LauncherSpacing.MediumLarge)) }
     }

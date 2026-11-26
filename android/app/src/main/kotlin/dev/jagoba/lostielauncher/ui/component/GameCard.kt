@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -346,7 +347,7 @@ private fun GameCardFrame(
     }
     val fade = tween<Float>(LauncherMotion.TakeoverFade.inWholeMilliseconds.toInt())
     val contentAlpha by animateFloatAsState(if (takeover == null) 1f else 0f, fade, label = "card-content")
-    Box(modifier.fillMaxWidth().background(colors.secondaryBg, shape)) {
+    Box(modifier.widthIn(max = LauncherSizes.GameCardMaxWidth).fillMaxWidth().background(colors.secondaryBg, shape)) {
         GameCardColumns(
             logo = { GameLogo(logoUrl) },
             text = { Column(content = text) },
