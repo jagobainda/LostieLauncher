@@ -25,6 +25,7 @@ import io.mockk.verify
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.async
@@ -429,7 +430,7 @@ class ContentServiceTest {
     private class MutableClock(private var now: Instant) : Clock() {
         override fun getZone() = ZoneOffset.UTC
 
-        override fun withZone(zone: java.time.ZoneId) = this
+        override fun withZone(zone: ZoneId) = this
 
         override fun instant() = now
 

@@ -10,14 +10,17 @@ import io.kotest.matchers.string.shouldNotContain
 import io.mockk.mockk
 import java.util.UUID
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("CdnSpecialVersionService")
 class SpecialVersionServiceTest {
     private lateinit var server: MockWebServer
 
@@ -40,8 +43,8 @@ class SpecialVersionServiceTest {
                 "sha256=${"a".repeat(64)}\ntipo=special\njuego-principal=$id\nvers=v2\narchivo=game.zip",
             ).build(),
         )
-        val service = createService()
-        val result = service.lookup("ABCD-1234-EFGH-5678-IJKL")
+        val sut = createSut()
+        val result = sut.lookup("ABCD-1234-EFGH-5678-IJKL")
         (result as SpecialVersionLookup.Found).config.mainGameId shouldBe id
         server.takeRequest().url.encodedPath shouldBe "/games/ABCD-1234-EFGH-5678-IJKL/game.config"
     }
@@ -50,26 +53,21 @@ class SpecialVersionServiceTest {
     fun `not found and malformed response stay distinct`() = runTest {
         server.enqueue(MockResponse.Builder().code(404).build())
         server.enqueue(MockResponse.Builder().body("invalid").build())
-        val service = createService()
-        service.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NotFound
-        service.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
+        val sut = createSut()
+        sut.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NotFound
+        sut.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
     }
 
     @Test
     fun `server error is a download error outcome`() = runTest {
         server.enqueue(MockResponse.Builder().code(500).build())
-        createService().lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NetworkError
+        createSut().lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NetworkError
     }
 
     @Test
     fun `transport setup failure is a download error outcome`() = runTest {
-        val service = CdnSpecialVersionService(
-            OkHttpClient(),
-            SpecialVersionOptions("invalid-url", "game.config"),
-            TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
-            mockk<Logger>(relaxed = true),
-        )
-        service.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NetworkError
+        val sut = createSut(baseUrl = "invalid-url")
+        sut.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.NetworkError
     }
 
     @Test
@@ -80,10 +78,10 @@ class SpecialVersionServiceTest {
         SpecialVersionConfigParser.parse(oversized).shouldNotBeNull()
         server.enqueue(MockResponse.Builder().body(oversized).build())
         server.enqueue(MockResponse.Builder().chunkedBody(oversized, maxChunkSize = 16).build())
-        val service = createService(maxConfigBytes = 128)
+        val sut = createSut(maxConfigBytes = 128)
 
-        service.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
-        service.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
+        sut.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
+        sut.lookup("ABCD-1234-EFGH-5678-IJKL") shouldBe SpecialVersionLookup.InvalidResponse
     }
 
     @Test
@@ -109,20 +107,21 @@ class SpecialVersionServiceTest {
             }
         }
         val client = OkHttpClient.Builder().addInterceptor(BoundedResponseBodyInterceptor(maxBytes = 32)).build()
-        val service = createService(client = client, logger = capturingLogger)
+        val sut = createSut(client = client, logger = capturingLogger)
 
-        service.lookup(key) shouldBe SpecialVersionLookup.InvalidResponse
+        sut.lookup(key) shouldBe SpecialVersionLookup.InvalidResponse
         logged.joinToString("\n") shouldNotContain key
     }
 
-    private fun kotlinx.coroutines.test.TestScope.createService(
+    private fun TestScope.createSut(
+        baseUrl: String = server.url("/games").toString(),
         maxConfigBytes: Long = SpecialVersionOptions.DEFAULT_MAX_CONFIG_BYTES,
         client: OkHttpClient = OkHttpClient(),
         logger: Logger = mockk<Logger>(relaxed = true),
     ) = CdnSpecialVersionService(
         client,
-        SpecialVersionOptions(server.url("/games").toString(), "game.config", maxConfigBytes),
-        TestDispatcherProvider(testScheduler.let { kotlinx.coroutines.test.StandardTestDispatcher(it) }),
+        SpecialVersionOptions(baseUrl, "game.config", maxConfigBytes),
+        TestDispatcherProvider(StandardTestDispatcher(testScheduler)),
         logger,
     )
 }

@@ -1,6 +1,7 @@
 package dev.jagoba.lostielauncher.content
 
 import dev.jagoba.lostielauncher.model.AppLanguage
+import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -152,7 +153,7 @@ class StringsTest {
             val expected = placeholdersOf(getter.valueIn(stringsFor(reference)))
             AppLanguage.entries.forEach { language ->
                 val actual = placeholdersOf(getter.valueIn(stringsFor(language)))
-                withClue(getter.keyName(), language) { actual shouldContainExactly expected }
+                withClue("${getter.keyName()} in $language") { actual shouldContainExactly expected }
             }
         }
     }
@@ -236,13 +237,5 @@ class StringsTest {
         val PLACEHOLDER = Regex("""\{(\d+)}""")
 
         fun placeholdersOf(text: String): List<String> = PLACEHOLDER.findAll(text).map { it.value }.toList()
-
-        inline fun withClue(key: String, language: AppLanguage, block: () -> Unit) {
-            try {
-                block()
-            } catch (failure: AssertionError) {
-                throw AssertionError("$key in $language: ${failure.message}", failure)
-            }
-        }
     }
 }

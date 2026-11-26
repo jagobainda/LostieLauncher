@@ -32,9 +32,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("GamesViewModel")
 class GamesViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val content = TestContentService()
@@ -75,8 +77,7 @@ class GamesViewModelTest {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().hasUpdate shouldBe true
@@ -92,9 +93,7 @@ class GamesViewModelTest {
         val remote = testGame()
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().hasUpdate shouldBe false
@@ -107,8 +106,7 @@ class GamesViewModelTest {
         val remote = testGame()
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, remote.version, null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         val sut = createSut()
         runCurrent()
         sut.play(remote.name)
@@ -149,8 +147,7 @@ class GamesViewModelTest {
         val remote = testGame()
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, remote.version, null)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         val sut = createSut()
         runCurrent()
         downloads.purged.clear()
@@ -182,8 +179,7 @@ class GamesViewModelTest {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value =
-            InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, "v1.0", "special")))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0", "special")))
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().canPlay shouldBe true
@@ -212,9 +208,7 @@ class GamesViewModelTest {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", "special")),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0", "special")))
         val sut = createSut()
         runCurrent()
         downloads.current.value = listOf(testDownload(remote, DownloadStatus.DOWNLOADING))
@@ -239,9 +233,7 @@ class GamesViewModelTest {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         val sut = createSut()
         runCurrent()
         verify(exactly = 1) { logger.debug("Installed games loaded: 1 games.") }
@@ -266,9 +258,7 @@ class GamesViewModelTest {
     fun `uninstalling flag blocks repeated uninstall while operation is pending`() = runTest(dispatcher) {
         val remote = testGame()
         coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, remote.version, null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
         launch.signal = GameRunningSignal.NOT_RUNNING
         val barrier = CompletableDeferred<Unit>()
         installation.uninstallBarrier = barrier
@@ -293,9 +283,7 @@ class GamesViewModelTest {
         val remote = testGame(version = "v2.0")
         content.games = listOf(remote)
         coordinator.refreshCatalogue()
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", "")),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0", "")))
         val sut = createSut()
         runCurrent()
         sut.state.value.games.single().canPlay shouldBe false
@@ -398,8 +386,7 @@ class GamesViewModelTest {
             val remote = testGame()
             content.games = listOf(remote)
             coordinator.refreshCatalogue()
-            installation.current.value =
-                InstalledGamesState.Available(listOf(LocalGame(remote.id!!, remote.name, remote.version, null)))
+            installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote)))
             launch.launchResult = GameLaunchResult.IntegrityMismatch
             val saved = SavedStateHandle()
             val sut = createSut(saved)

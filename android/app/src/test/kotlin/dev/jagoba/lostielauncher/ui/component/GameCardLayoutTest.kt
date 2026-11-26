@@ -2,8 +2,10 @@ package dev.jagoba.lostielauncher.ui.component
 
 import androidx.compose.ui.unit.dp
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("GameCardLayout")
 class GameCardLayoutTest {
     @Test
     fun `a phone in portrait stacks the actions under the text`() {

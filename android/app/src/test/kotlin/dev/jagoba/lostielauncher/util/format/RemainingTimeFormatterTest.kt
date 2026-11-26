@@ -1,8 +1,10 @@
 package dev.jagoba.lostielauncher.util.format
 
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("RemainingTimeFormatter")
 class RemainingTimeFormatterTest {
     @Test
     fun `formats seconds minutes and hours from download progress`() {

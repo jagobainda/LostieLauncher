@@ -2,15 +2,14 @@ package dev.jagoba.lostielauncher.service.presentation
 
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
 import dev.jagoba.lostielauncher.model.DownloadStatus
-import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
-import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.TestContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestDownloads
 import dev.jagoba.lostielauncher.ui.viewmodel.TestInstallation
 import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.ui.viewmodel.TestSettingsStore
+import dev.jagoba.lostielauncher.ui.viewmodel.installedAs
 import dev.jagoba.lostielauncher.ui.viewmodel.testDownload
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import dev.jagoba.lostielauncher.util.log.Logger
@@ -20,9 +19,11 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("GameAutoUpdateCoordinator")
 class GameAutoUpdateCoordinatorTest {
     private val content = TestContentService()
     private val downloads = TestDownloads()
@@ -44,9 +45,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `disabled setting leaves installed games untouched`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         launcher.refreshCatalogue()
         sut.start(backgroundScope)
         runCurrent()
@@ -62,10 +61,10 @@ class GameAutoUpdateCoordinatorTest {
         content.games = listOf(first, second, current, special)
         installation.current.value = InstalledGamesState.Available(
             listOf(
-                LocalGame(first.id!!, first.name, "v1.0", null),
-                LocalGame(second.id!!, second.name, "v1.0", null),
-                LocalGame(current.id!!, current.name, current.version, null),
-                LocalGame(special.id!!, special.name, "v1.0", "seasonal"),
+                installedAs(first, "v1.0"),
+                installedAs(second, "v1.0"),
+                installedAs(current),
+                installedAs(special, "v1.0", "seasonal"),
             ),
         )
         settings.setAutoUpdate(true)
@@ -89,7 +88,9 @@ class GameAutoUpdateCoordinatorTest {
         val first = testGame(name = "First")
         val second = testGame(name = "Second")
         content.games = listOf(first, second)
-        installation.current.value = InstalledGamesState.Available(listOf(localGame(first), localGame(second)))
+        installation.current.value = InstalledGamesState.Available(
+            listOf(installedAs(first, "v1.0"), installedAs(second, "v1.0")),
+        )
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
         sut.start(backgroundScope)
@@ -109,7 +110,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `disabling auto update does not cancel an unrelated active download`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         downloads.result = DownloadCommandResult.BUSY
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
@@ -126,7 +127,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `disabling auto update after updates finish does not cancel completed games`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
         sut.start(backgroundScope)
@@ -144,7 +145,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `enabling auto update during the session starts pending updates`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         launcher.refreshCatalogue()
         sut.start(backgroundScope)
         runCurrent()
@@ -161,7 +162,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `re-enabling auto update retries a previously cancelled update`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(listOf(localGame(remote)))
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
         sut.start(backgroundScope)
@@ -180,9 +181,7 @@ class GameAutoUpdateCoordinatorTest {
     fun `maintenance blocks automatic updates`() = runTest {
         val remote = testGame()
         content.games = listOf(remote)
-        installation.current.value = InstalledGamesState.Available(
-            listOf(LocalGame(remote.id!!, remote.name, "v1.0", null)),
-        )
+        installation.current.value = InstalledGamesState.Available(listOf(installedAs(remote, "v1.0")))
         settings.setAutoUpdate(true)
         launcher.refreshCatalogue()
         content.blocked = true
@@ -190,6 +189,4 @@ class GameAutoUpdateCoordinatorTest {
         runCurrent()
         downloads.starts shouldBe emptyList()
     }
-
-    private fun localGame(remote: GameInfo): LocalGame = LocalGame(requireNotNull(remote.id), remote.name, "v1.0", null)
 }

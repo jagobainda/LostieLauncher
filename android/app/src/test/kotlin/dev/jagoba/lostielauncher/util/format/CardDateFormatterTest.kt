@@ -4,11 +4,13 @@ import dev.jagoba.lostielauncher.model.AppLanguage
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldMatch
 import java.time.LocalDateTime
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 
+@DisplayName("CardDateFormatter")
 class CardDateFormatterTest {
     private val march = LocalDateTime.of(2026, 3, 5, 23, 30)
     private val april = LocalDateTime.of(2026, 4, 5, 8, 0)

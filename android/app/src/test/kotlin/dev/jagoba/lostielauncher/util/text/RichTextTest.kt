@@ -2,8 +2,10 @@ package dev.jagoba.lostielauncher.util.text
 
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("RichText")
 class RichTextTest {
     @Test
     fun `empty text has no runs`() {

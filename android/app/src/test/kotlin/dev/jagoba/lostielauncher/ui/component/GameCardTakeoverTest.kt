@@ -3,8 +3,10 @@ package dev.jagoba.lostielauncher.ui.component
 import dev.jagoba.lostielauncher.model.LibraryCardStatus
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("GameCardTakeover")
 class GameCardTakeoverTest {
     @Test
     fun `starting a download or an update takes the card over`() {

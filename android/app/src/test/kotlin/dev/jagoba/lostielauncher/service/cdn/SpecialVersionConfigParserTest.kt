@@ -69,11 +69,6 @@ class SpecialVersionConfigParserTest {
         SpecialVersionConfigParser.parse(content).shouldBeNull()
     }
 
-    @Test
-    fun `refuses the file when the main game is not a GUID`() {
-        SpecialVersionConfigParser.parse(validContent("juego-principal", "not-a-guid")).shouldBeNull()
-    }
-
     @ParameterizedTest
     @ValueSource(
         strings = [

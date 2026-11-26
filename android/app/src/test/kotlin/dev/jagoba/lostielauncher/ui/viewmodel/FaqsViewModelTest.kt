@@ -13,9 +13,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@DisplayName("FaqsViewModel")
 class FaqsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val settings = TestSettingsStore()
@@ -29,7 +31,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `loads all FAQs collapsed in current language`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         sut.state.value.rows.size shouldBe faqsFor(AppLanguage.ESP).size
         sut.state.value.rows.all { !it.isExpanded } shouldBe true
@@ -38,9 +40,9 @@ class FaqsViewModelTest {
     @Test
     fun `a search restored from saved state filters as it did before the process died`() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        FaqsViewModel(settings, links, saved).setSearchText("instalacion")
+        createSut(saved).setSearchText("instalacion")
 
-        val restored = FaqsViewModel(settings, links, saved)
+        val restored = createSut(saved)
         runCurrent()
 
         restored.state.value.searchText shouldBe "instalacion"
@@ -50,7 +52,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `search matches answer ignoring accents and expands matches`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         sut.setSearchText("instalacion")
         runCurrent()
@@ -60,7 +62,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `no match and clear search reproduce empty and collapsed states`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         sut.setSearchText("unmatched-term-xyz")
         runCurrent()
@@ -73,7 +75,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change reloads FAQs`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
         runCurrent()
@@ -82,7 +84,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `tapping FAQ toggles expansion and search resets it`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         val index = sut.state.value.rows.first().index
         sut.toggleFaq(index)
@@ -101,7 +103,7 @@ class FaqsViewModelTest {
 
     @Test
     fun `language change discards expansion overrides`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         runCurrent()
         sut.toggleFaq(sut.state.value.rows.first().index)
         runCurrent()
@@ -113,13 +115,13 @@ class FaqsViewModelTest {
     @Test
     fun `manual FAQ expansions survive process death through saved state`() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        val original = FaqsViewModel(settings, links, saved)
+        val original = createSut(saved)
         runCurrent()
         val index = original.state.value.rows.first().index
         original.toggleFaq(index)
         runCurrent()
 
-        val restored = FaqsViewModel(settings, links, saved)
+        val restored = createSut(saved)
         runCurrent()
 
         restored.state.value.rows.first { it.index == index }.isExpanded shouldBe true
@@ -129,7 +131,7 @@ class FaqsViewModelTest {
     @Test
     fun `manually collapsed search result survives process death and same-text sync`() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        val original = FaqsViewModel(settings, links, saved)
+        val original = createSut(saved)
         runCurrent()
         original.setSearchText("instalacion")
         runCurrent()
@@ -137,7 +139,7 @@ class FaqsViewModelTest {
         original.toggleFaq(index)
         runCurrent()
 
-        val restored = FaqsViewModel(settings, links, saved)
+        val restored = createSut(saved)
         runCurrent()
         restored.setSearchText("instalacion")
         runCurrent()
@@ -149,14 +151,14 @@ class FaqsViewModelTest {
     @Test
     fun `restored expansion overrides are discarded when language changed`() = runTest(dispatcher) {
         val saved = SavedStateHandle()
-        val original = FaqsViewModel(settings, links, saved)
+        val original = createSut(saved)
         runCurrent()
         val index = original.state.value.rows.first().index
         original.toggleFaq(index)
         runCurrent()
         settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
 
-        val restored = FaqsViewModel(settings, links, saved)
+        val restored = createSut(saved)
         runCurrent()
 
         restored.state.value.rows.first { it.index == index }.isExpanded shouldBe false
@@ -169,8 +171,14 @@ class FaqsViewModelTest {
 
     @Test
     fun `answer links open through the link service`() = runTest(dispatcher) {
-        val sut = FaqsViewModel(settings, links, SavedStateHandle())
+        val sut = createSut()
         sut.openLink("https://example.com")
         links.openedUrls shouldBe listOf("https://example.com")
     }
+
+    private fun createSut(savedState: SavedStateHandle = SavedStateHandle()) = FaqsViewModel(
+        settings,
+        links,
+        savedState,
+    )
 }

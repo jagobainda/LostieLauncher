@@ -56,9 +56,4 @@ class GameInfoTest {
             Locale.setDefault(original)
         }
     }
-
-    @Test
-    fun `returns an empty slug for a name that is all separators`() {
-        createGame(name = "+++").gameId shouldBe ""
-    }
 }

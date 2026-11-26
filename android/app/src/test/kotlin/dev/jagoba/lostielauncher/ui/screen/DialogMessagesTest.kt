@@ -19,13 +19,16 @@ import dev.jagoba.lostielauncher.ui.viewmodel.MainUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
+@DisplayName("DialogMessages")
 class DialogMessagesTest {
     private val strings = stringsFor(AppLanguage.ENG)
     private val target = GameTarget(null, "Test Game")
@@ -114,11 +117,11 @@ class DialogMessagesTest {
 
     @Test
     fun `uninstall confirmation names the game, protects against overlays and switches to warning when running`() {
-        val confirm = gamesMessage(GamesUiState(pendingUninstall = target), strings)!!
+        val confirm = gamesMessage(GamesUiState(pendingUninstall = target), strings).shouldNotBeNull()
         val warning = gamesMessage(
             GamesUiState(pendingUninstall = target, notice = GamesNotice.POSSIBLY_RUNNING),
             strings,
-        )!!
+        ).shouldNotBeNull()
 
         confirm.confirmation shouldBe GamesConfirmation.UNINSTALL
         confirm.spec.icon shouldBe MessageBoxIcon.INFORMATION
@@ -140,7 +143,7 @@ class DialogMessagesTest {
                 blockingLocation = location,
             ),
             strings,
-        )!!
+        ).shouldNotBeNull()
 
         message.confirmation shouldBe GamesConfirmation.OPEN_BLOCKING_LOCATION
         message.spec.buttons shouldBe MessageBoxButtons.YES_NO
@@ -157,14 +160,14 @@ class DialogMessagesTest {
                 reinstallGameId = "test-game",
             ),
             strings,
-        )!!
+        ).shouldNotBeNull()
         val inform = gamesMessage(
             GamesUiState(
                 notice = GamesNotice.INTEGRITY_MISMATCH,
                 noticeGameName = "Test Game",
             ),
             strings,
-        )!!
+        ).shouldNotBeNull()
 
         reinstall.confirmation shouldBe GamesConfirmation.REINSTALL
         reinstall.spec.buttons shouldBe MessageBoxButtons.YES_NO
@@ -179,7 +182,9 @@ class DialogMessagesTest {
 
     @Test
     fun `unsupported explains itself`() {
-        gamesMessage(GamesUiState(notice = GamesNotice.NOT_SUPPORTED_YET), strings)!!.spec shouldBe MessageBoxSpec(
+        gamesMessage(GamesUiState(notice = GamesNotice.NOT_SUPPORTED_YET), strings)
+            .shouldNotBeNull()
+            .spec shouldBe MessageBoxSpec(
             strings.statusNotSupportedYet,
             strings.notSupportedYetMessage,
             MessageBoxButtons.OK,
@@ -271,12 +276,12 @@ class DialogMessagesTest {
                     localized,
                 )?.spec
             } +
-            gamesMessage(GamesUiState(pendingUninstall = target), localized)!!.spec +
+            gamesMessage(GamesUiState(pendingUninstall = target), localized).shouldNotBeNull().spec +
             gamesMessage(
                 GamesUiState(pendingUninstall = target, notice = GamesNotice.POSSIBLY_RUNNING),
                 localized,
-            )!!.spec +
-            launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), localized)!! +
+            ).shouldNotBeNull().spec +
+            launcherUpdateMessageBox(MainUiState(launcherUpdatePrompt = "1.1.0"), localized).shouldNotBeNull() +
             installPermissionMessageBox(localized) +
             installCancelledMessageBox(localized) +
             SettingsNotice.entries.map { it.messageBox(localized) }
@@ -302,7 +307,7 @@ class DialogMessagesTest {
         downloadConfirmState(pending) shouldBe null
         val state = downloadConfirmState(
             pending.copy(downloadDestination = DownloadDestination("/games/downloads", null)),
-        )!!
+        ).shouldNotBeNull()
         state.path shouldBe "/games/downloads"
         state.freeSpace shouldBe "—"
         state.hasPage shouldBe false

@@ -3,8 +3,10 @@ package dev.jagoba.lostielauncher.util.download
 import dev.jagoba.lostielauncher.model.SpecialVersionConfig
 import io.kotest.matchers.shouldBe
 import java.util.UUID
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("SpecialVersionPolicy")
 class SpecialVersionPolicyTest {
     private val gameId = UUID.randomUUID()
     private val valid = SpecialVersionConfig("a".repeat(64), "special", gameId, "v2", "game.zip")

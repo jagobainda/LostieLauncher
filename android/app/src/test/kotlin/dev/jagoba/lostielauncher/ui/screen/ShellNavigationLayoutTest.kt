@@ -2,8 +2,10 @@ package dev.jagoba.lostielauncher.ui.screen
 
 import androidx.compose.ui.unit.dp
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("ShellNavigationLayout")
 class ShellNavigationLayoutTest {
     @Test
     fun `FAQ search leaves room for the first result above a landscape keyboard`() {

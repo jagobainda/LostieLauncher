@@ -4,6 +4,8 @@ import dev.jagoba.lostielauncher.model.DownloadResumeMetadata
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 @DisplayName("DownloadResumePolicy")
 class DownloadResumePolicyTest {
@@ -26,23 +28,21 @@ class DownloadResumePolicyTest {
         DownloadResumePolicy.validator(DownloadResumeMetadata(null, null, 100)) shouldBe null
     }
 
-    @Test
-    fun `appends a partial response`() {
-        DownloadResumePolicy.responseAction(206, 40, 100, "bytes 40-99/100") shouldBe DownloadResponseAction.APPEND
-    }
-
-    @Test
-    fun `restarts when a ranged request receives a full response`() {
-        DownloadResumePolicy.responseAction(200, 40, 100, null) shouldBe DownloadResponseAction.RESTART
-    }
-
-    @Test
-    fun `accepts a complete partial after range not satisfiable`() {
-        DownloadResumePolicy.responseAction(416, 100, 100, null) shouldBe DownloadResponseAction.COMPLETE
-    }
-
-    @Test
-    fun `invalidates a mismatched partial after range not satisfiable`() {
-        DownloadResumePolicy.responseAction(416, 90, 100, null) shouldBe DownloadResponseAction.INVALIDATE
+    @ParameterizedTest(name = "HTTP {0} with {1}/{2} ({3}) -> {4}")
+    @CsvSource(
+        "206, 40, 100, bytes 40-99/100, APPEND",
+        "200, 40, 100, , RESTART",
+        "416, 100, 100, , COMPLETE",
+        "416, 90, 100, , INVALIDATE",
+    )
+    fun `decides the resume action from the response status and range`(
+        statusCode: Int,
+        partialBytes: Long,
+        expectedTotalBytes: Long?,
+        contentRange: String?,
+        expected: String,
+    ) {
+        DownloadResumePolicy.responseAction(statusCode, partialBytes, expectedTotalBytes, contentRange) shouldBe
+            DownloadResponseAction.valueOf(expected)
     }
 }
