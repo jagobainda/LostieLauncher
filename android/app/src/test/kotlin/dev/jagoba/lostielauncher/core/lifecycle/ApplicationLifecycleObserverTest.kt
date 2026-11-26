@@ -3,10 +3,8 @@ package dev.jagoba.lostielauncher.core.lifecycle
 import androidx.lifecycle.LifecycleOwner
 import dev.jagoba.lostielauncher.core.coroutines.TestDispatcherProvider
 import dev.jagoba.lostielauncher.model.AppSettings
-import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.game.GameInstallationService
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
-import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.service.presentation.GameAutoUpdateCoordinator
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.service.settings.SettingsStore
@@ -19,7 +17,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +34,6 @@ class ApplicationLifecycleObserverTest {
         every { settings } returns settingsFlow
     }
     private val logMaintenance = mockk<LogMaintenance>(relaxed = true)
-    private val network = mockk<NetworkMonitor>()
     private val owner = mockk<LifecycleOwner>()
     private val coordinator = mockk<LauncherDataCoordinator>(relaxed = true)
     private val gameAutoUpdates = mockk<GameAutoUpdateCoordinator>(relaxed = true)
@@ -55,7 +51,7 @@ class ApplicationLifecycleObserverTest {
 
         verify(exactly = 1) { logMaintenance.purgeExpired() }
         verify(exactly = 1) { logger.info("Application started.") }
-        verify(exactly = 0) { coordinator.start(any(), any(), any(), any()) }
+        verify(exactly = 0) { coordinator.start(any()) }
         verify(exactly = 0) { gameAutoUpdates.start(any()) }
     }
 
@@ -67,7 +63,7 @@ class ApplicationLifecycleObserverTest {
         sut.onStart(owner)
         sut.onStart(owner)
 
-        verify(exactly = 1) { coordinator.start(any(), settingsStore, network, any()) }
+        verify(exactly = 1) { coordinator.start(any()) }
         verify(exactly = 1) { gameAutoUpdates.start(any()) }
     }
 
@@ -167,10 +163,8 @@ class ApplicationLifecycleObserverTest {
 
     private fun createSut(dispatcher: CoroutineDispatcher) = ApplicationLifecycleObserver(
         settingsStore = settingsStore,
-        network = network,
         logMaintenance = logMaintenance,
         coordinator = coordinator,
-        homeRefreshOptions = HomeRefreshOptions(2.minutes),
         gameAutoUpdates = gameAutoUpdates,
         installation = installation,
         kirin = kirin,

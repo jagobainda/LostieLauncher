@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppSettings
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.ExternalLink
+import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.KirinStatus
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.service.game.KirinSetupService
@@ -18,6 +19,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,7 +40,15 @@ class MainViewModelTest {
     private val downloads = TestDownloads()
     private val settings = TestSettingsStore().apply { current.value = AppSettings(hasSeenWelcome = true) }
     private var twitchLive = false
-    private val coordinator = LauncherDataCoordinator(content, downloads, { twitchLive }, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(
+        content,
+        downloads,
+        { twitchLive },
+        settings,
+        TestNetworkMonitor(),
+        HomeRefreshOptions(2.minutes),
+        mockk<Logger>(relaxed = true),
+    )
     private val navigation = NavigationStore()
     private val externalLinks = TestExternalLinkService()
     private val kirinStatus = MutableStateFlow<KirinStatus?>(KirinStatus.Ready)

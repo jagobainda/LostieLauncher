@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.core.di
 
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,12 +35,29 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule {
-    private const val CDN_BASE_URL = "https://ericlostie-launcher.jagoba.dev"
+internal abstract class NetworkBindingsModule {
+    @Binds
+    @Singleton
+    internal abstract fun bindMaintenanceFlagApi(impl: OkHttpMaintenanceFlagApi): MaintenanceFlagApi
+
+    @Binds
+    @Singleton
+    internal abstract fun bindContentService(impl: DefaultContentService): ContentService
+
+    @Binds
+    @Singleton
+    internal abstract fun bindNetworkMonitor(impl: ConnectivityNetworkMonitor): NetworkMonitor
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal object NetworkModule {
+    internal const val CDN_BASE_URL = "https://ericlostie-launcher.jagoba.dev"
+    private const val STATIC_CDN_BASE_URL = "https://cdn.jagoba.dev/ericlostie-launcher"
 
     private const val CONTENT_ENDPOINT = "$CDN_BASE_URL/games/listado.json"
-    private const val NOTIFICATIONS_ENDPOINT = "https://cdn.jagoba.dev/ericlostie-launcher/homepage-notifications.json"
-    private const val FLAG_ENDPOINT = "https://cdn.jagoba.dev/ericlostie-launcher/flag.txt"
+    private const val NOTIFICATIONS_ENDPOINT = "$STATIC_CDN_BASE_URL/homepage-notifications.json"
+    private const val FLAG_ENDPOINT = "$STATIC_CDN_BASE_URL/flag.txt"
     private const val DOWNLOAD_BASE_URL = "$CDN_BASE_URL/games"
 
     private const val CONTENT_TIMEOUT_SECONDS = 10L
@@ -131,18 +149,6 @@ object NetworkModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(ContentApi::class.java)
-
-    @Provides
-    @Singleton
-    internal fun provideMaintenanceFlagApi(api: OkHttpMaintenanceFlagApi): MaintenanceFlagApi = api
-
-    @Provides
-    @Singleton
-    internal fun provideContentService(service: DefaultContentService): ContentService = service
-
-    @Provides
-    @Singleton
-    internal fun provideNetworkMonitor(monitor: ConnectivityNetworkMonitor): NetworkMonitor = monitor
 }
 
 @Qualifier

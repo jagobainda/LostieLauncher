@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.core.di
 
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,6 +10,14 @@ import dev.jagoba.lostielauncher.service.log.FileLogger
 import dev.jagoba.lostielauncher.util.log.LogMaintenance
 import java.time.ZoneId
 import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+internal abstract class LoggingBindingsModule {
+    @Binds
+    @Singleton
+    internal abstract fun bindLogMaintenance(impl: FileLogger): LogMaintenance
+}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,8 +32,4 @@ internal object LoggingModule {
         retentionMonths = LOG_RETENTION_MONTHS,
         zoneId = ZoneId.systemDefault(),
     )
-
-    @Provides
-    @Singleton
-    internal fun provideLogMaintenance(fileLogger: FileLogger): LogMaintenance = fileLogger
 }

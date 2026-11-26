@@ -50,6 +50,9 @@ class LauncherDataCoordinator @Inject constructor(
     private val content: ContentService,
     private val downloads: DownloadManager,
     private val twitch: TwitchLiveService,
+    private val settings: SettingsStore,
+    private val network: NetworkMonitor,
+    private val options: HomeRefreshOptions,
     private val logger: Logger,
 ) {
     private val homeGate = Mutex()
@@ -62,9 +65,6 @@ class LauncherDataCoordinator @Inject constructor(
     private val mutableCatalogue = MutableStateFlow(CatalogueData())
     private val mutableRefreshing = MutableStateFlow(false)
     private val visible = MutableStateFlow(true)
-
-    @Volatile
-    private var settingsStore: SettingsStore? = null
     private var started = false
 
     val home: StateFlow<HomeData> = mutableHome.asStateFlow()
@@ -72,10 +72,9 @@ class LauncherDataCoordinator @Inject constructor(
     val isRefreshing: StateFlow<Boolean> = mutableRefreshing.asStateFlow()
 
     @Synchronized
-    fun start(scope: CoroutineScope, settings: SettingsStore, network: NetworkMonitor, options: HomeRefreshOptions) {
+    fun start(scope: CoroutineScope) {
         if (started) return
         started = true
-        settingsStore = settings
         scope.launch {
             settings.settings.map { it.language }.distinctUntilChanged().collect { language ->
                 refreshHome(language, force = false)
@@ -125,7 +124,7 @@ class LauncherDataCoordinator @Inject constructor(
         homeGate.withLock {
             if (showLoading) mutableHome.update { it.copy(isLoading = true) }
             try {
-                val allowTwitch = settingsStore?.settings?.first()?.hasSeenWelcome ?: true
+                val allowTwitch = settings.settings.first().hasSeenWelcome
                 coroutineScope {
                     val live = if (allowTwitch) async { twitch.isLive() } else null
                     if (checkAvailability) {

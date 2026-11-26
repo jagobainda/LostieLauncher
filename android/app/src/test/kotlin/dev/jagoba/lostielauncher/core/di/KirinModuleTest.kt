@@ -34,6 +34,9 @@ class KirinModuleTest {
     fun `keeps the Kirin installer in its own folder under the shared APK cache`() {
         val context = mockk<Context> { every { cacheDir } returns File("/cache") }
 
-        KirinModule.provideKirinSetupOptions(context).installerFile shouldBe File("/cache", "apk/kirin/Kirin.apk")
+        val options = KirinModule.provideKirinSetupOptions(context)
+
+        options.installerFile shouldBe File("/cache", "apk/kirin/Kirin.apk")
+        options.requirementsUrl shouldBe "https://ericlostie-launcher.jagoba.dev/public/config/kirin-setup-options.json"
     }
 }
