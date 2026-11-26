@@ -46,11 +46,10 @@ fun GamesDialogs(viewModel: GamesViewModel = hiltViewModel()) {
 internal fun gamesMessage(state: GamesUiState, strings: Strings): GamesMessage? {
     state.pendingUninstall?.let { game ->
         val spec = if (state.notice == GamesNotice.POSSIBLY_RUNNING) {
-            MessageBoxSpec(
+            errorMessageBox(
                 strings.uninstallGameRunningTitle,
                 strings.uninstallMaybeRunningMessage.withArgs(game.name),
                 MessageBoxButtons.YES_NO,
-                MessageBoxIcon.ERROR,
                 protectFromOverlays = true,
             )
         } else {

@@ -19,10 +19,11 @@ import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.version.VersionUtils
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -47,32 +48,26 @@ class SettingsViewModel @Inject constructor(
     private val launcherUpdate: LauncherUpdateService,
     private val logger: Logger,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow<SettingsUiState?>(null)
-    val state: StateFlow<SettingsUiState?> = mutableState.asStateFlow()
     private val checking = MutableStateFlow(false)
     private val notice = MutableStateFlow<SettingsNotice?>(null)
 
-    init {
-        viewModelScope.launch {
-            combine(
-                store.settings,
-                installation.installedGames,
-                checking,
-                notice,
-            ) { settings, installed, checking, notice ->
-                SettingsUiState(
-                    theme = settings.theme,
-                    language = settings.language,
-                    strings = stringsFor(settings.language),
-                    version = VersionUtils.formatDisplayVersion(version.name),
-                    autoUpdate = settings.autoUpdate,
-                    autoUpdateSupported = installed !is InstalledGamesState.NotSupportedYet,
-                    isCheckingForUpdates = checking,
-                    notice = notice,
-                )
-            }.collect { mutableState.value = it }
-        }
-    }
+    val state: StateFlow<SettingsUiState?> = combine(
+        store.settings,
+        installation.installedGames,
+        checking,
+        notice,
+    ) { settings, installed, checking, notice ->
+        SettingsUiState(
+            theme = settings.theme,
+            language = settings.language,
+            strings = stringsFor(settings.language),
+            version = VersionUtils.formatDisplayVersion(version.name),
+            autoUpdate = settings.autoUpdate,
+            autoUpdateSupported = installed !is InstalledGamesState.NotSupportedYet,
+            isCheckingForUpdates = checking,
+            notice = notice,
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun selectTheme(theme: AppTheme) {
         logger.debug("Theme changed to: $theme.")

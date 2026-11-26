@@ -188,7 +188,7 @@ fun LauncherShellLayout(
                 Spacer(Modifier.windowInsetsTopHeight(insets))
             } else {
                 ShellTopBar(
-                    title = state.title,
+                    title = state.section.label(strings),
                     logo = painterResource(R.drawable.launcher_logo),
                     pills = listOfNotNull(offline, kirinUpdate, launcherUpdate),
                     actions = actions,
@@ -355,7 +355,7 @@ private fun shellDestinations(
     )
 }
 
-private fun LauncherSection.label(strings: Strings): String = when (this) {
+internal fun LauncherSection.label(strings: Strings): String = when (this) {
     LauncherSection.HOME -> strings.titleHome
     LauncherSection.GAMES -> strings.titleGames
     LauncherSection.LIBRARY -> strings.titleLibrary

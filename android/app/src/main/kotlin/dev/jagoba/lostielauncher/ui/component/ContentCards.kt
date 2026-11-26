@@ -28,7 +28,6 @@ import dev.jagoba.lostielauncher.R
 import dev.jagoba.lostielauncher.model.NotificationType
 import dev.jagoba.lostielauncher.ui.LocalAppLanguage
 import dev.jagoba.lostielauncher.ui.theme.FixedColors
-import dev.jagoba.lostielauncher.ui.theme.LauncherBorders
 import dev.jagoba.lostielauncher.ui.theme.LauncherRadii
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
@@ -192,13 +191,7 @@ fun FaqCard(
             )
         }
         if (expanded) {
-            Box(
-                Modifier
-                    .padding(horizontal = LauncherSpacing.Card)
-                    .fillMaxWidth()
-                    .height(LauncherBorders.Thin)
-                    .background(colors.overlayLight),
-            )
+            LauncherDivider()
             LinkText(
                 text = answer,
                 color = colors.secondaryFgDim,

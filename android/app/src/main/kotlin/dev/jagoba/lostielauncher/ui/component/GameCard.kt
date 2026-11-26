@@ -64,6 +64,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.accentButton
 import dev.jagoba.lostielauncher.util.net.HttpsUrls
 import kotlin.math.PI
 import kotlin.math.cos
@@ -168,30 +169,32 @@ fun LibraryGameCard(
                     onClick = onDownload,
                 )
 
-                LibraryCardStatus.DOWNLOADING -> Row {
-                    CardButton(
-                        style = CardButtonStyle.ACCENT,
-                        icon = R.drawable.ic_card_pause,
-                        label = strings.btnPause,
-                        enabled = state.canPause,
-                        onClick = onPause,
-                    )
-                    Spacer(Modifier.width(LauncherSpacing.Small))
-                    CancelButton(state.canCancel, onCancel)
-                }
+                LibraryCardStatus.DOWNLOADING -> TransferActionRow(
+                    icon = R.drawable.ic_card_pause,
+                    label = strings.btnPause,
+                    enabled = state.canPause,
+                    onClick = onPause,
+                    canCancel = state.canCancel,
+                    onCancel = onCancel,
+                )
 
-                LibraryCardStatus.PAUSED, LibraryCardStatus.INSTALLATION_FAILED -> Row {
-                    val paused = state.status == LibraryCardStatus.PAUSED
-                    CardButton(
-                        style = CardButtonStyle.ACCENT,
-                        icon = if (paused) R.drawable.ic_card_play else R.drawable.ic_card_update,
-                        label = if (paused) strings.btnResume else strings.btnRetry,
-                        enabled = state.canStart,
-                        onClick = onDownload,
-                    )
-                    Spacer(Modifier.width(LauncherSpacing.Small))
-                    CancelButton(state.canCancel, onCancel)
-                }
+                LibraryCardStatus.PAUSED -> TransferActionRow(
+                    icon = R.drawable.ic_card_play,
+                    label = strings.btnResume,
+                    enabled = state.canStart,
+                    onClick = onDownload,
+                    canCancel = state.canCancel,
+                    onCancel = onCancel,
+                )
+
+                LibraryCardStatus.INSTALLATION_FAILED -> TransferActionRow(
+                    icon = R.drawable.ic_card_update,
+                    label = strings.btnRetry,
+                    enabled = state.canStart,
+                    onClick = onDownload,
+                    canCancel = state.canCancel,
+                    onCancel = onCancel,
+                )
 
                 LibraryCardStatus.INSTALLATION_PENDING -> CancelButton(state.canCancel, onCancel)
 
@@ -535,6 +538,28 @@ internal fun StatusNotice(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun TransferActionRow(
+    @DrawableRes icon: Int,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    canCancel: Boolean,
+    onCancel: () -> Unit,
+) {
+    Row {
+        CardButton(
+            style = CardButtonStyle.ACCENT,
+            icon = icon,
+            label = label,
+            enabled = enabled,
+            onClick = onClick,
+        )
+        Spacer(Modifier.width(LauncherSpacing.Small))
+        CancelButton(canCancel, onCancel)
+    }
+}
+
+@Composable
 private fun CancelButton(enabled: Boolean, onClick: () -> Unit) {
     CardButton(
         style = CardButtonStyle.SECONDARY,
@@ -576,11 +601,7 @@ private fun CardButton(
     val hovered by interactions.collectIsHoveredAsState()
     val active = enabled && (pressed || hovered)
     val background = when (style) {
-        CardButtonStyle.ACCENT -> when {
-            enabled && pressed -> colors.primaryFgPressed
-            active -> colors.primaryFgHover
-            else -> colors.primaryFg
-        }
+        CardButtonStyle.ACCENT -> colors.accentButton(enabled, pressed, hovered)
 
         CardButtonStyle.SUCCESS -> colors.success
 

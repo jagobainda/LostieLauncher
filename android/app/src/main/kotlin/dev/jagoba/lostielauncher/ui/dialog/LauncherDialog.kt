@@ -81,6 +81,7 @@ import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
 import dev.jagoba.lostielauncher.ui.theme.LauncherType
 import dev.jagoba.lostielauncher.ui.theme.LocalLauncherColors
+import dev.jagoba.lostielauncher.ui.theme.accentButton
 import dev.jagoba.lostielauncher.ui.theme.inputSurface
 
 internal enum class DialogButtonStyle { ACCENT, SECONDARY }
@@ -284,11 +285,7 @@ internal fun DialogButton(
     val hovered by interactions.collectIsHoveredAsState()
     val pressed by interactions.collectIsPressedAsState()
     val background = when (style) {
-        DialogButtonStyle.ACCENT -> when {
-            enabled && pressed -> colors.primaryFgPressed
-            enabled && hovered -> colors.primaryFgHover
-            else -> colors.primaryFg
-        }
+        DialogButtonStyle.ACCENT -> colors.accentButton(enabled, pressed, hovered)
 
         DialogButtonStyle.SECONDARY -> when {
             enabled && pressed -> colors.overlayMuted
