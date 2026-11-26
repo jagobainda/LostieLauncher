@@ -56,14 +56,28 @@ class RemoteJsonTest {
     }
 
     @Test
-    fun `returns nothing and logs when the server answers with an error`() = runTest(dispatcher) {
+    fun `returns nothing and logs at info when the server answers with an error`() = runTest(dispatcher) {
         server.enqueue(MockResponse.Builder().code(503).build())
         val sut = createSut()
 
         val result = sut.fetch(url, deserializer, "Feed")
 
         result shouldBe null
-        verify(exactly = 1) { logger.error("Feed could not be read.", any()) }
+        verify(exactly = 1) { logger.info(match { it.contains("Feed could not be read") && it.contains("503") }) }
+        verify(exactly = 0) { logger.error(any(), any()) }
+    }
+
+    @Test
+    fun `returns nothing and logs at info when the server cannot be reached`() = runTest(dispatcher) {
+        val unreachableUrl = url
+        server.close()
+        val sut = createSut()
+
+        val result = sut.fetch(unreachableUrl, deserializer, "Feed")
+
+        result shouldBe null
+        verify(exactly = 1) { logger.info(match { it.contains("Feed could not be read") }) }
+        verify(exactly = 0) { logger.error(any(), any()) }
     }
 
     @Test

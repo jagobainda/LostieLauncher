@@ -4,6 +4,7 @@ import dev.jagoba.lostielauncher.core.coroutines.DispatcherProvider
 import dev.jagoba.lostielauncher.model.TwitchLiveOptions
 import dev.jagoba.lostielauncher.service.cdn.TwitchPreviewClient
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.logNetworkOrError
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -29,7 +30,11 @@ internal class PreviewTwitchLiveService @Inject constructor(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            logger.error("Checking whether the Twitch channel is live failed.", error)
+            logger.logNetworkOrError(
+                error,
+                networkMessage = { "Checking whether the Twitch channel is live failed ($it)." },
+                unexpectedMessage = "Checking whether the Twitch channel is live failed.",
+            )
             false
         }
     }

@@ -1,4 +1,4 @@
-package dev.jagoba.lostielauncher.util.log
+package dev.jagoba.lostielauncher.service.log
 
 import dev.jagoba.lostielauncher.model.LogOptions
 import dev.jagoba.lostielauncher.service.storage.FixedStorageLocations

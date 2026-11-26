@@ -1,7 +1,10 @@
-package dev.jagoba.lostielauncher.util.log
+package dev.jagoba.lostielauncher.service.log
 
 import dev.jagoba.lostielauncher.model.LogOptions
 import dev.jagoba.lostielauncher.service.storage.StorageLocations
+import dev.jagoba.lostielauncher.util.log.LogFiles
+import dev.jagoba.lostielauncher.util.log.LogMaintenance
+import dev.jagoba.lostielauncher.util.log.Logger
 import java.io.File
 import java.time.Clock
 import java.time.YearMonth

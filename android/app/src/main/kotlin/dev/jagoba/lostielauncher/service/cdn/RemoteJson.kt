@@ -5,6 +5,7 @@ import dev.jagoba.lostielauncher.model.AllowedHosts
 import dev.jagoba.lostielauncher.util.log.Logger
 import dev.jagoba.lostielauncher.util.net.DisallowedUrlException
 import dev.jagoba.lostielauncher.util.net.HttpsUrls
+import dev.jagoba.lostielauncher.util.net.logNetworkOrError
 import dev.jagoba.lostielauncher.util.net.readBoundedText
 import dev.jagoba.lostielauncher.util.net.useCancellableResponse
 import java.io.IOException
@@ -44,7 +45,11 @@ internal class RemoteJson @Inject constructor(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            logger.error("$label could not be read.", error)
+            logger.logNetworkOrError(
+                error,
+                networkMessage = { "$label could not be read ($it)." },
+                unexpectedMessage = "$label could not be read.",
+            )
             null
         }
     }
