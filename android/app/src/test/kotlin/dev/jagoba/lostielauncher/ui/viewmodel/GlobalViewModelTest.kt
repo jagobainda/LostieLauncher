@@ -3,11 +3,13 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameTarget
+import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,8 +27,15 @@ import org.junit.jupiter.api.Test
 class GlobalViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val downloads = TestDownloads()
-    private val coordinator =
-        LauncherDataCoordinator(TestContentService(), downloads, { false }, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(
+        TestContentService(),
+        downloads,
+        { false },
+        TestSettingsStore(),
+        TestNetworkMonitor(),
+        HomeRefreshOptions(2.minutes),
+        mockk<Logger>(relaxed = true),
+    )
     private val launch = TestLaunch()
 
     @BeforeEach
@@ -77,7 +86,15 @@ class GlobalViewModelTest {
         val content = TestContentService()
         val blocked = CompletableDeferred<Unit>()
         content.gameBarrier = blocked
-        val refreshing = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
+        val refreshing = LauncherDataCoordinator(
+            content,
+            downloads,
+            { false },
+            TestSettingsStore(),
+            TestNetworkMonitor(),
+            HomeRefreshOptions(2.minutes),
+            mockk<Logger>(relaxed = true),
+        )
         val other = GlobalViewModel(downloads, refreshing, launch)
         val refresh = async { refreshing.refreshAll(dev.jagoba.lostielauncher.model.AppLanguage.ESP) }
         runCurrent()

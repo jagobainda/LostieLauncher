@@ -53,7 +53,15 @@ class LibraryViewModelTest {
     private val storageAccess = TestStorageAccess()
     private val notificationAccess = TestNotificationAccess()
     private val logger = mockk<Logger>(relaxed = true)
-    private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(
+        content,
+        downloads,
+        { false },
+        settings,
+        network,
+        HomeRefreshOptions(2.minutes),
+        mockk<Logger>(relaxed = true),
+    )
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -1089,7 +1097,15 @@ class LibraryViewModelTest {
 
             val barrier = CompletableDeferred<Unit>()
             content.gameBarrier = barrier
-            val freshCoordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
+            val freshCoordinator = LauncherDataCoordinator(
+                content,
+                downloads,
+                { false },
+                settings,
+                network,
+                HomeRefreshOptions(2.minutes),
+                mockk<Logger>(relaxed = true),
+            )
             val restored = createSut(backgroundScope, saved, freshCoordinator)
             storageAccess.granted = true
             restored.onStorageAccessResult()
@@ -1481,7 +1497,7 @@ class LibraryViewModelTest {
         savedState: SavedStateHandle = SavedStateHandle(),
         coordinator: LauncherDataCoordinator = this.coordinator,
     ): LibraryViewModel {
-        coordinator.start(scope, settings, network, HomeRefreshOptions(2.minutes))
+        coordinator.start(scope)
         return LibraryViewModel(
             coordinator,
             downloads,

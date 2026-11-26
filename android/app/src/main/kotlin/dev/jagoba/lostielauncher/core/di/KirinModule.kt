@@ -83,7 +83,7 @@ internal object KirinModule {
     @Provides
     @Singleton
     fun provideKirinSetupOptions(@ApplicationContext context: Context): KirinSetupOptions = KirinSetupOptions(
-        requirementsUrl = "https://ericlostie-launcher.jagoba.dev/public/config/kirin-setup-options.json",
+        requirementsUrl = "${NetworkModule.CDN_BASE_URL}/public/config/kirin-setup-options.json",
         fallbackMinimumVersion = "0.4.0",
         installerFile = File(context.cacheDir, "apk/kirin/Kirin.apk"),
         signerSha256 = "a0033b292224df78a686a199eecf99bfbc45c2e0a23a311bfdeddbaad0cc20b2",

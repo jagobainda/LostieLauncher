@@ -29,7 +29,7 @@ internal object UpdateModule {
     fun provideLauncherUpdateOptions(@ApplicationContext context: Context): LauncherUpdateOptions =
         LauncherUpdateOptions(
             packageName = context.packageName,
-            feedUrl = "https://ericlostie-launcher.jagoba.dev/public/android/latest.json",
+            feedUrl = "${NetworkModule.CDN_BASE_URL}/public/android/latest.json",
             installerFile = File(context.cacheDir, "apk/launcher/LostieLauncher.apk"),
             maxInstallerBytes = LauncherUpdateOptions.DEFAULT_MAX_INSTALLER_BYTES,
             allowedHosts = LauncherUpdateOptions.DEFAULT_ALLOWED_HOSTS,

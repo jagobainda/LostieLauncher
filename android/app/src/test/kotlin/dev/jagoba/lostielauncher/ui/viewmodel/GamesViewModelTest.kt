@@ -8,6 +8,7 @@ import dev.jagoba.lostielauncher.model.GameLocationReference
 import dev.jagoba.lostielauncher.model.GameRunningSignal
 import dev.jagoba.lostielauncher.model.GameUninstallOutcome
 import dev.jagoba.lostielauncher.model.GameUninstallResult
+import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LauncherSection
 import dev.jagoba.lostielauncher.model.LocalGame
@@ -20,6 +21,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
 import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +44,15 @@ class GamesViewModelTest {
     private val navigation = NavigationStore()
     private val downloads = TestDownloads()
     private val logger = mockk<Logger>(relaxed = true)
-    private val coordinator = LauncherDataCoordinator(content, downloads, { false }, mockk<Logger>(relaxed = true))
+    private val coordinator = LauncherDataCoordinator(
+        content,
+        downloads,
+        { false },
+        TestSettingsStore(),
+        TestNetworkMonitor(),
+        HomeRefreshOptions(2.minutes),
+        mockk<Logger>(relaxed = true),
+    )
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)

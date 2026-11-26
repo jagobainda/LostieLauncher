@@ -3,17 +3,20 @@ package dev.jagoba.lostielauncher.service.presentation
 import dev.jagoba.lostielauncher.model.DownloadCommandResult
 import dev.jagoba.lostielauncher.model.DownloadStatus
 import dev.jagoba.lostielauncher.model.GameInfo
+import dev.jagoba.lostielauncher.model.HomeRefreshOptions
 import dev.jagoba.lostielauncher.model.InstalledGamesState
 import dev.jagoba.lostielauncher.model.LocalGame
 import dev.jagoba.lostielauncher.ui.viewmodel.TestContentService
 import dev.jagoba.lostielauncher.ui.viewmodel.TestDownloads
 import dev.jagoba.lostielauncher.ui.viewmodel.TestInstallation
+import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.ui.viewmodel.TestSettingsStore
 import dev.jagoba.lostielauncher.ui.viewmodel.testDownload
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
 import dev.jagoba.lostielauncher.util.log.Logger
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -26,7 +29,15 @@ class GameAutoUpdateCoordinatorTest {
     private val installation = TestInstallation()
     private val settings = TestSettingsStore()
     private val logger = mockk<Logger>(relaxed = true)
-    private val launcher = LauncherDataCoordinator(content, downloads, { false }, logger)
+    private val launcher = LauncherDataCoordinator(
+        content,
+        downloads,
+        { false },
+        settings,
+        TestNetworkMonitor(),
+        HomeRefreshOptions(2.minutes),
+        logger,
+    )
     private val sut = GameAutoUpdateCoordinator(settings, launcher, installation, downloads, content, logger)
 
     @Test
