@@ -1,10 +1,12 @@
 package dev.jagoba.lostielauncher.ui
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.animation.AnticipateInterpolator
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -21,6 +23,8 @@ import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.model.SettingsOptions
 import dev.jagoba.lostielauncher.ui.screen.LauncherShell
 import dev.jagoba.lostielauncher.ui.theme.LostieLauncherTheme
+import dev.jagoba.lostielauncher.ui.theme.isDark
+import dev.jagoba.lostielauncher.ui.theme.paletteFor
 import dev.jagoba.lostielauncher.ui.theme.splashThemeFor
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsViewModel
 import dev.jagoba.lostielauncher.util.policy.StartupWindowPolicy
@@ -32,6 +36,10 @@ private const val SPLASH_EXIT_DURATION_MILLISECONDS = 500L
 class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
 
+    private var darkSystemBars = paletteFor(AppTheme.Default).isDark()
+
+    private val systemBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkSystemBars }
+
     @Inject
     internal lateinit var settingsOptions: SettingsOptions
 
@@ -40,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
-        enableEdgeToEdge()
+        enableEdgeToEdge(systemBarStyle, systemBarStyle)
         super.onCreate(savedInstanceState)
         keepSplashScreenUntilSettingsLoad(splash)
         splash.setOnExitAnimationListener(::animateSplashScreenExit)
@@ -48,7 +56,10 @@ class MainActivity : ComponentActivity() {
             val state by settingsViewModel.state.collectAsStateWithLifecycle()
             val appearance = state ?: return@setContent
 
-            LaunchedEffect(appearance.theme) { rememberSplashScreenTheme(appearance.theme) }
+            LaunchedEffect(appearance.theme) {
+                rememberSplashScreenTheme(appearance.theme)
+                applySystemBarStyle(appearance.theme)
+            }
             LostieLauncherTheme(theme = appearance.theme) {
                 CompositionLocalProvider(
                     LocalStrings provides appearance.strings,
@@ -85,6 +96,11 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             splashScreen.setSplashScreenTheme(splashThemeFor(theme))
         }
+    }
+
+    private fun applySystemBarStyle(theme: AppTheme) {
+        darkSystemBars = paletteFor(theme).isDark()
+        enableEdgeToEdge(systemBarStyle, systemBarStyle)
     }
 
     private fun animateSplashScreenExit(provider: SplashScreenViewProvider) {

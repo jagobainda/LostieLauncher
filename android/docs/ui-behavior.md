@@ -22,6 +22,9 @@ Social labels are brand names; Twitch live status is a separate state signal.
 ## Cards and text
 
 Game cards reserve action width before choosing side-by-side or stacked layout.
+Library and My Games keep one column. Cards, their skeletons and the Library
+status banner are capped at the desktop card width (`GameCardMaxWidth`) and
+centered, so on a tablet the actions stay close to the title.
 The status/footer and skeleton reserves reduce movement when content changes.
 During an active update, Android's My Games card shows an indeterminate progress
 indicator; desktop only disables the affected actions. In the stacked layout,

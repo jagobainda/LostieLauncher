@@ -81,7 +81,7 @@ internal fun CardActions(labelled: @Composable () -> Unit, icons: @Composable ()
             rows.forEachIndexed { index, row ->
                 var x = width - rowWidths[index]
                 row.forEachIndexed { column, slotWidth ->
-                    placeables[index][column].place(x, y)
+                    placeables[index][column].placeRelative(x, y)
                     x += slotWidth + gap
                 }
                 y += rowHeights[index] + gap
@@ -132,10 +132,16 @@ internal fun GameCardColumns(
                 val height = maxOf(logoPlaceable.height, middle, actionsPlaceable.height)
                 val middleTop = (height - middle) / 2
                 layout(width, height) {
-                    logoPlaceable.place(0, (height - logoPlaceable.height) / 2)
-                    textPlaceable.place(logoPlaceable.width + inset, middleTop)
-                    statusPlaceable.place(logoPlaceable.width + inset, middleTop + textPlaceable.height + statusGap)
-                    actionsPlaceable.place(width - actionsPlaceable.width, (height - actionsPlaceable.height) / 2)
+                    logoPlaceable.placeRelative(0, (height - logoPlaceable.height) / 2)
+                    textPlaceable.placeRelative(logoPlaceable.width + inset, middleTop)
+                    statusPlaceable.placeRelative(
+                        logoPlaceable.width + inset,
+                        middleTop + textPlaceable.height + statusGap,
+                    )
+                    actionsPlaceable.placeRelative(
+                        width - actionsPlaceable.width,
+                        (height - actionsPlaceable.height) / 2,
+                    )
                 }
             }
 
@@ -159,15 +165,15 @@ internal fun GameCardColumns(
                     statusTop
                 }
                 layout(width, footerTop + footer) {
-                    logoPlaceable.place(0, (top - logoPlaceable.height) / 2)
-                    textPlaceable.place(logoPlaceable.width + inset, (top - textPlaceable.height) / 2)
+                    logoPlaceable.placeRelative(0, (top - logoPlaceable.height) / 2)
+                    textPlaceable.placeRelative(logoPlaceable.width + inset, (top - textPlaceable.height) / 2)
                     val statusY = if (fillStackedActions) {
                         statusTop
                     } else {
                         footerTop + (footer - statusPlaceable.height) / 2
                     }
-                    statusPlaceable.place(0, statusY)
-                    actionsPlaceable.place(
+                    statusPlaceable.placeRelative(0, statusY)
+                    actionsPlaceable.placeRelative(
                         width - actionsPlaceable.width,
                         footerTop + (footer - actionsPlaceable.height) / 2,
                     )
