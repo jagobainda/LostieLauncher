@@ -17,6 +17,7 @@ class AppearanceSettingsTest {
         AppTheme.Default shouldBe AppTheme.Volcarona
         AppLanguage.Default shouldBe AppLanguage.ESP
         Appearance() shouldBe Appearance(AppTheme.Volcarona, AppLanguage.ESP)
+        AppSettings().appearance shouldBe Appearance()
     }
 
     @ParameterizedTest(name = "{0}")

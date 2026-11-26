@@ -83,8 +83,7 @@ internal interface DownloadDao {
     @Query(
         """
         UPDATE downloads
-        SET status = :status,
-            percent = :percent,
+        SET percent = :percent,
             bytes_per_second = :bytesPerSecond,
             downloaded_bytes = :downloadedBytes,
             total_bytes = :totalBytes,
@@ -96,7 +95,6 @@ internal interface DownloadDao {
         gameId: String,
         workId: String,
         expectedStatus: String,
-        status: String,
         percent: Double,
         bytesPerSecond: Double,
         downloadedBytes: Long,

@@ -26,8 +26,8 @@ import dev.jagoba.lostielauncher.service.download.MonotonicTimeSource
 import dev.jagoba.lostielauncher.service.download.NotificationAccess
 import dev.jagoba.lostielauncher.service.download.OkHttpDownloadTransfer
 import dev.jagoba.lostielauncher.service.download.WorkManagerDownloadScheduler
-import dev.jagoba.lostielauncher.util.download.DownloadCachePolicy
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -43,7 +43,7 @@ internal object DownloadModule {
     @Singleton
     fun provideOptions(): DownloadTransferOptions = DownloadTransferOptions(
         cacheDirectoryName = CACHE_DIRECTORY_NAME,
-        cacheMaxAge = DownloadCachePolicy.DEFAULT_MAX_AGE,
+        cacheMaxAge = 14.days,
         bufferSizeBytes = BUFFER_SIZE_BYTES,
         maximumAttempts = MAXIMUM_ATTEMPTS,
         retryBaseDelay = 1.seconds,

@@ -108,7 +108,7 @@ internal fun downloadConfirmState(state: LibraryUiState): DownloadConfirmState? 
         logoUrl = game.logoUrl,
         hasPage = game.pageUrl.isNotBlank(),
         path = destination.path,
-        size = game.formattedSize,
+        size = FreeSpaceFormatter.formatGigabytes(game.sizeGb),
         freeSpace = FreeSpaceFormatter.format(destination.freeBytes),
     )
 }

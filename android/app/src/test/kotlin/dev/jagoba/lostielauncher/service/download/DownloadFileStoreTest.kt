@@ -14,6 +14,7 @@ import java.time.Instant
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -179,7 +180,7 @@ class DownloadFileStoreTest {
         ),
         options = DownloadTransferOptions(
             cacheDirectoryName = "downloads",
-            cacheMaxAge = Duration.ofDays(14),
+            cacheMaxAge = 14.days,
             bufferSizeBytes = 4,
             maximumAttempts = 3,
             retryBaseDelay = 1.milliseconds,

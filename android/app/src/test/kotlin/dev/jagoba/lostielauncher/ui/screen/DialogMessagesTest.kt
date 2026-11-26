@@ -18,6 +18,7 @@ import dev.jagoba.lostielauncher.ui.viewmodel.LibraryUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.MainUiState
 import dev.jagoba.lostielauncher.ui.viewmodel.SettingsNotice
 import dev.jagoba.lostielauncher.ui.viewmodel.testGame
+import dev.jagoba.lostielauncher.util.format.FreeSpaceFormatter
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -305,7 +306,7 @@ class DialogMessagesTest {
         state.path shouldBe "/games/downloads"
         state.freeSpace shouldBe "—"
         state.hasPage shouldBe false
-        state.size shouldBe game.formattedSize
+        state.size shouldBe FreeSpaceFormatter.formatGigabytes(game.sizeGb)
     }
 
     private fun error(title: String, message: String) =

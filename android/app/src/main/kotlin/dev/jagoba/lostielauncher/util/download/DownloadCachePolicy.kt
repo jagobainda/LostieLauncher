@@ -1,19 +1,20 @@
 package dev.jagoba.lostielauncher.util.download
 
 import dev.jagoba.lostielauncher.model.DownloadCacheEntry
-import java.time.Duration
+import java.time.Duration as JavaDuration
 import java.time.Instant
 import java.util.Locale
+import kotlin.time.Duration
+import kotlin.time.toKotlinDuration
 
 object DownloadCachePolicy {
-    val DEFAULT_MAX_AGE: Duration = Duration.ofDays(14)
+    private const val PART_META_EXTENSION = DownloadPathUtils.PART_EXTENSION + DownloadPathUtils.META_EXTENSION
 
-    private const val ZIP_EXTENSION = ".zip"
-    private const val PART_EXTENSION = ".part"
-    private const val META_EXTENSION = ".meta"
-    private const val PART_META_EXTENSION = PART_EXTENSION + META_EXTENSION
-
-    private val MANAGED_EXTENSIONS = listOf(ZIP_EXTENSION, PART_EXTENSION, PART_META_EXTENSION)
+    private val MANAGED_EXTENSIONS = listOf(
+        DownloadPathUtils.ZIP_EXTENSION,
+        DownloadPathUtils.PART_EXTENSION,
+        PART_META_EXTENSION,
+    )
 
     fun selectStaleFiles(
         entries: Iterable<DownloadCacheEntry>,
@@ -24,7 +25,7 @@ object DownloadCachePolicy {
         val managed = entries.filter { isManaged(it.fileName) }
         val partFiles = managed
             .map { it.fileName.lowercase(Locale.ROOT) }
-            .filterTo(mutableSetOf()) { it.endsWith(PART_EXTENSION) }
+            .filterTo(mutableSetOf()) { it.endsWith(DownloadPathUtils.PART_EXTENSION) }
         val known = knownGameIds.mapTo(mutableSetOf()) { it.lowercase(Locale.ROOT) }
 
         return managed.filter { isStale(it, partFiles, known, now, maxAge) }.map { it.fileName }
@@ -39,11 +40,13 @@ object DownloadCachePolicy {
     ): Boolean {
         val fileName = entry.fileName.lowercase(Locale.ROOT)
 
-        if (fileName.endsWith(PART_META_EXTENSION) && fileName.removeSuffix(META_EXTENSION) !in partFiles) {
+        if (fileName.endsWith(PART_META_EXTENSION) &&
+            fileName.removeSuffix(DownloadPathUtils.META_EXTENSION) !in partFiles
+        ) {
             return true
         }
 
-        if (Duration.between(entry.lastWriteTime, now) > maxAge) return true
+        if (JavaDuration.between(entry.lastWriteTime, now).toKotlinDuration() > maxAge) return true
 
         return gameIdOf(fileName) !in knownGameIds
     }

@@ -1,4 +1,4 @@
-package dev.jagoba.lostielauncher.model
+package dev.jagoba.lostielauncher.service.cdn
 
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-@DisplayName("SpecialVersionConfig.parse")
-class SpecialVersionConfigTest {
+@DisplayName("SpecialVersionConfigParser.parse")
+class SpecialVersionConfigParserTest {
     private val validGuid = "11111111-2222-3333-4444-555555555555"
 
     private fun validContent(overrideKey: String? = null, overrideValue: String = ""): String {
@@ -27,7 +27,7 @@ class SpecialVersionConfigTest {
 
     @Test
     fun `reads every required field`() {
-        val config = SpecialVersionConfig.parse(validContent())
+        val config = SpecialVersionConfigParser.parse(validContent())
 
         config.shouldNotBeNull()
         config.sha256 shouldBe "abc"
@@ -41,7 +41,7 @@ class SpecialVersionConfigTest {
     fun `accepts carriage returns and stray whitespace around each field`() {
         val content = "  sha256 = abc  \n tipo=beta\njuego-principal=$validGuid\nvers=1.0.0\narchivo=g.zip\n"
 
-        val config = SpecialVersionConfig.parse(content)
+        val config = SpecialVersionConfigParser.parse(content)
 
         config.shouldNotBeNull()
         config.sha256 shouldBe "abc"
@@ -52,7 +52,7 @@ class SpecialVersionConfigTest {
     fun `matches keys regardless of case`() {
         val content = "SHA256=abc\nTipo=beta\nJUEGO-PRINCIPAL=$validGuid\nVers=2.0.0\nArchivo=g.zip"
 
-        val config = SpecialVersionConfig.parse(content)
+        val config = SpecialVersionConfigParser.parse(content)
 
         config.shouldNotBeNull()
         config.version shouldBe "2.0.0"
@@ -66,12 +66,12 @@ class SpecialVersionConfigTest {
             .filterNot { it.startsWith("$missingKey=") }
             .joinToString("\n")
 
-        SpecialVersionConfig.parse(content).shouldBeNull()
+        SpecialVersionConfigParser.parse(content).shouldBeNull()
     }
 
     @Test
     fun `refuses the file when the main game is not a GUID`() {
-        SpecialVersionConfig.parse(validContent("juego-principal", "not-a-guid")).shouldBeNull()
+        SpecialVersionConfigParser.parse(validContent("juego-principal", "not-a-guid")).shouldBeNull()
     }
 
     @ParameterizedTest
@@ -86,7 +86,7 @@ class SpecialVersionConfigTest {
         ],
     )
     fun `accepts every main-game form the desktop accepts`(written: String) {
-        SpecialVersionConfig.parse(validContent("juego-principal", written)).shouldNotBeNull()
+        SpecialVersionConfigParser.parse(validContent("juego-principal", written)).shouldNotBeNull()
     }
 
     @ParameterizedTest
@@ -104,13 +104,13 @@ class SpecialVersionConfigTest {
         ],
     )
     fun `refuses every main-game form the desktop refuses`(written: String) {
-        SpecialVersionConfig.parse(validContent("juego-principal", written)).shouldBeNull()
+        SpecialVersionConfigParser.parse(validContent("juego-principal", written)).shouldBeNull()
     }
 
     @Test
     fun `reads a wrapped main game as the same id as a bare one`() {
-        val wrapped = SpecialVersionConfig.parse(validContent("juego-principal", "{$validGuid}"))
-        val compact = SpecialVersionConfig.parse(validContent("juego-principal", validGuid.replace("-", "")))
+        val wrapped = SpecialVersionConfigParser.parse(validContent("juego-principal", "{$validGuid}"))
+        val compact = SpecialVersionConfigParser.parse(validContent("juego-principal", validGuid.replace("-", "")))
 
         wrapped.shouldNotBeNull().mainGameId shouldBe UUID.fromString(validGuid)
         compact.shouldNotBeNull().mainGameId shouldBe UUID.fromString(validGuid)
@@ -121,19 +121,19 @@ class SpecialVersionConfigTest {
         val content = "# this is a comment\n\nsha256=abc\ntipo=beta\n" +
             "juego-principal=$validGuid\nvers=1.0.0\narchivo=g.zip\nbroken-line"
 
-        SpecialVersionConfig.parse(content).shouldNotBeNull()
+        SpecialVersionConfigParser.parse(content).shouldNotBeNull()
     }
 
     @Test
     fun `refuses an empty file`() {
-        SpecialVersionConfig.parse("").shouldBeNull()
+        SpecialVersionConfigParser.parse("").shouldBeNull()
     }
 
     @Test
     fun `lets the last occurrence of a repeated key win`() {
         val content = validContent() + "\ntipo=halloween"
 
-        val config = SpecialVersionConfig.parse(content)
+        val config = SpecialVersionConfigParser.parse(content)
 
         config.shouldNotBeNull()
         config.type shouldBe "halloween"
@@ -143,7 +143,7 @@ class SpecialVersionConfigTest {
     fun `keeps a value that itself contains an equals sign`() {
         val content = validContent("archivo", "g=1.zip")
 
-        val config = SpecialVersionConfig.parse(content)
+        val config = SpecialVersionConfigParser.parse(content)
 
         config.shouldNotBeNull()
         config.fileName shouldBe "g=1.zip"

@@ -172,7 +172,6 @@ internal class DownloadWorkerRunner @Inject constructor(
             gameId = entity.gameId,
             workId = workId,
             expectedStatus = DownloadStatus.DOWNLOADING.name,
-            status = DownloadStatus.DOWNLOADING.name,
             percent = progress.percent,
             bytesPerSecond = progress.bytesPerSecond,
             downloadedBytes = progress.downloadedBytes,
