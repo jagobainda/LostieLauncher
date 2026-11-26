@@ -10,6 +10,7 @@ import dev.jagoba.lostielauncher.service.cdn.dto.HomeContentDto
 import dev.jagoba.lostielauncher.service.cdn.dto.NewsItemDto
 import dev.jagoba.lostielauncher.ui.viewmodel.TestNetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
+import dev.jagoba.lostielauncher.util.net.ResponseTooLargeException
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -114,22 +115,24 @@ class ContentServiceTest {
     }
 
     @Test
-    fun `reports a failure and logs when the content server fails`() = runTest {
+    fun `reports a failure and logs at info when the content server cannot be reached`() = runTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } throws IOException("boom")
 
         val result = createSut().getGames()
 
         result shouldBe CatalogueResult.Failed
-        verify(exactly = 1) { logger.error(any(), any()) }
+        verify(exactly = 1) { logger.info(match { it.contains("Fetching the games list failed") }) }
+        verify(exactly = 0) { logger.error(any(), any()) }
     }
 
     @Test
-    fun `reports a failure when the payload cannot be read`() = runTest {
+    fun `reports a failure and logs an error when the payload cannot be read`() = runTest {
         maintenanceOff()
         coEvery { contentApi.catalogue(any()) } throws SerializationException("bad json")
 
         createSut().getGames() shouldBe CatalogueResult.Failed
+        verify(exactly = 1) { logger.error(any(), ofType<SerializationException>()) }
     }
 
     @Test
@@ -260,7 +263,7 @@ class ContentServiceTest {
     }
 
     @Test
-    fun `assumes not blocked when the flag cannot be reached, and remembers that`() = runTest {
+    fun `assumes not blocked and logs at info when the flag cannot be reached, and remembers that`() = runTest {
         coEvery { flagApi.head(any()) } throws IOException("no route to host")
         val sut = createSut()
 
@@ -269,7 +272,16 @@ class ContentServiceTest {
 
         blocked shouldBe false
         coVerify(exactly = 1) { flagApi.head(any()) }
-        verify(atLeast = 1) { logger.error(any(), any()) }
+        verify(exactly = 1) { logger.info(match { it.contains("The maintenance flag check failed") }) }
+        verify(exactly = 0) { logger.error(any(), any()) }
+    }
+
+    @Test
+    fun `logs an error when the maintenance flag check fails for a non-network reason`() = runTest {
+        coEvery { flagApi.head(any()) } throws IllegalStateException("broken")
+
+        createSut().isServerActionBlocked() shouldBe false
+        verify(exactly = 1) { logger.error(any(), ofType<IllegalStateException>()) }
     }
 
     @Test
@@ -391,6 +403,15 @@ class ContentServiceTest {
 
         createSut().getHomeContent(AppLanguage.ESP).isStale shouldBe true
         verify(exactly = 1) { logger.error(any(), any()) }
+    }
+
+    @Test
+    fun `logs a failed refresh as an error when the response exceeds the size limit`() = runTest {
+        coEvery { contentApi.homeContent(any()) } throws ResponseTooLargeException("HTTP", 1024)
+
+        createSut().getHomeContent(AppLanguage.ESP).isStale shouldBe true
+        verify(exactly = 1) { logger.error(any(), ofType<ResponseTooLargeException>()) }
+        verify(exactly = 0) { logger.info(any()) }
     }
 
     private fun homeContent(spanishTitle: String = "Hola", englishTitle: String = "Hello") = HomeContentDto(

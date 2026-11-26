@@ -10,7 +10,7 @@ import dev.jagoba.lostielauncher.service.cdn.MaintenanceFlagApi
 import dev.jagoba.lostielauncher.service.cdn.dto.HomeContentDto
 import dev.jagoba.lostielauncher.service.network.NetworkMonitor
 import dev.jagoba.lostielauncher.util.log.Logger
-import java.io.IOException
+import dev.jagoba.lostielauncher.util.net.logNetworkOrError
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
@@ -19,7 +19,6 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import retrofit2.HttpException
 
 sealed interface CatalogueResult {
     data class Loaded(val games: List<GameInfo>) : CatalogueResult
@@ -69,7 +68,11 @@ internal class DefaultContentService @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.error("Fetching the games list failed.", e)
+            logger.logNetworkOrError(
+                e,
+                networkMessage = { "Fetching the games list failed ($it)." },
+                unexpectedMessage = "Fetching the games list failed.",
+            )
             return CatalogueResult.Failed
         }
     }
@@ -121,14 +124,11 @@ internal class DefaultContentService @Inject constructor(
         }
 
     private fun logHomeContentRefreshFailure(e: Exception) {
-        if (e is IOException || e is HttpException) {
-            logger.info(
-                "Home content refresh failed (${e.javaClass.simpleName}: ${e.message}); " +
-                    "keeping the last known content.",
-            )
-        } else {
-            logger.error("Home content refresh failed for a reason that is not the network.", e)
-        }
+        logger.logNetworkOrError(
+            e,
+            networkMessage = { "Home content refresh failed ($it); keeping the last known content." },
+            unexpectedMessage = "Home content refresh failed for a reason that is not the network.",
+        )
     }
 
     override suspend fun isServerActionBlocked(forceRefresh: Boolean): Boolean {
@@ -150,7 +150,13 @@ internal class DefaultContentService @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                logger.error("The maintenance flag check failed; assuming server actions are not blocked.", e)
+                logger.logNetworkOrError(
+                    e,
+                    networkMessage = {
+                        "The maintenance flag check failed ($it); assuming server actions are not blocked."
+                    },
+                    unexpectedMessage = "The maintenance flag check failed; assuming server actions are not blocked.",
+                )
                 cacheMaintenanceFlag(blocked = false)
                 false
             }

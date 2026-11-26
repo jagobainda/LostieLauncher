@@ -60,14 +60,15 @@ class PreviewTwitchLiveServiceTest {
     }
 
     @Test
-    fun `is not live and logs when the preview cannot be reached`() = runTest {
+    fun `is not live and logs at info when the preview cannot be reached`() = runTest {
         val url = server.url("/preview.jpg").toString()
         server.close()
 
         val live = createSut(url).isLive()
 
         live shouldBe false
-        verify(exactly = 1) { logger.error(any(), any()) }
+        verify(exactly = 1) { logger.info(match { it.contains("Twitch channel is live failed") }) }
+        verify(exactly = 0) { logger.error(any(), any()) }
     }
 
     @Test
@@ -75,6 +76,7 @@ class PreviewTwitchLiveServiceTest {
         createSut("invalid").isLive() shouldBe false
 
         verify(exactly = 1) { logger.error(any(), ofType<IllegalArgumentException>()) }
+        verify(exactly = 0) { logger.info(any()) }
     }
 
     @Test
@@ -93,6 +95,7 @@ class PreviewTwitchLiveServiceTest {
 
         call.isCanceled() shouldBe true
         job.join()
+        verify(exactly = 0) { logger.info(any()) }
         verify(exactly = 0) { logger.error(any(), any()) }
     }
 

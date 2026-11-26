@@ -5,11 +5,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dev.jagoba.lostielauncher.model.LogOptions
-import dev.jagoba.lostielauncher.util.log.AndroidLogger
-import dev.jagoba.lostielauncher.util.log.FileLogger
+import dev.jagoba.lostielauncher.service.log.FileLogger
 import dev.jagoba.lostielauncher.util.log.LogMaintenance
-import dev.jagoba.lostielauncher.util.log.Logger
-import dev.jagoba.lostielauncher.util.log.TeeLogger
 import java.time.ZoneId
 import javax.inject.Singleton
 
@@ -26,10 +23,6 @@ internal object LoggingModule {
         retentionMonths = LOG_RETENTION_MONTHS,
         zoneId = ZoneId.systemDefault(),
     )
-
-    @Provides
-    @Singleton
-    internal fun provideLogger(fileLogger: FileLogger): Logger = TeeLogger(AndroidLogger(), fileLogger)
 
     @Provides
     @Singleton
