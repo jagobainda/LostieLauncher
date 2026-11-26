@@ -85,12 +85,6 @@ enum class GameRunningSignal {
     NOT_SUPPORTED_YET,
 }
 
-sealed interface GameActivityState {
-    data class Active(val games: Set<GameTarget>) : GameActivityState
-
-    data object NotSupportedYet : GameActivityState
-}
-
 sealed interface OpenGameLocationResult {
     data object Opened : OpenGameLocationResult
 

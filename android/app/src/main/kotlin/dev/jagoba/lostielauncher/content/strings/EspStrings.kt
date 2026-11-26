@@ -24,7 +24,6 @@ internal object EspStrings : Strings {
     override val btnUpdate = "Actualizar"
     override val btnPlay = "Jugar"
     override val tooltipUninstall = "Desinstalar juego"
-    override val tooltipRefresh = "Actualizar"
     override val uninstallConfirmTitle = "Desinstalar juego"
     override val uninstallConfirmMessage = "¿Seguro que quieres desinstalar {0}? Las partidas guardadas no se perderán."
     override val uninstallNotFoundTitle = "Archivos no encontrados"

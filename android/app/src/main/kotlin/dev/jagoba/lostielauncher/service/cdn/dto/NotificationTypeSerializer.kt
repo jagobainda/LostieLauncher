@@ -20,7 +20,6 @@ internal object NotificationTypeSerializer : KSerializer<NotificationType> {
             ?: throw SerializationException("Unknown notification type: '$name'.")
     }
 
-    override fun serialize(encoder: Encoder, value: NotificationType) {
-        encoder.encodeString(value.name.lowercase(Locale.ROOT).replaceFirstChar { it.uppercase(Locale.ROOT) })
-    }
+    override fun serialize(encoder: Encoder, value: NotificationType): Unit =
+        throw SerializationException("A notification type is read-only.")
 }

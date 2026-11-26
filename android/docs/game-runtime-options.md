@@ -15,7 +15,7 @@ This is a source review, not evidence of a fresh device run.
 | Uninstall | `ArchiveGameInstallationService.uninstall` | Removes or moves the game directory aside, removes the internal manifest, updates both registries, reports missing/blocked/partial removal |
 | Individual lookup | inherited `PendingGameInstallationService.findInstalled` | Returns `NotSupportedYet` |
 | Launch | `KirinGameLaunchService` and `AndroidKirinShortcut` | Checks the game directory, Kirin's pinned signer, and full SHA-256 integrity of all manifest files (ignoring extra runtime files such as saves; allowing legacy installations without a manifest), then starts Kirin's explicit shortcut intent |
-| Running detection / active sessions | inherited `PendingGameLaunchService` | Reports unsupported, not a known stopped state |
+| Running detection | inherited `PendingGameLaunchService` | Reports unsupported, not a known stopped state |
 | Open a partial-uninstall blocker | `PendingGameLocationService` | Reports unsupported |
 | Playtime | no accounting implementation | Not tracked; there is no reliable supported session-end signal |
 

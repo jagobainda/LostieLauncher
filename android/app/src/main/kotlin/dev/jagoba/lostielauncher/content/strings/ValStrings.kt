@@ -24,7 +24,6 @@ internal object ValStrings : Strings {
     override val btnUpdate = "Actualitzar"
     override val btnPlay = "Jugar"
     override val tooltipUninstall = "Desinstal·lar joc"
-    override val tooltipRefresh = "Actualitzar"
     override val uninstallConfirmTitle = "Desinstal·lar joc"
     override val uninstallConfirmMessage = "Estàs segur que vols desinstal·lar {0}? Les teues partides guardades no es perdran."
     override val uninstallNotFoundTitle = "Fitxers no trobats"

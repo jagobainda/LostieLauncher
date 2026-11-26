@@ -2,7 +2,6 @@ package dev.jagoba.lostielauncher.service.game
 
 import app.cash.turbine.test
 import dev.jagoba.lostielauncher.model.DownloadedFile
-import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
 import dev.jagoba.lostielauncher.model.GameInstallationState
@@ -88,7 +87,6 @@ class PendingGameOperationsTest {
     fun `running lookup does not claim a game is stopped`() = runTest {
         val sut = PendingGameLaunchService(logger)
 
-        sut.activeSessions.value shouldBe GameActivityState.NotSupportedYet
         sut.runningSignal(game) shouldBe GameRunningSignal.NOT_SUPPORTED_YET
         verify(exactly = 1) { logger.info(match { it.contains("Running-state lookup requested for Demo") }) }
     }

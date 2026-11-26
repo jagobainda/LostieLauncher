@@ -29,7 +29,6 @@ data class SettingsUiState(
     val theme: AppTheme,
     val language: AppLanguage,
     val strings: Strings,
-    val hasSeenWelcome: Boolean,
     val version: String,
     val autoUpdate: Boolean,
     val autoUpdateSupported: Boolean,
@@ -65,7 +64,6 @@ class SettingsViewModel @Inject constructor(
                     theme = settings.theme,
                     language = settings.language,
                     strings = stringsFor(settings.language),
-                    hasSeenWelcome = settings.hasSeenWelcome,
                     version = VersionUtils.formatDisplayVersion(version.name),
                     autoUpdate = settings.autoUpdate,
                     autoUpdateSupported = installed !is InstalledGamesState.NotSupportedYet,
@@ -84,10 +82,6 @@ class SettingsViewModel @Inject constructor(
     fun selectLanguage(language: AppLanguage) {
         logger.debug("Language changed to: $language.")
         viewModelScope.launch { store.setLanguage(language) }
-    }
-
-    fun markWelcomeSeen() {
-        viewModelScope.launch { store.setHasSeenWelcome(true) }
     }
 
     fun setAutoUpdate(enabled: Boolean) {

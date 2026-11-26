@@ -7,14 +7,11 @@ import dev.jagoba.lostielauncher.model.NewsItem
 import dev.jagoba.lostielauncher.model.NotificationItem
 import dev.jagoba.lostielauncher.service.link.ExternalLinkService
 import dev.jagoba.lostielauncher.service.presentation.LauncherDataCoordinator
-import dev.jagoba.lostielauncher.service.settings.SettingsStore
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val news: List<NewsItem> = emptyList(),
@@ -32,8 +29,7 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val coordinator: LauncherDataCoordinator,
-    private val settings: SettingsStore,
+    coordinator: LauncherDataCoordinator,
     private val externalLinks: ExternalLinkService,
 ) : ViewModel() {
     val state: StateFlow<HomeUiState> = coordinator.home.map { data ->
@@ -45,10 +41,6 @@ class HomeViewModel @Inject constructor(
             isContentStale = data.content.isStale,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, HomeUiState())
-
-    fun refresh() {
-        viewModelScope.launch { coordinator.refreshHome(settings.settings.first().language) }
-    }
 
     fun openLink(url: String) {
         externalLinks.openUrl(url)

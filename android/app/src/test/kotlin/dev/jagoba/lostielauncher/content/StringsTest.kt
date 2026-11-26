@@ -14,11 +14,11 @@ import org.junit.jupiter.params.provider.EnumSource
 class StringsTest {
 
     @Test
-    @DisplayName("declares the 92 keys kept from the desktop and the 41 Android-only keys")
+    @DisplayName("declares the 91 keys kept from the desktop and the 41 Android-only keys")
     fun `has the expected number of keys`() {
         val keys = KEYS
 
-        keys.size shouldBe 133
+        keys.size shouldBe 132
         keys.containsAll(
             setOf(
                 "statusNotSupportedYet",
@@ -113,6 +113,7 @@ class StringsTest {
             "downloadDirStepRename",
             "tooltipOpenFolder",
             "tooltipOpenHelp",
+            "tooltipRefresh",
             "folderNotFoundTitle",
             "folderNotFoundMessage",
         )

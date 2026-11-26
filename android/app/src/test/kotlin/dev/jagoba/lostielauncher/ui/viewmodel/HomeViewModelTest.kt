@@ -103,23 +103,21 @@ class HomeViewModelTest {
         runCurrent()
         sut.state.value.isOutOfDateWarningVisible shouldBe true
         content.home = HomeContent()
-        sut.refresh()
+        coordinator.refreshHome(AppLanguage.ESP)
         runCurrent()
         sut.state.value.isOutOfDateWarningVisible shouldBe false
         sut.viewModelScope.cancel()
     }
 
     @Test
-    fun `manual and timer refreshes force both content and maintenance checks`() = runTest(dispatcher) {
+    fun `timer refresh forces both content and maintenance checks`() = runTest(dispatcher) {
         val sut = createSut(backgroundScope)
         runCurrent()
         content.homeForces shouldBe listOf(false)
-        sut.refresh()
-        runCurrent()
         advanceTimeBy(2.minutes.inWholeMilliseconds)
         runCurrent()
-        content.homeForces shouldBe listOf(false, true, true)
-        content.flagForces shouldBe listOf(false, true, true)
+        content.homeForces shouldBe listOf(false, true)
+        content.flagForces shouldBe listOf(false, true)
         sut.viewModelScope.cancel()
     }
 
@@ -143,6 +141,6 @@ class HomeViewModelTest {
 
     private fun createSut(scope: CoroutineScope): HomeViewModel {
         coordinator.start(scope)
-        return HomeViewModel(coordinator, settings, links)
+        return HomeViewModel(coordinator, links)
     }
 }

@@ -9,7 +9,6 @@ import dev.jagoba.lostielauncher.model.DownloadDestination
 import dev.jagoba.lostielauncher.model.DownloadRequest
 import dev.jagoba.lostielauncher.model.DownloadSnapshot
 import dev.jagoba.lostielauncher.model.ExternalLink
-import dev.jagoba.lostielauncher.model.GameActivityState
 import dev.jagoba.lostielauncher.model.GameInfo
 import dev.jagoba.lostielauncher.model.GameInstallationRequest
 import dev.jagoba.lostielauncher.model.GameInstallationResult
@@ -186,8 +185,6 @@ internal class TestInstallation : GameInstallationService {
 }
 
 internal class TestLaunch : GameLaunchService {
-    val current = MutableStateFlow<GameActivityState>(GameActivityState.NotSupportedYet)
-    override val activeSessions: StateFlow<GameActivityState> = current
     var launchResult: GameLaunchResult = GameLaunchResult.NotSupportedYet
     var signal = GameRunningSignal.NOT_SUPPORTED_YET
     var launches = 0

@@ -24,7 +24,6 @@ internal object GalStrings : Strings {
     override val btnUpdate = "Actualizar"
     override val btnPlay = "Xogar"
     override val tooltipUninstall = "Desinstalar xogo"
-    override val tooltipRefresh = "Actualizar"
     override val uninstallConfirmTitle = "Desinstalar xogo"
     override val uninstallConfirmMessage = "Seguro que queres desinstalar {0}? As partidas gardadas non se perderán."
     override val uninstallNotFoundTitle = "Ficheiros non atopados"

@@ -24,7 +24,6 @@ internal object PorStrings : Strings {
     override val btnUpdate = "Atualizar"
     override val btnPlay = "Jogar"
     override val tooltipUninstall = "Desinstalar jogo"
-    override val tooltipRefresh = "Atualizar"
     override val uninstallConfirmTitle = "Desinstalar jogo"
     override val uninstallConfirmMessage = "Tem certeza que deseja desinstalar {0}? Seus saves não serão perdidos."
     override val uninstallNotFoundTitle = "Arquivos não encontrados"
