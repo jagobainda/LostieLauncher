@@ -64,11 +64,7 @@ fun KirinRequirement(
     }
     when {
         state.download == ApkDownloadState.Failed -> LauncherMessageBox(
-            spec = MessageBoxSpec(
-                strings.downloadErrorTitle,
-                strings.downloadErrorMessage,
-                icon = MessageBoxIcon.ERROR,
-            ),
+            spec = errorMessageBox(strings.downloadErrorTitle, strings.downloadErrorMessage),
             onConfirm = viewModel::dismissDownloadFailure,
             onDismiss = viewModel::dismissDownloadFailure,
         )

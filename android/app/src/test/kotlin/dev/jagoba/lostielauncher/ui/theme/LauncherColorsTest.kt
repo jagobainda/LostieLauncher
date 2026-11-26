@@ -1,5 +1,6 @@
 package dev.jagoba.lostielauncher.ui.theme
 
+import dev.jagoba.lostielauncher.model.AppTheme
 import io.kotest.matchers.shouldBe
 import java.lang.reflect.Modifier
 import org.junit.jupiter.api.DisplayName
@@ -39,5 +40,17 @@ class LauncherColorsTest {
         val hasCopy = names.any { it.startsWith("copy") } && names.any { it.startsWith("component1") }
 
         hasCopy shouldBe true
+    }
+
+    @Test
+    @DisplayName("accentButton resolves idle, hover, pressed and disabled states")
+    fun `accentButton resolves pressed, hovered, idle and disabled colors`() {
+        val colors = paletteFor(AppTheme.Volcarona)
+
+        colors.accentButton(enabled = true, pressed = false, hovered = false) shouldBe colors.primaryFg
+        colors.accentButton(enabled = true, pressed = false, hovered = true) shouldBe colors.primaryFgHover
+        colors.accentButton(enabled = true, pressed = true, hovered = false) shouldBe colors.primaryFgPressed
+        colors.accentButton(enabled = true, pressed = true, hovered = true) shouldBe colors.primaryFgPressed
+        colors.accentButton(enabled = false, pressed = true, hovered = true) shouldBe colors.primaryFg
     }
 }

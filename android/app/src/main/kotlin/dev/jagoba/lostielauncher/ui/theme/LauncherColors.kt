@@ -20,3 +20,9 @@ data class LauncherColors(
     val overlayMedium: Color,
     val overlayStrong: Color,
 )
+
+internal fun LauncherColors.accentButton(enabled: Boolean, pressed: Boolean, hovered: Boolean): Color = when {
+    enabled && pressed -> primaryFgPressed
+    enabled && hovered -> primaryFgHover
+    else -> primaryFg
+}

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,13 +37,13 @@ import dev.jagoba.lostielauncher.content.Strings
 import dev.jagoba.lostielauncher.model.AppLanguage
 import dev.jagoba.lostielauncher.model.AppTheme
 import dev.jagoba.lostielauncher.ui.component.LauncherComboBox
+import dev.jagoba.lostielauncher.ui.component.LauncherDivider
 import dev.jagoba.lostielauncher.ui.component.StatusNotice
 import dev.jagoba.lostielauncher.ui.dialog.DialogButton
 import dev.jagoba.lostielauncher.ui.dialog.DialogButtonStyle
 import dev.jagoba.lostielauncher.ui.dialog.LauncherMessageBox
 import dev.jagoba.lostielauncher.ui.dialog.MessageBoxIcon
 import dev.jagoba.lostielauncher.ui.dialog.MessageBoxSpec
-import dev.jagoba.lostielauncher.ui.theme.LauncherBorders
 import dev.jagoba.lostielauncher.ui.theme.LauncherRadii
 import dev.jagoba.lostielauncher.ui.theme.LauncherSizes
 import dev.jagoba.lostielauncher.ui.theme.LauncherSpacing
@@ -83,7 +82,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     onValueChange = viewModel::setAutoUpdate,
                 ),
             ) { ToggleSwitch(state.autoUpdate) }
-            SettingsDivider()
+            LauncherDivider()
             SettingsRow(icon = R.drawable.ic_settings_refresh, label = state.version) {
                 DialogButton(
                     label = strings.settingsCheckForUpdates,
@@ -103,7 +102,7 @@ fun SettingsScreen(modifier: Modifier = Modifier, viewModel: SettingsViewModel =
                     onSelect = viewModel::selectLanguage,
                 )
             }
-            SettingsDivider()
+            LauncherDivider()
             SettingsRow(icon = R.drawable.ic_settings_palette, label = strings.settingsTheme) {
                 LauncherComboBox(
                     options = AppTheme.entries,
@@ -198,17 +197,6 @@ private fun SettingsRow(
             control()
         }
     }
-}
-
-@Composable
-private fun SettingsDivider() {
-    Box(
-        Modifier
-            .padding(horizontal = LauncherSpacing.Card)
-            .fillMaxWidth()
-            .height(LauncherBorders.Thin)
-            .background(LocalLauncherColors.current.overlayLight),
-    )
 }
 
 @Composable

@@ -3,7 +3,6 @@ package dev.jagoba.lostielauncher.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.jagoba.lostielauncher.content.stringsFor
 import dev.jagoba.lostielauncher.model.ApkDownloadState
 import dev.jagoba.lostielauncher.model.ExternalLink
 import dev.jagoba.lostielauncher.model.KirinStatus
@@ -35,7 +34,6 @@ data class KirinUpdateUiState(
 
 data class MainUiState(
     val section: LauncherSection = LauncherSection.HOME,
-    val title: String = "",
     val isOffline: Boolean = false,
     val isTwitchLive: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -96,20 +94,11 @@ class MainViewModel @Inject constructor(
     private val updates = combine(kirinUpdate, launcherUpdate.offeredVersion, launcherUpdate.download, ::UpdatesState)
     private val shell = combine(
         navigation.state,
-        settings.settings,
         coordinator.home,
         coordinator.catalogue,
-    ) { navigation, settings, home, catalogue ->
-        val strings = stringsFor(settings.language)
+    ) { navigation, home, catalogue ->
         MainUiState(
             section = navigation.section,
-            title = when (navigation.section) {
-                LauncherSection.HOME -> strings.titleHome
-                LauncherSection.GAMES -> strings.titleGames
-                LauncherSection.LIBRARY -> strings.titleLibrary
-                LauncherSection.FAQS -> strings.titleFaqs
-                LauncherSection.SETTINGS -> strings.titleSettings
-            },
             isOffline = home.isOffline,
             isTwitchLive = home.isTwitchLive,
             canRefresh = !home.isLoading && !catalogue.isLoading,

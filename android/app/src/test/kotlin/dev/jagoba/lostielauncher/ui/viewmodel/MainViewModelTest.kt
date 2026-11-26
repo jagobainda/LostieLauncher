@@ -71,7 +71,7 @@ class MainViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `defaults to home and navigates with a localized title`() = runTest(dispatcher) {
+    fun `defaults to home and navigates between sections`() = runTest(dispatcher) {
         coordinator.refreshHome(AppLanguage.ESP)
         coordinator.refreshCatalogue()
         val sut = createSut()
@@ -80,10 +80,6 @@ class MainViewModelTest {
         sut.navigate(LauncherSection.GAMES)
         runCurrent()
         sut.state.value.section shouldBe LauncherSection.GAMES
-        sut.state.value.title shouldBe dev.jagoba.lostielauncher.content.stringsFor(AppLanguage.ESP).titleGames
-        settings.current.value = settings.current.value.copy(language = AppLanguage.FRA)
-        runCurrent()
-        sut.state.value.title shouldBe dev.jagoba.lostielauncher.content.stringsFor(AppLanguage.FRA).titleGames
     }
 
     @Test

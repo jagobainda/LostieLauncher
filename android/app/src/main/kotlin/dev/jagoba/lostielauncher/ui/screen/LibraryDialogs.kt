@@ -199,5 +199,9 @@ internal fun LibraryNotice.messageBox(strings: Strings): MessageBoxSpec = when (
     )
 }
 
-internal fun errorMessageBox(title: String, message: String, buttons: MessageBoxButtons = MessageBoxButtons.OK) =
-    MessageBoxSpec(title, message, buttons, MessageBoxIcon.ERROR)
+internal fun errorMessageBox(
+    title: String,
+    message: String,
+    buttons: MessageBoxButtons = MessageBoxButtons.OK,
+    protectFromOverlays: Boolean = false,
+) = MessageBoxSpec(title, message, buttons, MessageBoxIcon.ERROR, protectFromOverlays)
