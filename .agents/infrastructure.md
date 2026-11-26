@@ -8,6 +8,11 @@
 - [Dependabot](../.github/dependabot.yml) scans NuGet in `/desktop`, Gradle in
   `/android` and GitHub Actions in `/`. Add an ecosystem without repointing
   another one. Velopack is explicitly excluded and maintained manually.
+- [Dependency submission](../.github/workflows/dependency-submission.yml)
+  sends the resolved Android Gradle graph to GitHub on every push to `main`,
+  so Dependabot alerts and security updates also cover transitive Gradle
+  dependencies. Alerts, security updates, secret scanning and push protection
+  are repository settings, not files.
 - [CODEOWNERS](../.github/CODEOWNERS) covers project files, Gradle build files,
   the version catalogue and workflows. Preserve pattern scope when moving files.
 - Root [.editorconfig](../.editorconfig) defines the baseline and `root = true`.

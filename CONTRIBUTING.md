@@ -234,6 +234,12 @@ automatically assigned as reviewer on those PRs. Velopack is excluded from
 automatic updates and maintained manually. You do not need to update
 dependencies unless your change requires it.
 
+Security advisories reach the maintainer through **Dependabot alerts** and
+security update PRs. For Android, the
+[dependency submission workflow](.github/workflows/dependency-submission.yml)
+sends the full Gradle graph on every push to `main`, so advisories for
+transitive dependencies are reported too.
+
 ---
 
 ## ✔️ Acceptance requirements
