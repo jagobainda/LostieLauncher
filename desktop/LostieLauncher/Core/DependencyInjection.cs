@@ -22,13 +22,11 @@ public static class DependencyInjection
     {
         var services = new ServiceCollection();
 
-        // Configuration
         services.AddSingleton(new ContentOptions(ContentEndpoint: ContentEndpoint, NotificationsEndpoint: NotificationsEndpoint, FlagEndpoint: FlagEndpoint));
         services.AddSingleton(new DownloadOptions(BaseUrl: DownloadBaseUrl));
         services.AddSingleton(new UpdateOptions(FeedUrl: UpdateFeedUrl));
         services.AddSingleton(new TwitchLiveOptions(PreviewUrl: TwitchPreviewUrl));
 
-        // Services
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IWindowsStartupService, WindowsStartupService>();
         services.AddSingleton<IContentService, ContentService>();
@@ -62,7 +60,6 @@ public static class DependencyInjection
         })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 
-        // ViewModels
         services.AddSingleton<GlobalViewModel>();
         services.AddSingleton<HomeViewModel>();
         services.AddSingleton<GamesViewModel>();
@@ -71,7 +68,6 @@ public static class DependencyInjection
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<MainViewModel>();
 
-        // Views
         services.AddSingleton<MainWindow>();
 
         var provider = services.BuildServiceProvider();

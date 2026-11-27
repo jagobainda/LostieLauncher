@@ -5,17 +5,10 @@ using LostieLauncher.Views.Dialogs;
 
 namespace LostieLauncher.Services;
 
-/// <summary>
-/// Seam over the WPF dialogs about the download location, so the ViewModels that
-/// decide when to show them can be unit tested without instantiating Windows or
-/// pumping a real Dispatcher. Mirrors <see cref="IUpdateNotifier"/>.
-/// </summary>
 public interface IDownloadLocationNotifier
 {
-    /// <summary>Tells the user the folder cannot finalize downloads, naming it and the step that failed.</summary>
     public void NotifyDirectoryNotUsable(DirectoryProbeResult result);
 
-    /// <summary>Warns that the folder is OneDrive-synced. Returns <c>true</c> to use it anyway.</summary>
     public bool ConfirmOneDriveDirectory(string directory);
 }
 

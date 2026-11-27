@@ -22,8 +22,6 @@ public class ProcessUtilsTests
 
         ProcessUtils.RestartApplication(restarter);
 
-        // The single-instance lock MUST be released before the child starts, or the child sees
-        // the mutex held and shuts itself down (the original BUG-007 defect).
         Received.InOrder(() =>
         {
             restarter.ReleaseSingleInstanceLock();
@@ -69,7 +67,6 @@ public class ProcessUtilsTests
         var act = () => ProcessUtils.RestartApplication(restarter);
 
         Should.NotThrow(act);
-        // The child never started: restore the lock so single-instance still holds, and stay alive.
         Received.InOrder(() =>
         {
             restarter.ReleaseSingleInstanceLock();

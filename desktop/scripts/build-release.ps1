@@ -1,49 +1,3 @@
-<#
-.SYNOPSIS
-    Builds and packages LostieLauncher for release using Velopack.
-
-.DESCRIPTION
-    1. Reads the version from the .csproj and checks it matches the channel
-    2. Publishes a self-contained win-x64 build
-    3. Packages it with `vpk pack` (Velopack signs its own binaries + the app)
-    4. Optionally uploads the releases/ folder to the server via SCP
-
-.PARAMETER Sign
-    If set, signs all binaries (app + Velopack internals) with the Certum smart card.
-    Requires the ACS ACR39U reader connected with the Certum card inserted.
-
-.PARAMETER CertThumbprint
-    SHA1 thumbprint of the code-signing certificate. Required when -Sign is set.
-
-.PARAMETER Upload
-    If set, uploads the output to the configured remote server.
-
-.PARAMETER SshHost
-    SSH host for upload (e.g. user@yourserver.com). Required when -Upload is set.
-
-.PARAMETER SshPath
-    Remote path on the server (e.g. /var/www/ericlostie-launcher/public/installer/).
-    Required when -Upload is set.
-
-.PARAMETER Channel
-    Velopack release channel. Defaults to "win" (stable); use "pre" for pre-release builds.
-    Installs only receive updates from the channel their installer was built for.
-    "win" requires a stable version (X.Y.Z); "pre" requires a pre-release one (X.Y.Z-pre.N).
-
-.PARAMETER AllowStableOnPre
-    Allows packing a stable version on the "pre" channel. Use it when promoting a version
-    to stable, so pre installs also move from X.Y.Z-pre.N to X.Y.Z.
-
-.EXAMPLE
-    Paths are relative to the repository root of the monorepo.
-
-    .\desktop\scripts\build-release.ps1
-    .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..."
-    .\desktop\scripts\build-release.ps1 -Sign -CertThumbprint "20ed2e50..." -Upload -SshHost "user@jagoba.dev" -SshPath "/var/www/installer/"
-    .\desktop\scripts\build-release.ps1 -Channel pre
-    .\desktop\scripts\build-release.ps1 -Channel pre -AllowStableOnPre
-#>
-
 param(
     [switch]$Sign,
     [switch]$Upload,
@@ -57,21 +11,15 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── Config ────────────────────────────────────────────────────────────────────
 $TimestampUrl   = "http://time.certum.pl"
 $SigntoolExe    = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
-# This is a monorepo: the script sits in desktop/scripts/, so its parent is the
-# desktop side and not the repository root. Every path below — the publish and
-# releases output included — is therefore scoped to desktop/.
 $DesktopRoot = Split-Path $PSScriptRoot -Parent
 $ProjectFile = Join-Path $DesktopRoot "LostieLauncher\LostieLauncher.csproj"
 $PublishDir  = Join-Path $DesktopRoot "publish"
 $ReleasesDir = Join-Path $DesktopRoot "releases"
 $IconFile    = Join-Path $DesktopRoot "LostieLauncher\Assets\app.ico"
 
-# ── Read version from .csproj ─────────────────────────────────────────────────
 $Version = "$(dotnet msbuild $ProjectFile -getProperty:Version)".Trim()
 
 if ($LASTEXITCODE -ne 0 -or $Version -notmatch '^\d+\.\d+\.\d+(-pre\.\d+)?$') {
@@ -101,7 +49,6 @@ if ($Sign) {
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Validate signtool if signing ──────────────────────────────────────────────
 if ($Sign) {
     if (-not $CertThumbprint) {
         Write-Error "-CertThumbprint is required when using -Sign."
@@ -113,11 +60,9 @@ if ($Sign) {
     }
 }
 
-# ── Clean ─────────────────────────────────────────────────────────────────────
 Write-Host "[1/3] Cleaning previous output..." -ForegroundColor Yellow
 Remove-Item $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
 
-# ── Publish ───────────────────────────────────────────────────────────────────
 Write-Host "[2/3] Publishing (win-x64, self-contained)..." -ForegroundColor Yellow
 dotnet publish $ProjectFile `
     --configuration Release `
@@ -129,10 +74,6 @@ dotnet publish $ProjectFile `
 
 if ($LASTEXITCODE -ne 0) { Write-Error "dotnet publish failed."; exit 1 }
 
-# ── Pack with vpk (+ signing) ─────────────────────────────────────────────────
-# NOTE: Velopack must handle ALL signing itself because it signs its own
-# internal binaries (Setup.exe, Update.exe) during the pack process.
-# Signing only the app .exe beforehand is NOT sufficient.
 Write-Host "[3/3] Packaging with vpk..." -ForegroundColor Yellow
 
 $vpkArgs = @(
@@ -166,7 +107,6 @@ Write-Host "✅ Package ready in: $ReleasesDir" -ForegroundColor Green
 Write-Host ""
 Get-ChildItem $ReleasesDir | Format-Table Name, Length -AutoSize
 
-# ── Optional upload ───────────────────────────────────────────────────────────
 if ($Upload) {
     if (-not $SshHost) { Write-Error "-SshHost is required when using -Upload."; exit 1 }
 

@@ -13,14 +13,11 @@ public class TwitchLiveServiceTests
     [Fact]
     public async Task IsLiveAsync_WhenThePreviewExists_ReturnsTrue()
     {
-        // Arrange
         var handler = _httpFactory.HandlerFor("TwitchPreview").RespondWithStatus("live_user_channel.jpg", HttpStatusCode.OK, method: HttpMethod.Head);
         var sut = CreateSut();
 
-        // Act
         var live = await sut.IsLiveAsync();
 
-        // Assert
         live.ShouldBeTrue();
         handler.Requests.ShouldHaveSingleItem().Method.ShouldBe(HttpMethod.Head);
     }
@@ -30,14 +27,11 @@ public class TwitchLiveServiceTests
     [InlineData(HttpStatusCode.NotFound)]
     public async Task IsLiveAsync_WhenThePreviewIsNotServed_ReturnsFalse(HttpStatusCode statusCode)
     {
-        // Arrange — an offline channel redirects to a placeholder image.
         _httpFactory.HandlerFor("TwitchPreview").RespondWithStatus("live_user_channel.jpg", statusCode);
         var sut = CreateSut();
 
-        // Act
         var live = await sut.IsLiveAsync();
 
-        // Assert
         live.ShouldBeFalse();
     }
 
@@ -47,14 +41,11 @@ public class TwitchLiveServiceTests
     [InlineData(typeof(InvalidOperationException))]
     public async Task IsLiveAsync_WhenTheCheckFails_ReturnsFalse(Type exceptionType)
     {
-        // Arrange
         _httpFactory.HandlerFor("TwitchPreview").Respond(_ => throw (Exception)Activator.CreateInstance(exceptionType)!);
         var sut = CreateSut();
 
-        // Act
         var live = await sut.IsLiveAsync();
 
-        // Assert
         live.ShouldBeFalse();
     }
 }

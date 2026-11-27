@@ -4,15 +4,9 @@ namespace LostieLauncher.Tests.Utils;
 
 public class GameArchiveInstallerTests
 {
-    // ---- Extraction never runs over a surviving .tmp (wave 2) -------------------------------
-
     [Fact]
     public async Task ExtractAsync_WhenTheLeftoverTempDirectoryCannotBeCleared_AbortsAndLeavesTheInstallUntouched()
     {
-        // Arrange — an aborted extraction left a .tmp behind and a lock (an antivirus still scanning
-        // the freshly written files, realistically) keeps it there. Directory.CreateDirectory is a
-        // no-op on it, so extraction used to proceed into the survivor and promote a mixture of two
-        // versions into the live install, reporting success the whole way.
         using var root = new TempDirectoryFixture("extract-leftover");
         var extractDir = root.Combine("Demo");
         var tempDir = extractDir + ".tmp";
@@ -26,11 +20,8 @@ public class GameArchiveInstallerTests
         var zipPath = root.Combine("demo.zip");
         File.WriteAllBytes(zipPath, ValidZipArchiveWithSingleEntry());
 
-        // Act
         await Should.ThrowAsync<IOException>(() => GameArchiveInstaller.ExtractAsync(zipPath, extractDir));
 
-        // Assert — the failure surfaces (the caller turns it into the update-failure dialog) and the
-        // live installation still holds exactly the version it had before.
         File.ReadAllText(Path.Combine(extractDir, "game.exe")).ShouldBe("v1.0");
         Directory.EnumerateFiles(extractDir).Count().ShouldBe(1);
         File.Exists(strandedPath).ShouldBeTrue();
@@ -39,8 +30,6 @@ public class GameArchiveInstallerTests
     [Fact]
     public async Task ExtractAsync_WhenTheLeftoverTempDirectoryCanBeCleared_InstallsTheNewVersion()
     {
-        // Arrange — same leftover, nothing holding it: the abort must be about the failed cleanup,
-        // not about the .tmp merely being there.
         using var root = new TempDirectoryFixture("extract-leftover-clean");
         var extractDir = root.Combine("Demo");
         Directory.CreateDirectory(extractDir);
@@ -51,23 +40,18 @@ public class GameArchiveInstallerTests
         var zipPath = root.Combine("demo.zip");
         File.WriteAllBytes(zipPath, ValidZipArchiveWithSingleEntry());
 
-        // Act
         await GameArchiveInstaller.ExtractAsync(zipPath, extractDir);
 
-        // Assert — only what the archive carries is installed; the stranded file did not survive.
         File.ReadAllText(Path.Combine(extractDir, "game.exe")).ShouldBe("v2.0");
         File.Exists(Path.Combine(extractDir, "stranded.bin")).ShouldBeFalse();
         Directory.Exists(extractDir + ".tmp").ShouldBeFalse();
     }
-
-    // -------------------- Extraction progress --------------------
 
     [Theory]
     [InlineData(1, 4 * 1024 * 1024)]
     [InlineData(50, 1)]
     public async Task ExtractAsync_ReportsIncreasingProgressFromZeroTo100(int fileCount, int fileSize)
     {
-        // Arrange — one large file advances by bytes written; many tiny ones by their per-entry cost.
         using var root = new TempDirectoryFixture("extract-progress");
         var zipPath = root.Combine("demo.zip");
         File.WriteAllBytes(zipPath, ZipArchiveWithFiles(fileCount, fileSize));
@@ -75,10 +59,8 @@ public class GameArchiveInstallerTests
         var progress = Substitute.For<IProgress<int>>();
         progress.When(p => p.Report(Arg.Any<int>())).Do(c => reports.Add(c.Arg<int>()));
 
-        // Act
         await GameArchiveInstaller.ExtractAsync(zipPath, root.Combine("Demo"), progress);
 
-        // Assert
         reports.First().ShouldBe(0);
         reports.Last().ShouldBe(100);
         reports.ShouldBe(reports.Distinct().Order());
@@ -100,7 +82,6 @@ public class GameArchiveInstallerTests
         return buffer.ToArray();
     }
 
-    /// <summary>A minimal, stored zip holding a single <c>game.exe</c> with "v2.0".</summary>
     private static byte[] ValidZipArchiveWithSingleEntry()
     {
         using var buffer = new MemoryStream();
@@ -111,12 +92,9 @@ public class GameArchiveInstallerTests
         return buffer.ToArray();
     }
 
-    // -------------------- AtomicSwapDirectories --------------------
-
     [Fact]
     public void AtomicSwapDirectories_FreshInstall_MovesSourceToTargetAndCleansUp()
     {
-        // Arrange — no existing target directory (fresh install)
         using var root = new TempDirectoryFixture("atomicswap-fresh");
         var source = root.Combine("source");
         var backup = root.Combine("backup");
@@ -125,10 +103,8 @@ public class GameArchiveInstallerTests
         Directory.CreateDirectory(source);
         File.WriteAllText(Path.Combine(source, "game.exe"), "v1.0");
 
-        // Act
         GameArchiveInstaller.AtomicSwapDirectories(source, backup, target);
 
-        // Assert — source is gone, target exists with the file, backup does not exist
         Directory.Exists(source).ShouldBeFalse();
         Directory.Exists(target).ShouldBeTrue();
         File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
@@ -139,7 +115,6 @@ public class GameArchiveInstallerTests
     [Fact]
     public void AtomicSwapDirectories_Update_SwapsTargetToBackupSourceToTargetAndDeletesBackup()
     {
-        // Arrange — existing target directory (update scenario)
         using var root = new TempDirectoryFixture("atomicswap-update");
         var source = root.Combine("source");
         var backup = root.Combine("backup");
@@ -153,10 +128,8 @@ public class GameArchiveInstallerTests
         File.WriteAllText(Path.Combine(target, "game.exe"), "v1.0");
         File.WriteAllText(Path.Combine(target, "old.dll"), "orphan");
 
-        // Act
         GameArchiveInstaller.AtomicSwapDirectories(source, backup, target);
 
-        // Assert — source gone, target has only v2.0 files (BUG-029: no orphan old.dll), backup gone
         Directory.Exists(source).ShouldBeFalse();
         Directory.Exists(target).ShouldBeTrue();
         File.Exists(Path.Combine(target, "game.exe")).ShouldBeTrue();
@@ -169,7 +142,6 @@ public class GameArchiveInstallerTests
     [Fact]
     public void AtomicSwapDirectories_LeftoverBackup_IsCleanedBeforeSwap()
     {
-        // Arrange — a leftover .old directory from a previous crashed swap
         using var root = new TempDirectoryFixture("atomicswap-leftover");
         var source = root.Combine("source");
         var backup = root.Combine("backup");
@@ -184,10 +156,8 @@ public class GameArchiveInstallerTests
         Directory.CreateDirectory(backup);
         File.WriteAllText(Path.Combine(backup, "stale.txt"), "leftover-from-crash");
 
-        // Act
         GameArchiveInstaller.AtomicSwapDirectories(source, backup, target);
 
-        // Assert — stale backup was cleaned, swap succeeded normally
         Directory.Exists(source).ShouldBeFalse();
         Directory.Exists(target).ShouldBeTrue();
         File.ReadAllText(Path.Combine(target, "game.exe")).ShouldBe("fresh");

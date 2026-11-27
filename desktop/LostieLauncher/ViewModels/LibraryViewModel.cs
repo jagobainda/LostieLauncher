@@ -402,13 +402,6 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
-    /// <summary>
-    /// Pre-flight on the folder the download will be finalized in. A folder that grants write
-    /// but not delete accepts the whole transfer and only fails at the closing rename, so
-    /// without this check the user pays a full download per game to learn it cannot work.
-    /// Nothing about the session or the game state is touched when it blocks: the download
-    /// simply never starts.
-    /// </summary>
     private bool EnsureDownloadDirectoryUsable(DownloadSession session)
     {
         var directory = Path.GetDirectoryName(session.ZipPath);
@@ -635,7 +628,6 @@ public partial class LibraryViewModel : ObservableObject
         return _sessions.TryGetValue(gameId, out var session) ? session : null;
     }
 
-    /// <summary>Scopes a confirmation to the transfer phase; the token dismisses its dialog.</summary>
     internal static bool ConfirmDownloadCancellation(GameInfo game, Func<CancellationToken, bool?> show)
     {
         bool InTransfer() => game.DownloadStatus is GameDownloadStatus.Downloading or GameDownloadStatus.Paused;

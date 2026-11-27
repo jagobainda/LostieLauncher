@@ -1,42 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!--
-      net10.0-windows is required because the project under test (LostieLauncher) is a WPF
-      application targeting net10.0-windows. We intentionally do NOT enable UseWPF nor
-      UseWindowsForms here: unit tests must not load XAML, instantiate Windows or pump a
-      real Dispatcher, so they can run on a headless Windows CI agent (no desktop session).
-    -->
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
 
-    <!--
-      xUnit v3 ships tests as a standalone executable instead of a class library.
-      OutputType=Exe is mandatory for the v3 runner. Since xunit.v3 4.x the tests run on
-      Microsoft.Testing.Platform: the .NET 10 SDK dropped the VSTest bridge, so `dotnet test`
-      only discovers them because global.json opts this repo into the MTP test runner.
-    -->
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
 
-    <!--
-      Treat warnings as errors in tests too. Suppress:
-        xUnit1031 — async wait inside test (we drain via PumpAsync helpers).
-        xUnit1051 — recommends TestContext.Current.CancellationToken; opt-in style only,
-                    not a correctness issue. Migrate per-test if/when desired.
-    -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);xUnit1031;xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-      Test framework: xUnit v3 (xunit 2.x is now in maintenance-only mode).
-      The xunit.v3 metapackage transitively pulls xunit.v3.core and xunit.v3.assert.
-    -->
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageReference Include="xunit.v3" Version="4.0.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
@@ -44,21 +22,17 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 
-    <!-- Mocking -->
     <PackageReference Include="NSubstitute" Version="6.2.0" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp" Version="1.0.17">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <!-- Assertions: Shouldly is MIT-licensed (FluentAssertions v8+ is paid). -->
     <PackageReference Include="Shouldly" Version="4.3.0" />
 
-    <!-- DI helpers (the production project uses Microsoft.Extensions.DI). -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
 
-    <!-- Coverage -->
     <PackageReference Include="coverlet.collector" Version="10.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -70,13 +44,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Mirror production folders so authors can find the matching tests easily. -->
     <Folder Include="Services\" />
     <Folder Include="ViewModels\" />
     <Folder Include="Utils\" />
     <Folder Include="Models\" />
     <Folder Include="Helpers\" />
-    <!-- Reserved for future integration tests; keep separate from unit tests. -->
     <Folder Include="Integration\" />
   </ItemGroup>
 

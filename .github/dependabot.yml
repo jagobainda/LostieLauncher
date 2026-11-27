@@ -1,41 +1,23 @@
 version: 2
 updates:
-    # Dependencias NuGet del proyecto (CommunityToolkit.Mvvm, MahApps, SharpCompress, etc.)
-    # Monorepo: the .NET projects live under desktop/, so that is the directory
-    # Dependabot must scan. github-actions below stays at the repository root.
     - package-ecosystem: nuget
       directory: /desktop
       schedule:
           interval: weekly
       open-pull-requests-limit: 10
       groups:
-          # Agrupa las actualizaciones menores/patch en un solo PR para reducir ruido.
           minor-and-patch:
               update-types:
                   - minor
                   - patch
-          # Microsoft.Extensions.* majors must move together: each package
-          # requires the same major of the others, so a PR bumping only one
-          # fails to restore with NU1605 (package downgrade). Listed after
-          # minor-and-patch so their minor and patch updates stay in that group.
           microsoft-extensions-major:
               patterns:
                   - "Microsoft.Extensions.*"
               update-types:
                   - major
       ignore:
-          # Velopack es la dependencia crítica de auto-actualización: no queremos
-          # NINGÚN PR automático (ni de versión ni de seguridad). Se gestiona a mano.
           - dependency-name: Velopack
 
-    # Gradle dependencies of the Android project (AGP, Kotlin, Compose, Hilt...).
-    # Its own ecosystem and its own directory: the nuget entry above is left
-    # alone. Dependabot reads gradle/libs.versions.toml, which is where this
-    # side declares every version it uses.
-    #
-    # Gradle has no equivalent of `dotnet list package --vulnerable`, so this
-    # entry is also the channel through which the Android side's security
-    # advisories arrive.
     - package-ecosystem: gradle
       directory: /android
       schedule:
@@ -47,7 +29,6 @@ updates:
                   - minor
                   - patch
 
-    # Las propias actions usadas en los workflows (checkout, setup-dotnet...).
     - package-ecosystem: github-actions
       directory: /
       schedule:

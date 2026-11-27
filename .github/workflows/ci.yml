@@ -6,16 +6,6 @@ on:
     pull_request:
         branches: [main, development]
 
-# Two sides, two toolchains, two sets of jobs. Each job sets the
-# `working-directory` of the side it belongs to and runs exactly the commands
-# documented in that side's .agents/build-and-validation.md, so local checks
-# and the pipeline exercise the same gates.
-#
-#   desktop-*  WPF / .NET, windows-latest, working-directory: desktop
-#   android-*  Gradle / Kotlin, ubuntu-latest, working-directory: android
-#
-# Every job name starts with its side, so a PR's check list says which side
-# failed. A new job follows the same rule.
 jobs:
     desktop-format-check:
         runs-on: windows-latest
@@ -155,10 +145,6 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v6
 
-            # The full local gate in android/.agents/build-and-validation.md is
-            # split across android-build-and-test, android-lint and
-            # android-release-build so lint and R8 run on separate runners
-            # instead of competing for the same cores.
             - name: Build and test
               run: ./gradlew assembleDebug testDebugUnitTest
 
@@ -192,7 +178,6 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v6
 
-            # Static-analysis gate (warningsAsErrors, abortOnError).
             - name: Lint
               run: ./gradlew lintDebug
 
@@ -224,7 +209,6 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v6
 
-            # Proves the release source set and R8 still build.
             - name: Assemble release
               run: ./gradlew assembleRelease
 

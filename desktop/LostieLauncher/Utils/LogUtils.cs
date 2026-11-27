@@ -31,10 +31,6 @@ public static class Logs
 
     public static void InfoLogManager(string mensaje) => AddLog(CreateLogString("INFO", mensaje));
 
-    /// <summary>
-    /// Logs a failed remote call: a network failure or timeout as a single INFO line, so an offline
-    /// session does not bury real errors, and anything else as an ERROR with its stack trace.
-    /// </summary>
     public static void NetworkFailureLogManager(Exception e, string operation, string outcome)
     {
         if (IsNetworkFailure(e))
@@ -53,7 +49,6 @@ public static class Logs
         }
         catch
         {
-            // Ignored
         }
     }
 
@@ -84,7 +79,6 @@ public static class Logs
         }
         catch
         {
-            // Ignored — losing a log line is always preferable to crashing the caller.
         }
     }
 

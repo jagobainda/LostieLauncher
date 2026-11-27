@@ -43,11 +43,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial string DownloadDirectory { get; set; } = DownloadDefaults.DownloadDirectory;
 
-    /// <summary>The folder the games actually land in, shown so the user never has to guess.</summary>
     [ObservableProperty]
     public partial string GamesRootDirectory { get; set; } = string.Empty;
 
-    /// <summary>Drives the Settings warning banner for a library that already sits under OneDrive.</summary>
     [ObservableProperty]
     public partial bool IsDownloadDirectoryOneDriveSynced { get; set; }
 
@@ -169,9 +167,6 @@ public partial class SettingsViewModel : ObservableObject
             var succeeded = value ? _windowsStartupService.Enable() : _windowsStartupService.Disable();
             if (!succeeded)
             {
-                // The registry write failed (e.g. ProcessPath unavailable or the run key is not
-                // writable): revert the toggle to the real state so the UI never shows "on" for a
-                // startup entry that was never written (BUG-052).
                 _isLoading = true;
                 try
                 {
@@ -205,12 +200,6 @@ public partial class SettingsViewModel : ObservableObject
         RefreshGamesRootState();
     }
 
-    /// <summary>
-    /// Recomputes what the Settings screen says about the library location. The OneDrive
-    /// check runs on every load too, so a user who installed while the default was still
-    /// Documents is told their library sits in a synced folder instead of silently keeping
-    /// it there.
-    /// </summary>
     private void RefreshGamesRootState()
     {
         try
@@ -289,11 +278,6 @@ public partial class SettingsViewModel : ObservableObject
         DownloadDirectory = dialog.FolderName;
     }
 
-    /// <summary>
-    /// Gates a freshly picked folder: a folder that grants write but not delete would accept
-    /// gigabytes and then fail the rename that finalizes every download, and a OneDrive-synced
-    /// folder is a bad host the user should at least be warned about.
-    /// </summary>
     private bool AcceptDownloadDirectory(string directory)
     {
         var probe = _downloadLocationService.Probe(directory);

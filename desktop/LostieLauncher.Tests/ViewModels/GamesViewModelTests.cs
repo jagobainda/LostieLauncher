@@ -20,8 +20,6 @@ public class GamesViewModelTests
         _contentService.GetGamesAsync().Returns([]);
         _contentService.GetLocalGamesAsync().Returns([]);
         _contentService.GetAllPlaytimesAsync().Returns(new Dictionary<Guid, int>());
-        // GetGameDirectory is invoked for HasHelpSubfolder; return a path that does not exist
-        // so that branch returns false without touching real disk.
         _contentService.GetGameDirectory(Arg.Any<string>()).Returns(ci => Path.Combine(Path.GetTempPath(), "LostieLauncherTests-nonexistent", ci.Arg<string>()!));
     }
 
@@ -33,7 +31,6 @@ public class GamesViewModelTests
         var library = CreateLibrary();
         await library.LibraryLoadedTask;
         var sut = new GamesViewModel(_contentService, library, _globalViewModel, uninstallDeparture ?? TimeSpan.Zero);
-        // Wait for the constructor's fire-and-forget LoadInstalledGamesAsync to finish.
         await sut.RefreshAsync();
         return sut;
     }
@@ -41,10 +38,8 @@ public class GamesViewModelTests
     [Fact]
     public async Task Constructor_WithNoLocalGames_LeavesInstalledListEmpty()
     {
-        // Arrange & Act
         var vm = await CreateSutAsync();
 
-        // Assert
         vm.InstalledGames.ShouldBeEmpty();
         vm.IsLoading.ShouldBeFalse();
         vm.IsEmpty.ShouldBeTrue();
@@ -54,17 +49,14 @@ public class GamesViewModelTests
     [Fact]
     public async Task LoadInstalledGames_PopulatesEntriesFromLocalRegistry()
     {
-        // Arrange
         var id = Guid.NewGuid();
         _contentService.GetLocalGamesAsync().Returns([
             TestData.LocalGame(name: "Demo", version: "1.0.0", id: id)
         ]);
         _contentService.GetAllPlaytimesAsync().Returns(new Dictionary<Guid, int> { [id] = 15 });
 
-        // Act
         var vm = await CreateSutAsync();
 
-        // Assert
         var installed = vm.InstalledGames.Single();
         installed.Nombre.ShouldBe("Demo");
         installed.InstalledVersion.ShouldBe("1.0.0");
@@ -74,9 +66,6 @@ public class GamesViewModelTests
     [Fact]
     public async Task LoadInstalledGames_WhenOneGameHasInvalidName_StillLoadsTheOthers()
     {
-        // Arrange — two installed games; GetGameDirectory throws for the malicious name (exactly as
-        // the real service does for a traversal attempt) but succeeds for the valid one. Before
-        // BUG-009 this single throw aborted the whole projection and left "My Games" empty.
         _contentService.GetLocalGamesAsync().Returns([
             TestData.LocalGame(name: "Good", version: "1.0.0", id: Guid.NewGuid()),
             TestData.LocalGame(name: "..\\evil", version: "1.0.0", id: Guid.NewGuid()),
@@ -84,10 +73,8 @@ public class GamesViewModelTests
         _contentService.GetGameDirectory("..\\evil")
             .Returns(_ => throw new InvalidOperationException("escapes the games root"));
 
-        // Act
         var vm = await CreateSutAsync();
 
-        // Assert — both games are present and the invalid one simply has no help folder.
         vm.InstalledGames.Count.ShouldBe(2);
         vm.InstalledGames.Single(g => g.Nombre == "..\\evil").HasHelpFolder.ShouldBeFalse();
     }
@@ -95,7 +82,6 @@ public class GamesViewModelTests
     [Fact]
     public async Task LoadInstalledGames_WhenRemoteVersionIsNewer_FlagsHasUpdate()
     {
-        // Arrange
         var id = Guid.NewGuid();
         _contentService.GetGamesAsync().Returns([
             TestData.Game(name: "Demo", version: "2.0.0", id: id)
@@ -104,10 +90,8 @@ public class GamesViewModelTests
             TestData.LocalGame(name: "Demo", version: "1.0.0", id: id)
         ]);
 
-        // Act
         var vm = await CreateSutAsync();
 
-        // Assert
         var installed = vm.InstalledGames.Single();
         installed.HasUpdate.ShouldBeTrue();
         installed.UpdateVersion.ShouldBe("2.0.0");
@@ -116,7 +100,6 @@ public class GamesViewModelTests
     [Fact]
     public async Task LoadInstalledGames_WhenRemoteAndLocalVersionsMatch_DoesNotFlagUpdate()
     {
-        // Arrange
         var id = Guid.NewGuid();
         _contentService.GetGamesAsync().Returns([
             TestData.Game(name: "Demo", version: "1.0.0", id: id)
@@ -125,10 +108,8 @@ public class GamesViewModelTests
             TestData.LocalGame(name: "Demo", version: "1.0.0", id: id)
         ]);
 
-        // Act
         var vm = await CreateSutAsync();
 
-        // Assert
         var installed = vm.InstalledGames.Single();
         installed.HasUpdate.ShouldBeFalse();
         installed.UpdateVersion.ShouldBeEmpty();
@@ -137,10 +118,6 @@ public class GamesViewModelTests
     [Fact]
     public async Task BuildInstalledGameInfo_PopulatesPlaytimeAndHelpFolder_ForAFreshlyInstalledCard()
     {
-        // Arrange — a temp game dir WITH an "ayuda" subfolder. This is the exact path OnGameInstalled
-        // now takes after install; before BUG-033 the post-install card was hand-built omitting both
-        // PlaytimeMinutes (left at 0, wiping the value on updates) and HasHelpFolder (left false, so the
-        // help button only appeared after a manual refresh).
         var id = Guid.NewGuid();
         var gameDir = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-" + Guid.NewGuid());
         Directory.CreateDirectory(Path.Combine(gameDir, "ayuda"));
@@ -151,10 +128,8 @@ public class GamesViewModelTests
             var local = TestData.LocalGame(name: "Demo", version: "1.0.0", id: id);
             var playtimes = new Dictionary<Guid, int> { [id] = 42 };
 
-            // Act
             var info = vm.BuildInstalledGameInfo(local, playtimes);
 
-            // Assert
             info.PlaytimeMinutes.ShouldBe(42);
             info.HasHelpFolder.ShouldBeTrue();
             info.Nombre.ShouldBe("Demo");
@@ -169,14 +144,11 @@ public class GamesViewModelTests
     [Fact]
     public async Task BuildInstalledGameInfo_WhenNoPlaytimeRecorded_LeavesPlaytimeAtZero()
     {
-        // Arrange — empty playtime map and the fixture's non-existent game dir (no help folder).
         var vm = await CreateSutAsync();
         var local = TestData.LocalGame(name: "Demo", id: Guid.NewGuid());
 
-        // Act
         var info = vm.BuildInstalledGameInfo(local, new Dictionary<Guid, int>());
 
-        // Assert
         info.PlaytimeMinutes.ShouldBe(0);
         info.HasHelpFolder.ShouldBeFalse();
     }
@@ -184,16 +156,13 @@ public class GamesViewModelTests
     [Fact]
     public async Task BuildInstalledGameInfo_DerivesUpdateFlagFromRemoteCatalog()
     {
-        // Arrange — remote catalog advertises a newer version than the installed one.
         var id = Guid.NewGuid();
         _contentService.GetGamesAsync().Returns([TestData.Game(name: "Demo", version: "2.0.0", id: id)]);
         var vm = await CreateSutAsync();
         var local = TestData.LocalGame(name: "Demo", version: "1.0.0", id: id);
 
-        // Act — these are the other fields the old hand-built post-install card never computed.
         var info = vm.BuildInstalledGameInfo(local, new Dictionary<Guid, int>());
 
-        // Assert
         info.HasUpdate.ShouldBeTrue();
         info.UpdateVersion.ShouldBe("2.0.0");
     }
@@ -201,29 +170,23 @@ public class GamesViewModelTests
     [Fact]
     public async Task NavigateToLibraryCommand_WhenExecuted_RaisesNavigateToLibraryRequested()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         var raised = false;
         vm.NavigateToLibraryRequested += () => raised = true;
 
-        // Act
         vm.NavigateToLibraryCommand.Execute(null);
 
-        // Assert
         raised.ShouldBeTrue();
     }
 
     [Fact]
     public async Task RefreshAsync_RecomputesInstalledList_FromContentService()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         _contentService.ClearReceivedCalls();
 
-        // Act
         await vm.RefreshAsync();
 
-        // Assert
         await _contentService.Received(1).GetLocalGamesAsync();
     }
 
@@ -278,15 +241,11 @@ public class GamesViewModelTests
     [Fact]
     public async Task OpenHelpFolder_WhenGameDirectoryDoesNotExist_DoesNotThrow()
     {
-        // Arrange — GetGameDirectory already returns a non-existent path (fixture setup)
         var vm = await CreateSutAsync();
         _contentService.ClearReceivedCalls();
 
-        // Act
         var act = () => vm.OpenHelpFolderCommand.Execute("MissingGame");
 
-        // Assert — before the fix, Directory.EnumerateDirectories on a non-existent path threw
-        // DirectoryNotFoundException; with the guard it returns without throwing.
         Should.NotThrow(act);
         _contentService.Received(1).GetGameDirectory("MissingGame");
     }
@@ -294,26 +253,20 @@ public class GamesViewModelTests
     [Fact]
     public async Task OpenHelpFolder_WhenGameDirectoryDoesNotExist_DoesNotEnumerateDirectories()
     {
-        // Arrange — simulate a deleted directory by pointing GetGameDirectory to a
-        // well-known temp path that definitely does not exist.
         var tempRoot = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-DeletedGame-" + Guid.NewGuid());
         _contentService.GetGameDirectory("DeletedGame").Returns(tempRoot);
         var vm = await CreateSutAsync();
 
-        // Sanity: the directory must NOT exist for the test to be meaningful.
         Directory.Exists(tempRoot).ShouldBeFalse();
 
-        // Act
         vm.OpenHelpFolderCommand.Execute("DeletedGame");
 
-        // Assert — GetGameDirectory was consulted (proves the command ran its path).
         _contentService.Received(1).GetGameDirectory("DeletedGame");
     }
 
     [Fact]
     public async Task OpenHelpFolder_WithValidDirectoryButNoHelpSubfolder_DoesNotThrow()
     {
-        // Arrange — create a temp directory with NO "ayuda" subfolder.
         var tempRoot = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-" + Guid.NewGuid());
         Directory.CreateDirectory(tempRoot);
         try
@@ -321,10 +274,8 @@ public class GamesViewModelTests
             _contentService.GetGameDirectory("NoHelp").Returns(tempRoot);
             var vm = await CreateSutAsync();
 
-            // Act
             var act = () => vm.OpenHelpFolderCommand.Execute("NoHelp");
 
-            // Assert — no "ayuda" subfolder → logs and returns, never reaches Process.Start.
             Should.NotThrow(act);
         }
         finally
@@ -552,15 +503,12 @@ public class GamesViewModelTests
     [Fact]
     public async Task UninstallCoreAsync_KeepsTheDepartingCardListedUntilItsAnimationEnds()
     {
-        // Arrange
         _contentService.GetLocalGamesAsync().Returns([TestData.LocalGame(name: "Demo", version: "1.0.0", id: Guid.NewGuid())]);
         var vm = await CreateSutAsync(uninstallDeparture: Timeout.InfiniteTimeSpan);
         var game = vm.InstalledGames.Single();
 
-        // Act
         _ = vm.UninstallCoreAsync("Demo");
 
-        // Assert
         game.IsDeparting.ShouldBeTrue();
         game.IsUninstalling.ShouldBeTrue();
         vm.InstalledGames.ShouldContain(game);

@@ -1,7 +1,12 @@
 # General rules
 
-- Write code, comments, documentation, commits, branch names and PR text in
-  English. Translate user-facing content into each supported language.
+- Write code, documentation, commits, branch names and PR text in English.
+  Translate user-facing content into each supported language.
+- Do not write comments, XML docs or KDoc in source, build, script or CI files.
+  Explain intent through names and structure; record rationale, constraints
+  and decisions in the `.agents/` and `docs/` documents or the PR description.
+  Tooling directives that change behavior, such as `#pragma` or
+  `@Suppress`, are not comments.
 - Keep changes within the requested scope. Normally work on one application;
   changes to both need a reason, such as a shared documentation reorganization.
 - Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution policy and

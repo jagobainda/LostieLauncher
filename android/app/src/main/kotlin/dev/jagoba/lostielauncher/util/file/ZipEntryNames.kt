@@ -8,12 +8,6 @@ import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 
 internal object ZipEntryNames {
-    /**
-     * Charset to open the archive with. `ZipFile` applies it only to names stored without the UTF-8 flag.
-     * The game archives are packed on Western European Windows, whose OEM code page is 850 rather than
-     * the ZIP default 437. Android does not guarantee this charset, so it is resolved on first use: a device
-     * without it fails that installation instead of the initialization of this object.
-     */
     val LEGACY_CHARSET: Charset by lazy { Charset.forName("IBM850") }
 
     private const val FIELD_HEADER_SIZE = 4
@@ -25,11 +19,6 @@ internal object ZipEntryNames {
     private const val UNICODE_PATH_CHECKSUM_OFFSET = 1
     private const val UNICODE_PATH_NAME_OFFSET = 5
 
-    /**
-     * Name of an [entry] read with [LEGACY_CHARSET]. The Info-ZIP Unicode Path field wins over the header
-     * name, as on desktop. Unlike desktop, the field is ignored when its checksum shows that the header name
-     * changed after the field was written, as the ZIP specification asks.
-     */
     fun resolve(entry: ZipEntry): String = unicodePath(entry) ?: entry.name
 
     private fun unicodePath(entry: ZipEntry): String? {

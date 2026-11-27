@@ -16,6 +16,6 @@
 - Label historical measurements and manual checks with their context. Moving
   old evidence does not make it a fresh verification of the application.
 - When moving or deleting a document, update inbound links, relative paths,
-  anchors, README trees and CI comments that name it.
+  anchors, README trees and CI steps that name it.
 - For documentation changes, check local links and anchors, inspect the diff
   for lost rules and contradictions, and follow the applicable validation gates.

@@ -3,18 +3,12 @@ using LostieLauncher.Views.Dialogs;
 
 namespace LostieLauncher.Services;
 
-/// <summary>
-/// Seam over the WPF dialogs shown during an update check, so the orchestration in
-/// <see cref="UpdateService"/> can be unit tested without instantiating Windows or
-/// pumping a real Dispatcher.
-/// </summary>
 public interface IUpdateNotifier
 {
     public void NotifyUpToDate();
     public void NotifyCheckFailed();
     public void NotifyDownloadInProgress();
 
-    /// <summary>Asks the user whether to apply the update now. Returns <c>true</c> to apply.</summary>
     public bool PromptApply(string version);
 }
 

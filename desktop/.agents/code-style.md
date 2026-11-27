@@ -54,11 +54,6 @@ will fail CI:
 
 ## Comments and docs
 
-- Comments explain **why**, not what. See the annotated
-  `LostieLauncher.Tests.csproj` and the test helpers in
-  `LostieLauncher.Tests/Helpers/` for the expected register: a comment earns its
-  place by recording a constraint or a decision that the code cannot show.
-- Put an XML doc on every new interface or seam stating what it exists to
-  isolate, and on anything whose correct use is not obvious from the signature.
-- Do not narrate obvious code, and do not leave commented-out code behind.
-- Comments and XML docs are written in English.
+- C#, XAML, project files and scripts carry no comments or XML docs, as
+  [general.md](../../.agents/general.md) requires. Name interfaces and seams so
+  their purpose is clear, and put longer explanations in the documentation.

@@ -55,10 +55,8 @@ public class MainViewModelTests
     [Fact]
     public async Task Constructor_DefaultsToHomeViewModelAsCurrent()
     {
-        // Arrange & Act
         var vm = await CreateSutAsync();
 
-        // Assert
         vm.IsHomeActive.ShouldBeTrue();
         vm.IsGamesActive.ShouldBeFalse();
         vm.IsLibraryActive.ShouldBeFalse();
@@ -68,14 +66,11 @@ public class MainViewModelTests
     [Fact]
     public async Task NavigateToGamesCommand_SwitchesCurrentViewModelAndUpdatesTitle()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         var expectedTitle = SettingsViewModel.Instance.Strings.TitleGames;
 
-        // Act
         vm.NavigateToGamesCommand.Execute(null);
 
-        // Assert
         vm.IsGamesActive.ShouldBeTrue();
         vm.CurrentTitle.ShouldBe(expectedTitle);
     }
@@ -83,14 +78,11 @@ public class MainViewModelTests
     [Fact]
     public async Task NavigateToLibraryCommand_SwitchesCurrentViewModelAndUpdatesTitle()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         var expectedTitle = SettingsViewModel.Instance.Strings.TitleLibrary;
 
-        // Act
         vm.NavigateToLibraryCommand.Execute(null);
 
-        // Assert
         vm.IsLibraryActive.ShouldBeTrue();
         vm.CurrentTitle.ShouldBe(expectedTitle);
     }
@@ -98,14 +90,11 @@ public class MainViewModelTests
     [Fact]
     public async Task NavigateToSettingsCommand_SwitchesCurrentViewModelAndUpdatesTitle()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         var expectedTitle = SettingsViewModel.Instance.Strings.TitleSettings;
 
-        // Act
         vm.NavigateToSettingsCommand.Execute(null);
 
-        // Assert
         vm.IsSettingsActive.ShouldBeTrue();
         vm.CurrentTitle.ShouldBe(expectedTitle);
     }
@@ -113,24 +102,19 @@ public class MainViewModelTests
     [Fact]
     public async Task NavigateToHomeCommand_FromAnotherView_SwitchesBackToHome()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         vm.NavigateToSettingsCommand.Execute(null);
 
-        // Act
         vm.NavigateToHomeCommand.Execute(null);
 
-        // Assert
         vm.IsHomeActive.ShouldBeTrue();
     }
 
     [Fact]
     public async Task IsRefreshVisible_OnlyInHomeGamesAndLibrary()
     {
-        // Arrange
         var vm = await CreateSutAsync();
 
-        // Act & Assert
         vm.IsRefreshVisible.ShouldBeTrue();
         vm.NavigateToGamesCommand.Execute(null);
         vm.IsRefreshVisible.ShouldBeTrue();
@@ -145,14 +129,11 @@ public class MainViewModelTests
     [Fact]
     public async Task CurrentViewModelChange_RaisesPropertyChangedForActiveFlags()
     {
-        // Arrange
         var vm = await CreateSutAsync();
         using var recorder = new PropertyChangedRecorder(vm);
 
-        // Act
         vm.NavigateToGamesCommand.Execute(null);
 
-        // Assert
         recorder.WasRaised(nameof(MainViewModel.IsHomeActive)).ShouldBeTrue();
         recorder.WasRaised(nameof(MainViewModel.IsGamesActive)).ShouldBeTrue();
         recorder.WasRaised(nameof(MainViewModel.IsLibraryActive)).ShouldBeTrue();
@@ -162,7 +143,6 @@ public class MainViewModelTests
     [Fact]
     public async Task RefreshDataCommand_CanExecute_ReturnsFalseWhileGlobalIsDownloading()
     {
-        // Arrange
         var global = new GlobalViewModel();
         var settings = new SettingsViewModel(_settingsService, _startupService, global, Substitute.For<IUpdateService>(),
             Substitute.For<IDownloadLocationService>(), Substitute.For<IDownloadLocationNotifier>());
@@ -176,24 +156,19 @@ public class MainViewModelTests
         var faqs = new FaqsViewModel(settings);
         var vm = new MainViewModel(global, home, games, library, faqs, settings);
 
-        // Act
         global.IsDownloading = true;
 
-        // Assert
         vm.RefreshDataCommand.CanExecute(null).ShouldBeFalse();
     }
 
     [Fact]
     public async Task MaintenanceEnding_ReloadsTheCatalogue()
     {
-        // Arrange
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
         var vm = await CreateSutAsync();
 
-        // Act
         await EndMaintenanceAsync();
 
-        // Assert
         vm.IsOfflineMode.ShouldBeFalse();
         await _contentService.Received(1).GetGamesAsync();
     }
@@ -201,43 +176,34 @@ public class MainViewModelTests
     [Fact]
     public async Task MaintenanceEnding_WhileDownloading_KeepsTheCatalogue()
     {
-        // Arrange
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
         await CreateSutAsync();
         _global.IsDownloading = true;
 
-        // Act
         await EndMaintenanceAsync();
 
-        // Assert
         await _contentService.DidNotReceive().GetGamesAsync();
     }
 
     [Fact]
     public async Task HomeRefresh_WithoutMaintenance_DoesNotReloadTheCatalogue()
     {
-        // Arrange
         await CreateSutAsync();
 
-        // Act
         await EndMaintenanceAsync();
 
-        // Assert
         await _contentService.DidNotReceive().GetGamesAsync();
     }
 
     [Fact]
     public async Task DownloadDirectoryChange_RefreshesLibraryAndInstalledGames()
     {
-        // Arrange
         await CreateSutAsync();
         _contentService.ClearReceivedCalls();
         _contentService.GetLocalGamesAsync().Returns([TestData.LocalGame(name: "Other folder game")]);
 
-        // Act
         _settings.DownloadDirectory = Path.Combine(Path.GetTempPath(), "LostieLauncherTests-other-folder");
 
-        // Assert
         await _contentService.Received(1).GetGamesAsync();
         _games.InstalledGames.Single().Nombre.ShouldBe("Other folder game");
     }
@@ -245,10 +211,8 @@ public class MainViewModelTests
     [Fact]
     public async Task RefreshDataCommand_CanExecute_ReturnsTrueWhenIdle()
     {
-        // Arrange
         var vm = await CreateSutAsync();
 
-        // Act & Assert
         vm.RefreshDataCommand.CanExecute(null).ShouldBeTrue();
     }
 }
