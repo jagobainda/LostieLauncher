@@ -10,8 +10,6 @@ plugins {
     alias(libs.plugins.android.junit)
 }
 
-// Release signing credentials stay out of the repository. Without this file,
-// as on CI, assembleRelease still builds, unsigned.
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) keystorePropertiesFile.inputStream().use { load(it) }
@@ -47,8 +45,6 @@ android {
     }
 
     buildTypes {
-        // A debug build is signed with the debug key, so under the release's id it
-        // would block installing a release over it, and the other way round.
         debug {
             applicationIdSuffix = ".debug"
         }
@@ -79,13 +75,10 @@ android {
         abortOnError = true
         checkDependencies = true
         checkReleaseBuilds = false
-        // Dependabot tracks AGP updates; keeping this check enabled fails CI on every upstream release.
         disable += "AndroidGradlePluginVersion"
     }
 }
 
-// A signed release is also copied to android/release/, named after its version,
-// ready to upload. An unsigned one, as on CI, stays where AGP writes it.
 androidComponents {
     onVariants(selector().withBuildType("release")) { variant ->
         if (!keystorePropertiesFile.exists()) return@onVariants

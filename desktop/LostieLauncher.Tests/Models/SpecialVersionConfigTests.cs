@@ -23,13 +23,10 @@ public class SpecialVersionConfigTests
     [Fact]
     public void Parse_WithAllRequiredFields_ReturnsPopulatedConfig()
     {
-        // Arrange
         var content = ValidContent();
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldNotBeNull();
         config!.Sha256.ShouldBe("abc");
         config.Tipo.ShouldBe("beta");
@@ -41,13 +38,10 @@ public class SpecialVersionConfigTests
     [Fact]
     public void Parse_AcceptsCarriageReturnsAndExtraWhitespacePerLine()
     {
-        // Arrange
         var content = "  sha256 = abc  \n tipo=beta\njuego-principal=" + ValidGuid + "\nvers=1.0.0\narchivo=g.zip\n";
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldNotBeNull();
         config!.Sha256.ShouldBe("abc");
         config.Tipo.ShouldBe("beta");
@@ -56,13 +50,10 @@ public class SpecialVersionConfigTests
     [Fact]
     public void Parse_KeysAreCaseInsensitive()
     {
-        // Arrange
         var content = "SHA256=abc\nTipo=beta\nJUEGO-PRINCIPAL=" + ValidGuid + "\nVers=2.0.0\nArchivo=g.zip";
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldNotBeNull();
         config!.Version.ShouldBe("2.0.0");
     }
@@ -75,7 +66,6 @@ public class SpecialVersionConfigTests
     [InlineData("archivo")]
     public void Parse_WhenRequiredKeyMissing_ReturnsNull(string missingKey)
     {
-        // Arrange — build content omitting one required key
         var values = new Dictionary<string, string>
         {
             ["sha256"] = "abc",
@@ -87,49 +77,38 @@ public class SpecialVersionConfigTests
         values.Remove(missingKey);
         var content = string.Join('\n', values.Select(kv => $"{kv.Key}={kv.Value}"));
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldBeNull();
     }
 
     [Fact]
     public void Parse_WhenJuegoPrincipalIsNotAGuid_ReturnsNull()
     {
-        // Arrange
         var content = ValidContent(overrideKey: "juego-principal", overrideValue: "not-a-guid");
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldBeNull();
     }
 
     [Fact]
     public void Parse_IgnoresLinesWithoutEqualsSignAndEmptyLines()
     {
-        // Arrange
         var content = $"# this is a comment\n\nsha256=abc\ntipo=beta\njuego-principal={ValidGuid}\nvers=1.0.0\narchivo=g.zip\nbroken-line";
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldNotBeNull();
     }
 
     [Fact]
     public void Parse_WhenContentIsEmpty_ReturnsNull()
     {
-        // Arrange
         var content = string.Empty;
 
-        // Act
         var config = SpecialVersionConfig.Parse(content);
 
-        // Assert
         config.ShouldBeNull();
     }
 }

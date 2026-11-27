@@ -103,7 +103,6 @@ public partial class FaqCardComponent : UserControl
             var highlighted = new Run(text[start..(start + length)]) { FontWeight = FontWeights.Bold };
             if (!isLink)
             {
-                // Hyperlinks already come underlined and accent-colored; plain text gets both here.
                 highlighted.TextDecorations = TextDecorations.Underline;
                 highlighted.SetResourceReference(TextElement.ForegroundProperty, "PrimaryFgBrush");
             }

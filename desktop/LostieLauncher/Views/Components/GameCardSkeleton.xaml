@@ -5,7 +5,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Name="Root">
-    <!-- Mirrors the outer geometry of GameCardComponent: Grid[Margin=0,0,0,10] > Border[SecondaryBg, r6, p16] -->
     <Grid Margin="0,0,0,10">
         <Border Background="{DynamicResource SecondaryBgBrush}" CornerRadius="6" Padding="16" SnapsToDevicePixels="True">
             <Grid>
@@ -15,13 +14,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Logo placeholder: 110×80, r6 — mirrors the logo Border in GameCardComponent -->
                 <Border Grid.Column="0"
                         Style="{StaticResource SkeletonBlockStyle}"
                         Width="110" Height="80" CornerRadius="6"
                         VerticalAlignment="Center" />
 
-                <!-- Text placeholder: title bar + meta bar — mirrors the StackPanel text column -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,16,0">
                     <Border Style="{StaticResource SkeletonBlockStyle}"
                             Height="18" CornerRadius="3"
@@ -32,7 +29,6 @@
                             Margin="0,8,0,0" />
                 </StackPanel>
 
-                <!-- Button placeholder: 110×32, r4 — mirrors CardAccentButtonStyle dimensions -->
                 <Border Grid.Column="2"
                         Style="{StaticResource SkeletonBlockStyle}"
                         Width="110" Height="32" CornerRadius="4"

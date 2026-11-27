@@ -5,7 +5,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Name="Root">
-    <!-- Mirrors the outer geometry of NewsCardComponent: Border[OverlaySubtle, r8, p16, m0,0,0,10] -->
     <Border Background="{DynamicResource OverlaySubtleBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,10"
             SnapsToDevicePixels="True">
         <Grid>
@@ -15,7 +14,6 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Row 0: tag pill + date — mirrors DockPanel with PrimaryFg pill + right-aligned date -->
             <DockPanel Grid.Row="0">
                 <Border Style="{StaticResource SkeletonBlockStyle}"
                         Width="60" Height="18" CornerRadius="4"
@@ -25,14 +23,12 @@
                         HorizontalAlignment="Right" VerticalAlignment="Center" />
             </DockPanel>
 
-            <!-- Row 1: title — mirrors TextBlock[FontSize=15, Margin=0,10,0,4] -->
             <Border Grid.Row="1"
                     Style="{StaticResource SkeletonBlockStyle}"
                     Height="18" CornerRadius="3"
                     Width="200" HorizontalAlignment="Left"
                     Margin="0,10,0,4" />
 
-            <!-- Row 2: description lines — mirrors the wrapping TextBlock[FontSize=13] -->
             <StackPanel Grid.Row="2">
                 <Border Style="{StaticResource SkeletonBlockStyle}" Height="12" CornerRadius="3" />
                 <Border Style="{StaticResource SkeletonBlockStyle}" Height="12" CornerRadius="3"

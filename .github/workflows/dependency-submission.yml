@@ -1,0 +1,28 @@
+name: Dependency submission
+
+on:
+    push:
+        branches: [development]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    android-dependency-submission:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup JDK
+              uses: actions/setup-java@v6
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Submit Gradle dependency graph
+              uses: gradle/actions/dependency-submission@v6
+              with:
+                  build-root-directory: android

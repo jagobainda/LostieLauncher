@@ -11,10 +11,8 @@ public class GameCardTakeoverPolicyTests
     [InlineData(GameDownloadStatus.Downloaded)]
     public void ForStatusChange_WhenADownloadStarts_ReturnsInstallStarted(GameDownloadStatus previous)
     {
-        // Act
         var takeover = GameCardTakeoverPolicy.ForStatusChange(previous, GameDownloadStatus.Downloading);
 
-        // Assert
         takeover.ShouldBe(GameCardTakeover.InstallStarted);
     }
 
@@ -25,10 +23,8 @@ public class GameCardTakeoverPolicyTests
     [InlineData(GameDownloadStatus.Extracting)]
     public void ForStatusChange_WhenAnInstallInProgressCompletes_ReturnsInstallFinished(GameDownloadStatus previous)
     {
-        // Act
         var takeover = GameCardTakeoverPolicy.ForStatusChange(previous, GameDownloadStatus.Downloaded);
 
-        // Assert
         takeover.ShouldBe(GameCardTakeover.InstallFinished);
     }
 
@@ -41,10 +37,8 @@ public class GameCardTakeoverPolicyTests
     [InlineData(GameDownloadStatus.Available, GameDownloadStatus.Downloaded)]
     public void ForStatusChange_ForOtherTransitions_ReturnsNull(GameDownloadStatus previous, GameDownloadStatus current)
     {
-        // Act
         var takeover = GameCardTakeoverPolicy.ForStatusChange(previous, current);
 
-        // Assert
         takeover.ShouldBeNull();
     }
 }

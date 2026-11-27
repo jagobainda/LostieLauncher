@@ -13,7 +13,6 @@ internal suspend inline fun <T> Call.useCancellableResponse(
     consume: (Response) -> T,
 ): T {
     val context = currentCoroutineContext()
-    // This child finishes on parent cancellation even while the caller is blocked in a socket read.
     val cancellation = Job(context.job)
     cancellation.invokeOnCompletion { if (it != null) cancel() }
     try {

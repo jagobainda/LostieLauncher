@@ -27,16 +27,13 @@ public class HomeViewModelTests
     [Fact]
     public async Task Constructor_KicksOffInitialLoad_PopulatingNewsAndNotifications()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
 
-        // Act
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
-        await vm.RefreshAsync(); // serialised via the same gate, so the initial load completes first.
+        await vm.RefreshAsync();
 
-        // Assert
         vm.News.Count.ShouldBe(1);
         vm.Notifications.Count.ShouldBe(1);
         vm.IsLoading.ShouldBeFalse();
@@ -47,39 +44,32 @@ public class HomeViewModelTests
     [InlineData(false)]
     public async Task RefreshAsync_PropagatesTwitchLiveStatus(bool isLive)
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         _twitchLiveService.IsLiveAsync().Returns(isLive);
         var vm = new HomeViewModel(_contentService, _twitchLiveService, CreateSettings());
 
-        // Act
         await vm.RefreshAsync();
 
-        // Assert
         vm.IsTwitchLive.ShouldBe(isLive);
     }
 
     [Fact]
     public async Task Constructor_PropagatesOfflineMode_FromContentService()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
         var settings = CreateSettings();
 
-        // Act
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
-        // Assert
         vm.IsOfflineMode.ShouldBeTrue();
     }
 
     [Fact]
     public async Task RefreshAsync_RequestsForcedRefresh_FromContentService()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
@@ -87,17 +77,14 @@ public class HomeViewModelTests
         await vm.RefreshAsync();
         _contentService.ClearReceivedCalls();
 
-        // Act
         await vm.RefreshAsync();
 
-        // Assert — RefreshAsync must always pass forceRefresh=true.
         await _contentService.Received(1).GetHomeContentAsync(true);
     }
 
     [Fact]
     public async Task SettingsLanguageChange_TriggersAdditionalLoadHomeContent()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
@@ -105,29 +92,24 @@ public class HomeViewModelTests
         await vm.RefreshAsync();
         var before = _contentService.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IContentService.GetHomeContentAsync));
 
-        // Act
         settings.Language = AppLanguage.Eng;
-        await vm.RefreshAsync(); // drains the fire-and-forget reload via the gate.
+        await vm.RefreshAsync();
 
-        // Assert
         var after = _contentService.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IContentService.GetHomeContentAsync));
-        (after - before).ShouldBeGreaterThanOrEqualTo(2); // at least the language reload + our explicit refresh.
+        (after - before).ShouldBeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
     public async Task IsEmpty_WhenNoNewsOrNotificationsAndNotLoading_ReturnsTrue()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
-        // Act
         var empty = vm.IsEmpty;
 
-        // Assert
         empty.ShouldBeTrue();
         vm.IsListVisible.ShouldBeFalse();
     }
@@ -135,14 +117,12 @@ public class HomeViewModelTests
     [Fact]
     public async Task IsListVisible_WhenContentArrived_ReturnsTrueAndIsEmptyIsFalse()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
-        // Act & Assert
         vm.IsListVisible.ShouldBeTrue();
         vm.IsEmpty.ShouldBeFalse();
     }
@@ -150,17 +130,14 @@ public class HomeViewModelTests
     [Fact]
     public void News_WhenReplaced_RaisesPropertyChangedForDerivedFlags()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         using var recorder = new PropertyChangedRecorder(vm);
 
-        // Act
         vm.News = new ObservableCollection<NewsItem> { new() { Title = "x" } };
 
-        // Assert
         recorder.WasRaised(nameof(HomeViewModel.News)).ShouldBeTrue();
         recorder.WasRaised(nameof(HomeViewModel.IsEmpty)).ShouldBeTrue();
         recorder.WasRaised(nameof(HomeViewModel.IsListVisible)).ShouldBeTrue();
@@ -170,19 +147,13 @@ public class HomeViewModelTests
     [Fact]
     public async Task Dispose_StopsTheBackgroundRefreshLoop()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
-        // Intervalo por defecto (2 min): el bucle queda esperando el primer tick, así que solo puede
-        // terminar por la cancelación de Dispose — nunca por agotar el intervalo. Es la regresión exacta
-        // de BUG-019 (antes el bucle era imparable y el `using` del timer nunca disponía).
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
 
-        // Act
         vm.Dispose();
 
-        // Assert — el bucle termina limpiamente sin colgarse (WaitAsync acota el caso "imparable").
         await vm.BackgroundRefreshTask.WaitAsync(TimeSpan.FromSeconds(5));
         vm.BackgroundRefreshTask.IsCompletedSuccessfully.ShouldBeTrue();
     }
@@ -190,19 +161,15 @@ public class HomeViewModelTests
     [Fact]
     public async Task BackgroundLoop_PerformsForcedRefresh_AndStopsOnDispose()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var ticked = new TaskCompletionSource();
-        // El bucle de fondo es el único que pide GetHomeContentAsync(true); la carga inicial usa forceRefresh=false.
         _contentService.When(c => c.GetHomeContentAsync(true)).Do(_ => ticked.TrySetResult());
         var settings = CreateSettings();
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings, TimeSpan.FromMilliseconds(20));
 
-        // Act & Assert — el bucle sigue refrescando periódicamente tras añadir la cancelación...
         await ticked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        // ...y se detiene de forma determinista al disponer.
         vm.Dispose();
         await vm.BackgroundRefreshTask.WaitAsync(TimeSpan.FromSeconds(5));
         vm.BackgroundRefreshTask.IsCompletedSuccessfully.ShouldBeTrue();
@@ -211,7 +178,6 @@ public class HomeViewModelTests
     [Fact]
     public async Task Dispose_StopsRespondingToSettingsLanguageChanges()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
@@ -220,32 +186,25 @@ public class HomeViewModelTests
         vm.Dispose();
         _contentService.ClearReceivedCalls();
 
-        // Act — tras Dispose, un cambio de idioma ya no debe disparar una recarga (suscripción desuscrita).
         settings.Language = AppLanguage.Eng;
-        await vm.RefreshAsync(); // drena por el gate cualquier recarga que el cambio hubiese encolado.
+        await vm.RefreshAsync();
 
-        // Assert — solo la carga de nuestro RefreshAsync explícito; el cambio de idioma no añadió ninguna.
         var loads = _contentService.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IContentService.GetHomeContentAsync));
         loads.ShouldBe(1);
     }
 
-    // ---- Distinguishing "no content" from "could not refresh" (wave 2) ----------------------
-
     [Fact]
     public async Task LoadHomeContent_WhenTheServiceReportsStaleContent_RaisesTheOutOfDateWarning()
     {
-        // Arrange — the refresh failed and the service handed back the last known payload.
         var stale = SampleContent();
         stale.IsStale = true;
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
 
-        // Act
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
-        // Assert — the content stays on screen, with a warning that it may be out of date.
         vm.News.Count.ShouldBe(1);
         vm.IsContentStale.ShouldBeTrue();
         vm.IsOutOfDateWarningVisible.ShouldBeTrue();
@@ -254,19 +213,15 @@ public class HomeViewModelTests
     [Fact]
     public async Task LoadHomeContent_WhenTheServerIsUnderMaintenance_ShowsOnlyTheOfflineBanner()
     {
-        // Arrange — nothing refreshes during maintenance, so the offline banner already explains it;
-        // stacking a second warning on top of it would just be noise.
         var stale = SampleContent();
         stale.IsStale = true;
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(true);
         var settings = CreateSettings();
 
-        // Act
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         await vm.RefreshAsync();
 
-        // Assert
         vm.IsOfflineMode.ShouldBeTrue();
         vm.IsContentStale.ShouldBeTrue();
         vm.IsOutOfDateWarningVisible.ShouldBeFalse();
@@ -275,7 +230,6 @@ public class HomeViewModelTests
     [Fact]
     public async Task LoadHomeContent_WhenAFailedRefreshIsFollowedByAGoodOne_ClearsTheWarning()
     {
-        // Arrange — the warning must not outlive the failure that caused it.
         var stale = SampleContent();
         stale.IsStale = true;
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(stale);
@@ -285,11 +239,9 @@ public class HomeViewModelTests
         await vm.RefreshAsync();
         vm.IsContentStale.ShouldBeTrue();
 
-        // Act
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(SampleContent());
         await vm.RefreshAsync();
 
-        // Assert
         vm.IsContentStale.ShouldBeFalse();
         vm.IsOutOfDateWarningVisible.ShouldBeFalse();
     }
@@ -297,17 +249,14 @@ public class HomeViewModelTests
     [Fact]
     public void Dispose_WhenCalledTwice_DoesNotThrow()
     {
-        // Arrange
         _contentService.GetHomeContentAsync(Arg.Any<bool>()).Returns(new HomeContent());
         _contentService.IsServerActionBlockedAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(false);
         var settings = CreateSettings();
         var vm = new HomeViewModel(_contentService, _twitchLiveService, settings);
         vm.Dispose();
 
-        // Act
         var act = vm.Dispose;
 
-        // Assert
         Should.NotThrow(act);
     }
 }

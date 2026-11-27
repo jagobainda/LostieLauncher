@@ -50,8 +50,6 @@
             </Button>
         </Grid>
 
-        <!-- The window grows with the message (paths in the uninstall error are long and would be
-             clipped by a fixed height) and scrolls only once it hits MaxHeight. -->
         <ScrollViewer Grid.Row="1"
                       VerticalAlignment="Center"
                       VerticalScrollBarVisibility="Auto"

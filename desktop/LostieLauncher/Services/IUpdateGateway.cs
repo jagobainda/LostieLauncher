@@ -2,18 +2,11 @@ using Velopack;
 
 namespace LostieLauncher.Services;
 
-/// <summary>
-/// Seam over Velopack's <see cref="UpdateManager"/> so the update orchestration in
-/// <see cref="UpdateService"/> can be unit tested without touching the network or the
-/// not-installed Velopack runtime (which throws when the app isn't packaged).
-/// </summary>
 public interface IUpdateGateway
 {
-    /// <summary>Returns the pending update, or <c>null</c> when already up to date.</summary>
     public Task<IUpdatePackage?> CheckForUpdatesAsync();
 }
 
-/// <summary>A pending update that can be downloaded and applied.</summary>
 public interface IUpdatePackage
 {
     public string Version { get; }

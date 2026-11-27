@@ -2,10 +2,6 @@ using LostieLauncher.Models;
 
 namespace LostieLauncher.Tests.Helpers;
 
-/// <summary>
-/// Centralised factories for valid model instances used across tests. Keeps Arrange
-/// blocks short and ensures every test starts from the same well-formed baseline.
-/// </summary>
 public static class TestData
 {
     public static AppSettings AppSettings(

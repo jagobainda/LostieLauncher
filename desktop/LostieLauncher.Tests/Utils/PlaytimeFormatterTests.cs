@@ -10,10 +10,8 @@ public class PlaytimeFormatterTests
     [InlineData(int.MinValue, "")]
     public void Format_WhenMinutesIsZeroOrNegative_ReturnsEmpty(int minutes, string expected)
     {
-        // Act
         var text = PlaytimeFormatter.Format(minutes);
 
-        // Assert
         text.ShouldBe(expected);
     }
 
@@ -23,10 +21,8 @@ public class PlaytimeFormatterTests
     [InlineData(59, "59 min")]
     public void Format_WhenBelowOneHour_ReturnsMinutesOnly(int minutes, string expected)
     {
-        // Act
         var text = PlaytimeFormatter.Format(minutes);
 
-        // Assert
         text.ShouldBe(expected);
     }
 
@@ -35,10 +31,8 @@ public class PlaytimeFormatterTests
     [InlineData(120, "2 h")]
     public void Format_WhenWholeHours_OmitsMinutes(int minutes, string expected)
     {
-        // Act
         var text = PlaytimeFormatter.Format(minutes);
 
-        // Assert
         text.ShouldBe(expected);
     }
 
@@ -48,10 +42,8 @@ public class PlaytimeFormatterTests
     [InlineData(150, "2 h 30 min")]
     public void Format_WhenHoursAndMinutes_ReturnsBoth(int minutes, string expected)
     {
-        // Act
         var text = PlaytimeFormatter.Format(minutes);
 
-        // Assert
         text.ShouldBe(expected);
     }
 }
