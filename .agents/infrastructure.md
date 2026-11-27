@@ -9,7 +9,7 @@
   `/android` and GitHub Actions in `/`. Add an ecosystem without repointing
   another one. Velopack is explicitly excluded and maintained manually.
 - [Dependency submission](../.github/workflows/dependency-submission.yml)
-  sends the resolved Android Gradle graph to GitHub on every push to `main`,
+  sends the resolved Android Gradle graph to GitHub on every push to `development`,
   so Dependabot alerts and security updates also cover transitive Gradle
   dependencies. Alerts, security updates, secret scanning and push protection
   are repository settings, not files.

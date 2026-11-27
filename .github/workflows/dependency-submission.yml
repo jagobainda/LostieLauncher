@@ -2,7 +2,7 @@ name: Dependency submission
 
 on:
     push:
-        branches: [main]
+        branches: [development]
     workflow_dispatch:
 
 permissions:

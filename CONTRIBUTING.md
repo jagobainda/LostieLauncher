@@ -237,7 +237,7 @@ dependencies unless your change requires it.
 Security advisories reach the maintainer through **Dependabot alerts** and
 security update PRs. For Android, the
 [dependency submission workflow](.github/workflows/dependency-submission.yml)
-sends the full Gradle graph on every push to `main`, so advisories for
+sends the full Gradle graph on every push to `development`, so advisories for
 transitive dependencies are reported too.
 
 ---
