@@ -32,7 +32,10 @@ Spotless overrides; keep the duplicated settings aligned. Use
 
 ## Comments and documentation
 
-- Source, build scripts and configuration carry no comments or KDoc, as
-  [general.md](../../.agents/general.md) requires. Explanations belong in `docs/`.
-- Current limitations live in [game runtime](../docs/game-runtime-options.md),
-  not in TODO markers.
+- Keep comments and KDoc only when they explain a necessary constraint or
+  decision. Remove redundant narration when editing; preserve useful rationale
+  rather than deleting comments merely because the file changed.
+- Longer explanations belong in `docs/`. Short build-script explanations may
+  record constraints the configuration itself does not explain.
+- Do not leave commented-out code or obsolete runtime TODO markers behind.
+  Current limitations live in [game runtime](../docs/game-runtime-options.md).

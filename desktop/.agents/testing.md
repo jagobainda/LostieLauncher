@@ -22,7 +22,7 @@ NSubstitute and Shouldly; package versions live in the test project file.
 
 - Names follow `Method_Scenario_ExpectedResult`.
 - Use readonly NSubstitute fields and a `CreateSut()` factory.
-- Separate arrange, act and assert with blank lines, without comments.
+- Keep `// Arrange`, `// Act`, `// Assert` sections; comments explain intent.
 - Assert with Shouldly, verify calls with `Received(1)` / `DidNotReceive()`.
 - Use `[Theory]` / `[InlineData]` for parallel cases.
 
